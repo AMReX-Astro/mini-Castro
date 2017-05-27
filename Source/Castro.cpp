@@ -87,7 +87,6 @@ Real         Castro::previousCPUTimeUsed = 0.0;
 
 Real         Castro::startCPUTime = 0.0;
 
-int          Castro::Knapsack_Weight_Type = -1;
 int          Castro::num_state_type = 0;
 
 // Note: Castro::variableSetUp is in Castro_setup.cpp
@@ -551,10 +550,6 @@ Castro::initData ()
 
     if (verbose && ParallelDescriptor::IOProcessor())
        std::cout << "Initializing the data at level " << level << std::endl;
-
-   if (Knapsack_Weight_Type > 0) {
-       get_new_data(Knapsack_Weight_Type).setVal(1.0);
-   }
 
     {
        for (MFIter mfi(S_new); mfi.isValid(); ++mfi)
