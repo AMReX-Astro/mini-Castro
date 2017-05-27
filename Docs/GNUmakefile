@@ -17,14 +17,8 @@ section_sources = Preface/Preface.tex \
                   ManagingJobs/managingjobs.tex \
                   FAQ/faq.tex \
                   Hydrodynamics/Hydrodynamics.tex \
-	          Gravity/CastroGravity.tex \
-	          Diffusion/CastroDiffusion.tex \
-	          Rotation/CastroRotation.tex \
-                  Radiation/CastroRadiation.tex \
                   EOSNetwork/EOSNetwork.tex \
                   AMR/AMR.tex \
-                  ConvertCheckpoint/ConvertCheckpoint.tex \
-		  MAESTRO_restart/MAESTRO_restart.tex \
                   Visualization/CastroVisualization.tex \
                   Verification/Verification.tex \
                   castrosymbols.tex
