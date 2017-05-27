@@ -47,23 +47,6 @@ public:
     //The destructor.
     //
     virtual ~Castro () override;
-    //
-    //Restart from a checkpoint file.
-    //
-    virtual void restart (amrex::Amr&     papa,
-                          istream& is,
-			  bool bReadSpecial = false) override;
-    //
-    //This is called only when we restart from an old checkpoint.
-    //
-    virtual void set_state_in_checkpoint (amrex::Array<int>& state_in_checkpoint) override;
-    //
-    //Call amrex::AmrLevel::checkPoint and then add radiation info
-    //
-    virtual void checkPoint(const std::string& dir,
-                            std::ostream&      os,
-                            amrex::VisMF::How         how,
-                            bool               dump_old) override;
 
     /*A string written as the first item in writePlotFile() at
                level zero. It is so we can distinguish between different
@@ -78,9 +61,7 @@ public:
     virtual void writePlotFile (const std::string& dir,
                                 ostream&       os,
                                 amrex::VisMF::How     how) override;
-    virtual void writeSmallPlotFile (const std::string& dir,
-				     ostream&       os,
-				     amrex::VisMF::How     how) override;
+
     void writeJobInfo (const std::string& dir);
 
     //
