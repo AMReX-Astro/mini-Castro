@@ -103,8 +103,7 @@ Bpack	+= $(foreach dir, $(Pdirs), $(AMREX_HOME)/Src/$(dir)/Make.package)
 
 
 # Castro directories
-Bdirs 	:= Source Source/param_includes Source/Src_$(DIM)d Source/Src_nd \
-           Util/model_parser
+Bdirs 	:= Source Source/param_includes Source/Src_$(DIM)d Source/Src_nd
 
 ifeq ($(USE_RAD), TRUE)
 Bdirs +=   Source/Radiation Source/Radiation/_interpbndry \
@@ -132,7 +131,6 @@ mega_f.F90: $(ca_F90EXE_sources) $(ca_f90EXE_sources)
 
 # these are for finding runtime parameters
 EXTERN_CORE += $(TOP)/constants
-EXTERN_CORE += $(TOP)/Util/model_parser
 
 USE_MG = FALSE
 
