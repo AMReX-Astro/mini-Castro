@@ -184,19 +184,6 @@ Castro::read_params ()
     if (cfl <= 0.0 || cfl > 1.0)
       amrex::Error("Invalid CFL factor; must be between zero and one.");
 
-    if (use_colglaz >= 0)
-    {
-	std::cerr << "ERROR:: use_colglaz is deprecated.  Use riemann_solver instead\n";
-	amrex::Error();
-    }
-
-
-    if (max_dt < fixed_dt)
-    {
-	std::cerr << "cannot have max_dt < fixed_dt\n";
-	amrex::Error();
-    }
-
     int bndry_func_thread_safe = 1;
     StateDescriptor::setBndryFuncThreadSafety(bndry_func_thread_safe);
 
@@ -520,14 +507,7 @@ Castro::initialTimeStep ()
     Real dummy_dt = 0.0;
     Real init_dt  = 0.0;
 
-    if (initial_dt > 0.0)
-    {
-       init_dt = initial_dt;
-    }
-    else
-    {
-       init_dt = init_shrink*estTimeStep(dummy_dt);
-    }
+    init_dt = estTimeStep(dummy_dt);
 
     return init_dt;
 }
@@ -542,13 +522,13 @@ Castro::estTimeStep (Real dt_old)
 
     ca_set_amr_info(level, -1, -1, -1.0, -1.0);
 
+    Real max_dt = 1.e200;
+
     Real estdt = max_dt;
 
     const MultiFab& stateMF = get_new_data(State_Type);
 
     const Real* dx = geom.CellSize();
-
-    std::string limiter = "castro.max_dt";
 
     // Start the hydro with the max_dt value, but divide by CFL
     // to account for the fact that we multiply by it at the end.
@@ -581,14 +561,11 @@ Castro::estTimeStep (Real dt_old)
 
     ParallelDescriptor::ReduceRealMin(estdt_hydro);
     estdt_hydro *= cfl;
-    if (verbose && ParallelDescriptor::IOProcessor())
-	std::cout << "...estimated hydro-limited timestep at level " << level << ": " << estdt_hydro << std::endl;
 
-    limiter = "hydro";
     estdt = estdt_hydro;
 
     if (verbose && ParallelDescriptor::IOProcessor())
-      std::cout << "Castro::estTimeStep (" << limiter << "-limited) at level " << level << ":  estdt = " << estdt << '\n';
+      std::cout << "Castro::estTimeStep (hydro-limited) at level " << level << ":  estdt = " << estdt << '\n';
 
     return estdt;
 }
@@ -611,6 +588,8 @@ Castro::computeNewDt (int                   finest_level,
     //
     if (level > 0)
         return;
+
+    Real change_max = 1.1e0;
 
     int i;
 
@@ -873,12 +852,6 @@ Castro::okToContinue ()
         return 1;
 
     int test = 1;
-
-    if (parent->dtLevel(0) < dt_cutoff) {
-      test = 0;
-      if (ParallelDescriptor::IOProcessor())
-	std::cout << " Signalling a stop of the run because dt < dt_cutoff." << std::endl;
-    }
 
     return test;
 }

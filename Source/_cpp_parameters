@@ -3,29 +3,7 @@
 # note, name can have two values, as (a, b).  a will be the name used
 # in the inputs file, b is the variable name in the C++ class.
 
-
 @namespace: castro Castro static
-
-#-----------------------------------------------------------------------------
-# category: AMR
-#-----------------------------------------------------------------------------
-
-# highest order used in interpolation
-state_interp_order           int           1
-
-# how to do limiting of the state data when interpolating
-# 0: only prevent new extrema
-# 1: preserve linear combinations of state variables
-lin_limit_state_interp       int           0
-
-# Number of ghost zones for state data to have. Note that
-# if you are using radiation, choosing this to be zero will
-# be overridden since radiation needs at least one ghost zone.
-state_nghost                 int           0
-
-#-----------------------------------------------------------------------------
-# category: hydrodynamics
-#-----------------------------------------------------------------------------
 
 # the small density cutoff.  Densities below this value will be reset
 small_dens                   Real         -1.e200             y
@@ -33,87 +11,6 @@ small_dens                   Real         -1.e200             y
 # the small temperature cutoff.  Temperatures below this value will
 # be reset
 small_temp                   Real         -1.e200             y
-
-# do we construct $\gamma_e = p/(\rho e) + 1$ and bring it
-# to the interfaces for additional thermodynamic information
-# (this is the Colella \& Glaz technique) or do we use $(\rho e)$
-# (the classic \castro\ behavior).  Note this also uses
-# $\tau = 1/\rho$ instead of $\rho$.
-ppm_predict_gammae           int           0                  y
-
-# do we use the reference state in evaluating the eigenvectors?
-ppm_reference_eigenvectors   int           0                  y
-
-# do we drop from our regular Riemann solver to HLL when we
-# are in shocks to avoid the odd-even decoupling instability?
-hybrid_riemann               int           0                  y
-
-# this is deprecated---use {\tt riemann\_solver} instead
-use_colglaz                  int           -1
-
-# which Riemann solver do we use:
-# 0: Colella, Glaz, \& Ferguson (a two-shock solver);
-# 1: Colella \& Glaz (a two-shock solver)
-# 2: HLLC
-riemann_solver               int           0                  y
-
-# for the Colella \& Glaz Riemann solver, the maximum number
-# of iterations to take when solving for the star state
-cg_maxiter                   int          12                  y
-
-# for the Colella \& Glaz Riemann solver, the tolerance to
-# demand in finding the star state
-cg_tol                       Real          1.0e-5             y
-
-# for the Colella \& Glaz Riemann solver, what to do if
-# we do not converge to a solution for the star state.
-# 0 = do nothing; print iterations and exit
-# 1 = revert to the original guess for p-star
-# 2 = do a bisection search for another 2 * cg\_maxiter iterations.
-cg_blend                     int           2                  y
-
-# flatten the reconstructed profiles around shocks to prevent them
-# from becoming too thin
-use_flattening               int           1                  y
-
-# Allow internal energy resets and temperature flooring to change the
-# total energy variable UEDEN in addition to the internal energy variable
-# UEINT.
-dual_energy_update_E_from_e  int           1                  y
-
-# Threshold value of (E - K) / E such that above eta1, the hydrodynamic
-# pressure is derived from E - K; otherwise, we use the internal energy
-# variable UEINT.
-dual_energy_eta1             Real          1.0e0              y
-
-# Threshold value of (E - K) / E such that above eta2, we update the
-# internal energy variable UEINT to match E - K. Below this, UEINT
-# remains unchanged.
-dual_energy_eta2             Real          1.0e-4             y
-
-# Threshold value of (E - K) / E such that above eta3, the temperature used
-# in the burning module is derived from E-K; otherwise, we use UEINT.
-dual_energy_eta3             Real          1.0e0              y
-
-# Should we limit the density fluxes so that we do not create small densities?
-limit_fluxes_on_small_dens   int           0                  y
-
-# Which method to use when resetting a negative/small density
-# 1 = Reset to characteristics of adjacent zone with largest density
-# 2 = Use average of all adjacent zones for all state variables
-# 3 = Reset to the original zone state before the hydro update
-density_reset_method         int           1                  y
-
-# Whether or not to allow internal energy to be less than zero
-allow_negative_energy        int           0                  y
-
-# Whether or not to allow the internal energy to be less than the
-# internal energy corresponding to small\_temp
-allow_small_energy           int           1                  y
-
-# set the flattening parameter to zero to force the reconstructed profiles
-# to be flat, resulting in a first-order method
-first_order_hydro            int           0                  y
 
 # if we are doing an external -x boundary condition, who do we interpret it?
 xl_ext_bc_type               string        ""                 y
@@ -133,56 +30,15 @@ zl_ext_bc_type               string        ""                 y
 # if we are doing an external +z boundary condition, who do we interpret it?
 zr_ext_bc_type               string        ""                 y
 
-# if we are doing HSE boundary conditions, do we zero the velocity?
-hse_zero_vels                int           0                  y
-
-# if we are doing HSE boundary conditions, should we get the temperature
-# via interpolation (using model\_parser) or hold it constant?
-hse_interp_temp              int           0                  y
-
-# if we are doing HSE boundary conditions, how do we treat the velocity?
-# reflect? or outflow?
-hse_reflect_vels             int           0                  y
-
-#-----------------------------------------------------------------------------
-# category: timestep control
-#-----------------------------------------------------------------------------
-
 # a fixed timestep to use for all steps (negative turns it off)
 fixed_dt                     Real         -1.0
-
-# the initial timestep (negative uses the step returned from the timestep
-# constraints)
-initial_dt                   Real         -1.0
-
-# the smallest valid timestep---if we go below this, we abort
-dt_cutoff                    Real          0.0
-
-# the largest valid timestep---limit all timesteps to be no larger than this
-max_dt                       Real          1.e200
 
 # the effective Courant number to use---we will not allow the hydrodynamic
 # waves to cross more than this fraction of a zone over a single timestep
 cfl                          Real          0.8                y
 
-# a factor by which to reduce the first timestep from that requested by
-# the timestep estimators
-init_shrink                  Real          1.0
-
-# the maximum factor by which the timestep can increase from one step to
-# the next.
-change_max                   Real          1.1
-
-#-----------------------------------------------------------------------------
-# category: parallelization
-#-----------------------------------------------------------------------------
-
 # determines whether we use accelerators for specific loops
 do_acc                       int          -1                  y
-
-#-----------------------------------------------------------------------------
-# category: diagnostics
-#-----------------------------------------------------------------------------
 
 # display warnings in Fortran90 routines
 print_fortran_warnings       int           (0, 1)
@@ -195,7 +51,3 @@ sum_per                      Real          -1.0e0
 
 # abort if we exceed CFL = 1 over the cource of a timestep
 hard_cfl_limit               int           1
-
-# a string describing the simulation that will be copied into the
-# plotfile's {\tt job\_info} file
-job_name                     string        ""

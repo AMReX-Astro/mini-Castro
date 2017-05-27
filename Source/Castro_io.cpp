@@ -96,7 +96,6 @@ Castro::writeJobInfo (const std::string& dir)
   jobInfoFile << " Castro Job Information\n";
   jobInfoFile << PrettyLine;
 
-  jobInfoFile << "job name: " << job_name << "\n\n";
   jobInfoFile << "inputs file: " << inputs_name << "\n\n";
 
   jobInfoFile << "number of MPI processes: " << ParallelDescriptor::NProcs() << "\n";

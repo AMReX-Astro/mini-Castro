@@ -9,10 +9,7 @@ module riemann_module
                                  NGDNV, GDRHO, GDPRES, GDGAME, &
                                  QC, QCSML, QGAMC, &
                                  small_dens, small_temp, &
-                                 cg_maxiter, cg_tol, cg_blend, &
-                                 npassive, upass_map, qpass_map, &
-                                 riemann_solver, hybrid_riemann, &
-                                 allow_negative_energy
+                                 npassive, upass_map, qpass_map
   use amrex_fort_module, only : rt => amrex_real
 
   implicit none
@@ -21,7 +18,7 @@ module riemann_module
 
   public cmpflx, shock
 
-  real(rt)        , parameter :: smallu = 1.e-12_rt
+  real(rt), parameter :: smallu = 1.e-12_rt
 
 contains
 
@@ -37,10 +34,11 @@ contains
                     idir, ilo, ihi, jlo, jhi, kc, kflux, k3d, domlo, domhi)
 
     use mempool_module, only : bl_allocate, bl_deallocate
-    use eos_module
+    use eos_module, only: eos
+    use eos_type_module, only: eos_t, eos_input_re
     use network, only: nspec, naux
-
     use amrex_fort_module, only : rt => amrex_real
+
     integer, intent(in) :: qpd_lo(3), qpd_hi(3)
     integer, intent(in) :: flx_lo(3), flx_hi(3)
     integer, intent(in) :: q_lo(3), q_hi(3)
@@ -57,18 +55,18 @@ contains
     ! comes in dimensioned as the full box.  We index the flux with
     ! kflux -- this will be set correctly for the different cases.
 
-    real(rt)        , intent(inout) :: qm(qpd_lo(1):qpd_hi(1),qpd_lo(2):qpd_hi(2),qpd_lo(3):qpd_hi(3),NQ)
-    real(rt)        , intent(inout) :: qp(qpd_lo(1):qpd_hi(1),qpd_lo(2):qpd_hi(2),qpd_lo(3):qpd_hi(3),NQ)
+    real(rt), intent(inout) :: qm(qpd_lo(1):qpd_hi(1),qpd_lo(2):qpd_hi(2),qpd_lo(3):qpd_hi(3),NQ)
+    real(rt), intent(inout) :: qp(qpd_lo(1):qpd_hi(1),qpd_lo(2):qpd_hi(2),qpd_lo(3):qpd_hi(3),NQ)
 
-    real(rt)        , intent(inout) ::    flx(flx_lo(1):flx_hi(1),flx_lo(2):flx_hi(2),flx_lo(3):flx_hi(3),NVAR)
-    real(rt)        , intent(inout) ::   qint(q_lo(1):q_hi(1),q_lo(2):q_hi(2),q_lo(3):q_hi(3),NGDNV)
+    real(rt), intent(inout) ::    flx(flx_lo(1):flx_hi(1),flx_lo(2):flx_hi(2),flx_lo(3):flx_hi(3),NVAR)
+    real(rt), intent(inout) ::   qint(q_lo(1):q_hi(1),q_lo(2):q_hi(2),q_lo(3):q_hi(3),NGDNV)
 
     ! qaux come in dimensioned as the full box, so we use k3d here to
     ! index it in z
 
-    real(rt)        , intent(in) :: qaux(qa_lo(1):qa_hi(1),qa_lo(2):qa_hi(2),qa_lo(3):qa_hi(3),NQAUX)
+    real(rt), intent(in) :: qaux(qa_lo(1):qa_hi(1),qa_lo(2):qa_hi(2),qa_lo(3):qa_hi(3),NQAUX)
 
-    real(rt)        , intent(in) ::  shk(s_lo(1):s_hi(1),s_lo(2):s_hi(2),s_lo(3):s_hi(3))
+    real(rt), intent(in) ::  shk(s_lo(1):s_hi(1),s_lo(2):s_hi(2),s_lo(3):s_hi(3))
 
     ! local variables
 
@@ -686,8 +684,6 @@ contains
     ! f(p*) = u*_l(p*) - u*_r(p*)                                                         
     ! we'll do bisection                                                                  
                                                   
-    use meth_params_module, only : cg_maxiter, cg_tol
-
     real(rt)        , intent(inout) :: pstar_lo, pstar_hi
     real(rt)        , intent(in) :: ul, pl, taul, gamel, clsql
     real(rt)        , intent(in) :: ur, pr, taur, gamer, clsqr
@@ -698,6 +694,9 @@ contains
 
     real(rt)         :: pstar_c, ustar_l, ustar_r, f_lo, f_hi, f_c
     real(rt)         :: wl, wr, wlsq, wrsq
+
+    integer, parameter :: cg_maxiter = 12
+    real(rt), parameter :: cg_tol = 1.e-5_rt
 
     integer :: iter
 
