@@ -1,11 +1,3 @@
 CEXE_headers += castro_params.H
 CEXE_headers += castro_queries.H
 CEXE_headers += castro_defaults.H
-
-CEXE_headers += gravity_params.H
-CEXE_headers += gravity_queries.H
-CEXE_headers += gravity_defaults.H
-
-CEXE_headers += diffusion_params.H
-CEXE_headers += diffusion_queries.H
-CEXE_headers += diffusion_defaults.H

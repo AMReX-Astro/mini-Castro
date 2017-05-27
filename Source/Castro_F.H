@@ -246,56 +246,6 @@ extern "C"
     (const int* lo, const int* hi, const BL_FORT_FAB_ARG_3D(f1), BL_FORT_FAB_ARG_3D(f2),
      const amrex::Real* dx, BL_FORT_FAB_ARG_3D(vol), amrex::Real* s);
 
-  void ca_tempdiffextrap
-    (const int* lo, const int* hi,
-     BL_FORT_FAB_ARG_3D(TempDiffTerm));
-
-  void make_enthalpy
-    (const int* lo, const int* hi,
-     const BL_FORT_FAB_ARG_3D(state),
-           BL_FORT_FAB_ARG_3D(enth));
-
-  void ca_fill_temp_cond
-    (const int* lo, const int* hi,
-     const BL_FORT_FAB_ARG_3D(state),
-     const BL_FORT_FAB_ARG_3D(xcoeffs),
-     const BL_FORT_FAB_ARG_3D(ycoeffs),
-     const BL_FORT_FAB_ARG_3D(zcoeffs));
-
-  void ca_fill_enth_cond
-    (const int* lo, const int* hi,
-     const BL_FORT_FAB_ARG_3D(state),
-     const BL_FORT_FAB_ARG_3D(xcoeffs),
-     const BL_FORT_FAB_ARG_3D(ycoeffs),
-     const BL_FORT_FAB_ARG_3D(zcoeffs));
-  
-  void ca_fill_spec_coeff
-    (const int* lo, const int* hi,
-     const BL_FORT_FAB_ARG_3D(state),
-     const BL_FORT_FAB_ARG_3D(xcoeffs),
-     const BL_FORT_FAB_ARG_3D(ycoeffs),
-     const BL_FORT_FAB_ARG_3D(zcoeffs));
-
-  void ca_fill_first_visc_coeff
-    (const int* lo, const int* hi,
-     const BL_FORT_FAB_ARG_3D(state),
-     const BL_FORT_FAB_ARG_3D(xcoeffs),
-     const BL_FORT_FAB_ARG_3D(ycoeffs),
-     const BL_FORT_FAB_ARG_3D(zcoeffs));
-
-  void ca_fill_secnd_visc_coeff
-    (const int* lo, const int* hi,
-     const BL_FORT_FAB_ARG_3D(state),
-     const BL_FORT_FAB_ARG_3D(xcoeffs),
-     const BL_FORT_FAB_ARG_3D(ycoeffs),
-     const BL_FORT_FAB_ARG_3D(zcoeffs));
-
-  void ca_compute_div_tau_u
-    (const int* lo, const int* hi,
-     const BL_FORT_FAB_ARG_3D(div_tau_u),
-     const BL_FORT_FAB_ARG_3D(state),
-     const amrex::Real* dx, const int* coord_type);
-
   void ca_derpres
     (BL_FORT_FAB_ARG_3D(der),const int* nvar,
      const BL_FORT_FAB_ARG_3D(data),const int* ncomp,

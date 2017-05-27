@@ -79,10 +79,6 @@ contains
 
   end subroutine ca_estdt
 
-  ! Reactions-limited timestep
-
-  ! Diffusion-limited timestep
-
   ! Check whether the last timestep violated any of our stability criteria.
   ! If so, suggest a new timestep which would not.
 

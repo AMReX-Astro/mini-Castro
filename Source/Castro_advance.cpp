@@ -14,8 +14,7 @@ Castro::advance (Real time,
                  int  amr_iteration,
                  int  amr_ncycle)
 
-  // the main driver for a single level.  This will do either the SDC
-  // algorithm or the Strang-split reactions algorithm.
+  // the main driver for a single level.
   //
   // arguments:
   //    time          : the current simulation time
@@ -76,20 +75,17 @@ Castro::do_advance (Real time,
 
     check_for_nan(S_old);
 
-    // Since we are Strang splitting the reactions, do them now (only
-    // for first stage of MOL)
-
     if (sub_iteration == 0) {
 
-      // Initialize the new-time data. This copy needs to come after the
-      // reactions.
+      // Initialize the new-time data.
 
       MultiFab::Copy(S_new, Sborder, 0, 0, NUM_STATE, S_new.nGrow());
 
       // store the result of the burn in Sburn for later stages
-      MultiFab::Copy(Sburn, Sborder, 0, 0, NUM_STATE, 0);
-    }
 
+      MultiFab::Copy(Sburn, Sborder, 0, 0, NUM_STATE, 0);
+
+    }
 
     // Do the hydro update.  We build directly off of Sborder, which
     // is the state that has already seen the burn 
