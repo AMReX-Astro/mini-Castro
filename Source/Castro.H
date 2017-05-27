@@ -341,9 +341,6 @@ protected:
     static amrex::Array<amrex::Real> b_mol;
     static amrex::Array<amrex::Real> c_mol;
 
-    //
-    //  Call extern/networks/.../network.f90::network_init()
-    //
     static void extern_init ();
 
     static void network_init ();

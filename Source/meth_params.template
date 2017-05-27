@@ -73,7 +73,7 @@ module meth_params_module
   integer, save :: xl_ext, yl_ext, zl_ext, xr_ext, yr_ext, zr_ext
 
   ! Create versions of these variables on the GPU
-  ! the device update is then done in Castro_nd.f90
+  ! the device update is then done in Castro_nd.F90
 
   !$acc declare &
   !$acc create(NTHERM, NVAR) &
@@ -93,7 +93,7 @@ module meth_params_module
 
   ! Begin the declarations of the ParmParse parameters
 
-  @@f90_declarations@@
+  @@F90_declarations@@
 
   ! End the declarations of the ParmParse parameters
 

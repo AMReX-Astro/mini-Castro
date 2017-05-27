@@ -70,7 +70,7 @@ contains
 
                 print *,'DENSITY EXACTLY ZERO AT CELL ',i,j,k
                 print *,'  in grid ',lo(1),lo(2),lo(3),hi(1),hi(2),hi(3)
-                call bl_error("Error:: advection_util_nd.f90 :: ca_enforce_minimum_density")
+                call bl_error("Error:: advection_util_nd.F90 :: ca_enforce_minimum_density")
 
              else if (uout(i,j,k,URHO) < small_dens) then
 
@@ -420,12 +420,12 @@ contains
                 print *,'   '
                 print *,'>>> Error: advection_util_nd.F90::ctoprim ',i, j, k
                 print *,'>>> ... negative density ', uin(i,j,k,URHO)
-                call bl_error("Error:: advection_util_nd.f90 :: ctoprim")
+                call bl_error("Error:: advection_util_nd.F90 :: ctoprim")
              else if (uin(i,j,k,URHO) .lt. small_dens) then
                 print *,'   '
                 print *,'>>> Error: advection_util_nd.F90::ctoprim ',i, j, k
                 print *,'>>> ... small density ', uin(i,j,k,URHO)
-                call bl_error("Error:: advection_util_nd.f90 :: ctoprim")
+                call bl_error("Error:: advection_util_nd.F90 :: ctoprim")
              endif
           end do
 

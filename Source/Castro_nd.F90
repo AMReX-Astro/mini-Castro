@@ -209,7 +209,7 @@ end subroutine ca_set_amr_info
 
 subroutine ca_get_method_params(nGrowHyp) bind(C, name="ca_get_method_params")
 
-  ! Passing data from f90 back to C++
+  ! Passing data from F90 back to C++
 
   use meth_params_module, only: NHYP
   use amrex_fort_module, only: rt => amrex_real
@@ -251,7 +251,7 @@ end subroutine allocate_outflow_data
 subroutine set_old_outflow_data(radial,time,np,nc) &
      bind(C, name="set_old_outflow_data")
 
-  ! Passing data from C++ to f90
+  ! Passing data from C++ to F90
 
   use meth_params_module, only: outflow_data_old, outflow_data_old_time
   use amrex_fort_module, only: rt => amrex_real
@@ -278,7 +278,7 @@ end subroutine set_old_outflow_data
 subroutine set_new_outflow_data(radial,time,np,nc) &
      bind(C, name="set_new_outflow_data")
 
-  ! Passing data from C++ to f90
+  ! Passing data from C++ to F90
 
   use meth_params_module, only: outflow_data_new, outflow_data_new_time
   use amrex_fort_module, only: rt => amrex_real
@@ -323,7 +323,7 @@ subroutine swap_outflow_data() bind(C, name="swap_outflow_data")
 
   if (size(outflow_data_old,dim=2) .ne. size(outflow_data_new,dim=2)) then
      print *,'size of old and new dont match in swap_outflow_data '
-     call bl_error("Error:: Castro_nd.f90 :: swap_outflow_data")
+     call bl_error("Error:: Castro_nd.F90 :: swap_outflow_data")
   end if
 
   outflow_data_old(1:nc,1:np) = outflow_data_new(1:nc,1:np)
@@ -593,7 +593,7 @@ subroutine ca_set_problem_params(dm,physbc_lo_in,physbc_hi_in,&
                                  problo_in, probhi_in, center_in) &
                                  bind(C, name="ca_set_problem_params")
 
-  ! Passing data from C++ into f90
+  ! Passing data from C++ into F90
 
   use bl_constants_module, only: ZERO
   use prob_params_module

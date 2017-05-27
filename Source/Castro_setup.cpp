@@ -175,7 +175,7 @@ Castro::variableSetUp ()
 
   NUM_STATE = cnt;
 
-  // Define NUM_GROW from the f90 module.
+  // Define NUM_GROW from the F90 module.
   ca_get_method_params(&NUM_GROW);
 
   const Real run_strt = ParallelDescriptor::second() ;

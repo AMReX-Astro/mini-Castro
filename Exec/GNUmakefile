@@ -63,11 +63,10 @@ VPATH_LOCATIONS   += $(Blocs)
 ifeq ($(MEGA_FORTRAN), TRUE)
    F90EXE_sources += mega_f.F90
 else
-   f90EXE_sources += $(ca_f90EXE_sources)
    F90EXE_sources += $(ca_F90EXE_sources)
 endif
 
-mega_f.F90: $(ca_F90EXE_sources) $(ca_f90EXE_sources)
+mega_f.F90: $(ca_F90EXE_sources)
 	$(AMREX_HOME)/Tools/F_scripts/f90cat.py $^
 
 include $(AMREX_HOME)/Src/F_BaseLib/FParallelMG.mak
@@ -79,13 +78,7 @@ EXTERN_TEMPLATE := $(TOP)/Source/extern_probin.template
 
 EXTERN_PARAMETERS := $(shell $(AMREX_HOME)/Tools/F_scripts/findparams.py $(EXTERN_CORE))
 
-extern.f90: $(EXTERN_PARAMETERS) $(EXTERN_TEMPLATE)
-	$(AMREX_HOME)/Tools/F_scripts/write_probin.py \
-           -t $(EXTERN_TEMPLATE) -o extern.f90 -n extern \
-           --pa "$(EXTERN_PARAMETERS)"
-
 # job_info support
-#CEXE_sources += AMReX_buildInfo.cpp
 CEXE_headers += $(AMREX_HOME)/Tools/C_scripts/AMReX_buildInfo.H
 INCLUDE_LOCATIONS +=  $(AMREX_HOME)/Tools/C_scripts
 
@@ -114,7 +107,6 @@ $(objEXETempDir)/AMReX_buildInfo.o: .FORCE
 include $(AMREX_HOME)/Tools/GNUMake/Make.rules
 
 clean::
-	$(SILENT) $(RM) extern.f90
 	$(SILENT) $(RM) AMReX_buildInfo.cpp
 
 #-----------------------------------------------------------------------------
