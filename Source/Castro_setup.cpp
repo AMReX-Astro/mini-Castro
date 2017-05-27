@@ -105,21 +105,12 @@ Castro::variableSetUp ()
 
     const char* castro_hash  = buildInfoGetGitHash(1);
     const char* amrex_hash  = buildInfoGetGitHash(2);
-    const char* microphysics_hash = buildInfoGetGitHash(3);
-    const char* buildgithash = buildInfoGetBuildGitHash();
-    const char* buildgitname = buildInfoGetBuildGitName();
 
     if (strlen(castro_hash) > 0) {
       std::cout << "\n" << "Castro git describe: " << castro_hash << "\n";
     }
     if (strlen(amrex_hash) > 0) {
       std::cout << "AMReX git describe: " << amrex_hash << "\n";
-    }
-    if (strlen(microphysics_hash) > 0) {
-      std::cout << "Microphysics git describe: " << microphysics_hash << "\n";
-    }
-    if (strlen(buildgithash) > 0){
-      std::cout << buildgitname << " git describe: " << buildgithash << "\n";
     }
 
     std::cout << "\n";

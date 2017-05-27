@@ -3,9 +3,6 @@ CASTRO_HOME ?= /path/to/Castro
 
 TOP := $(CASTRO_HOME)
 
-EOS_HOME ?= $(TOP)/Source/EOS
-NETWORK_HOME ?= $(TOP)/Source/networks
-
 EBASE = Castro
 
 # This application only supports 3D.
@@ -13,9 +10,9 @@ ifneq ($(DIM),3)
   $(error StarLord only supports BL_SPACEDIM == 3)
 endif
 
-# EXTERN_CORE is simply a list of the directories we use in EOS, Networks and Util
-# this list will be searched for runtime parameters
-EXTERN_CORE ?=
+# EXTERN_CORE is simply a list of the directories we use that
+# will be searched for runtime parameters
+EXTERN_CORE ?= $(TOP)/Source
 
 include $(AMREX_HOME)/Tools/GNUMake/Make.defs
 
@@ -30,18 +27,6 @@ endif
 all: $(executable)
 	@echo SUCCESS
 
-ifdef MICROPHYSICS_HOME
-   EOS_PATH := $(MICROPHYSICS_HOME)/EOS/$(strip $(EOS_dir))
-   NETWORK_PATH := $(MICROPHYSICS_HOME)/networks/$(strip $(Network_dir))
-endif
-
-ifneq "$(wildcard $(EOS_HOME)/$(strip $(EOS_dir)) )" ""
-   EOS_PATH := $(EOS_HOME)/$(strip $(EOS_dir))
-endif
-ifneq "$(wildcard $(NETWORK_HOME)/$(strip $(Network_dir)) )" ""
-   NETWORK_PATH := $(NETWORK_HOME)/$(strip $(Network_dir))
-endif
-
 # Problems can specify the input file for general_null by
 # setting GENERAL_NET_INPUTS directly (full path) or just
 # specifying the name of the inputs file as NETWORK_INPUTS
@@ -50,44 +35,9 @@ ifndef GENERAL_NET_INPUTS
    ifneq "$(wildcard $(NETWORK_INPUTS))" ""
       GENERAL_NET_INPUTS := $(NETWORK_INPUTS)
    else
-      GENERAL_NET_INPUTS := $(CASTRO_HOME)/Source/networks/general_null/$(NETWORK_INPUTS)
+      GENERAL_NET_INPUTS := $(CASTRO_HOME)/Source/$(NETWORK_INPUTS)
    endif
 endif
-
-include $(EOS_HOME)/Make.package
-include $(EOS_PATH)/Make.package
-EXTERN_CORE += $(EOS_HOME)
-EXTERN_CORE += $(EOS_PATH)
-
-# the helmholtz EOS has an include file -- also add a target to link the table
-# into the problem directory.
-ifeq ($(findstring helmholtz, $(EOS_dir)), helmholtz)
-   all: table
-endif
-
-table:
-	@if [ ! -f helm_table.dat ]; then echo Linking helm_table.dat; ln -s $(EOS_PATH)/helm_table.dat .;  fi
-
-include $(NETWORK_HOME)/Make.package
-include $(NETWORK_PATH)/Make.package
-EXTERN_CORE += $(NETWORK_HOME)
-EXTERN_CORE += $(NETWORK_PATH)
-
-# Note that this should be located after the include of the EOS and Network includes
-# since it has actions that depend on variables set there.
-
-ifdef MICROPHYSICS_HOME
-   include $(MICROPHYSICS_HOME)/EOS/Make.package
-   include $(MICROPHYSICS_HOME)/networks/Make.package
-endif
-
-
-INCLUDE_LOCATIONS += $(EOS_HOME) $(EOS_PATH)
-VPATH_LOCATIONS   += $(EOS_HOME) $(EOS_PATH)
-
-INCLUDE_LOCATIONS += $(NETWORK_HOME) $(NETWORK_PATH)
-VPATH_LOCATIONS   += $(NETWORK_HOME) $(NETWORK_PATH)
-
 
 # AMReX directories -- note the Make.package for these adds these
 # directories into VPATH_LOCATIONS and INCLUDE_LOCATIONS for us, so we
@@ -144,16 +94,6 @@ extern.f90: $(EXTERN_PARAMETERS) $(EXTERN_TEMPLATE)
 CEXE_headers += $(AMREX_HOME)/Tools/C_scripts/AMReX_buildInfo.H
 INCLUDE_LOCATIONS +=  $(AMREX_HOME)/Tools/C_scripts
 
-
-MNAMES := EOS=$(EOS_PATH) NETWORK=$(NETWORK_PATH)
-ifeq ($(USE_DIFFUSION), TRUE)
-   MNAMES += CONDUCTIVITY=$(COND_PATH)
-endif
-
-ifeq ($(USE_RAD), TRUE)
-   MNAMES += OPACITY=$(OPAC_PATH)
-endif
-
 # we make AMReX_buildInfo.cpp as we make the .o file, so we can delete it
 # immediately.  this way if the build is interrupted, we are guaranteed
 # to remake it
@@ -179,7 +119,7 @@ $(objEXETempDir)/AMReX_buildInfo.o: .FORCE
           --F_comp_name "$(F90)" --F_flags "$(F90FLAGS)" \
           --link_flags "$(LDFLAGS)" --libraries "$(libraries)" \
           --MODULES "$(MNAMES)" $(EXTRA_BUILD_INFO) \
-          --GIT "$(TOP) $(AMREX_HOME) $(MICROPHYSICS_HOME)"
+          --GIT "$(TOP) $(AMREX_HOME)"
 	$(SILENT) $(CCACHE) $(CXX) $(CXXFLAGS) $(CPPFLAGS) -c $(CXXEXEFLAGS) AMReX_buildInfo.cpp -o $(objEXETempDir)/AMReX_buildInfo.o
 	$(SILENT) $(RM) AMReX_buildInfo.cpp
 
@@ -189,18 +129,6 @@ include $(AMREX_HOME)/Tools/GNUMake/Make.rules
 clean::
 	$(SILENT) $(RM) extern.f90
 	$(SILENT) $(RM) AMReX_buildInfo.cpp
-
-# Older versions of CASTRO generated a
-# "network.f90" file when using the
-# general_null network, which conflicts
-# with our generalized network.f90 file.
-# So we should delete the local copy if
-# we are trying to rebuild from an old directory.
-
-clean::
-	$(RM) network.f90
-	@if [ -L helm_table.dat ]; then rm -f helm_table.dat; fi
-
 
 #-----------------------------------------------------------------------------
 # for debugging.  To see the value of a Makefile variable,

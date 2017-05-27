@@ -51,3 +51,27 @@ ca_F90EXE_sources += castro_c_interfaces_nd.F90
 ifeq ($(USE_CUDA), TRUE)
 ca_F90EXE_sources += castro_cuda_interfaces_nd.F90
 endif
+
+F90EXE_sources += eos.F90
+f90EXE_sources += eos_type.f90
+F90EXE_sources += eos_override.F90
+F90EXE_sources += gamma_law.F90
+
+f90EXE_sources += network.f90
+f90EXE_sources += actual_network.f90
+
+# actual_network.f90 is created at build time for this network
+actual_network.f90:   $(GENERAL_NET_INPUTS) $(CASTRO_HOME)/Source/network.template
+	@echo " "
+	@echo "---------------------------------------------------------------------------"
+	@echo "WRITING actual_network.f90:"
+	$(CASTRO_HOME)/Source/write_network.py \
+            -t $(CASTRO_HOME)/Source/network.template \
+            -s $(GENERAL_NET_INPUTS) \
+            -o actual_network.f90
+	@echo "---------------------------------------------------------------------------"
+	@echo " "
+
+# remove actual_network.f90 for 'make clean' and therefore 'make realclean'
+clean::
+	$(RM) actual_network.f90
