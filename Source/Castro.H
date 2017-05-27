@@ -269,22 +269,6 @@ public:
 
     amrex::Real volWgtSum (const std::string& name, amrex::Real time, bool local=false, bool finemask=true);
 
-    amrex::Real volWgtSquaredSum (const std::string& name, amrex::Real time, bool local=false);
-
-    amrex::Real locWgtSum (const std::string& name, amrex::Real time, int idir, bool local=false);
-
-    amrex::Real locWgtSum2D (const std::string& name, amrex::Real time, int idir1, int idir2, bool local=false);
-
-    amrex::Real volWgtSumMF (const amrex::MultiFab& mf, int comp, bool local=false);
-
-    amrex::Real locWgtSumOneSide (const std::string& name, amrex::Real time, int idir, int side, int bdir, bool local=false);
-
-    amrex::Real volWgtSumOneSide (const std::string& name, amrex::Real time, int side, int bdir, bool local=false);
-
-    amrex::Real volProductSum (const std::string& name1, const std::string& name2, amrex::Real time, bool local=false);
-
-    amrex::Real locSquaredSum (const std::string& name, amrex::Real time, int idir, bool local=false);
-
     void add_force_to_sources (amrex::MultiFab& force, amrex::MultiFab& sources, amrex::MultiFab& state);
 
     void apply_source_to_state (amrex::MultiFab& state, amrex::MultiFab& source, amrex::Real dt);
@@ -401,10 +385,6 @@ protected:
     void buildMetrics ();
 
     void initMFs ();
-
-    // integrate derived quantities over domain
-
-    amrex::Real sumDerive (const std::string& name, amrex::Real time, bool local=false);
 
     void sum_integrated_quantities ();
 

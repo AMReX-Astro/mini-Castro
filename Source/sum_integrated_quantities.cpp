@@ -74,7 +74,7 @@ Castro::sum_integrated_quantities ()
 		      data_log1 << std::setw(datwidth) <<  "          xmom";
 		      data_log1 << std::setw(datwidth) <<  "          ymom";
 		      data_log1 << std::setw(datwidth) <<  "          zmom";
-		      data_log1 << std::setw(datwidth) <<  "         rho_K";
+		      data_log1 << std::setw(datwidth) <<  "         rho_e";
 		      data_log1 << std::setw(datwidth) <<  "         rho_E";
 		      data_log1 << std::endl;
 		  }
@@ -99,4 +99,55 @@ Castro::sum_integrated_quantities ()
 	});
 #endif
     }
+}
+
+
+
+Real
+Castro::volWgtSum (const std::string& name,
+                   Real               time,
+		   bool               local,
+		   bool               finemask)
+{
+    BL_PROFILE("Castro::volWgtSum()");
+
+    Real        sum     = 0.0;
+    const Real* dx      = geom.CellSize();
+    auto mf = derive(name,time,0);
+
+    BL_ASSERT(mf);
+
+    if (level < parent->finestLevel() && finemask)
+    {
+	const MultiFab& mask = getLevel(level+1).build_fine_mask();
+	MultiFab::Multiply(*mf, mask, 0, 0, 1, 0);
+    }
+
+#ifdef _OPENMP
+#pragma omp parallel reduction(+:sum)
+#endif    
+    for (MFIter mfi(*mf,true); mfi.isValid(); ++mfi)
+    {
+        FArrayBox& fab = (*mf)[mfi];
+
+	Real s = 0.0;
+        const Box& box  = mfi.tilebox();
+        const int* lo   = box.loVect();
+        const int* hi   = box.hiVect();
+
+        //
+        // Note that this routine will do a volume weighted sum of
+        // whatever quantity is passed in, not strictly the "mass".
+        //
+
+	ca_summass(ARLIM_3D(lo),ARLIM_3D(hi),BL_TO_FORTRAN_3D(fab),
+		   ZFILL(dx),BL_TO_FORTRAN_3D(volume[mfi]),&s);
+
+        sum += s;
+    }
+
+    if (!local)
+	ParallelDescriptor::ReduceRealSum(sum);
+
+    return sum;
 }
