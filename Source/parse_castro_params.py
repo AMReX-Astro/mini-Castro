@@ -96,7 +96,7 @@ class Param(object):
                  cpp_var_name=None,
                  namespace=None, cpp_class=None, static=None,
                  debug_default=None,
-                 in_fortran=0, f90_name=None, f90_dtype=None,
+                 in_fortran=0, F90_name=None, F90_dtype=None,
                  ifdef=None):
 
         self.name = name
@@ -120,15 +120,15 @@ class Param(object):
         else:
             self.ifdef = ifdef
 
-        if f90_name is None:
-            self.f90_name = name
+        if F90_name is None:
+            self.F90_name = name
         else:
-            self.f90_name = f90_name
+            self.F90_name = F90_name
 
-        if f90_dtype is None:
-            self.f90_dtype = dtype
+        if F90_dtype is None:
+            self.F90_dtype = dtype
         else:
-            self.f90_dtype = f90_dtype
+            self.F90_dtype = F90_dtype
 
     def get_default_string(self):
         # this is the line that goes into castro_defaults.H included
@@ -162,7 +162,7 @@ class Param(object):
 
         return ostr
 
-    def get_f90_default_string(self):
+    def get_F90_default_string(self):
         # this is the line that goes into set_castro_method_params()
         # to set the default value of the variable
 
@@ -190,7 +190,7 @@ class Param(object):
             else:
                 default += "d0"
 
-        name = self.f90_name
+        name = self.F90_name
 
         if not self.debug_default is None:
             ostr += "#ifdef DEBUG\n"
@@ -215,7 +215,7 @@ class Param(object):
         if language == "C++":
             ostr += "pp.query(\"{}\", {});\n".format(self.name, self.cpp_var_name)
         elif language == "F90":
-            ostr += "    call pp%query(\"{}\", {})\n".format(self.name, self.f90_name)
+            ostr += "    call pp%query(\"{}\", {})\n".format(self.name, self.F90_name)
         else:
             sys.exit("invalid language choice in get_query_string")
 
@@ -253,20 +253,20 @@ class Param(object):
 
         return ostr
 
-    def get_f90_decl_string(self):
-        # this is the line that goes into meth_params.f90
+    def get_F90_decl_string(self):
+        # this is the line that goes into meth_params.F90
 
         if not self.in_fortran:
             return None
 
-        if self.f90_dtype == "int":
-            tstr = "integer         , save :: {}\n".format(self.f90_name)
-        elif self.f90_dtype == "Real":
-            tstr = "real(rt), save :: {}\n".format(self.f90_name)
-        elif self.f90_dtype == "logical":
-            tstr = "logical         , save :: {}\n".format(self.f90_name)
-        elif self.f90_dtype == "string":
-            tstr = "character (len=128), save :: {}\n".format(self.f90_name)
+        if self.F90_dtype == "int":
+            tstr = "integer         , save :: {}\n".format(self.F90_name)
+        elif self.F90_dtype == "Real":
+            tstr = "real(rt), save :: {}\n".format(self.F90_name)
+        elif self.F90_dtype == "logical":
+            tstr = "logical         , save :: {}\n".format(self.F90_name)
+        elif self.F90_dtype == "string":
+            tstr = "character (len=128), save :: {}\n".format(self.F90_name)
         else:
             sys.exit("unsupported datatype for Fortran: {}".format(self.name))
 
@@ -290,7 +290,7 @@ def write_meth_module(plist, meth_template):
 
     mo.write(FWARNING)
 
-    param_decls = [p.get_f90_decl_string() for p in plist if p.in_fortran == 1]
+    param_decls = [p.get_F90_decl_string() for p in plist if p.in_fortran == 1]
     params = [p for p in plist if p.in_fortran == 1]
 
     decls = ""
@@ -299,7 +299,7 @@ def write_meth_module(plist, meth_template):
         decls += "  {}".format(p)
 
     for line in mt:
-        if line.find("@@f90_declarations@@") > 0:
+        if line.find("@@F90_declarations@@") > 0:
             mo.write(decls)
 
             # Now do the OpenACC declarations
@@ -309,12 +309,12 @@ def write_meth_module(plist, meth_template):
             mo.write("  !$acc create(")
 
             for n, p in enumerate(params):
-                if p.f90_dtype == "string": 
+                if p.F90_dtype == "string": 
                     print("warning: string parameter {} will not be available on the GPU".format(p.name),
                           file=sys.stderr)
                     continue
 
-                mo.write("{}".format(p.f90_name))
+                mo.write("{}".format(p.F90_name))
 
                 if n == len(params)-1:
                     mo.write(")\n")
@@ -326,7 +326,7 @@ def write_meth_module(plist, meth_template):
 
         elif line.find("@@set_castro_params@@") >= 0:
             for p in params:
-                mo.write(p.get_f90_default_string())
+                mo.write(p.get_F90_default_string())
 
             mo.write("\n")
 
@@ -340,8 +340,8 @@ def write_meth_module(plist, meth_template):
             mo.write("    !$acc device(")
 
             for n, p in enumerate(params):
-                if p.f90_dtype == "string": continue
-                mo.write("{}".format(p.f90_name))
+                if p.F90_dtype == "string": continue
+                mo.write("{}".format(p.F90_name))
 
                 if n == len(params)-1:
                     mo.write(")\n")
@@ -429,11 +429,11 @@ def parse_params(infile, meth_template):
         try: ifdef = fields[4]
         except: ifdef = None
 
-        try: f90_name = fields[5]
-        except: f90_name = None
+        try: F90_name = fields[5]
+        except: F90_name = None
 
-        try: f90_dtype = fields[6]
-        except: f90_dtype = None
+        try: F90_dtype = fields[6]
+        except: F90_dtype = None
 
         if namespace is None:
             sys.exit("namespace not set")
@@ -444,7 +444,7 @@ def parse_params(infile, meth_template):
                             cpp_class=cpp_class,
                             static=static,
                             debug_default=debug_default,
-                            in_fortran=in_fortran, f90_name=f90_name, f90_dtype=f90_dtype,
+                            in_fortran=in_fortran, F90_name=F90_name, F90_dtype=F90_dtype,
                             ifdef=ifdef))
 
 

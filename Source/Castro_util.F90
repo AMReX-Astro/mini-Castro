@@ -359,7 +359,7 @@ contains
                 print *,'>>> Error: Castro_util.F90::ca_compute_temp ',i,j,k
                 print *,'>>> ... negative density ',state(i,j,k,URHO)
                 print *,'    '
-                call bl_error("Error:: compute_temp_nd.f90")
+                call bl_error("Error:: compute_temp_nd.F90")
              end if
 
              if (allow_negative_energy .eq. 0 .and. state(i,j,k,UEINT) <= ZERO) then
@@ -367,7 +367,7 @@ contains
                 print *,'>>> Warning: Castro_util.F90::ca_compute_temp ',i,j,k
                 print *,'>>> ... negative (rho e) ',state(i,j,k,UEINT)
                 print *,'   '
-                call bl_error("Error:: compute_temp_nd.f90")
+                call bl_error("Error:: compute_temp_nd.F90")
              end if
 
           enddo

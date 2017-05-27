@@ -78,7 +78,7 @@ module meth_params_module
   integer, save :: xl_ext, yl_ext, zl_ext, xr_ext, yr_ext, zr_ext
 
   ! Create versions of these variables on the GPU
-  ! the device update is then done in Castro_nd.f90
+  ! the device update is then done in Castro_nd.F90
 
   !$acc declare &
   !$acc create(NTHERM, NVAR) &
