@@ -20,7 +20,4 @@ EOS_dir     := gamma_law
 Network_dir := general_null
 GENERAL_NET_INPUTS = $(CASTRO_HOME)/Source/gammalaw.net
 
-Bpack   := ./Make.package
-Blocs   := .
-
 include $(CASTRO_HOME)/Exec/Make.Castro
