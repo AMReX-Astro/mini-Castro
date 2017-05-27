@@ -7,7 +7,6 @@ int         Castro::state_interp_order = 1;
 int         Castro::lin_limit_state_interp = 0;
 int         Castro::state_nghost = 0;
 int         Castro::do_reflux = 1;
-int         Castro::update_sources_after_reflux = 1;
 int         Castro::use_custom_knapsack_weights = 0;
 amrex::Real Castro::difmag = 0.1;
 amrex::Real Castro::small_dens = -1.e200;
@@ -16,10 +15,8 @@ amrex::Real Castro::small_pres = -1.e200;
 amrex::Real Castro::small_ener = -1.e200;
 int         Castro::do_hydro = -1;
 int         Castro::do_ctu = 0;
-int         Castro::add_ext_src = 0;
 int         Castro::hybrid_hydro = 0;
 int         Castro::ppm_type = 1;
-int         Castro::ppm_trace_sources = 1;
 int         Castro::ppm_temp_fix = 0;
 int         Castro::ppm_predict_gammae = 0;
 int         Castro::ppm_reference_eigenvectors = 0;
@@ -44,12 +41,6 @@ int         Castro::limit_fluxes_on_small_dens = 0;
 int         Castro::density_reset_method = 1;
 int         Castro::allow_negative_energy = 0;
 int         Castro::allow_small_energy = 1;
-int         Castro::do_sponge = 0;
-int         Castro::sponge_implicit = 1;
-int         Castro::time_center_sponge = 1;
-int         Castro::update_state_between_sources = 1;
-int         Castro::keep_sources_until_end = 0;
-int         Castro::source_term_predictor = 0;
 int         Castro::first_order_hydro = 0;
 std::string Castro::xl_ext_bc_type = "";
 std::string Castro::xr_ext_bc_type = "";
@@ -82,16 +73,6 @@ int         Castro::spherical_star = 0;
 int         Castro::print_fortran_warnings = 1;
 #else
 int         Castro::print_fortran_warnings = 0;
-#endif
-#ifdef DEBUG
-int         Castro::print_update_diagnostics = 1;
-#else
-int         Castro::print_update_diagnostics = 0;
-#endif
-#ifdef DEBUG
-int         Castro::coalesce_update_diagnostics = 1;
-#else
-int         Castro::coalesce_update_diagnostics = 0;
 #endif
 int         Castro::track_grid_losses = 0;
 int         Castro::sum_interval = -1;

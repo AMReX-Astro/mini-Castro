@@ -339,11 +339,6 @@ protected:
     amrex::MultiFab Sburn;
 
     //
-    // Source terms to the hydrodynamics solve.
-    //
-    amrex::MultiFab sources_for_hydro;
-
-    //
     // Source term representing hydrodynamics update.
     //
     amrex::MultiFab hydro_source;

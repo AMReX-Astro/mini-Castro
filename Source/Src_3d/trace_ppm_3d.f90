@@ -22,7 +22,7 @@ contains
     use meth_params_module, only : QVAR, QRHO, QU, QV, QW, &
          QREINT, QPRES, QGAME, &
          small_dens, small_pres, &
-         ppm_type, ppm_trace_sources, &
+         ppm_type, &
          ppm_reference_eigenvectors, ppm_predict_gammae, &
          npassive, qpass_map
     use bl_constants_module
@@ -214,15 +214,6 @@ contains
              dptotp   = p_ref    - Im(i,j,kc,1,3,QPRES)
 
 
-             ! If we are doing source term tracing, then we add the force to
-             ! the velocity here, otherwise we will deal with this in the
-             ! trans_X routines
-             if (ppm_trace_sources == 1) then
-                dum = dum - hdt*Im_src(i,j,kc,1,1,QU)
-                dup = dup - hdt*Im_src(i,j,kc,1,3,QU)
-             endif
-
-
              ! Optionally use the reference state in evaluating the
              ! eigenvectors
              if (ppm_reference_eigenvectors == 0) then
@@ -335,11 +326,6 @@ contains
              qxp(i,j,kc,QV) = Im(i,j,kc,1,2,QV)
              qxp(i,j,kc,QW) = Im(i,j,kc,1,2,QW)
 
-             if (ppm_trace_sources == 1) then
-                qxp(i,j,kc,QV) = qxp(i,j,kc,QV) + hdt*Im_src(i,j,kc,1,2,QV)
-                qxp(i,j,kc,QW) = qxp(i,j,kc,QW) + hdt*Im_src(i,j,kc,1,2,QW)
-             endif
-
           end if
 
 
@@ -383,15 +369,6 @@ contains
 
              dup   = u_ref    - Ip(i,j,kc,1,3,QU)
              dptotp   = p_ref    - Ip(i,j,kc,1,3,QPRES)
-
-             ! If we are doing source term tracing, then we add the force
-             ! to the velocity here, otherwise we will deal with this
-             ! in the trans_X routines
-             if (ppm_trace_sources == 1) then
-                dum = dum - hdt*Ip_src(i,j,kc,1,1,QU)
-                dup = dup - hdt*Ip_src(i,j,kc,1,3,QU)
-             endif
-
 
              ! Optionally use the reference state in evaluating the
              ! eigenvectors
@@ -497,11 +474,6 @@ contains
              ! transverse velocities
              qxm(i+1,j,kc,QV    ) = Ip(i,j,kc,1,2,QV)
              qxm(i+1,j,kc,QW    ) = Ip(i,j,kc,1,2,QW)
-
-             if (ppm_trace_sources == 1) then
-                qxm(i+1,j,kc,QV) = qxm(i+1,j,kc,QV) + hdt*Ip_src(i,j,kc,1,2,QV)
-                qxm(i+1,j,kc,QW) = qxm(i+1,j,kc,QW) + hdt*Ip_src(i,j,kc,1,2,QW)
-             endif
 
           end if
 
@@ -626,14 +598,6 @@ contains
              dvp   = v_ref    - Im(i,j,kc,2,3,QV)
              dptotp   = p_ref    - Im(i,j,kc,2,3,QPRES)
 
-             ! If we are doing source term tracing, then we add the force
-             ! to the velocity here, otherwise we will deal with this
-             ! in the trans_X routines
-             if (ppm_trace_sources == 1) then
-                dvm = dvm - hdt*Im_src(i,j,kc,2,1,QV)
-                dvp = dvp - hdt*Im_src(i,j,kc,2,3,QV)
-             endif
-
              ! Optionally use the reference state in evaluating the
              ! eigenvectors
              if (ppm_reference_eigenvectors == 0) then
@@ -741,10 +705,6 @@ contains
              qyp(i,j,kc,QU    ) = Im(i,j,kc,2,2,QU)
              qyp(i,j,kc,QW    ) = Im(i,j,kc,2,2,QW)
 
-             if (ppm_trace_sources == 1) then
-                qyp(i,j,kc,QU) = qyp(i,j,kc,QU) + hdt*Im_src(i,j,kc,2,2,QU)
-                qyp(i,j,kc,QW) = qyp(i,j,kc,QW) + hdt*Im_src(i,j,kc,2,2,QW)
-             endif
 
           end if
 
@@ -790,13 +750,6 @@ contains
              dvp   = v_ref    - Ip(i,j,kc,2,3,QV)
              dptotp   = p_ref    - Ip(i,j,kc,2,3,QPRES)
 
-             ! If we are doing source term tracing, then we add the force
-             ! to the velocity here, otherwise we will deal with this
-             ! in the trans_X routines
-             if (ppm_trace_sources == 1) then
-                dvm = dvm - hdt*Ip_src(i,j,kc,2,1,QV)
-                dvp = dvp - hdt*Ip_src(i,j,kc,2,3,QV)
-             endif
 
 
              ! Optionally use the reference state in evaluating the
@@ -906,11 +859,6 @@ contains
              qym(i,j+1,kc,QU    ) = Ip(i,j,kc,2,2,QU)
              qym(i,j+1,kc,QW    ) = Ip(i,j,kc,2,2,QW)
 
-             if (ppm_trace_sources == 1) then
-                qym(i,j+1,kc,QU) = qym(i,j+1,kc,QU) + hdt*Ip_src(i,j,kc,2,2,QU)
-                qym(i,j+1,kc,QW) = qym(i,j+1,kc,QW) + hdt*Ip_src(i,j,kc,2,2,QW)
-             endif
-
           end if
 
        end do
@@ -970,7 +918,7 @@ contains
     use meth_params_module, only : QVAR, QRHO, QU, QV, QW, &
          QREINT, QPRES, QGAME, &
          small_dens, small_pres, &
-         ppm_type, ppm_trace_sources, &
+         ppm_type, &
          ppm_reference_eigenvectors, ppm_predict_gammae, &
          npassive, qpass_map
     use bl_constants_module
@@ -1129,13 +1077,6 @@ contains
           dwp   = w_ref    - Im(i,j,kc,3,3,QW)
           dptotp   = p_ref    - Im(i,j,kc,3,3,QPRES)
 
-          ! If we are doing source term tracing, then we add the force to
-          ! the velocity here, otherwise we will deal with this in the
-          ! trans_X routines
-          if (ppm_trace_sources == 1) then
-             dwm = dwm - hdt*Im_src(i,j,kc,3,1,QW)
-             dwp = dwp - hdt*Im_src(i,j,kc,3,3,QW)
-          endif
 
           ! Optionally use the reference state in evaluating the
           ! eigenvectors
@@ -1241,12 +1182,6 @@ contains
           qzp(i,j,kc,QU    ) = Im(i,j,kc,3,2,QU)
           qzp(i,j,kc,QV    ) = Im(i,j,kc,3,2,QV)
 
-          if (ppm_trace_sources == 1) then
-             qzp(i,j,kc,QU) = qzp(i,j,kc,QU) + hdt*Im_src(i,j,kc,3,2,QU)
-             qzp(i,j,kc,QV) = qzp(i,j,kc,QV) + hdt*Im_src(i,j,kc,3,2,QV)
-          endif
-
-
           !-------------------------------------------------------------------
           ! This is all for qzm -- minus state on face kc
           !-------------------------------------------------------------------
@@ -1312,13 +1247,6 @@ contains
           dwp   = w_ref    - Ip(i,j,km,3,3,QW)
           dptotp   = p_ref    - Ip(i,j,km,3,3,QPRES)
 
-          ! If we are doing source term tracing, then we add the force to
-          ! the velocity here, otherwise we will deal with this in the
-          ! trans_X routines
-          if (ppm_trace_sources == 1) then
-             dwm = dwm - hdt*Ip_src(i,j,km,3,1,QW)
-             dwp = dwp - hdt*Ip_src(i,j,km,3,3,QW)
-          endif
 
           ! Optionally use the reference state in evaluating the
           ! eigenvectors
@@ -1425,11 +1353,6 @@ contains
           ! Transverse velocity
           qzm(i,j,kc,QU    ) = Ip(i,j,km,3,2,QU)
           qzm(i,j,kc,QV    ) = Ip(i,j,km,3,2,QV)
-
-          if (ppm_trace_sources == 1) then
-             qzm(i,j,kc,QU) = qzm(i,j,kc,QU) + hdt*Ip_src(i,j,km,3,2,QU)
-             qzm(i,j,kc,QV) = qzm(i,j,kc,QV) + hdt*Ip_src(i,j,km,3,2,QV)
-          endif
 
        end do
     end do

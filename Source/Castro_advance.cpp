@@ -322,21 +322,9 @@ Castro::initialize_advance(Real time, Real dt, int amr_iteration, int amr_ncycle
 
     MultiFab& S_new = get_new_data(State_Type);
 
-    if (!keep_sources_until_end) {
+    // This array holds the hydrodynamics update.
 
-	// This array holds the hydrodynamics update.
-
-	hydro_source.define(grids,dmap,NUM_STATE,0);
-
-    }
-
-    // This array holds the sum of all source terms that affect the hydrodynamics.
-    // If we are doing the source term predictor, we'll also use this after the
-    // hydro update to store the sum of the new-time sources, so that we can
-    // compute the time derivative of the source terms.
-
-    sources_for_hydro.define(grids,dmap,NUM_STATE,NUM_GROW);
-
+    hydro_source.define(grids,dmap,NUM_STATE,0);
 
     if (!do_ctu) {
       // if we are not doing CTU advection, then we are doing a method
@@ -388,13 +376,7 @@ Castro::finalize_advance(Real time, Real dt, int amr_iteration, int amr_ncycle)
     Real cur_time = state[State_Type].curTime();
     set_special_tagging_flag(cur_time);
 
-    if (!keep_sources_until_end) {
-
-	hydro_source.clear();
-
-    }
-
-    sources_for_hydro.clear();
+    hydro_source.clear();
 
     amrex::FillNull(prev_state);
 

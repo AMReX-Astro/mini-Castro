@@ -14,13 +14,6 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
   if (verbose && ParallelDescriptor::IOProcessor())
     std::cout << "... Entering hydro advance" << std::endl << std::endl;
 
-  // Set up the source terms to go into the hydro -- note: the
-  // sources_for_hydro MF has ghost zones, but we don't need them
-  // here, since sources don't explicitly enter into the prediction
-  // for MOL integration
-
-  sources_for_hydro.setVal(0.0);
-
   int finest_level = parent->finestLevel();
 
   const Real *dx = geom.CellSize();
@@ -61,8 +54,6 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
 	FArrayBox &statein  = Sborder[mfi];
 	FArrayBox &stateout = S_new[mfi];
 
-	FArrayBox &source_in  = sources_for_hydro[mfi];
-
 	// the output of this will be stored in the correct stage MF
 	FArrayBox &source_out = k_stage[mfi];
 
@@ -101,7 +92,6 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
 	   BL_TO_FORTRAN(stateout),
 	   BL_TO_FORTRAN(q),
 	   BL_TO_FORTRAN(qaux),
-	   BL_TO_FORTRAN(source_in),
 	   BL_TO_FORTRAN(source_out),
 	   dx, &dt,
 	   D_DECL(BL_TO_FORTRAN(flux[0]),

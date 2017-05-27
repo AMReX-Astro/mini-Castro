@@ -214,7 +214,6 @@ extern "C"
      BL_FORT_FAB_ARG(stateout),
      BL_FORT_FAB_ARG(q),
      BL_FORT_FAB_ARG(qaux),
-     BL_FORT_FAB_ARG(srcU),
      BL_FORT_FAB_ARG(update),
      const amrex::Real dx[], const amrex::Real* dt,
      D_DECL(BL_FORT_FAB_ARG(xflux),

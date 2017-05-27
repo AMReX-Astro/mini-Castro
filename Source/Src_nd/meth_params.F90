@@ -107,7 +107,6 @@ module meth_params_module
   integer         , save :: do_ctu
   integer         , save :: hybrid_hydro
   integer         , save :: ppm_type
-  integer         , save :: ppm_trace_sources
   integer         , save :: ppm_temp_fix
   integer         , save :: ppm_predict_gammae
   integer         , save :: ppm_reference_eigenvectors
@@ -131,8 +130,6 @@ module meth_params_module
   integer         , save :: density_reset_method
   integer         , save :: allow_negative_energy
   integer         , save :: allow_small_energy
-  integer         , save :: do_sponge
-  integer         , save :: sponge_implicit
   integer         , save :: first_order_hydro
   character (len=128), save :: xl_ext_bc_type
   character (len=128), save :: xr_ext_bc_type
@@ -152,15 +149,14 @@ module meth_params_module
   !$acc create(difmag, small_dens, small_temp) &
   !$acc create(small_pres, small_ener, do_hydro) &
   !$acc create(do_ctu, hybrid_hydro, ppm_type) &
-  !$acc create(ppm_trace_sources, ppm_temp_fix, ppm_predict_gammae) &
-  !$acc create(ppm_reference_eigenvectors, plm_iorder, hybrid_riemann) &
-  !$acc create(riemann_solver, cg_maxiter, cg_tol) &
-  !$acc create(cg_blend, use_flattening, transverse_use_eos) &
-  !$acc create(transverse_reset_density, transverse_reset_rhoe, dual_energy_update_E_from_e) &
-  !$acc create(dual_energy_eta1, dual_energy_eta2, dual_energy_eta3) &
-  !$acc create(use_pslope, fix_mass_flux, limit_fluxes_on_small_dens) &
-  !$acc create(density_reset_method, allow_negative_energy, allow_small_energy) &
-  !$acc create(do_sponge, sponge_implicit, first_order_hydro) &
+  !$acc create(ppm_temp_fix, ppm_predict_gammae, ppm_reference_eigenvectors) &
+  !$acc create(plm_iorder, hybrid_riemann, riemann_solver) &
+  !$acc create(cg_maxiter, cg_tol, cg_blend) &
+  !$acc create(use_flattening, transverse_use_eos, transverse_reset_density) &
+  !$acc create(transverse_reset_rhoe, dual_energy_update_E_from_e, dual_energy_eta1) &
+  !$acc create(dual_energy_eta2, dual_energy_eta3, use_pslope) &
+  !$acc create(fix_mass_flux, limit_fluxes_on_small_dens, density_reset_method) &
+  !$acc create(allow_negative_energy, allow_small_energy, first_order_hydro) &
   !$acc create(hse_zero_vels, hse_interp_temp, hse_reflect_vels) &
   !$acc create(cfl, do_acc, grown_factor) &
   !$acc create(track_grid_losses)
@@ -191,7 +187,6 @@ contains
     do_ctu = 0;
     hybrid_hydro = 0;
     ppm_type = 1;
-    ppm_trace_sources = 1;
     ppm_temp_fix = 0;
     ppm_predict_gammae = 0;
     ppm_reference_eigenvectors = 0;
@@ -215,8 +210,6 @@ contains
     density_reset_method = 1;
     allow_negative_energy = 0;
     allow_small_energy = 1;
-    do_sponge = 0;
-    sponge_implicit = 1;
     first_order_hydro = 0;
     xl_ext_bc_type = "";
     xr_ext_bc_type = "";
@@ -241,7 +234,6 @@ contains
     call pp%query("do_ctu", do_ctu)
     call pp%query("hybrid_hydro", hybrid_hydro)
     call pp%query("ppm_type", ppm_type)
-    call pp%query("ppm_trace_sources", ppm_trace_sources)
     call pp%query("ppm_temp_fix", ppm_temp_fix)
     call pp%query("ppm_predict_gammae", ppm_predict_gammae)
     call pp%query("ppm_reference_eigenvectors", ppm_reference_eigenvectors)
@@ -265,8 +257,6 @@ contains
     call pp%query("density_reset_method", density_reset_method)
     call pp%query("allow_negative_energy", allow_negative_energy)
     call pp%query("allow_small_energy", allow_small_energy)
-    call pp%query("do_sponge", do_sponge)
-    call pp%query("sponge_implicit", sponge_implicit)
     call pp%query("first_order_hydro", first_order_hydro)
     call pp%query("xl_ext_bc_type", xl_ext_bc_type)
     call pp%query("xr_ext_bc_type", xr_ext_bc_type)
@@ -286,15 +276,14 @@ contains
     !$acc device(difmag, small_dens, small_temp) &
     !$acc device(small_pres, small_ener, do_hydro) &
     !$acc device(do_ctu, hybrid_hydro, ppm_type) &
-    !$acc device(ppm_trace_sources, ppm_temp_fix, ppm_predict_gammae) &
-    !$acc device(ppm_reference_eigenvectors, plm_iorder, hybrid_riemann) &
-    !$acc device(riemann_solver, cg_maxiter, cg_tol) &
-    !$acc device(cg_blend, use_flattening, transverse_use_eos) &
-    !$acc device(transverse_reset_density, transverse_reset_rhoe, dual_energy_update_E_from_e) &
-    !$acc device(dual_energy_eta1, dual_energy_eta2, dual_energy_eta3) &
-    !$acc device(use_pslope, fix_mass_flux, limit_fluxes_on_small_dens) &
-    !$acc device(density_reset_method, allow_negative_energy, allow_small_energy) &
-    !$acc device(do_sponge, sponge_implicit, first_order_hydro) &
+    !$acc device(ppm_temp_fix, ppm_predict_gammae, ppm_reference_eigenvectors) &
+    !$acc device(plm_iorder, hybrid_riemann, riemann_solver) &
+    !$acc device(cg_maxiter, cg_tol, cg_blend) &
+    !$acc device(use_flattening, transverse_use_eos, transverse_reset_density) &
+    !$acc device(transverse_reset_rhoe, dual_energy_update_E_from_e, dual_energy_eta1) &
+    !$acc device(dual_energy_eta2, dual_energy_eta3, use_pslope) &
+    !$acc device(fix_mass_flux, limit_fluxes_on_small_dens, density_reset_method) &
+    !$acc device(allow_negative_energy, allow_small_energy, first_order_hydro) &
     !$acc device(hse_zero_vels, hse_interp_temp, hse_reflect_vels) &
     !$acc device(cfl, do_acc, grown_factor) &
     !$acc device(track_grid_losses)
