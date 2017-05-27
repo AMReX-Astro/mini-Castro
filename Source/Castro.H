@@ -143,8 +143,6 @@ public:
 
     void check_for_nan(amrex::MultiFab& state, int check_ghost=0);
 
-    static int get_output_at_completion();
-
     //
     // Estimate time step.
     //
@@ -357,8 +355,6 @@ protected:
 
     void write_info ();
 
-    void stopJob ();
-
     //
     // The data.
     //
@@ -376,8 +372,6 @@ protected:
     //
 #include <castro_params.H>
 
-    static bool      signalStopJob;
-    static bool      dump_old;
     static int       radius_grow;
     static int       verbose;
     static amrex::ErrorList err_list;
@@ -386,12 +380,6 @@ protected:
 
     // for keeping track of mass changes from negative density resets
     static amrex::Real      frac_change;
-
-    // For keeping track of fluid quantities lost at physical grid boundaries.
-    // This should persist through restarts, but right now only on level 0.
-    static const int n_lost = 8;
-    amrex::Real             material_lost_through_boundary_cumulative[n_lost];
-    amrex::Real             material_lost_through_boundary_temp[n_lost];
 
     // for keeping track of the amount of CPU time used -- this will persist
     // after restarts
@@ -448,22 +436,6 @@ Castro&
 Castro::getLevel (int lev)
 {
     return *(Castro *) &parent->getLevel(lev);
-}
-
-inline
-void
-Castro::stopJob()
-{
-  signalStopJob = true;
-
-
-}
-
-inline
-int
-Castro::get_output_at_completion()
-{
-    return output_at_completion;
 }
 
 #endif /*_Castro_H_*/

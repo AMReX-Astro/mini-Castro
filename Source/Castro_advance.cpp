@@ -90,10 +90,7 @@ Castro::do_advance (Real time,
     // Do the hydro update.  We build directly off of Sborder, which
     // is the state that has already seen the burn 
 
-    if (do_hydro)
-    {
-        construct_mol_hydro_source(time, dt, sub_iteration, sub_ncycle);
-    }
+    construct_mol_hydro_source(time, dt, sub_iteration, sub_ncycle);
 
     // For MOL integration, we are done with this stage, unless it is
     // the last stage
@@ -137,12 +134,6 @@ Castro::initialize_do_advance(Real time, Real dt, int amr_iteration, int amr_ncy
     frac_change = 1.e0;
 
     int finest_level = parent->finestLevel();
-
-    // Reset the grid loss tracking.
-
-    if (track_grid_losses)
-      for (int i = 0; i < n_lost; i++)
-	material_lost_through_boundary_temp[i] = 0.0;
 
     // For the hydrodynamics update we need to have NUM_GROW ghost zones available,
     // but the state data does not carry ghost zones. So we use a FillPatch
@@ -260,21 +251,8 @@ void
 Castro::finalize_advance(Real time, Real dt, int amr_iteration, int amr_ncycle)
 {
 
-    // Add the material lost in this timestep to the cumulative losses.
-
-    if (track_grid_losses) {
-
-      ParallelDescriptor::ReduceRealSum(material_lost_through_boundary_temp, n_lost);
-
-      for (int i = 0; i < n_lost; i++)
-	material_lost_through_boundary_cumulative[i] += material_lost_through_boundary_temp[i];
-
-    }
-
-    if (do_reflux) {
-	FluxRegCrseInit();
-	FluxRegFineAdd();
-    }
+    FluxRegCrseInit();
+    FluxRegFineAdd();
 
     Real cur_time = state[State_Type].curTime();
 

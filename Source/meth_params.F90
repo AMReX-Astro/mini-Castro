@@ -98,13 +98,8 @@ module meth_params_module
 
   ! Begin the declarations of the ParmParse parameters
 
-  real(rt), save :: difmag
   real(rt), save :: small_dens
   real(rt), save :: small_temp
-  real(rt), save :: small_pres
-  real(rt), save :: small_ener
-  integer         , save :: do_hydro
-  integer         , save :: ppm_type
   integer         , save :: ppm_temp_fix
   integer         , save :: ppm_predict_gammae
   integer         , save :: ppm_reference_eigenvectors
@@ -118,8 +113,6 @@ module meth_params_module
   real(rt), save :: dual_energy_eta1
   real(rt), save :: dual_energy_eta2
   real(rt), save :: dual_energy_eta3
-  integer         , save :: use_pslope
-  integer         , save :: fix_mass_flux
   integer         , save :: limit_fluxes_on_small_dens
   integer         , save :: density_reset_method
   integer         , save :: allow_negative_energy
@@ -136,20 +129,17 @@ module meth_params_module
   integer         , save :: hse_reflect_vels
   real(rt), save :: cfl
   integer         , save :: do_acc
-  integer         , save :: track_grid_losses
 
   !$acc declare &
-  !$acc create(difmag, small_dens, small_temp) &
-  !$acc create(small_pres, small_ener, do_hydro) &
-  !$acc create(ppm_type, ppm_temp_fix, ppm_predict_gammae) &
-  !$acc create(ppm_reference_eigenvectors, hybrid_riemann, riemann_solver) &
-  !$acc create(cg_maxiter, cg_tol, cg_blend) &
-  !$acc create(use_flattening, dual_energy_update_E_from_e, dual_energy_eta1) &
-  !$acc create(dual_energy_eta2, dual_energy_eta3, use_pslope) &
-  !$acc create(fix_mass_flux, limit_fluxes_on_small_dens, density_reset_method) &
-  !$acc create(allow_negative_energy, allow_small_energy, first_order_hydro) &
-  !$acc create(hse_zero_vels, hse_interp_temp, hse_reflect_vels) &
-  !$acc create(cfl, do_acc, track_grid_losses)
+  !$acc create(small_dens, small_temp, ppm_temp_fix) &
+  !$acc create(ppm_predict_gammae, ppm_reference_eigenvectors, hybrid_riemann) &
+  !$acc create(riemann_solver, cg_maxiter, cg_tol) &
+  !$acc create(cg_blend, use_flattening, dual_energy_update_E_from_e) &
+  !$acc create(dual_energy_eta1, dual_energy_eta2, dual_energy_eta3) &
+  !$acc create(limit_fluxes_on_small_dens, density_reset_method, allow_negative_energy) &
+  !$acc create(allow_small_energy, first_order_hydro, hse_zero_vels) &
+  !$acc create(hse_interp_temp, hse_reflect_vels, cfl) &
+  !$acc create(do_acc)
 
   ! End the declarations of the ParmParse parameters
 
@@ -168,13 +158,8 @@ contains
 
     call amrex_parmparse_build(pp, "castro")
 
-    difmag = 0.1d0;
     small_dens = -1.d200;
     small_temp = -1.d200;
-    small_pres = -1.d200;
-    small_ener = -1.d200;
-    do_hydro = -1;
-    ppm_type = 1;
     ppm_temp_fix = 0;
     ppm_predict_gammae = 0;
     ppm_reference_eigenvectors = 0;
@@ -188,8 +173,6 @@ contains
     dual_energy_eta1 = 1.0d0;
     dual_energy_eta2 = 1.0d-4;
     dual_energy_eta3 = 1.0d0;
-    use_pslope = 1;
-    fix_mass_flux = 0;
     limit_fluxes_on_small_dens = 0;
     density_reset_method = 1;
     allow_negative_energy = 0;
@@ -206,15 +189,9 @@ contains
     hse_reflect_vels = 0;
     cfl = 0.8d0;
     do_acc = -1;
-    track_grid_losses = 0;
 
-    call pp%query("difmag", difmag)
     call pp%query("small_dens", small_dens)
     call pp%query("small_temp", small_temp)
-    call pp%query("small_pres", small_pres)
-    call pp%query("small_ener", small_ener)
-    call pp%query("do_hydro", do_hydro)
-    call pp%query("ppm_type", ppm_type)
     call pp%query("ppm_temp_fix", ppm_temp_fix)
     call pp%query("ppm_predict_gammae", ppm_predict_gammae)
     call pp%query("ppm_reference_eigenvectors", ppm_reference_eigenvectors)
@@ -228,8 +205,6 @@ contains
     call pp%query("dual_energy_eta1", dual_energy_eta1)
     call pp%query("dual_energy_eta2", dual_energy_eta2)
     call pp%query("dual_energy_eta3", dual_energy_eta3)
-    call pp%query("use_pslope", use_pslope)
-    call pp%query("fix_mass_flux", fix_mass_flux)
     call pp%query("limit_fluxes_on_small_dens", limit_fluxes_on_small_dens)
     call pp%query("density_reset_method", density_reset_method)
     call pp%query("allow_negative_energy", allow_negative_energy)
@@ -246,20 +221,17 @@ contains
     call pp%query("hse_reflect_vels", hse_reflect_vels)
     call pp%query("cfl", cfl)
     call pp%query("do_acc", do_acc)
-    call pp%query("track_grid_losses", track_grid_losses)
 
     !$acc update &
-    !$acc device(difmag, small_dens, small_temp) &
-    !$acc device(small_pres, small_ener, do_hydro) &
-    !$acc device(ppm_type, ppm_temp_fix, ppm_predict_gammae) &
-    !$acc device(ppm_reference_eigenvectors, hybrid_riemann, riemann_solver) &
-    !$acc device(cg_maxiter, cg_tol, cg_blend) &
-    !$acc device(use_flattening, dual_energy_update_E_from_e, dual_energy_eta1) &
-    !$acc device(dual_energy_eta2, dual_energy_eta3, use_pslope) &
-    !$acc device(fix_mass_flux, limit_fluxes_on_small_dens, density_reset_method) &
-    !$acc device(allow_negative_energy, allow_small_energy, first_order_hydro) &
-    !$acc device(hse_zero_vels, hse_interp_temp, hse_reflect_vels) &
-    !$acc device(cfl, do_acc, track_grid_losses)
+    !$acc device(small_dens, small_temp, ppm_temp_fix) &
+    !$acc device(ppm_predict_gammae, ppm_reference_eigenvectors, hybrid_riemann) &
+    !$acc device(riemann_solver, cg_maxiter, cg_tol) &
+    !$acc device(cg_blend, use_flattening, dual_energy_update_E_from_e) &
+    !$acc device(dual_energy_eta1, dual_energy_eta2, dual_energy_eta3) &
+    !$acc device(limit_fluxes_on_small_dens, density_reset_method, allow_negative_energy) &
+    !$acc device(allow_small_energy, first_order_hydro, hse_zero_vels) &
+    !$acc device(hse_interp_temp, hse_reflect_vels, cfl) &
+    !$acc device(do_acc)
 
 
     ! now set the external BC flags

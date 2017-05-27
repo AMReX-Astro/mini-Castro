@@ -28,10 +28,6 @@
 
 using namespace amrex;
 
-bool         Castro::signalStopJob = false;
-
-bool         Castro::dump_old      = false;
-
 int          Castro::verbose       = 0;
 ErrorList    Castro::err_list;
 int          Castro::radius_grow   = 1;
@@ -104,8 +100,6 @@ Castro::read_params ()
 
     pp.query("v",verbose);
     pp.query("sum_interval",sum_interval);
-
-    pp.query("dump_old",dump_old);
 
     // Get boundary conditions
     Array<int> lo_bc(BL_SPACEDIM), hi_bc(BL_SPACEDIM);
@@ -197,19 +191,17 @@ Castro::read_params ()
     }
 
 
-    // Make sure not to call refluxing if we're not actually doing any hydro.
-    if (do_hydro == 0) do_reflux = 0;
-
     if (max_dt < fixed_dt)
-      {
+    {
 	std::cerr << "cannot have max_dt < fixed_dt\n";
 	amrex::Error();
-      }
+    }
 
-   StateDescriptor::setBndryFuncThreadSafety(bndry_func_thread_safe);
+    int bndry_func_thread_safe = 1;
+    StateDescriptor::setBndryFuncThreadSafety(bndry_func_thread_safe);
 
-   ParmParse ppa("amr");
-   ppa.query("probin_file",probin_file);
+    ParmParse ppa("amr");
+    ppa.query("probin_file",probin_file);
 
     Array<int> tilesize(BL_SPACEDIM);
     if (pp.queryarr("hydro_tile_size", tilesize, 0, BL_SPACEDIM))
@@ -236,15 +228,11 @@ Castro::Castro (Amr&            papa,
 
     initMFs();
 
-    for (int i = 0; i < n_lost; i++) {
-      material_lost_through_boundary_cumulative[i] = 0.0;
-      material_lost_through_boundary_temp[i] = 0.0;
-    }
-
     // initialize the Godunov state array used in hydro -- we wait
     // until here so that ngroups is defined (if needed) in
     // rad_params_module
     ca_init_godunov_indices();
+
     // NQ will be used to dimension the primitive variable state
     // vector it will include the "pure" hydrodynamical variables +
     // any radiation variables
@@ -320,7 +308,7 @@ Castro::initMFs()
     for (int dir = 0; dir < BL_SPACEDIM; ++dir)
 	fluxes[dir].reset(new MultiFab(getEdgeBoxArray(dir), dmap, NUM_STATE, 0));
 
-    if (do_reflux && level > 0) {
+    if (level > 0) {
 
 	flux_reg.define(grids, dmap, crse_ratio, level, NUM_STATE);
 	flux_reg.setVal(0.0);
@@ -329,12 +317,8 @@ Castro::initMFs()
 
     // Set the flux register scalings.
 
-    if (do_reflux) {
-
-	flux_crse_scale = -1.0;
-	flux_fine_scale = 1.0;
-
-    }
+    flux_crse_scale = -1.0;
+    flux_fine_scale = 1.0;
 
     // This array holds the hydrodynamics update.
 
@@ -573,48 +557,35 @@ Castro::estTimeStep (Real dt_old)
 
     Real estdt_hydro = max_dt / cfl;
 
-    if (do_hydro)
-    {
-
-	  // Compute hydro-limited timestep.
-	if (do_hydro)
-	  {
-
 #ifdef _OPENMP
 #pragma omp parallel
 #endif
-	    {
-	      Real dt = max_dt / cfl;
+    {
+	Real dt = max_dt / cfl;
 
-	      for (MFIter mfi(stateMF,true); mfi.isValid(); ++mfi)
-		{
-		  const Box& box = mfi.tilebox();
+	for (MFIter mfi(stateMF,true); mfi.isValid(); ++mfi)
+	{
+	    const Box& box = mfi.tilebox();
 
-		  ca_estdt(ARLIM_3D(box.loVect()), ARLIM_3D(box.hiVect()),
-			   BL_TO_FORTRAN_3D(stateMF[mfi]),
-			   ZFILL(dx),&dt);
-		}
+	    ca_estdt(ARLIM_3D(box.loVect()), ARLIM_3D(box.hiVect()),
+		     BL_TO_FORTRAN_3D(stateMF[mfi]),
+		     ZFILL(dx),&dt);
+	}
 #ifdef _OPENMP
 #pragma omp critical (castro_estdt)
 #endif
-	      {
-		estdt_hydro = std::min(estdt_hydro,dt);
-	      }
-	    }
-	  }
-
-       ParallelDescriptor::ReduceRealMin(estdt_hydro);
-       estdt_hydro *= cfl;
-       if (verbose && ParallelDescriptor::IOProcessor())
-           std::cout << "...estimated hydro-limited timestep at level " << level << ": " << estdt_hydro << std::endl;
-
-       // Determine if this is more restrictive than the maximum timestep limiting
-
-       if (estdt_hydro < estdt) {
-	 limiter = "hydro";
-	 estdt = estdt_hydro;
-       }
+	{
+	    estdt_hydro = std::min(estdt_hydro,dt);
+	}
     }
+
+    ParallelDescriptor::ReduceRealMin(estdt_hydro);
+    estdt_hydro *= cfl;
+    if (verbose && ParallelDescriptor::IOProcessor())
+	std::cout << "...estimated hydro-limited timestep at level " << level << ": " << estdt_hydro << std::endl;
+
+    limiter = "hydro";
+    estdt = estdt_hydro;
 
     if (verbose && ParallelDescriptor::IOProcessor())
       std::cout << "Castro::estTimeStep (" << limiter << "-limited) at level " << level << ":  estdt = " << estdt << '\n';
@@ -776,7 +747,7 @@ Castro::post_timestep (int iteration)
 
     // Now do the refluxing.
 
-    if (do_reflux && level < parent->finestLevel())
+    if (level < parent->finestLevel())
 	reflux(level, level+1);
 
     // Ensure consistency with finer grids.
@@ -927,12 +898,7 @@ Castro::okToContinue ()
 
     int test = 1;
 
-    if (signalStopJob) {
-      test = 0;
-      if (ParallelDescriptor::IOProcessor())
-	std::cout << " Signalling a stop of the run due to signalStopJob = true." << std::endl;
-    }
-    else if (parent->dtLevel(0) < dt_cutoff) {
+    if (parent->dtLevel(0) < dt_cutoff) {
       test = 0;
       if (ParallelDescriptor::IOProcessor())
 	std::cout << " Signalling a stop of the run because dt < dt_cutoff." << std::endl;

@@ -132,18 +132,10 @@ main (int   argc,
 
     }
 
-    // Write final checkpoint and plotfile
+    // Write final plotfile
 
-    if (Castro::get_output_at_completion() == 1) {
-
-	if (amrptr->stepOfLastCheckPoint() < amrptr->levelSteps(0)) {
-	    amrptr->checkPoint();
-	}
-
-	if (amrptr->stepOfLastPlotFile() < amrptr->levelSteps(0)) {
-	    amrptr->writePlotFile();
-	}
-
+    if (amrptr->stepOfLastPlotFile() < amrptr->levelSteps(0)) {
+	amrptr->writePlotFile();
     }
 
     time(&time_type);

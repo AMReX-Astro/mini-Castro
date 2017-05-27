@@ -8,7 +8,7 @@ module riemann_module
                                  UFS, UFX, &
                                  NGDNV, GDRHO, GDPRES, GDGAME, &
                                  QC, QCSML, QGAMC, &
-                                 small_dens, small_pres, small_temp, &
+                                 small_dens, small_temp, &
                                  cg_maxiter, cg_tol, cg_blend, &
                                  npassive, upass_map, qpass_map, &
                                  riemann_solver, ppm_temp_fix, hybrid_riemann, &
@@ -306,7 +306,9 @@ contains
     use mempool_module, only : bl_allocate, bl_deallocate
     use prob_params_module, only : physbc_lo, physbc_hi, Symmetry, SlipWall, NoSlipWall
     use amrex_fort_module, only : rt => amrex_real
-    real(rt)        , parameter:: small = 1.e-8_rt
+
+    real(rt), parameter :: small = 1.e-8_rt
+    real(rt), parameter :: small_pres = 1.e-200_rt
 
     integer :: qpd_lo(3),qpd_hi(3)
     integer :: gd_lo(2),gd_hi(2)

@@ -21,8 +21,8 @@ subroutine ca_mol_single_stage(time, &
   use meth_params_module, only : NQ, QVAR, NVAR, NGDNV, GDPRES, &
                                  UTEMP, UEINT, USHK, UMX, GDU, GDV, GDW, &
                                  use_flattening, QU, QV, QW, QPRES, NQAUX, &
-                                 first_order_hydro, difmag, hybrid_riemann, &
-                                 limit_fluxes_on_small_dens, ppm_type
+                                 first_order_hydro, hybrid_riemann, &
+                                 limit_fluxes_on_small_dens
   use advection_util_module, only: compute_cfl, limit_hydro_fluxes_on_small_dens, &
                                    divu, normalize_species_fluxes
   use bl_constants_module, only : ZERO, HALF, ONE, FOURTH
@@ -98,6 +98,8 @@ subroutine ca_mol_single_stage(time, &
   integer :: st_lo(3), st_hi(3)
   integer :: shk_lo(3), shk_hi(3)
 
+  real(rt), parameter :: difmag = 0.1d0
+
   real(rt) :: div1
   integer :: i, j, k, n
   integer :: kc, km, kt, k3d
@@ -172,18 +174,15 @@ subroutine ca_mol_single_stage(time, &
   call bl_allocate(qint, It_lo, It_hi, NGDNV)
 
   call bl_allocate(shk, shk_lo, shk_hi)
-
-  if (ppm_type == 0) then
-     call bl_error("ERROR: method of lines integration does not support ppm_type = 0")
-  endif
   
-    ! multidimensional shock detection -- this will be used to do the
-    ! hybrid Riemann solver
-    if (hybrid_riemann == 1) then
-       call shock(q, q_lo, q_hi, shk, shk_lo, shk_hi, lo, hi, dx)
-    else
-       shk(:,:,:) = ZERO
-    endif
+  ! multidimensional shock detection -- this will be used to do the
+  ! hybrid Riemann solver
+  if (hybrid_riemann == 1) then
+     call shock(q, q_lo, q_hi, shk, shk_lo, shk_hi, lo, hi, dx)
+  else
+     shk(:,:,:) = ZERO
+  endif
+
   ! Check if we have violated the CFL criterion.
   call compute_cfl(q, q_lo, q_hi, &
                    qaux, qa_lo, qa_hi, &
