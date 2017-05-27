@@ -13,8 +13,6 @@ ca_f90EXE_sources += riemann_util.f90
 
 ca_F90EXE_sources += flatten_nd.F90
 
-ca_f90EXE_sources += math.f90
-
 ca_f90EXE_sources += io.f90
 ca_f90EXE_sources += constants_cgs.f90
 
