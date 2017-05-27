@@ -63,8 +63,6 @@ int          Castro::QRADVAR       = 0;
 int          Castro::NQAUX         = -1;
 int          Castro::NQ            = -1;
 
-Array<std::string> Castro::source_names;
-
 int          Castro::MOL_STAGES;
 Array< Array<Real> > Castro::a_mol;
 Array<Real> Castro::b_mol;
@@ -277,8 +275,6 @@ Castro::read_params ()
 
 Castro::Castro ()
     :
-    old_sources(num_src),
-    new_sources(num_src),
     prev_state(num_state_type)
 {
 }
@@ -291,8 +287,6 @@ Castro::Castro (Amr&            papa,
                 Real            time)
     :
     AmrLevel(papa,lev,level_geom,bl,dm,time),
-    old_sources(num_src),
-    new_sources(num_src),
     prev_state(num_state_type)
 {
     buildMetrics();
@@ -303,11 +297,6 @@ Castro::Castro (Amr&            papa,
       material_lost_through_boundary_cumulative[i] = 0.0;
       material_lost_through_boundary_temp[i] = 0.0;
     }
-
-   // Initialize source term data to zero.
-
-   MultiFab& dSdt_new = get_new_data(Source_Type);
-   dSdt_new.setVal(0.0);
 
     // initialize the Godunov state array used in hydro -- we wait
     // until here so that ngroups is defined (if needed) in
@@ -447,14 +436,7 @@ Castro::initMFs()
 
     }
 
-    if (keep_sources_until_end || (do_reflux && update_sources_after_reflux)) {
-
-	// These arrays hold all source terms that update the state.
-
-	for (int n = 0; n < num_src; ++n) {
-	    old_sources[n].reset(new MultiFab(grids, dmap, NUM_STATE, NUM_GROW));
-	    new_sources[n].reset(new MultiFab(grids, dmap, NUM_STATE, get_new_data(State_Type).nGrow()));
-	}
+    if (keep_sources_until_end) {
 
 	// This array holds the hydrodynamics update.
 
@@ -621,9 +603,6 @@ Castro::initData ()
     }
 
     set_special_tagging_flag(cur_time);
-
-    MultiFab& dSdt_new = get_new_data(Source_Type);
-    dSdt_new.setVal(0.);
 
     if (verbose && ParallelDescriptor::IOProcessor())
        std::cout << "Done initializing the level " << level << " data " << std::endl;
@@ -927,8 +906,7 @@ Castro::post_timestep (int iteration)
     //
     int finest_level = parent->finestLevel();
 
-    // Now do the refluxing. If we're using gravity it
-    // will also do the sync solve associated with the reflux.
+    // Now do the refluxing.
 
     if (do_reflux && level < parent->finestLevel())
 	reflux(level, level+1);
@@ -1108,8 +1086,6 @@ Castro::okToContinue ()
 void
 Castro::FluxRegCrseInit() {
 
-    FluxRegister* reg;
-
     if (level == parent->finestLevel()) return;
 
     Castro& fine_level = getLevel(level+1);
@@ -1127,8 +1103,6 @@ Castro::FluxRegCrseInit() {
 
 void
 Castro::FluxRegFineAdd() {
-
-    FluxRegister* reg;
 
     if (level == 0) return;
 
@@ -1172,37 +1146,6 @@ Castro::reflux(int crse_level, int fine_level)
 
 	reg->Reflux(state, crse_lev.volume, 1.0, 0, 0, NUM_STATE, crse_lev.geom);
 
-	// Store the density change, for the gravity sync.
-
-	// Also update the coarse fluxes MultiFabs using the reflux data. This should only make
-	// a difference if we re-evaluate the source terms later.
-
-	Array<std::unique_ptr<MultiFab> > temp_fluxes(3);
-
-	if (update_sources_after_reflux) {
-
-	    for (int i = 0; i < BL_SPACEDIM; ++i) {
-		temp_fluxes[i].reset(new MultiFab(crse_lev.fluxes[i]->boxArray(), 
-						  crse_lev.fluxes[i]->DistributionMap(),
-						  crse_lev.fluxes[i]->nComp(), crse_lev.fluxes[i]->nGrow()));
-		temp_fluxes[i]->setVal(0.0);
-	    }
-	    for (OrientationIter fi; fi; ++fi) {
-		const FabSet& fs = (*reg)[fi()];
-		int idir = fi().coordDir();
-		fs.copyTo(*temp_fluxes[idir], 0, 0, 0, temp_fluxes[idir]->nComp());
-	    }
-	    for (int i = 0; i < BL_SPACEDIM; ++i) {
-		MultiFab::Add(*crse_lev.fluxes[i], *temp_fluxes[i], 0, 0, crse_lev.fluxes[i]->nComp(), 0);
-		temp_fluxes[i].reset();
-	    }
-
-	    // Reflux into the hydro_source array so that we have the most up-to-date version of it.
-
-	    reg->Reflux(crse_lev.hydro_source, crse_lev.volume, 1.0, 0, 0, NUM_STATE, crse_lev.geom);
-
-	}
-
 	// We no longer need the flux register data, so clear it out.
 
 	reg->setVal(0.0);
@@ -1219,69 +1162,10 @@ Castro::reflux(int crse_level, int fine_level)
 
 	    reg->Reflux(state, dr, 1.0, 0, Xmom, 1, crse_lev.geom);
 
-	    if (update_sources_after_reflux) {
-
-		temp_fluxes[0].reset(new MultiFab(crse_lev.P_radial.boxArray(), 
-						  crse_lev.P_radial.DistributionMap(),
-						  crse_lev.P_radial.nComp(), crse_lev.P_radial.nGrow()));
-		temp_fluxes[0]->setVal(0.0);
-
-                for (OrientationIter fi; fi; ++fi) 
-		{
-		    const FabSet& fs = (*reg)[fi()];
-		    int idir = fi().coordDir();
-		    if (idir == 0) {
-			fs.copyTo(*temp_fluxes[idir], 0, 0, 0, temp_fluxes[idir]->nComp());
-		    }
-                }
-
-		MultiFab::Add(crse_lev.P_radial, *temp_fluxes[0], 0, 0, crse_lev.P_radial.nComp(), 0);
-		temp_fluxes[0].reset();
-
-                reg->Reflux(crse_lev.hydro_source, dr, 1.0, 0, Xmom, 1, crse_lev.geom);
-
-	    }
-
 	    reg->setVal(0.0);
 
 	}
 #endif
-
-    }
-
-    // Do the sync solve across all levels.
-
-    // Now subtract the new-time updates to the state data,
-    // recompute it, and add it back. This corrects for the fact
-    // that the new-time data was calculated the first time around
-    // using a state that hadn't yet been refluxed. Note that this
-    // needs to come after the gravity sync solve because the gravity
-    // source depends on an up-to-date value of phi. We'll do this
-    // on the fine level in addition to the coarser levels, because
-    // global sources like gravity or source terms that rely on
-    // ghost zone fills like diffusion depend on the data in the
-    // coarser levels.
-
-    if (update_sources_after_reflux) {
-
-	for (int lev = fine_level; lev >= crse_level; --lev) {
-
-	    MultiFab& S_new = getLevel(lev).get_new_data(State_Type);
-	    Real time = getLevel(lev).state[State_Type].curTime();
-	    Real dt = parent->dtLevel(lev);
-
-	    for (int n = 0; n < num_src; ++n)
-                if (source_flag(n))
-		    getLevel(lev).apply_source_to_state(S_new, *getLevel(lev).new_sources[n], -dt);
-
-	    // Make the state data consistent with this earlier version before
-	    // recalculating the new-time source terms.
-
-	    getLevel(lev).clean_state(S_new);
-
-	    getLevel(lev).do_new_sources(time, dt);
-
-	}
 
     }
 
@@ -1310,8 +1194,6 @@ Castro::avgDown ()
   if (level == parent->finestLevel()) return;
 
   avgDown(State_Type);
-
-  avgDown(Source_Type);
 
 }
 
@@ -1366,19 +1248,6 @@ Castro::enforce_min_density (MultiFab& S_old, MultiFab& S_new)
 
     Real dens_change = 1.e0;
 
-    MultiFab reset_source;
-
-    if (print_update_diagnostics)
-    {
-
-	// Before we do anything, make a copy of the state.
-
-	reset_source.define(S_new.boxArray(), S_new.DistributionMap(), S_new.nComp(), 0);
-
-	MultiFab::Copy(reset_source, S_new, 0, 0, S_new.nComp(), 0);
-
-    }
-
 #ifdef _OPENMP
 #pragma omp parallel reduction(min:dens_change)
 #endif
@@ -1396,35 +1265,6 @@ Castro::enforce_min_density (MultiFab& S_old, MultiFab& S_new)
 				   vol.dataPtr(), ARLIM_3D(vol.loVect()), ARLIM_3D(vol.hiVect()),
 				   ARLIM_3D(bx.loVect()), ARLIM_3D(bx.hiVect()),
 				   &dens_change, &verbose, &idx);
-
-    }
-
-    if (print_update_diagnostics)
-    {
-
-	// Evaluate what the effective reset source was.
-
-	MultiFab::Subtract(reset_source, S_new, 0, 0, S_old.nComp(), 0);
-
-	bool local = true;
-	Array<Real> reset_update = evaluate_source_change(reset_source, 1.0, local);
-
-#ifdef BL_LAZY
-        Lazy::QueueReduction( [=] () mutable {
-#endif
-	    ParallelDescriptor::ReduceRealSum(reset_update.dataPtr(), reset_update.size(), ParallelDescriptor::IOProcessorNumber());
-
-	    if (ParallelDescriptor::IOProcessor()) {
-		if (std::abs(reset_update[0]) != 0.0) {
-		    std::cout << std::endl << "  Contributions to the state from negative density resets:" << std::endl;
-
-		    print_source_change(reset_update);
-		}
-	    }
-
-#ifdef BL_LAZY
-        });
-#endif
 
     }
 
@@ -1614,14 +1454,6 @@ Castro::reset_internal_energy(MultiFab& S_new)
 
     MultiFab old_state;
 
-    // Make a copy of the state so we can evaluate how much changed.
-
-    if (print_update_diagnostics)
-    {
-	old_state.define(S_new.boxArray(), S_new.DistributionMap(), S_new.nComp(), 0);
-        MultiFab::Copy(old_state, S_new, 0, 0, S_new.nComp(), 0);
-    }
-
     int ng = S_new.nGrow();
 
     // Ensure (rho e) isn't too small or negative
@@ -1643,36 +1475,6 @@ Castro::reset_internal_energy(MultiFab& S_new)
     if (verbose)
       flush_output();
 
-    if (print_update_diagnostics)
-    {
-	// Evaluate what the effective reset source was.
-
-	MultiFab reset_source(S_new.boxArray(), S_new.DistributionMap(), S_new.nComp(), 0);
-
-	MultiFab::Copy(reset_source, S_new, 0, 0, S_new.nComp(), 0);
-
-	MultiFab::Subtract(reset_source, old_state, 0, 0, old_state.nComp(), 0);
-
-	bool local = true;
-	Array<Real> reset_update = evaluate_source_change(reset_source, 1.0, local);
-
-#ifdef BL_LAZY
-        Lazy::QueueReduction( [=] () mutable {
-#endif
-	    ParallelDescriptor::ReduceRealSum(reset_update.dataPtr(), reset_update.size(), ParallelDescriptor::IOProcessorNumber());
-
-	    if (ParallelDescriptor::IOProcessor()) {
-		if (std::abs(reset_update[Eint]) != 0.0) {
-		    std::cout << std::endl << "  Contributions to the state from negative energy resets:" << std::endl;
-
-		    print_source_change(reset_update);
-		}
-	    }
-
-#ifdef BL_LAZY
-	});
-#endif
-    }
 }
 
 void

@@ -83,8 +83,7 @@ Castro::do_advance (Real time,
 
   // this routine will advance the old state data (called S_old here)
   // to the new time, for a single level.  The new data is called
-  // S_new here.  The update includes reactions (if we are not doing
-  // SDC), hydro, and the source terms.
+  // S_new here.
 
     BL_PROFILE("Castro::do_advance()");
 
@@ -120,14 +119,6 @@ Castro::do_advance (Real time,
     }
 
 
-    // Construct the old-time sources from Sborder.  For CTU
-    // integration, this will already be applied to S_new (with full
-    // dt weighting), to be correctly later.  For MOL, this is not
-    // applied to any state.
-
-    do_old_sources(prev_time, dt, amr_iteration, amr_ncycle,
-		   sub_iteration, sub_ncycle);
-
     // Do the hydro update.  We build directly off of Sborder, which
     // is the state that has already seen the burn 
 
@@ -153,12 +144,6 @@ Castro::do_advance (Real time,
 
       check_for_nan(S_new);
 
-      // Construct and apply new-time source terms.
-
-      do_new_sources(cur_time, dt, amr_iteration, amr_ncycle,
-		     sub_iteration, sub_ncycle);
-
-      // Do the second half of the reactions.
     }
 
     if (!do_ctu && sub_iteration == sub_ncycle-1) {
@@ -265,25 +250,6 @@ void
 Castro::finalize_do_advance(Real time, Real dt, int amr_iteration, int amr_ncycle, int sub_iteration, int sub_ncycle)
 {
 
-    // Update the dSdt MultiFab. Since we want (S^{n+1} - S^{n}) / dt, we
-    // only need to take twice the new-time source term, since in the predictor-corrector
-    // approach, the new-time source term is 1/2 * S^{n+1} - 1/2 * S^{n}. This is untrue
-    // in general for the non-momentum sources, but those don't appear in the hydro anyway,
-    // and for safety we'll only do this on the momentum terms.
-
-    if (source_term_predictor == 1) {
-
-        MultiFab& dSdt_new = get_new_data(Source_Type);
-
-	dSdt_new.setVal(0.0, NUM_GROW);
-
-	for (int n = 0; n < num_src; ++n) {
-	    MultiFab::Add(dSdt_new, *new_sources[n], Xmom, Xmom, 3, 0);
-	}
-
-	dSdt_new.mult(2.0 / dt);
-
-    }
     Sborder.clear();
 
 }
@@ -325,8 +291,6 @@ Castro::initialize_advance(Real time, Real dt, int amr_iteration, int amr_ncycle
 	// this because we never need the old data, so we
 	// don't want to allocate memory for it.
 
-	if (k == Source_Type)
-	    state[k].swapTimeLevels(0.0);
 	state[k].allocOldData();
 	state[k].swapTimeLevels(dt);
 
@@ -358,14 +322,7 @@ Castro::initialize_advance(Real time, Real dt, int amr_iteration, int amr_ncycle
 
     MultiFab& S_new = get_new_data(State_Type);
 
-    if (!(keep_sources_until_end || (do_reflux && update_sources_after_reflux))) {
-
-	// These arrays hold all source terms that update the state.
-
-	for (int n = 0; n < num_src; ++n) {
-	    old_sources[n].reset(new MultiFab(grids, dmap, NUM_STATE, NUM_GROW));
-	    new_sources[n].reset(new MultiFab(grids, dmap, NUM_STATE, get_new_data(State_Type).nGrow()));
-	}
+    if (!keep_sources_until_end) {
 
 	// This array holds the hydrodynamics update.
 
@@ -431,10 +388,8 @@ Castro::finalize_advance(Real time, Real dt, int amr_iteration, int amr_ncycle)
     Real cur_time = state[State_Type].curTime();
     set_special_tagging_flag(cur_time);
 
-    if (!(keep_sources_until_end || (do_reflux && update_sources_after_reflux))) {
+    if (!keep_sources_until_end) {
 
-	amrex::FillNull(old_sources);
-	amrex::FillNull(new_sources);
 	hydro_source.clear();
 
     }
@@ -566,8 +521,6 @@ Castro::retry_advance(Real time, Real dt, int amr_iteration, int amr_ncycle)
 
 	  // Anticipate the swapTimeLevels to come.
 
-	  if (k == Source_Type)
-	      state[k].swapTimeLevels(0.0);
 	  state[k].swapTimeLevels(0.0);
 
 	  state[k].setTimeLevel(time, 0.0, 0.0);
@@ -600,8 +553,6 @@ Castro::retry_advance(Real time, Real dt, int amr_iteration, int amr_ncycle)
 
 	    for (int k = 0; k < num_state_type; k++) {
 
-	        if (k == Source_Type)
-		    state[k].swapTimeLevels(0.0);
 		state[k].swapTimeLevels(dt_advance);
 
 	    }

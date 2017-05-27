@@ -203,29 +203,12 @@ Castro::variableSetUp ()
 
   const Real run_strt = ParallelDescriptor::second() ;
 
-
-  // we want const_grav in F90, get it here from parmparse, since it
-  // it not in the Castro namespace
-  ParmParse pp("gravity");
-
-  // Pass in the name of the gravity type we're using -- we do this
-  // manually, since the Fortran parmparse doesn't support strings
-  std::string gravity_type = "none";
-  pp.query("gravity_type", gravity_type);
-  int gravity_type_length = gravity_type.length();
-  Array<int> gravity_type_name(gravity_type_length);
-
-  for (int i = 0; i < gravity_type_length; i++)
-    gravity_type_name[i] = gravity_type[i];
-
-
   // Read in the input values to Fortran.
 
   ca_set_castro_method_params();
 
   ca_set_method_params(dm, Density, Xmom, Eden, Eint, Temp, FirstAdv, FirstSpec, FirstAux,
-		       NumAdv,
-		       gravity_type_name.dataPtr(), gravity_type_length);
+		       NumAdv);
 
   // Get the number of primitive variables from Fortran.
 
@@ -287,13 +270,6 @@ Castro::variableSetUp ()
   desc_lst.addDescriptor(State_Type,IndexType::TheCellType(),
 			 StateDescriptor::Point,ngrow_state,NUM_STATE,
 			 interp,state_data_extrap,store_in_checkpoint);
-
-  // Source terms. Currently this holds dS/dt for each of the NVAR state variables.
-
-  store_in_checkpoint = true;
-  desc_lst.addDescriptor(Source_Type, IndexType::TheCellType(),
-			 StateDescriptor::Point,NUM_GROW,NUM_STATE,
-			 &cell_cons_interp, state_data_extrap,store_in_checkpoint);
 
   Array<BCRec>       bcs(NUM_STATE);
   Array<std::string> name(NUM_STATE);
@@ -380,15 +356,6 @@ Castro::variableSetUp ()
 			name,
 			bcs,
 			BndryFunc(ca_denfill,ca_hypfill));
-
-  // Source term array will use standard hyperbolic fill.
-
-  Array<std::string> state_type_source_names(NUM_STATE);
-
-  for (int i = 0; i < NUM_STATE; i++)
-    state_type_source_names[i] = name[i] + "_source";
-
-  desc_lst.setComponent(Source_Type,Density,state_type_source_names,bcs,BndryFunc(ca_denfill,ca_hypfill));
 
   if (use_custom_knapsack_weights) {
       Knapsack_Weight_Type = desc_lst.size();
@@ -548,23 +515,6 @@ Castro::variableSetUp ()
   // DEFINE ERROR ESTIMATION QUANTITIES
   //
   ErrorSetUp();
-
-  //
-  // Construct an array holding the names of the source terms.
-  //
-
-  source_names.resize(num_src);
-
-  // Fill with an empty string to initialize.
-
-  for (int n = 0; n < num_src; ++n)
-    source_names[n] = "";
-
-  source_names[ext_src] = "user-defined external";
-
-#ifdef GRAVITY
-  source_names[grav_src] = "gravity";
-#endif
 
   // method of lines Butcher tableau
 #define THIRDORDER_TVD

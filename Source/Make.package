@@ -2,7 +2,6 @@
 CEXE_sources += Castro.cpp
 CEXE_sources += Castro_advance.cpp
 CEXE_sources += Castro_hydro.cpp
-CEXE_sources += Castro_sources.cpp
 CEXE_sources += Castro_setup.cpp
 CEXE_sources += Castro_error.cpp 
 CEXE_sources += Castro_io.cpp 
@@ -12,7 +11,6 @@ CEXE_sources += main.cpp
 CEXE_headers += Castro.H
 CEXE_headers += Castro_io.H
 
-CEXE_sources += Castro_external.cpp
 CEXE_sources += sum_utils.cpp
 CEXE_sources += sum_integrated_quantities.cpp
 

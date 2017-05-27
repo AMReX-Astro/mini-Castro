@@ -19,17 +19,7 @@ using std::istream;
 using std::ostream;
 
 
-enum StateType { State_Type = 0,
-		 Source_Type,
-};
-
-// Create storage for all source terms.
-
-enum sources { ext_src = 0,
-#ifdef GRAVITY
-               grav_src,
-#endif
-	       num_src };
+enum StateType { State_Type = 0 };
 
 //
 // AmrLevel-derived class for hyperbolic conservation equations for stellar media
@@ -172,42 +162,7 @@ public:
 
     void check_for_nan(amrex::MultiFab& state, int check_ghost=0);
 
-    bool source_flag(int src);
-
     static int get_output_at_completion();
-
-    void do_old_sources(amrex::Real time, amrex::Real dt, int amr_iteration = -1, int amr_ncycle = -1, int sub_iteration = -1, int sub_ncycle = -1);
-
-    void construct_old_source(int src, amrex::Real time, amrex::Real dt, int amr_iteration = -1, int amr_ncycle = -1, int sub_iteration = -1, int sub_ncycle = -1);
-
-    void do_new_sources(amrex::Real time, amrex::Real dt, int amr_iteration = -1, int amr_ncycle = -1, int sub_iteration = -1, int sub_ncycle = -1);
-
-    void construct_new_source(int src, amrex::Real time, amrex::Real dt, int amr_iteration = -1, int amr_ncycle = -1, int sub_iteration = -1, int sub_ncycle = -1);
-
-    amrex::Array<amrex::Real> evaluate_source_change(amrex::MultiFab& update, amrex::Real dt, bool local = false);
-
-    void print_source_change(amrex::Array<amrex::Real> update);
-
-    void print_all_source_changes(amrex::Real dt, bool is_new);
-
-    void sum_of_sources(amrex::MultiFab& source);
-
-    void time_center_source_terms (amrex::MultiFab& S_new,
-				   amrex::MultiFab& src_old,
-				   amrex::MultiFab& src_new,
-				   amrex::Real dt = 1.0);
-
-    void construct_old_ext_source(amrex::Real time, amrex::Real dt);
-
-    void construct_new_ext_source(amrex::Real time, amrex::Real dt);
-
-    void fill_ext_source(amrex::Real time, amrex::Real dt, amrex::MultiFab& S_old, amrex::MultiFab& S_new, amrex::MultiFab& ext_src, int ng);
-
-#ifdef GRAVITY
-    void construct_old_gravity_source(amrex::Real time, amrex::Real dt);
-
-    void construct_new_gravity_source(amrex::Real time, amrex::Real dt);
-#endif
 
     //
     // Estimate time step.
@@ -355,8 +310,6 @@ public:
     static int       FirstSpec, NumSpec;
     static int       FirstAux,  NumAux;
 
-    static amrex::Array<std::string> source_names;
-
     //
     // This MultiFab is on the coarser level.  This is useful for the coarser level
     // to mask out the finer level.  We only build this when it is needed.
@@ -406,9 +359,6 @@ protected:
 #if (BL_SPACEDIM <= 2)
     amrex::FluxRegister pres_reg;
 #endif
-#ifdef GRAVITY
-    amrex::FluxRegister phi_reg;
-#endif
 
     // Scalings for the flux registers.
     amrex::Real flux_crse_scale;
@@ -418,12 +368,6 @@ protected:
     amrex::Real pres_crse_scale;
     amrex::Real pres_fine_scale;
 #endif
-
-    //
-    // Non-hydro source terms.
-    //
-    amrex::Array<std::unique_ptr<amrex::MultiFab> > old_sources;
-    amrex::Array<std::unique_ptr<amrex::MultiFab> > new_sources;
 
     //
     // State data to hold if we want to do a retry.
@@ -533,12 +477,6 @@ protected:
     static amrex::Real getCPUTime();
 
     bool             FillPatchedOldState_ok;
-
-    // There can be only one Gravity object, it covers all levels:
-    static class Gravity *gravity;
-
-    // There can be only one Diffusion object, it covers all levels:
-    static class Diffusion *diffusion;
 
     // Name of the probin file and its length.
     static std::string probin_file;

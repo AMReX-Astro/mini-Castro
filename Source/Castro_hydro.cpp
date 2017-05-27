@@ -21,9 +21,6 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
 
   sources_for_hydro.setVal(0.0);
 
-  for (int n = 0; n < num_src; ++n)
-    MultiFab::Add(sources_for_hydro, *old_sources[n], 0, 0, NUM_STATE, 0);
-
   int finest_level = parent->finestLevel();
 
   const Real *dx = geom.CellSize();
@@ -150,29 +147,6 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
 
   if (verbose)
     flush_output();
-
-
-  if (print_update_diagnostics)
-    {
-
-      bool local = true;
-      Array<Real> hydro_update = evaluate_source_change(k_stage, dt, local);
-
-#ifdef BL_LAZY
-      Lazy::QueueReduction( [=] () mutable {
-#endif
-	  ParallelDescriptor::ReduceRealSum(hydro_update.dataPtr(), hydro_update.size(), ParallelDescriptor::IOProcessorNumber());
-
-	  if (ParallelDescriptor::IOProcessor())
-	    std::cout << std::endl << "  Contributions to the state from the hydro source:" << std::endl;
-
-	  print_source_change(hydro_update);
-
-#ifdef BL_LAZY
-	});
-#endif
-    }
-
 
   if (courno > 1.0) {
     std::cout << "WARNING -- EFFECTIVE CFL AT THIS LEVEL " << level << " IS " << courno << '\n';

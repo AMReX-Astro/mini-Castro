@@ -339,8 +339,7 @@ end subroutine swap_outflow_data
 ! :::
 
 subroutine ca_set_method_params(dm,Density,Xmom,Eden,Eint,Temp, &
-                                FirstAdv,FirstSpec,FirstAux,numadv, &
-                                gravity_type_in, gravity_type_len) &
+                                FirstAdv,FirstSpec,FirstAux,numadv) &
                                 bind(C, name="ca_set_method_params")
 
   use meth_params_module
@@ -356,8 +355,6 @@ subroutine ca_set_method_params(dm,Density,Xmom,Eden,Eint,Temp, &
   integer, intent(in) :: Density, Xmom, Eden, Eint, Temp, &
        FirstAdv, FirstSpec, FirstAux
   integer, intent(in) :: numadv
-  integer, intent(in) :: gravity_type_len
-  integer, intent(in) :: gravity_type_in(gravity_type_len)
   integer :: iadv, ispec
 
   integer :: QLAST
@@ -513,12 +510,6 @@ subroutine ca_set_method_params(dm,Density,Xmom,Eden,Eint,Temp, &
   ! This is a routine which links to the C++ ParallelDescriptor class
 
   call bl_pd_is_ioproc(ioproc)
-
-  allocate(character(len=gravity_type_len) :: gravity_type)
-
-  do i = 1, gravity_type_len
-     gravity_type(i:i) = char(gravity_type_in(i))
-  enddo
 
   !---------------------------------------------------------------------
   ! safety checks

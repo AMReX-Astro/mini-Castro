@@ -77,13 +77,6 @@ Castro::restart (Amr&     papa,
 
     AmrLevel::restart(papa,is,bReadSpecial);
 
-    if (input_version == 0) { // old checkpoint without PhiGrav_Type
-    }
-
-    if (input_version < 3) { // old checkpoint without Source_Type
-      state[Source_Type].restart(desc_lst[Source_Type], state[State_Type]);
-    }
-
     // For versions < 2, we didn't store all three components
     // of the momenta in the checkpoint when doing 1D or 2D simulations.
     // So the state data that was read in will be a MultiFab with a
@@ -273,13 +266,6 @@ Castro::set_state_in_checkpoint (Array<int>& state_in_checkpoint)
 {
   for (int i=0; i<num_state_type; ++i)
     state_in_checkpoint[i] = 1;
-
-  for (int i=0; i<num_state_type; ++i) {
-    if (input_version < 3 && i == Source_Type) {
-      // We are reading an old checkpoint with no Source_Type
-      state_in_checkpoint[i] = 0;
-    }
-  }
 }
 
 void
@@ -347,12 +333,6 @@ void
 Castro::setPlotVariables ()
 {
   AmrLevel::setPlotVariables();
-
-  // Don't add the Source_Type data to the plotfile, we only
-  // want to store it in the checkpoints.
-
-  for (int i = 0; i < desc_lst[Source_Type].nComp(); i++)
-      parent->deleteStatePlotVar(desc_lst[Source_Type].name(i));
 
   ParmParse pp("castro");
 
