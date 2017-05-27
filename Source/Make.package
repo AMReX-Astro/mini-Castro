@@ -17,6 +17,10 @@ FEXE_headers += Castro_F.H
 FEXE_headers += Problem_F.H
 FEXE_headers += Castro_error_F.H
 
+CEXE_headers += castro_params.H
+CEXE_headers += castro_queries.H
+CEXE_headers += castro_defaults.H
+
 ca_f90EXE_sources += ppm_$(DIM)d.f90
 
 ca_F90EXE_sources += Castro_mol_$(DIM)d.F90 
