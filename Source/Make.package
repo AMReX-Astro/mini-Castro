@@ -21,14 +21,14 @@ CEXE_headers += castro_params.H
 CEXE_headers += castro_queries.H
 CEXE_headers += castro_defaults.H
 
-ca_F90EXE_sources += ppm_$(DIM)d.F90
+ca_F90EXE_sources += ppm.F90
 
-ca_F90EXE_sources += Castro_mol_$(DIM)d.F90 
+ca_F90EXE_sources += Castro_mol.F90 
 
-ca_F90EXE_sources += riemann_$(DIM)d.F90 
+ca_F90EXE_sources += riemann.F90 
 
-ca_F90EXE_sources += bc_fill_$(DIM)d.F90
-ca_F90EXE_sources += Prob_$(DIM)d.F90
+ca_F90EXE_sources += bc_fill.F90
+ca_F90EXE_sources += Prob.F90
 ca_F90EXE_sources += probdata.F90
 
 ca_F90EXE_sources += Castro_nd.F90
