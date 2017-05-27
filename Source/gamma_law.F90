@@ -18,6 +18,12 @@ module actual_eos_module
 
   logical, save :: assume_neutral
 
+  ! boltzmann's constant
+  real(kind=dp_t), parameter :: k_B = 1.3806488e-16_dp_t   ! erg/K
+
+  ! avogradro's Number
+  real(kind=dp_t), parameter :: n_A = 6.02214129e23_dp_t   ! mol^-1
+
 contains
 
   subroutine actual_eos_init
@@ -41,7 +47,6 @@ contains
 
   subroutine actual_eos(input, state)
 
-    use fundamental_constants_module, only: k_B, n_A
     use network, only: aion, zion
 
     implicit none
