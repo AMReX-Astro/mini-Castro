@@ -213,9 +213,6 @@ Castro::read_params ()
 
     // sanity checks
 
-    if (grown_factor < 1)
-       amrex::Error("grown_factor must be integer >= 1");
-
     if (cfl <= 0.0 || cfl > 1.0)
       amrex::Error("Invalid CFL factor; must be between zero and one.");
 
@@ -261,8 +258,6 @@ Castro::read_params ()
 }
 
 Castro::Castro ()
-    :
-    prev_state(num_state_type)
 {
 }
 
@@ -273,8 +268,7 @@ Castro::Castro (Amr&            papa,
 		const DistributionMapping& dm,
                 Real            time)
     :
-    AmrLevel(papa,lev,level_geom,bl,dm,time),
-    prev_state(num_state_type)
+    AmrLevel(papa,lev,level_geom,bl,dm,time)
 {
     buildMetrics();
 
@@ -426,8 +420,6 @@ Castro::initMFs()
     // This array holds the hydrodynamics update.
 
     hydro_source.define(grids,dmap,NUM_STATE,0);
-
-    post_step_regrid = 0;
 
 }
 
@@ -581,8 +573,6 @@ Castro::initData ()
 	   AmrLevel::FillPatch(*this, S_new, ng, cur_time, State_Type, 0, S_new.nComp());
     }
 
-    set_special_tagging_flag(cur_time);
-
     if (verbose && ParallelDescriptor::IOProcessor())
        std::cout << "Done initializing the level " << level << " data " << std::endl;
 }
@@ -626,12 +616,6 @@ Castro::init ()
     Real dt_old = (cur_time - prev_time)/(Real)parent->MaxRefRatio(level-1);
 
     Real time = cur_time;
-
-    // If we just triggered a regrid, we need to account for the fact that
-    // the data on the coarse level has already been advanced.
-
-    if (getLevel(level-1).post_step_regrid)
-	time = prev_time;
 
     setTimeLevel(time,dt_old,dt);
 
@@ -948,8 +932,6 @@ Castro::post_restart ()
 
    Real cur_time = state[State_Type].curTime();
 
-    set_special_tagging_flag(cur_time);
-
     // initialize the Godunov state array used in hydro -- we wait
     // until here so that ngroups is defined (if needed) in
     // rad_params_module
@@ -1029,14 +1011,6 @@ Castro::post_init (Real stop_time)
 
         if (sum_int_test || sum_per_test)
 	  sum_integrated_quantities();
-
-}
-
-void
-Castro::post_grown_restart ()
-{
-    if (level > 0)
-        return;
 
 }
 
@@ -1298,13 +1272,6 @@ Castro::errorEst (TagBoxArray& tags,
 
     Real t = time;
 
-    // If we are forcing a post-timestep regrid,
-    // note that we need to use the new time here,
-    // not the old time.
-
-    if (post_step_regrid)
-	t = get_state_data(State_Type).curTime();
-
     // Apply each of the built-in tagging functions.
 
     for (int j = 0; j < err_list.size(); j++)
@@ -1473,25 +1440,6 @@ Castro::computeTemp(MultiFab& State)
 	ca_compute_temp(ARLIM_3D(bx.loVect()), ARLIM_3D(bx.hiVect()),
 			BL_TO_FORTRAN_3D(State[mfi]), &idx);
     }
-}
-
-void
-Castro::set_special_tagging_flag(Real time)
-{
-   if (!do_special_tagging) return;
-
-   MultiFab& S_new = get_new_data(State_Type);
-   Real max_den = S_new.norm0(Density);
-
-   int flag_was_changed = 0;
-   ca_set_special_tagging_flag(max_den,&flag_was_changed);
-   if (ParallelDescriptor::IOProcessor()) {
-      if (flag_was_changed == 1) {
-        std::ofstream os("Bounce_time",std::ios::out);
-        os << "T_Bounce " << time << std::endl;
-        os.close();
-      }
-   }
 }
 
 Real

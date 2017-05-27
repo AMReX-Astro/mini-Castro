@@ -17,11 +17,7 @@ Castro::sum_integrated_quantities ()
     Real time        = state[State_Type].curTime();
     Real mass        = 0.0;
     Real mom[3]      = { 0.0 };
-    Real ang_mom[3]  = { 0.0 };
-    Real com[3]      = { 0.0 };
-    Real com_vel[3]  = { 0.0 };
     Real rho_e       = 0.0;
-    Real rho_K       = 0.0;
     Real rho_E       = 0.0;
     int datwidth     = 14;
     int datprecision = 6;
@@ -35,12 +31,6 @@ Castro::sum_integrated_quantities ()
 	mom[1] += ca_lev.volWgtSum("ymom", time, local_flag);
 	mom[2] += ca_lev.volWgtSum("zmom", time, local_flag);
 
-	if (show_center_of_mass) {
-	   com[0] += ca_lev.locWgtSum("density", time, 0, local_flag);
-	   com[1] += ca_lev.locWgtSum("density", time, 1, local_flag);
-	   com[2] += ca_lev.locWgtSum("density", time, 2, local_flag);
-	}
-
        rho_e += ca_lev.volWgtSum("rho_e", time, local_flag);
        rho_E += ca_lev.volWgtSum("rho_E", time, local_flag);
     }
@@ -49,16 +39,12 @@ Castro::sum_integrated_quantities ()
     {
 
        const int nfoo = 10;
-	Real foo[nfoo] = {mass, mom[0], mom[1], mom[2], ang_mom[0], ang_mom[1], ang_mom[2],
-			  rho_e, rho_K, rho_E};
+	Real foo[nfoo] = {mass, mom[0], mom[1], mom[2], rho_e, rho_E};
 #ifdef BL_LAZY
         Lazy::QueueReduction( [=] () mutable {
 #endif
 
 	ParallelDescriptor::ReduceRealSum(foo, nfoo, ParallelDescriptor::IOProcessorNumber());
-
-	if (show_center_of_mass)
-	    ParallelDescriptor::ReduceRealSum(com, 3, ParallelDescriptor::IOProcessorNumber());
 
 	if (ParallelDescriptor::IOProcessor()) {
 
@@ -67,11 +53,7 @@ Castro::sum_integrated_quantities ()
 	    mom[0]     = foo[i++];
             mom[1]     = foo[i++];
             mom[2]     = foo[i++];
-	    ang_mom[0] = foo[i++];
-	    ang_mom[1] = foo[i++];
-	    ang_mom[2] = foo[i++];
 	    rho_e      = foo[i++];
-	    rho_K      = foo[i++];
             rho_E      = foo[i++];
 	    std::cout << '\n';
 	    std::cout << "TIME= " << time << " MASS        = "   << mass      << '\n';
@@ -110,23 +92,9 @@ Castro::sum_integrated_quantities ()
 	       }
 
 	    }
-	    
-	    if (show_center_of_mass) {
-	        for (int i = 0; i <= 2; i++) {
-		  com[i]     = com[i] / mass;
-		  com_vel[i] = mom[i] / mass;
-		}
 
-		std::cout << "TIME= " << time << " CENTER OF MASS X-LOC = " << com[0]     << '\n';
-		std::cout << "TIME= " << time << " CENTER OF MASS X-VEL = " << com_vel[0] << '\n';
-
-		std::cout << "TIME= " << time << " CENTER OF MASS Y-LOC = " << com[1]     << '\n';
-		std::cout << "TIME= " << time << " CENTER OF MASS Y-VEL = " << com_vel[1] << '\n';
-
-		std::cout << "TIME= " << time << " CENTER OF MASS Z-LOC = " << com[2]     << '\n';
-		std::cout << "TIME= " << time << " CENTER OF MASS Z-VEL = " << com_vel[2] << '\n';
-	    }
 	}
+	    
 #ifdef BL_LAZY
 	});
 #endif

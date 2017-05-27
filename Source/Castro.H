@@ -233,10 +233,6 @@ public:
     // Do work after init().
     //
     virtual void post_init (amrex::Real stop_time) override;
-    //
-    // Do work after restart with grown_factor > 1
-    //
-    void post_grown_restart ();
 
     //
     // Error estimation for regridding.
@@ -288,10 +284,6 @@ public:
     amrex::Real volProductSum (const std::string& name1, const std::string& name2, amrex::Real time, bool local=false);
 
     amrex::Real locSquaredSum (const std::string& name, amrex::Real time, int idir, bool local=false);
-
-    amrex::Real get_point_mass ();
-
-    void set_special_tagging_flag (amrex::Real time);
 
     void add_force_to_sources (amrex::MultiFab& force, amrex::MultiFab& sources, amrex::MultiFab& state);
 
@@ -365,11 +357,6 @@ protected:
 #endif
 
     //
-    // State data to hold if we want to do a retry.
-    //
-    amrex::Array<std::unique_ptr<amrex::StateData> > prev_state;
-
-    //
     // Storage for the method of lines stages
     amrex::Array<std::unique_ptr<amrex::MultiFab> > k_mol;
     //
@@ -422,10 +409,6 @@ protected:
     void sum_integrated_quantities ();
 
     void write_info ();
-
-#ifdef POINTMASS
-    void pointmass_update(amrex::Real time, amrex::Real dt);
-#endif
 
     void stopJob ();
 
@@ -536,15 +519,5 @@ Castro::get_output_at_completion()
 {
     return output_at_completion;
 }
-
-#ifdef POINTMASS
-inline
-amrex::Real
-Castro::get_point_mass ()
-{
-    return point_mass;
-}
-#endif
-
 
 #endif /*_Castro_H_*/
