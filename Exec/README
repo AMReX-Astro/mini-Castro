@@ -1,0 +1,151 @@
+convective_flame:
+
+  This models a laterally propagating flame through a stratified
+  atmosphere.  A constant conductivity and simple analytic burning
+  rate is used.  Rotation, via the Coriolis force, is included to
+  confine the flame. 
+
+
+Detonation:
+
+  A 1-d detonation wave propagating through a uniform medium.
+
+
+diffusion_test:
+
+  A pure diffusion problem -- no hydro.  A simple Gaussian profile
+  is setup and diffused, and should remain a Gaussian with time
+  (but with a different width and amplitude).
+
+
+double_bubble:
+
+  Initialize 1 or 2 bubbles in a stratified atmosphere (isothermal or
+  isentropic) and allow for the bubbles to have the same or a
+  different gamma from one another / the background atmosphere.  This
+  uses the multigamma EOS.
+
+
+Dustcollapse:
+
+  A pressureless cloud collapse that is a standard test problem for
+  gravity.  An analytic solution that describes the radius of the
+  sphere as a function of time is found in Colgate and White (1966).
+  This problem is also found in the FLASH User's Guide and Mönchmeyer
+  and Müller (1989).
+
+
+evrard_collapse:
+
+
+
+gresho_vortex:
+
+  The Gresho vortex problem (see, e.g., Miczek, Roeple, and Edelmann
+  2015).  This is a stationary vortex -- it should remain unchanged
+  with time.  The problem parameters allow you to set the Mach number.
+
+
+HCBubble:
+
+
+
+hydrostatic_adjust:
+
+  A 1-d hydrostatic atmosphere that evolves in response to heating.
+  This is used as the reference calculation for the Maestro basestate
+  evolution algorithm.
+
+
+KH:
+
+  A Kelvin-Helmholtz shear instability problem
+
+
+Noh:
+
+
+
+oddeven:
+
+  A grid-aligned shock hitting a very small density perturbation.
+  This demonstrates the odd-even decoupling problem that the
+  hybrid_riemann option prevents.
+
+
+reacting_bubble:
+
+  A reacting bubble rise problem that was featured in the Maestro
+  paper III algorithm paper.
+
+
+rotating_torus:
+
+
+
+RT:
+
+  A Rayleigh-Taylor instability.  This problem setup was used in
+  the first Castro paper.
+
+
+RT_particles:
+
+  A Rayleigh-Taylor instability that uses particles.  It is intended
+  to be used in debugging the particle advection algorithm.
+
+
+Sedov:
+
+  The standard Sedov-Taylor blast wave problem.  This setup was used
+  in the original Castro paper.
+
+
+Sod:
+
+  A one-dimensional shock tube setup, including the classic Sod
+  problem.  This setup was used in the original Castro paper.
+
+
+Sod_stellar:
+
+  A version of the Sod shock tube for the general stellar equation
+  of state.  This setup and the included inputs files was used in
+  Zingale & Katz (2015).
+
+
+StarGrav:
+
+  Initialize a spherical model on a multi-d grid in hydrostatic
+  equilibrium.
+
+
+test_convect:
+
+  This is a version of the MAESTRO test_convect problem that was used
+  in MAESTRO paper III, and later in the appendix of the sub-Chandra II
+  MAESTRO paper.
+  
+
+toy_convect:
+
+  A simple nova-like convection problem with an external heating
+  source.  This problem shows how to use the model parser to
+  initialize a 1-d atmosphere on the Castro grid, incorporate a custom
+  tagging routine, and write a custom diagnostics routine.
+
+
+toy_flame:
+
+  A simple 1-d laminar flame.
+
+
+uniform_cube_sphere:
+
+
+
+Vortices_LWAcoustics:
+
+
+
+xrb_mixed:
