@@ -17,11 +17,10 @@ contains
 
   subroutine uflaten(lo, hi, p, u, v, w, flatn, q_lo, q_hi)
 
-    use meth_params_module, only : small_pres
     use prob_params_module, only : dg
     use bl_constants_module
-
     use amrex_fort_module, only : rt => amrex_real
+
     implicit none
 
     integer, intent(in) :: lo(3), hi(3)
@@ -34,6 +33,8 @@ contains
     real(rt)        , intent(inout) :: flatn(q_lo(1):q_hi(1),q_lo(2):q_hi(2),q_lo(3):q_hi(3))
 
     integer :: i, j, k, ishft
+
+    real(rt), parameter :: small_pres = 1.e-200_rt
 
     real(rt)         :: denom, zeta, tst, tmp, ftmp
 

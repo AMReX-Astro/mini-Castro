@@ -529,14 +529,6 @@ subroutine ca_set_method_params(dm,Density,Xmom,Eden,Eint,Temp, &
      small_temp = 1.e-200_rt
   endif
 
-  if (small_pres <= 0.e0_rt) then
-     small_pres = 1.e-200_rt
-  endif
-
-  if (small_ener <= 0.e0_rt) then
-     small_ener = 1.e-200_rt
-  endif
-
   ! Note that the EOS may modify our choices because of its
   ! internal limitations, so the small_dens and small_temp
   ! may be modified coming back out of this routine.

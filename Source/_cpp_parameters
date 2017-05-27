@@ -23,15 +23,9 @@ lin_limit_state_interp       int           0
 # be overridden since radiation needs at least one ghost zone.
 state_nghost                 int           0
 
-# do we do the hyperbolic reflux at coarse-fine interfaces?
-do_reflux                    int           1
-
 #-----------------------------------------------------------------------------
 # category: hydrodynamics
 #-----------------------------------------------------------------------------
-
-# the coefficient of the artificial viscosity
-difmag                       Real          0.1                y
 
 # the small density cutoff.  Densities below this value will be reset
 small_dens                   Real         -1.e200             y
@@ -39,22 +33,6 @@ small_dens                   Real         -1.e200             y
 # the small temperature cutoff.  Temperatures below this value will
 # be reset
 small_temp                   Real         -1.e200             y
-
-# the small pressure cutoff.  Pressures below this value will be reset
-small_pres                   Real         -1.e200             y
-
-# the small specific internal energy cutoff.  Internal energies below this
-# value will be reset
-small_ener                   Real         -1.e200             y
-
-# permits hydro to be turned on and off for running pure rad problems
-do_hydro                     int          -1                  y
-
-# reconstruction type:
-# 0: piecewise linear;
-# 1: classic Colella \& Woodward ppm;
-# 2: extrema-preserving ppm
-ppm_type                     int           1                  y
 
 # various methods of giving temperature a larger role in the
 # reconstruction---see Zingale \& Katz 2015
@@ -120,12 +98,6 @@ dual_energy_eta2             Real          1.0e-4             y
 # Threshold value of (E - K) / E such that above eta3, the temperature used
 # in the burning module is derived from E-K; otherwise, we use UEINT.
 dual_energy_eta3             Real          1.0e0              y
-
-# for the piecewise linear reconstruction, do we subtract off $(\rho g)$
-# from the pressure before limiting?
-use_pslope                   int           1                  y
-
-fix_mass_flux                int           0                  y
 
 # Should we limit the density fluxes so that we do not create small densities?
 limit_fluxes_on_small_dens   int           0                  y
@@ -212,17 +184,12 @@ change_max                   Real          1.1
 # determines whether we use accelerators for specific loops
 do_acc                       int          -1                  y
 
-bndry_func_thread_safe       int           1
-
 #-----------------------------------------------------------------------------
 # category: diagnostics
 #-----------------------------------------------------------------------------
 
 # display warnings in Fortran90 routines
 print_fortran_warnings       int           (0, 1)
-
-# calculate losses of material through physical grid boundaries
-track_grid_losses            int            0                    y
 
 # how often (number of coarse timesteps) to compute integral sums (for runtime diagnostics)
 sum_interval                 int           -1
@@ -236,6 +203,3 @@ hard_cfl_limit               int           1
 # a string describing the simulation that will be copied into the
 # plotfile's {\tt job\_info} file
 job_name                     string        ""
-
-# write a final plotfile and checkpoint upon completion
-output_at_completion         int           1

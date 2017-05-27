@@ -18,10 +18,7 @@ contains
   subroutine ppm_reconstruct(s, s_lo, s_hi, &
                              flatn, f_lo, f_hi, &
                              sxm, sxp, sym, syp, szm, szp, sd_lo, sd_hi, &
-                             ilo1, ilo2, ihi1, ihi2, dx, k3d, kc, &
-                             force_type_in)
-
-    use meth_params_module, only : ppm_type
+                             ilo1, ilo2, ihi1, ihi2, dx, k3d, kc)
 
     implicit none
 
@@ -41,13 +38,6 @@ contains
     real(rt)        , intent(inout) :: szp( sd_lo(1): sd_hi(1), sd_lo(2): sd_hi(2), sd_lo(3): sd_hi(3))
     real(rt)        , intent(in) :: dx(3)
 
-    integer, intent(in), optional :: force_type_in
-
-    integer :: ppm_type_to_use
-
-    ppm_type_to_use = ppm_type
-    if (present(force_type_in)) ppm_type_to_use = force_type_in
-
     call ppm_type1(s, s_lo, s_hi, &
                    flatn, f_lo, f_hi, &
                    sxm, sxp, sym, syp, szm, szp, sd_lo, sd_hi, &
@@ -66,9 +56,8 @@ contains
                        ilo1, ilo2, ihi1, ihi2, dx, k3d, kc)
 
     use mempool_module, only : bl_allocate, bl_deallocate
-    use meth_params_module, only : ppm_type
-
     use amrex_fort_module, only : rt => amrex_real
+
     implicit none
 
     integer, intent(in) ::  s_lo(3),  s_hi(3)
@@ -102,9 +91,6 @@ contains
 
     ! s_{i+\half}^{H.O.}
     real(rt)        , pointer :: sedge(:,:)
-
-    if (ppm_type .ne. 1) &
-         call bl_error("Should have ppm_type = 1 in ppm_type1")
 
     if (s_lo(1) .gt. ilo1-3 .or. s_lo(2) .gt. ilo2-3) then
          print *,'Low bounds of array: ',s_lo(1), s_lo(2)
