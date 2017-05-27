@@ -802,35 +802,11 @@ Castro::post_timestep (int iteration)
 }
 
 void
-Castro::post_restart ()
-{
-   BL_PROFILE("Castro::post_restart()");
-
-   Real cur_time = state[State_Type].curTime();
-
-    // initialize the Godunov state array used in hydro -- we wait
-    // until here so that ngroups is defined (if needed) in
-    // rad_params_module
-    ca_init_godunov_indices();
-    // NQ will be used to dimension the primitive variable state
-    // vector it will include the "pure" hydrodynamical variables +
-    // any radiation variables
-    NQ = QVAR + QRADVAR;
-
-}
-
-void
 Castro::postCoarseTimeStep (Real cumtime)
 {
     // postCoarseTimeStep() is only called by level 0.
     BL_ASSERT(level == 0);
     AmrLevel::postCoarseTimeStep(cumtime);
-}
-
-void
-Castro::check_for_post_regrid (Real time)
-{
-
 }
 
 void
