@@ -645,14 +645,10 @@ contains
                                               vol,vol_lo,vol_hi, &
                                               flux1,flux1_lo,flux1_hi, &
                                               area1,area1_lo,area1_hi, &
-#if (BL_SPACEDIM >= 2)
                                               flux2,flux2_lo,flux2_hi, &
                                               area2,area2_lo,area2_hi, &
-#endif
-#if (BL_SPACEDIM == 3)
                                               flux3,flux3_lo,flux3_hi, &
                                               area3,area3_lo,area3_hi, &
-#endif
                                               lo,hi,dt,dx)
 
     use bl_constants_module, only: ZERO, HALF, ONE, TWO
@@ -674,14 +670,10 @@ contains
     integer, intent(in) :: lo(3), hi(3)
     integer, intent(in) :: flux1_lo(3), flux1_hi(3)
     integer, intent(in) :: area1_lo(3), area1_hi(3)
-#if (BL_SPACEDIM >= 2)
     integer, intent(in) :: flux2_lo(3), flux2_hi(3)
     integer, intent(in) :: area2_lo(3), area2_hi(3)
-#endif
-#if (BL_SPACEDIM == 3)
     integer, intent(in) :: flux3_lo(3), flux3_hi(3)
     integer, intent(in) :: area3_lo(3), area3_hi(3)
-#endif
 
     real(rt)        , intent(in   ) :: dt, dx(3)
 
@@ -690,14 +682,10 @@ contains
     real(rt)        , intent(in   ) :: vol(vol_lo(1):vol_hi(1),vol_lo(2):vol_hi(2),vol_lo(3):vol_hi(3))
     real(rt)        , intent(inout) :: flux1(flux1_lo(1):flux1_hi(1),flux1_lo(2):flux1_hi(2),flux1_lo(3):flux1_hi(3),NVAR)
     real(rt)        , intent(in   ) :: area1(area1_lo(1):area1_hi(1),area1_lo(2):area1_hi(2),area1_lo(3):area1_hi(3))
-#if (BL_SPACEDIM >= 2)
     real(rt)        , intent(inout) :: flux2(flux2_lo(1):flux2_hi(1),flux2_lo(2):flux2_hi(2),flux2_lo(3):flux2_hi(3),NVAR)
     real(rt)        , intent(in   ) :: area2(area2_lo(1):area2_hi(1),area2_lo(2):area2_hi(2),area2_lo(3):area2_hi(3))
-#endif
-#if (BL_SPACEDIM == 3)
     real(rt)        , intent(inout) :: flux3(flux3_lo(1):flux3_hi(1),flux3_lo(2):flux3_hi(2),flux3_lo(3):flux3_hi(3),NVAR)
     real(rt)        , intent(in   ) :: area3(area3_lo(1):area3_hi(1),area3_lo(2):area3_hi(2),area3_lo(3):area3_hi(3))
-#endif
 
     real(rt)        , pointer :: thetap_dens(:,:,:), thetam_dens(:,:,:)
     real(rt)        , pointer :: thetap_rhoe(:,:,:), thetam_rhoe(:,:,:)
@@ -991,7 +979,6 @@ contains
     ! Now do the y-direction. The logic is all the same as for the x-direction,
     ! so the comments are skipped.
 
-#if (BL_SPACEDIM >= 2)
     thetap_dens(:,:,:) = ONE
     thetam_dens(:,:,:) = ONE
     thetap_rhoe(:,:,:) = ONE
@@ -1157,12 +1144,9 @@ contains
        enddo
     enddo
 
-#endif
-
     ! Now do the z-direction. The logic is all the same as for the x-direction,
     ! so the comments are skipped.
 
-#if (BL_SPACEDIM == 3)
     thetap_dens(:,:,:) = ONE
     thetam_dens(:,:,:) = ONE
     thetap_rhoe(:,:,:) = ONE
@@ -1327,8 +1311,6 @@ contains
           enddo
        enddo
     enddo
-
-#endif
 
     call bl_deallocate(thetap_dens)
     call bl_deallocate(thetam_dens)

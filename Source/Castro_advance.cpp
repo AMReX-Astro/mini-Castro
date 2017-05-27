@@ -256,11 +256,6 @@ Castro::initialize_advance(Real time, Real dt, int amr_iteration, int amr_ncycle
     for (int dir = 0; dir < 3; ++dir)
 	fluxes[dir]->setVal(0.0);
 
-#if (BL_SPACEDIM <= 2)
-    if (!Geometry::IsCartesian())
-	P_radial.setVal(0.0);
-#endif
-
 }
 
 

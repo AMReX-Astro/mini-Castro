@@ -323,22 +323,11 @@ protected:
     // Hydrodynamic (and radiation) fluxes.
     //
     amrex::Array<std::unique_ptr<amrex::MultiFab> > fluxes;
-#if (BL_SPACEDIM <= 2)
-    amrex::MultiFab         P_radial;
-#endif
     amrex::FluxRegister flux_reg;
-#if (BL_SPACEDIM <= 2)
-    amrex::FluxRegister pres_reg;
-#endif
 
     // Scalings for the flux registers.
     amrex::Real flux_crse_scale;
     amrex::Real flux_fine_scale;
-
-#if (BL_SPACEDIM <= 2)
-    amrex::Real pres_crse_scale;
-    amrex::Real pres_fine_scale;
-#endif
 
     //
     // Storage for the method of lines stages
@@ -397,7 +386,6 @@ protected:
     //
     amrex::MultiFab             volume;
     amrex::MultiFab             area[BL_SPACEDIM];
-    amrex::MultiFab             dLogArea[1];
     amrex::Array< amrex::Array<amrex::Real> > radius;
 
     //

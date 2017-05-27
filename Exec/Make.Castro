@@ -9,6 +9,11 @@ COND_HOME ?= $(TOP)/Microphysics/conductivity
 
 EBASE = Castro
 
+# This application only supports 3D.
+ifneq ($(DIM),3)
+  $(error StarLord only supports BL_SPACEDIM == 3)
+endif
+
 # EXTERN_CORE is simply a list of the directories we use in EOS, Networks and Util
 # this list will be searched for runtime parameters
 EXTERN_CORE ?=

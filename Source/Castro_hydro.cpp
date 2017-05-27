@@ -31,9 +31,7 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
   {
 
     FArrayBox flux[BL_SPACEDIM];
-#if (BL_SPACEDIM <= 2)
-    FArrayBox pradial(Box::TheUnitBox(),1);
-#endif
+
     FArrayBox q, qaux;
 
     int priv_nstep_fsp = -1;
@@ -79,12 +77,6 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
 	  flux[i].resize(bxtmp,NUM_STATE);
 	}
 
-#if (BL_SPACEDIM <= 2)
-	if (!Geometry::IsCartesian()) {
-	  pradial.resize(amrex::surroundingNodes(bx,0),1);
-	}
-#endif
-	  
 	ca_mol_single_stage
 	  (&time,
 	   lo, hi, domain_lo, domain_hi,
@@ -97,15 +89,9 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
 	   D_DECL(BL_TO_FORTRAN(flux[0]),
 		  BL_TO_FORTRAN(flux[1]),
 		  BL_TO_FORTRAN(flux[2])),
-#if (BL_SPACEDIM < 3)
-	   BL_TO_FORTRAN(pradial),
-#endif
 	   D_DECL(BL_TO_FORTRAN(area[0][mfi]),
 		  BL_TO_FORTRAN(area[1][mfi]),
 		  BL_TO_FORTRAN(area[2][mfi])),
-#if (BL_SPACEDIM < 3)
-	   BL_TO_FORTRAN(dLogArea[0][mfi]),
-#endif
 	   BL_TO_FORTRAN(volume[mfi]),
 	   &cflLoc, verbose);
 
@@ -116,11 +102,6 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
 				      mfi.nodaltilebox(i), mfi.nodaltilebox(i), 0, 0, NUM_STATE);
 	}
 
-#if (BL_SPACEDIM <= 2)
-	if (!Geometry::IsCartesian()) {
-	  P_radial[mfi].plus(pradial,mfi.nodaltilebox(0),0,0,1);
-	}
-#endif
       } // MFIter loop
 
 #ifdef _OPENMP

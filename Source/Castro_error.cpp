@@ -17,11 +17,7 @@ Castro::ErrorSetUp ()
     err_list.add("Temp",1,ErrorRec::Special,ca_temperror);
     err_list.add("pressure",1,ErrorRec::Special,ca_presserror);
     err_list.add("x_velocity",1,ErrorRec::Special,ca_velerror);
-#if (BL_SPACEDIM >= 2)
     err_list.add("y_velocity",1,ErrorRec::Special,ca_velerror);
-#endif
-#if (BL_SPACEDIM == 3)
     err_list.add("z_velocity",1,ErrorRec::Special,ca_velerror);
-#endif
 
 }

@@ -184,15 +184,9 @@ extern "C"
      D_DECL(BL_FORT_FAB_ARG(xflux),
             BL_FORT_FAB_ARG(yflux),
             BL_FORT_FAB_ARG(zflux)),
-#if (BL_SPACEDIM < 3)
-     BL_FORT_FAB_ARG(pradial),
-#endif
      D_DECL(BL_FORT_FAB_ARG(xarea),
             BL_FORT_FAB_ARG(yarea),
             BL_FORT_FAB_ARG(zarea)),
-#if (BL_SPACEDIM < 3)
-     const BL_FORT_FAB_ARG(dloga),
-#endif
      const BL_FORT_FAB_ARG(volume),
      amrex::Real* cflLoc,
      const int&  verbose,
@@ -219,15 +213,9 @@ extern "C"
      D_DECL(BL_FORT_FAB_ARG(xflux),
             BL_FORT_FAB_ARG(yflux),
             BL_FORT_FAB_ARG(zflux)),
-#if (BL_SPACEDIM < 3)
-     BL_FORT_FAB_ARG(pradial),
-#endif
      D_DECL(BL_FORT_FAB_ARG(xarea),
             BL_FORT_FAB_ARG(yarea),
             BL_FORT_FAB_ARG(zarea)),
-#if (BL_SPACEDIM < 3)
-     const BL_FORT_FAB_ARG(dloga),
-#endif
      const BL_FORT_FAB_ARG(volume),
      amrex::Real* cflLoc,
      const int&  verbose);

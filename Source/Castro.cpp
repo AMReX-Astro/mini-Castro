@@ -73,14 +73,7 @@ Array<Real> Castro::c_mol;
 
 std::string  Castro::probin_file = "probin";
 
-
-#if BL_SPACEDIM == 1
-IntVect      Castro::hydro_tile_size(1024);
-#elif BL_SPACEDIM == 2
-IntVect      Castro::hydro_tile_size(1024,16);
-#else
 IntVect      Castro::hydro_tile_size(1024,16,16);
-#endif
 
 // this will be reset upon restart
 Real         Castro::previousCPUTimeUsed = 0.0;
@@ -184,55 +177,25 @@ Castro::read_params ()
         amrex::Error();
     }
 
-#if (BL_SPACEDIM == 1)
-    if ( Geometry::IsSPHERICAL() )
-    {
-      if ( (lo_bc[0] != Symmetry) && (Geometry::ProbLo(0) == 0.0) )
-      {
-        std::cerr << "ERROR:Castro::read_params: must set r=0 boundary condition to Symmetry for spherical\n";
-        amrex::Error();
-      }
-    }
-#elif (BL_SPACEDIM == 2)
-    if ( Geometry::IsSPHERICAL() )
-      {
-	amrex::Abort("We don't support spherical coordinate systems in 2D");
-      }
-#elif (BL_SPACEDIM == 3)
     if ( Geometry::IsRZ() )
-      {
+    {
 	amrex::Abort("We don't support cylindrical coordinate systems in 3D");
-      }
+    }
     else if ( Geometry::IsSPHERICAL() )
-      {
+    {
 	amrex::Abort("We don't support spherical coordinate systems in 3D");
-      }
-#endif
-
-
+    }
 
     // sanity checks
 
     if (cfl <= 0.0 || cfl > 1.0)
       amrex::Error("Invalid CFL factor; must be between zero and one.");
 
-    if (hybrid_riemann == 1 && BL_SPACEDIM == 1)
-      {
-        std::cerr << "hybrid_riemann only implemented in 2- and 3-d\n";
-        amrex::Error();
-      }
-
-    if (hybrid_riemann == 1 && (Geometry::IsSPHERICAL() || Geometry::IsRZ() ))
-      {
-        std::cerr << "hybrid_riemann should only be used for Cartesian coordinates\n";
-        amrex::Error();
-      }
-
     if (use_colglaz >= 0)
-      {
+    {
 	std::cerr << "ERROR:: use_colglaz is deprecated.  Use riemann_solver instead\n";
 	amrex::Error();
-      }
+    }
 
 
     // Make sure not to call refluxing if we're not actually doing any hydro.
@@ -345,11 +308,6 @@ Castro::buildMetrics ()
         geom.GetFaceArea(area[dir],dir);
     }
 
-    dLogArea[0].clear();
-#if (BL_SPACEDIM <= 2)
-    geom.GetDLogA(dLogArea[0],grids,dmap,0,NUM_GROW);
-#endif
-
     if (level == 0) setGridInfo();
 }
 
@@ -363,25 +321,10 @@ Castro::initMFs()
     for (int dir = 0; dir < BL_SPACEDIM; ++dir)
 	fluxes[dir].reset(new MultiFab(getEdgeBoxArray(dir), dmap, NUM_STATE, 0));
 
-    for (int dir = BL_SPACEDIM; dir < 3; ++dir)
-	fluxes[dir].reset(new MultiFab(get_new_data(State_Type).boxArray(), dmap, NUM_STATE, 0));
-
-#if (BL_SPACEDIM <= 2)
-    if (!Geometry::IsCartesian())
-	P_radial.define(getEdgeBoxArray(0), dmap, 1, 0);
-#endif
-
     if (do_reflux && level > 0) {
 
 	flux_reg.define(grids, dmap, crse_ratio, level, NUM_STATE);
 	flux_reg.setVal(0.0);
-
-#if (BL_SPACEDIM < 3)
-	if (!Geometry::IsCartesian()) {
-	    pres_reg.define(grids, dmap, crse_ratio, level, 1);
-	    pres_reg.setVal(0.0);
-	}
-#endif
 
     }
 
@@ -391,29 +334,6 @@ Castro::initMFs()
 
 	flux_crse_scale = -1.0;
 	flux_fine_scale = 1.0;
-
-	// The fine pressure scaling depends on dimensionality,
-	// as the dimensionality determines the number of
-	// adjacent zones. In 1D the face is a point so
-	// there's only one fine neighbor for a given coarse
-	// face; in 2D there's crse_ratio[1] faces adjacent
-	// to a face perpendicular to the radial dimension;
-	// and in 3D there would be crse_ratio**2, though
-	// we do not separate the pressure out in 3D. Note
-	// that the scaling by dt has already been handled
-	// in the construction of the P_radial array.
-
-	// The coarse pressure scaling is the same as for the
-	// fluxes, we want the total refluxing contribution
-	// over the full set of fine timesteps to equal P_radial.
-
-#if (BL_SPACEDIM == 1)
-	pres_crse_scale = 1.0;
-	pres_fine_scale = 1.0;
-#elif (BL_SPACEDIM == 2)
-	pres_crse_scale = 1.0;
-	pres_fine_scale = 1.0 / crse_ratio[1];
-#endif
 
     }
 
@@ -485,18 +405,13 @@ Castro::setGridInfo ()
 	// refined levels may not exist at the beginning of the simulation.
 
 	for (int dir = 0; dir < 3; dir++)
-	  if (dir < BL_SPACEDIM) {
+	{
 	    dx_level[3 * lev + dir] = dx_level[3 * (lev - 1) + dir] / ref_ratio[dir];
 	    int ncell = (domhi_level[3 * (lev - 1) + dir] - domlo_level[3 * (lev - 1) + dir] + 1) * ref_ratio[dir];
 	    domlo_level[3 * lev + dir] = domlo_level[dir];
 	    domhi_level[3 * lev + dir] = domlo_level[3 * lev + dir] + ncell - 1;
 	    ref_ratio_to_f[3 * (lev - 1) + dir] = ref_ratio[dir];
-	  } else {
-	    dx_level[3 * lev + dir] = 0.0;
-	    domlo_level[3 * lev + dir] = 0;
-	    domhi_level[3 * lev + dir] = 0;
-	    ref_ratio_to_f[3 * (lev - 1) + dir] = 0;
-	  }
+	}
 
 	n_error_buf_to_f[lev - 1] = parent->nErrorBuf(lev - 1);
       }
@@ -524,19 +439,11 @@ Castro::initData ()
     S_new.setVal(0.);
 
     // make sure dx = dy = dz -- that's all we guarantee to support
-#if (BL_SPACEDIM == 2)
-    const Real SMALL = 1.e-13;
-    if (fabs(dx[0] - dx[1]) > SMALL*dx[0])
-      {
-	amrex::Abort("We don't support dx != dy");
-      }
-#elif (BL_SPACEDIM == 3)
     const Real SMALL = 1.e-13;
     if ( (fabs(dx[0] - dx[1]) > SMALL*dx[0]) || (fabs(dx[0] - dx[2]) > SMALL*dx[0]) )
-      {
+    {
 	amrex::Abort("We don't support dx != dy != dz");
-      }
-#endif
+    }
 
     ca_set_amr_info(level, -1, -1, -1.0, -1.0);
 
@@ -555,7 +462,6 @@ Castro::initData ()
   	  (level, cur_time, lo, hi, ns,
   	   BL_TO_FORTRAN(S_new[mfi]), dx,
   	   gridloc.lo(), gridloc.hi());
-	  // Generate the initial hybrid momenta based on this user data.
 
           // Verify that the sum of (rho X)_i = rho at every cell
 	  const int idx = mfi.tileIndex();
@@ -1046,11 +952,6 @@ Castro::FluxRegCrseInit() {
     for (int i = 0; i < BL_SPACEDIM; ++i)
 	fine_level.flux_reg.CrseInit(*fluxes[i], i, 0, 0, NUM_STATE, flux_crse_scale);
 
-#if (BL_SPACEDIM <= 2)
-    if (!Geometry::IsCartesian())
-	fine_level.pres_reg.CrseInit(P_radial, 0, 0, 0, 1, pres_crse_scale);
-#endif
-
 }
 
 
@@ -1061,11 +962,6 @@ Castro::FluxRegFineAdd() {
 
     for (int i = 0; i < BL_SPACEDIM; ++i)
 	flux_reg.FineAdd(*fluxes[i], i, 0, 0, NUM_STATE, flux_fine_scale);
-
-#if (BL_SPACEDIM <= 2)
-    if (!Geometry::IsCartesian())
-	getLevel(level).pres_reg.FineAdd(P_radial, 0, 0, 0, 1, pres_fine_scale);
-#endif
 
 }
 
@@ -1102,23 +998,6 @@ Castro::reflux(int crse_level, int fine_level)
 	// We no longer need the flux register data, so clear it out.
 
 	reg->setVal(0.0);
-
-#if (BL_SPACEDIM <= 2)
-	if (!Geometry::IsCartesian()) {
-
-	    reg = &getLevel(lev).pres_reg;
-
-	    MultiFab dr(crse_lev.grids, crse_lev.dmap, 1, 0);
-	    dr.setVal(crse_lev.geom.CellSize(0));
-
-	    reg->ClearInternalBorders(crse_lev.geom);
-
-	    reg->Reflux(state, dr, 1.0, 0, Xmom, 1, crse_lev.geom);
-
-	    reg->setVal(0.0);
-
-	}
-#endif
 
     }
 

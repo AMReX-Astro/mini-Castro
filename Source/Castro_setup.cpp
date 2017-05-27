@@ -55,14 +55,10 @@ set_x_vel_bc(BCRec& bc, const BCRec& phys_bc)
   const int* hi_bc = phys_bc.hi();
   bc.setLo(0,norm_vel_bc[lo_bc[0]]);
   bc.setHi(0,norm_vel_bc[hi_bc[0]]);
-#if (BL_SPACEDIM >= 2)
   bc.setLo(1,tang_vel_bc[lo_bc[1]]);
   bc.setHi(1,tang_vel_bc[hi_bc[1]]);
-#endif
-#if (BL_SPACEDIM == 3)
   bc.setLo(2,tang_vel_bc[lo_bc[2]]);
   bc.setHi(2,tang_vel_bc[hi_bc[2]]);
-#endif
 }
 
 static
@@ -73,14 +69,10 @@ set_y_vel_bc(BCRec& bc, const BCRec& phys_bc)
   const int* hi_bc = phys_bc.hi();
   bc.setLo(0,tang_vel_bc[lo_bc[0]]);
   bc.setHi(0,tang_vel_bc[hi_bc[0]]);
-#if (BL_SPACEDIM >= 2)
   bc.setLo(1,norm_vel_bc[lo_bc[1]]);
   bc.setHi(1,norm_vel_bc[hi_bc[1]]);
-#endif
-#if (BL_SPACEDIM == 3)
   bc.setLo(2,tang_vel_bc[lo_bc[2]]);
   bc.setHi(2,tang_vel_bc[hi_bc[2]]);
-#endif
 }
 
 static
@@ -91,14 +83,10 @@ set_z_vel_bc(BCRec& bc, const BCRec& phys_bc)
   const int* hi_bc = phys_bc.hi();
   bc.setLo(0,tang_vel_bc[lo_bc[0]]);
   bc.setHi(0,tang_vel_bc[hi_bc[0]]);
-#if (BL_SPACEDIM >= 2)
   bc.setLo(1,tang_vel_bc[lo_bc[1]]);
   bc.setHi(1,tang_vel_bc[hi_bc[1]]);
-#endif
-#if (BL_SPACEDIM == 3)
   bc.setLo(2,norm_vel_bc[lo_bc[2]]);
   bc.setHi(2,norm_vel_bc[hi_bc[2]]);
-#endif
 }
 
 void
