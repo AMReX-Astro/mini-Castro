@@ -4,7 +4,6 @@
 #include <AMReX_ParmParse.H>
 #include "Castro.H"
 #include "Castro_F.H"
-#include <Derive_F.H>
 #include "AMReX_buildInfo.H"
 
 using std::string;
