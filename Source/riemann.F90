@@ -11,7 +11,7 @@ module riemann_module
                                  small_dens, small_temp, &
                                  cg_maxiter, cg_tol, cg_blend, &
                                  npassive, upass_map, qpass_map, &
-                                 riemann_solver, ppm_temp_fix, hybrid_riemann, &
+                                 riemann_solver, hybrid_riemann, &
                                  allow_negative_energy
   use amrex_fort_module, only : rt => amrex_real
 
@@ -121,58 +121,55 @@ contains
        enddo
     endif
 
-    if (ppm_temp_fix == 2) then
-       ! recompute the thermodynamics on the interface to make it
-       ! all consistent
+    ! recompute the thermodynamics on the interface to make it
+    ! all consistent
 
-       ! we want to take the edge states of rho, p, and X, and get
-       ! new values for gamc and (rho e) on the edges that are
-       ! thermodynamically consistent.
+    ! we want to take the edge states of rho, p, and X, and get
+    ! new values for gamc and (rho e) on the edges that are
+    ! thermodynamically consistent.
+    
+    do j = jlo, jhi
+       do i = ilo, ihi
 
-       do j = jlo, jhi
-          do i = ilo, ihi
+          ! this is an initial guess for iterations, since we
+          ! can't be certain that temp is on interfaces
+          eos_state % T = 10000.0e0_rt
 
-             ! this is an initial guess for iterations, since we
-             ! can't be certain that temp is on interfaces
-             eos_state % T = 10000.0e0_rt
+          ! minus state
+          eos_state % rho = qm(i,j,kc,QRHO)
+          eos_state % p   = qm(i,j,kc,QPRES)
+          eos_state % e   = qm(i,j,kc,QREINT)/qm(i,j,kc,QRHO)
+          eos_state % xn  = qm(i,j,kc,QFS:QFS+nspec-1)
+          eos_state % aux = qm(i,j,kc,QFX:QFX+naux-1)
 
-             ! minus state
-             eos_state % rho = qm(i,j,kc,QRHO)
-             eos_state % p   = qm(i,j,kc,QPRES)
-             eos_state % e   = qm(i,j,kc,QREINT)/qm(i,j,kc,QRHO)
-             eos_state % xn  = qm(i,j,kc,QFS:QFS+nspec-1)
-             eos_state % aux = qm(i,j,kc,QFX:QFX+naux-1)
+          call eos(eos_input_re, eos_state)
 
-             call eos(eos_input_re, eos_state)
+          qm(i,j,kc,QREINT) = eos_state % e * eos_state % rho
+          qm(i,j,kc,QPRES)  = eos_state % p
+          gamcm(i,j)        = eos_state % gam1
 
-             qm(i,j,kc,QREINT) = eos_state % e * eos_state % rho
-             qm(i,j,kc,QPRES)  = eos_state % p
-             gamcm(i,j)        = eos_state % gam1
-
-          enddo
        enddo
+    enddo
 
-       ! plus state
-       do j = jlo, jhi
-          do i = ilo, ihi
-             rhoInv = ONE / qp(i,j,kc,QRHO)
+    ! plus state
+    do j = jlo, jhi
+       do i = ilo, ihi
+          rhoInv = ONE / qp(i,j,kc,QRHO)
 
-             eos_state % rho = qp(i,j,kc,QRHO)
-             eos_state % p   = qp(i,j,kc,QPRES)
-             eos_state % e   = qp(i,j,kc,QREINT)/qp(i,j,kc,QRHO)
-             eos_state % xn  = qp(i,j,kc,QFS:QFS+nspec-1) * rhoInv
-             eos_state % aux = qp(i,j,kc,QFX:QFX+naux-1) * rhoInv
+          eos_state % rho = qp(i,j,kc,QRHO)
+          eos_state % p   = qp(i,j,kc,QPRES)
+          eos_state % e   = qp(i,j,kc,QREINT)/qp(i,j,kc,QRHO)
+          eos_state % xn  = qp(i,j,kc,QFS:QFS+nspec-1) * rhoInv
+          eos_state % aux = qp(i,j,kc,QFX:QFX+naux-1) * rhoInv
 
-             call eos(eos_input_re, eos_state)
+          call eos(eos_input_re, eos_state)
 
-             qp(i,j,kc,QREINT) = eos_state % e * eos_state % rho
-             qp(i,j,kc,QPRES)  = eos_state % p
-             gamcp(i,j)        = eos_state % gam1
+          qp(i,j,kc,QREINT) = eos_state % e * eos_state % rho
+          qp(i,j,kc,QPRES)  = eos_state % p
+          gamcp(i,j)        = eos_state % gam1
 
-          enddo
        enddo
-
-    endif
+    enddo
 
     call riemannus(qm, qp, qpd_lo, qpd_hi, &
                    gamcm, gamcp, cavg, smallc, gd_lo, gd_hi, &

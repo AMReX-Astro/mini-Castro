@@ -8,7 +8,6 @@ int         Castro::lin_limit_state_interp = 0;
 int         Castro::state_nghost = 0;
 amrex::Real Castro::small_dens = -1.e200;
 amrex::Real Castro::small_temp = -1.e200;
-int         Castro::ppm_temp_fix = 0;
 int         Castro::ppm_predict_gammae = 0;
 int         Castro::ppm_reference_eigenvectors = 0;
 int         Castro::hybrid_riemann = 0;

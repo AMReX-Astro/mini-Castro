@@ -34,10 +34,6 @@ small_dens                   Real         -1.e200             y
 # be reset
 small_temp                   Real         -1.e200             y
 
-# various methods of giving temperature a larger role in the
-# reconstruction---see Zingale \& Katz 2015
-ppm_temp_fix                 int           0                  y
-
 # do we construct $\gamma_e = p/(\rho e) + 1$ and bring it
 # to the interfaces for additional thermodynamic information
 # (this is the Colella \& Glaz technique) or do we use $(\rho e)$
