@@ -13,11 +13,6 @@ Castro::ErrorSetUp ()
     // DEFINE ERROR ESTIMATION QUANTITIES
     //
 
-    // This routine uses the special evaluation of the second derivative
-    //   and can be called with any variable.  Note that two ghost cells are needed.
-//  err_list.add("density",2,ErrorRec::Special,ca_laplac_error);
-//  err_list.add("pressure",2,ErrorRec::Special,ca_laplac_error);
-
     err_list.add("density",1,ErrorRec::Special,ca_denerror);
     err_list.add("Temp",1,ErrorRec::Special,ca_temperror);
     err_list.add("pressure",1,ErrorRec::Special,ca_presserror);
@@ -28,7 +23,5 @@ Castro::ErrorSetUp ()
 #if (BL_SPACEDIM == 3)
     err_list.add("z_velocity",1,ErrorRec::Special,ca_velerror);
 #endif
-
-//   err_list.add("entropy",1,ErrorRec::Special,ca_enterror);
 
 }
