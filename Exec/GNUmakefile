@@ -13,8 +13,6 @@ USE_OMP    = FALSE
 # define the location of the CASTRO top directory
 CASTRO_HOME  := ../
 
-GENERAL_NET_INPUTS = $(CASTRO_HOME)/Source/gammalaw.net
-
 AMREX_HOME ?= /path/to/amrex
 CASTRO_HOME ?= /path/to/Castro
 
@@ -99,14 +97,6 @@ objForExecs += $(objEXETempDir)/AMReX_buildInfo.o
 
 .FORCE:
 .PHONE: .FORCE
-
-# set BUILD_GIT_NAME and BUILD_GIT_DIR if you are building in a
-# git-controlled dir not under Castro/
-EXTRA_BUILD_INFO :=
-ifdef BUILD_GIT_NAME
-   EXTRA_BUILD_INFO := --build_git_name "$(BUILD_GIT_NAME)" \
-                       --build_git_dir "$(BUILD_GIT_DIR)"
-endif
 
 $(objEXETempDir)/AMReX_buildInfo.o: .FORCE
 	$(AMREX_HOME)/Tools/C_scripts/makebuildinfo_C.py \
