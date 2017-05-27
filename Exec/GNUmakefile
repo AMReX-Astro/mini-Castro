@@ -72,13 +72,10 @@ endif
 mega_f.F90: $(ca_F90EXE_sources) $(ca_f90EXE_sources)
 	$(AMREX_HOME)/Tools/F_scripts/f90cat.py $^
 
-# these are for finding runtime parameters
-EXTERN_CORE += $(TOP)/constants
-
 include $(AMREX_HOME)/Src/F_BaseLib/FParallelMG.mak
 
 # runtime parameter support for extern/ routines
-f90EXE_sources += extern.f90
+
 
 EXTERN_TEMPLATE := $(TOP)/Source/extern_probin.template
 
