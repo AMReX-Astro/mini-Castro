@@ -72,26 +72,6 @@ static int use_post_step_regrid;
 static int retry_max_subcycles;
 static amrex::Real retry_neg_dens_factor;
 static int sdc_iters;
-static amrex::Real dtnuc_e;
-static amrex::Real dtnuc_X;
-static int dtnuc_mode;
-static amrex::Real dxnuc;
-static int do_react;
-static amrex::Real react_T_min;
-static amrex::Real react_T_max;
-static amrex::Real react_rho_min;
-static amrex::Real react_rho_max;
-static int disable_shock_burning;
-static int do_grav;
-static int moving_center;
-static int grav_source_type;
-static int do_rotation;
-#ifdef POINTMASS
-static amrex::Real point_mass;
-#endif
-#ifdef POINTMASS
-static int point_mass_fix_solution;
-#endif
 static int do_acc;
 static int bndry_func_thread_safe;
 static int grown_factor;

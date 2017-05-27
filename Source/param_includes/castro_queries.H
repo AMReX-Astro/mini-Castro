@@ -72,26 +72,6 @@ pp.query("use_post_step_regrid", use_post_step_regrid);
 pp.query("retry_max_subcycles", retry_max_subcycles);
 pp.query("retry_neg_dens_factor", retry_neg_dens_factor);
 pp.query("sdc_iters", sdc_iters);
-pp.query("dtnuc_e", dtnuc_e);
-pp.query("dtnuc_X", dtnuc_X);
-pp.query("dtnuc_mode", dtnuc_mode);
-pp.query("dxnuc", dxnuc);
-pp.query("do_react", do_react);
-pp.query("react_T_min", react_T_min);
-pp.query("react_T_max", react_T_max);
-pp.query("react_rho_min", react_rho_min);
-pp.query("react_rho_max", react_rho_max);
-pp.query("disable_shock_burning", disable_shock_burning);
-pp.query("do_grav", do_grav);
-pp.query("moving_center", moving_center);
-pp.query("grav_source_type", grav_source_type);
-pp.query("do_rotation", do_rotation);
-#ifdef POINTMASS
-pp.query("point_mass", point_mass);
-#endif
-#ifdef POINTMASS
-pp.query("point_mass_fix_solution", point_mass_fix_solution);
-#endif
 pp.query("do_acc", do_acc);
 pp.query("bndry_func_thread_safe", bndry_func_thread_safe);
 pp.query("grown_factor", grown_factor);

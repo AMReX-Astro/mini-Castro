@@ -15,7 +15,7 @@ amrex::Real Castro::small_temp = -1.e200;
 amrex::Real Castro::small_pres = -1.e200;
 amrex::Real Castro::small_ener = -1.e200;
 int         Castro::do_hydro = -1;
-int         Castro::do_ctu = 1;
+int         Castro::do_ctu = 0;
 int         Castro::add_ext_src = 0;
 int         Castro::hybrid_hydro = 0;
 int         Castro::ppm_type = 1;
@@ -72,26 +72,6 @@ int         Castro::use_post_step_regrid = 0;
 int         Castro::retry_max_subcycles = 1000;
 amrex::Real Castro::retry_neg_dens_factor = 1.e-1;
 int         Castro::sdc_iters = 2;
-amrex::Real Castro::dtnuc_e = 1.e200;
-amrex::Real Castro::dtnuc_X = 1.e200;
-int         Castro::dtnuc_mode = 1;
-amrex::Real Castro::dxnuc = 1.e200;
-int         Castro::do_react = -1;
-amrex::Real Castro::react_T_min = 0.0;
-amrex::Real Castro::react_T_max = 1.e200;
-amrex::Real Castro::react_rho_min = 0.0;
-amrex::Real Castro::react_rho_max = 1.e200;
-int         Castro::disable_shock_burning = 0;
-int         Castro::do_grav = -1;
-int         Castro::moving_center = 0;
-int         Castro::grav_source_type = 4;
-int         Castro::do_rotation = -1;
-#ifdef POINTMASS
-amrex::Real Castro::point_mass = 0.0;
-#endif
-#ifdef POINTMASS
-int         Castro::point_mass_fix_solution = 0;
-#endif
 int         Castro::do_acc = -1;
 int         Castro::bndry_func_thread_safe = 1;
 int         Castro::grown_factor = 1;
