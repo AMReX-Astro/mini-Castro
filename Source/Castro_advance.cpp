@@ -36,21 +36,9 @@ Castro::advance (Real time,
 
     // Do the advance.
 
-    // no SDC
-
-    if (do_ctu) {
-
-      // CTU method is just a single update
-      int sub_iteration = 0;
-      int sub_ncycle = 0;
-
-      dt_new = do_advance(time, dt, amr_iteration, amr_ncycle, 
-			  sub_iteration, sub_ncycle);
-    } else {
-      for (int iter = 0; iter < MOL_STAGES; ++iter) {
+    for (int iter = 0; iter < MOL_STAGES; ++iter) {
 	dt_new = do_advance(time, dt, amr_iteration, amr_ncycle, 
 			    iter, MOL_STAGES);
-      }
     }
 
     // Check to see if this advance violated certain stability criteria.
@@ -105,17 +93,15 @@ Castro::do_advance (Real time,
     // Since we are Strang splitting the reactions, do them now (only
     // for first stage of MOL)
 
-    if (do_ctu || (!do_ctu && sub_iteration == 0)) {
+    if (sub_iteration == 0) {
 
       // Initialize the new-time data. This copy needs to come after the
       // reactions.
 
       MultiFab::Copy(S_new, Sborder, 0, 0, NUM_STATE, S_new.nGrow());
 
-      if (!do_ctu) {
-	// store the result of the burn in Sburn for later stages
-	MultiFab::Copy(Sburn, Sborder, 0, 0, NUM_STATE, 0);
-      }
+      // store the result of the burn in Sburn for later stages
+      MultiFab::Copy(Sburn, Sborder, 0, 0, NUM_STATE, 0);
     }
 
 
@@ -124,34 +110,17 @@ Castro::do_advance (Real time,
 
     if (do_hydro)
     {
-      if (do_ctu) {
-        //construct_hydro_source(time, dt);
-	//apply_source_to_state(S_new, hydro_source, dt);      
-      } else {
         construct_mol_hydro_source(time, dt, sub_iteration, sub_ncycle);
-      }
     }
 
     // For MOL integration, we are done with this stage, unless it is
     // the last stage
-    if (do_ctu) {
 
-      // Sync up state after old sources and hydro source.
-
-      frac_change = clean_state(S_new, Sborder);
-
-      // Check for NaN's.
-
-      check_for_nan(S_new);
-
-    }
-
-    if (!do_ctu && sub_iteration == sub_ncycle-1) {
+    if (sub_iteration == sub_ncycle-1) {
       // we just finished the last stage of the MOL integration.
       // Construct S_new now using the weighted sum of the k_mol
       // updates
       
-
       // compute the hydro update
       hydro_source.setVal(0.0);
       for (int n = 0; n < MOL_STAGES; ++n) {
@@ -167,12 +136,6 @@ Castro::do_advance (Real time,
       clean_state(S_new);
 
     }
-
-    if (do_ctu || sub_iteration == sub_ncycle-1) {
-      // last part of reactions for CTU and if we are done with the
-      // MOL stages
-
-      }
 
     finalize_do_advance(time, dt, amr_iteration, amr_ncycle, sub_iteration, sub_ncycle);
 
@@ -203,24 +166,17 @@ Castro::initialize_do_advance(Real time, Real dt, int amr_iteration, int amr_ncy
     // but the state data does not carry ghost zones. So we use a FillPatch
     // using the state data to give us Sborder, which does have ghost zones.
 
-    if (do_ctu) {
-      // for the CTU unsplit method, we always start with the old state
-      Sborder.define(grids, dmap, NUM_STATE, NUM_GROW);
-      const Real prev_time = state[State_Type].prevTime();
-      expand_state(Sborder, prev_time, NUM_GROW);
-
-    } else {
-      // for Method of lines, our initialization of Sborder depends on
-      // which stage in the RK update we are working on
+    // for Method of lines, our initialization of Sborder depends on
+    // which stage in the RK update we are working on
       
-      if (sub_iteration == 0) {
+    if (sub_iteration == 0) {
 
 	// first MOL stage
 	Sborder.define(grids, dmap, NUM_STATE, NUM_GROW);
 	const Real prev_time = state[State_Type].prevTime();
 	expand_state(Sborder, prev_time, NUM_GROW);
 
-      } else {
+    } else {
 
 	// the initial state for the kth stage follows the Butcher
 	// tableau.  We need to create the proper state starting with
@@ -234,13 +190,12 @@ Castro::initialize_do_advance(Real time, Real dt, int amr_iteration, int amr_ncy
 
 	MultiFab::Copy(S_new, Sburn, 0, 0, S_new.nComp(), 0);
 	for (int i = 0; i < sub_iteration; ++i)
-	  MultiFab::Saxpy(S_new, dt*a_mol[sub_iteration][i], *k_mol[i], 0, 0, S_new.nComp(), 0);
+	    MultiFab::Saxpy(S_new, dt*a_mol[sub_iteration][i], *k_mol[i], 0, 0, S_new.nComp(), 0);
 
 	Sborder.define(grids, dmap, NUM_STATE, NUM_GROW);
 	const Real new_time = state[State_Type].curTime();
 	expand_state(Sborder, new_time, NUM_GROW);
 
-      }
     }
 }
 
@@ -326,18 +281,14 @@ Castro::initialize_advance(Real time, Real dt, int amr_iteration, int amr_ncycle
 
     hydro_source.define(grids,dmap,NUM_STATE,0);
 
-    if (!do_ctu) {
-      // if we are not doing CTU advection, then we are doing a method
-      // of lines, and need storage for hte intermediate stages
-      k_mol.resize(MOL_STAGES);
-      for (int n = 0; n < MOL_STAGES; ++n) {
+    k_mol.resize(MOL_STAGES);
+    for (int n = 0; n < MOL_STAGES; ++n) {
 	k_mol[n].reset(new MultiFab(grids, dmap, NUM_STATE, 0));
 	k_mol[n]->setVal(0.0);
-      }
-
-      // for the post-burn state
-      Sburn.define(grids, dmap, NUM_STATE, 0);
     }
+
+    // for the post-burn state
+    Sburn.define(grids, dmap, NUM_STATE, 0);
 
     // Zero out the current fluxes.
 
@@ -380,10 +331,8 @@ Castro::finalize_advance(Real time, Real dt, int amr_iteration, int amr_ncycle)
 
     amrex::FillNull(prev_state);
 
-    if (!do_ctu) {
-      k_mol.clear();
-      Sburn.clear();
-    }
+    k_mol.clear();
+    Sburn.clear();
 
 }
 

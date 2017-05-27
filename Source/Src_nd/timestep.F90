@@ -13,7 +13,7 @@ contains
 
     use network, only: nspec, naux
     use eos_module
-    use meth_params_module, only: NVAR, URHO, UMX, UMY, UMZ, UEINT, UTEMP, UFS, UFX, do_ctu
+    use meth_params_module, only: NVAR, URHO, UMX, UMY, UMZ, UEINT, UTEMP, UFS, UFX
     use prob_params_module, only: dim
     use bl_constants_module
     use amrex_fort_module, only : rt => amrex_real
@@ -64,19 +64,14 @@ contains
                 dt3 = dt1
              endif
 
-             if (do_ctu == 1) then
-                dt  = min(dt,dt1,dt2,dt3)
-             else
-                ! method of lines constraint is tougher
-                dt_tmp = ONE/dt1
-                if (dim >= 2) then
-                   dt_tmp = dt_tmp + ONE/dt2
-                endif
-                if (dim == 3) then
-                   dt_tmp = dt_tmp + ONE/dt3
-                endif
-                dt = min(dt, ONE/dt_tmp)
+             dt_tmp = ONE/dt1
+             if (dim >= 2) then
+                dt_tmp = dt_tmp + ONE/dt2
              endif
+             if (dim == 3) then
+                dt_tmp = dt_tmp + ONE/dt3
+             endif
+             dt = min(dt, ONE/dt_tmp)
 
           enddo
        enddo

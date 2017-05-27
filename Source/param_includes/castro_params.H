@@ -13,7 +13,6 @@ static amrex::Real small_temp;
 static amrex::Real small_pres;
 static amrex::Real small_ener;
 static int do_hydro;
-static int do_ctu;
 static int hybrid_hydro;
 static int ppm_type;
 static int ppm_temp_fix;

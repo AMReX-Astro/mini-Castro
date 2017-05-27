@@ -13,7 +13,6 @@ pp.query("small_temp", small_temp);
 pp.query("small_pres", small_pres);
 pp.query("small_ener", small_ener);
 pp.query("do_hydro", do_hydro);
-pp.query("do_ctu", do_ctu);
 pp.query("hybrid_hydro", hybrid_hydro);
 pp.query("ppm_type", ppm_type);
 pp.query("ppm_temp_fix", ppm_temp_fix);
