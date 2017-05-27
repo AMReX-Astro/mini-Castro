@@ -117,11 +117,8 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
   if (verbose)
     flush_output();
 
-  if (courno > 1.0) {
-    std::cout << "WARNING -- EFFECTIVE CFL AT THIS LEVEL " << level << " IS " << courno << '\n';
-    if (hard_cfl_limit == 1)
-      amrex::Abort("CFL is too high at this level -- go back to a checkpoint and restart with lower cfl number");
-  }
+  if (courno > 1.0)
+    amrex::Abort("CFL is too high at this level");
 
   if (verbose && ParallelDescriptor::IOProcessor())
     std::cout << std::endl << "... Leaving hydro advance" << std::endl << std::endl;

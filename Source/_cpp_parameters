@@ -1,9 +1,6 @@
-# name   type   default   need in Fortran?   ifdef    fortran name    fortran type
-#
-# note, name can have two values, as (a, b).  a will be the name used
-# in the inputs file, b is the variable name in the C++ class.
-
 @namespace: castro Castro static
+
+# name   type   default   need in Fortran?   ifdef    fortran name    fortran type
 
 # the small density cutoff.  Densities below this value will be reset
 small_dens                   Real         -1.e200             y
@@ -12,42 +9,6 @@ small_dens                   Real         -1.e200             y
 # be reset
 small_temp                   Real         -1.e200             y
 
-# if we are doing an external -x boundary condition, who do we interpret it?
-xl_ext_bc_type               string        ""                 y
-
-# if we are doing an external +x boundary condition, who do we interpret it?
-xr_ext_bc_type               string        ""                 y
-
-# if we are doing an external -y boundary condition, who do we interpret it?
-yl_ext_bc_type               string        ""                 y
-
-# if we are doing an external +y boundary condition, who do we interpret it?
-yr_ext_bc_type               string        ""                 y
-
-# if we are doing an external -z boundary condition, who do we interpret it?
-zl_ext_bc_type               string        ""                 y
-
-# if we are doing an external +z boundary condition, who do we interpret it?
-zr_ext_bc_type               string        ""                 y
-
-# a fixed timestep to use for all steps (negative turns it off)
-fixed_dt                     Real         -1.0
-
 # the effective Courant number to use---we will not allow the hydrodynamic
 # waves to cross more than this fraction of a zone over a single timestep
 cfl                          Real          0.8                y
-
-# determines whether we use accelerators for specific loops
-do_acc                       int          -1                  y
-
-# display warnings in Fortran90 routines
-print_fortran_warnings       int           (0, 1)
-
-# how often (number of coarse timesteps) to compute integral sums (for runtime diagnostics)
-sum_interval                 int           -1
-
-# how often (simulation time) to compute integral sums (for runtime diagnostics)
-sum_per                      Real          -1.0e0
-
-# abort if we exceed CFL = 1 over the cource of a timestep
-hard_cfl_limit               int           1

@@ -17,14 +17,8 @@ amr.n_cell           = 32   32   32
 castro.lo_bc       =  2   2   2
 castro.hi_bc       =  2   2   2
 
-# WHICH PHYSICS
-castro.allow_negative_energy = 0
-
 # TIME STEP CONTROL
-castro.dt_cutoff      = 5.e-20  # level 0 timestep below which we halt
 castro.cfl            = 0.5     # cfl number for hyperbolic system
-castro.init_shrink    = 0.01    # scale back initial timestep
-castro.change_max     = 1.1     # maximum increase in dt over successive steps
 
 # DIAGNOSTICS & VERBOSITY
 castro.sum_interval   = 1       # timesteps between computing mass

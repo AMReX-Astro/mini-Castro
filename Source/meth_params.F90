@@ -12,13 +12,13 @@
 
 module meth_params_module
 
-  use bl_error_module
+  use bl_error_module, only: bl_error
+  use amrex_fort_module, only: rt => amrex_real
 
-  use amrex_fort_module, only : rt => amrex_real
-  implicit none
+implicit none
 
   ! number of ghost cells for the hyperbolic solver
-  integer, parameter     :: NHYP    = 4
+  integer, parameter :: NHYP = 4
 
   ! NTHERM: number of thermodynamic variables
   integer, save :: NTHERM, NVAR
@@ -29,24 +29,12 @@ module meth_params_module
   integer, save :: QTHERM, QVAR
   integer, save :: QRHO, QU, QV, QW, QPRES, QREINT, QTEMP, QGAME
   integer, save :: NQAUX, QGAMC, QC, QCSML, QDPDR, QDPDE
-#ifdef RADIATION
-  integer, save :: QGAMCG, QCG, QLAMS
-#endif
   integer, save :: QFA, QFS, QFX
 
   integer, save :: nadv
 
   ! NQ will be the total number of primitive variables, hydro + radiation
   integer, save :: NQ         
-
-#ifdef RADIATION
-  integer, save :: QRADVAR, QRAD, QRADHI, QPTOT, QREITOT
-  integer, save :: fspace_type
-  logical, save :: do_inelastic_scattering
-  logical, save :: comoving
-
-  real(rt)        , save :: flatten_pp_threshold = -1.e0_rt
-#endif
 
   integer, save :: npassive
   integer, save, allocatable :: qpass_map(:), upass_map(:)
@@ -55,27 +43,15 @@ module meth_params_module
   ! Note that the velocity indices here are picked to be the same value
   ! as in the primitive variable array
   integer, save :: NGDNV, GDRHO, GDU, GDV, GDW, GDPRES, GDGAME
-#ifdef RADIATION
-  integer, save :: GDLAMS, GDERADS
-#endif
 
-  integer         , save :: numpts_1d
+  integer, save :: numpts_1d
 
-  real(rt)        , save, allocatable :: outflow_data_old(:,:)
-  real(rt)        , save, allocatable :: outflow_data_new(:,:)
-  real(rt)        , save :: outflow_data_old_time
-  real(rt)        , save :: outflow_data_new_time
-  logical         , save :: outflow_data_allocated
-  real(rt)        , save :: max_dist
-
-  character(len=:), allocatable :: gravity_type
-
-  ! these flags are for interpreting the EXT_DIR BCs
-  integer, parameter :: EXT_UNDEFINED = -1
-  integer, parameter :: EXT_HSE = 1
-  integer, parameter :: EXT_INTERP = 2 
-  
-  integer, save :: xl_ext, yl_ext, zl_ext, xr_ext, yr_ext, zr_ext
+  real(rt), save, allocatable :: outflow_data_old(:,:)
+  real(rt), save, allocatable :: outflow_data_new(:,:)
+  real(rt), save :: outflow_data_old_time
+  real(rt), save :: outflow_data_new_time
+  logical,  save :: outflow_data_allocated
+  real(rt), save :: max_dist
 
   ! Create versions of these variables on the GPU
   ! the device update is then done in Castro_nd.F90
@@ -88,42 +64,26 @@ module meth_params_module
   !$acc create(QRHO, QU, QV, QW, QPRES, QREINT, QTEMP) &
   !$acc create(QGAMC, QGAME) &
   !$acc create(NQ) &
-#ifdef RADIATION
-  !$acc create(QGAMCG, QCG, QLAMS) &
-  !$acc create(QRADVAR, QRAD, QRADHI, QPTOT, QREITOT) &
-  !$acc create(fspace_type, do_inelastic_scattering, comoving) &
-#endif
-  !$acc create(QFA, QFS, QFX) &
-  !$acc create(xl_ext, yl_ext, zl_ext, xr_ext, yr_ext, zr_ext)
+  !$acc create(QFA, QFS, QFX)
 
   ! Begin the declarations of the ParmParse parameters
 
   real(rt), save :: small_dens
   real(rt), save :: small_temp
-  character (len=128), save :: xl_ext_bc_type
-  character (len=128), save :: xr_ext_bc_type
-  character (len=128), save :: yl_ext_bc_type
-  character (len=128), save :: yr_ext_bc_type
-  character (len=128), save :: zl_ext_bc_type
-  character (len=128), save :: zr_ext_bc_type
   real(rt), save :: cfl
-  integer         , save :: do_acc
 
   !$acc declare &
-  !$acc create(small_dens, small_temp, cfl) &
-  !$acc create(do_acc)
+  !$acc create(small_dens, small_temp, cfl)
 
   ! End the declarations of the ParmParse parameters
-
-  real(rt)        , save :: rot_vec(3)
 
 contains
 
   subroutine ca_set_castro_method_params() bind(C, name="ca_set_castro_method_params")
 
     use amrex_parmparse_module, only: amrex_parmparse_build, amrex_parmparse_destroy, amrex_parmparse
+    use amrex_fort_module, only: rt => amrex_real
 
-    use amrex_fort_module, only : rt => amrex_real
     implicit none
 
     type (amrex_parmparse) :: pp
@@ -132,147 +92,17 @@ contains
 
     small_dens = -1.d200;
     small_temp = -1.d200;
-    xl_ext_bc_type = "";
-    xr_ext_bc_type = "";
-    yl_ext_bc_type = "";
-    yr_ext_bc_type = "";
-    zl_ext_bc_type = "";
-    zr_ext_bc_type = "";
     cfl = 0.8d0;
-    do_acc = -1;
 
     call pp%query("small_dens", small_dens)
     call pp%query("small_temp", small_temp)
-    call pp%query("xl_ext_bc_type", xl_ext_bc_type)
-    call pp%query("xr_ext_bc_type", xr_ext_bc_type)
-    call pp%query("yl_ext_bc_type", yl_ext_bc_type)
-    call pp%query("yr_ext_bc_type", yr_ext_bc_type)
-    call pp%query("zl_ext_bc_type", zl_ext_bc_type)
-    call pp%query("zr_ext_bc_type", zr_ext_bc_type)
     call pp%query("cfl", cfl)
-    call pp%query("do_acc", do_acc)
 
     !$acc update &
-    !$acc device(small_dens, small_temp, cfl) &
-    !$acc device(do_acc)
-
-
-    ! now set the external BC flags
-    select case (xl_ext_bc_type)
-    case ("hse", "HSE")
-       xl_ext = EXT_HSE
-    case ("interp", "INTERP")       
-       xl_ext = EXT_INTERP
-    case default
-       xl_ext = EXT_UNDEFINED
-    end select
-
-    select case (yl_ext_bc_type)
-    case ("hse", "HSE")
-       yl_ext = EXT_HSE
-    case ("interp", "INTERP")       
-       yl_ext = EXT_INTERP
-    case default
-       yl_ext = EXT_UNDEFINED
-    end select
-
-    select case (zl_ext_bc_type)
-    case ("hse", "HSE")
-       zl_ext = EXT_HSE
-    case ("interp", "INTERP")       
-       zl_ext = EXT_INTERP
-    case default
-       zl_ext = EXT_UNDEFINED
-    end select
-
-    select case (xr_ext_bc_type)
-    case ("hse", "HSE")
-       xr_ext = EXT_HSE
-    case ("interp", "INTERP")       
-       xr_ext = EXT_INTERP
-    case default
-       xr_ext = EXT_UNDEFINED
-    end select
-
-    select case (yr_ext_bc_type)
-    case ("hse", "HSE")
-       yr_ext = EXT_HSE
-    case ("interp", "INTERP")       
-       yr_ext = EXT_INTERP
-    case default
-       yr_ext = EXT_UNDEFINED
-    end select
-
-    select case (zr_ext_bc_type)
-    case ("hse", "HSE")
-       zr_ext = EXT_HSE
-    case ("interp", "INTERP")       
-       zr_ext = EXT_INTERP
-    case default
-       zr_ext = EXT_UNDEFINED
-    end select
-
-    !$acc update device(xl_ext, yl_ext, zl_ext, xr_ext, yr_ext, zr_ext)
+    !$acc device(small_dens, small_temp, cfl)
 
     call amrex_parmparse_destroy(pp)
 
   end subroutine ca_set_castro_method_params
-
-#ifdef RADIATION
-  subroutine ca_init_radhydro_pars(fsp_type_in, do_is_in, com_in,fppt) &
-       bind(C, name="ca_init_radhydro_pars")
-
-    use rad_params_module, only : ngroups
-
-    use amrex_fort_module, only : rt => amrex_real
-    integer, intent(in) :: fsp_type_in, do_is_in, com_in
-    real(rt)        , intent(in) :: fppt
-
-    QPTOT  = QVAR+1
-    QREITOT = QVAR+2
-    QRAD = QVAR+3
-    QRADHI = qrad+ngroups-1
-  
-    QRADVAR = QVAR + 2 + ngroups
-  
-    ! update NQ -- it was already initialized in the hydro
-    NQ = QRADVAR
-
-    ! NQAUX already knows about the hydro and the non-group-dependent
-    ! rad variables, update it here
-    NQAUX = NQAUX + ngroups
-
-    if (ngroups .eq. 1) then
-       fspace_type = 1
-    else
-       fspace_type = fsp_type_in
-    end if
-    
-    if (fsp_type_in .ne. 1 .and. fsp_type_in .ne. 2) then
-       call bl_error("Unknown fspace_type", fspace_type)
-    end if
-    
-    do_inelastic_scattering = (do_is_in .ne. 0)
-    
-    if (com_in .eq. 1) then
-       comoving = .true.
-    else if (com_in .eq. 0) then
-       comoving = .false.
-    else
-       call bl_error("Wrong value for comoving", fspace_type)
-    end if
-    
-    flatten_pp_threshold = fppt
-    
-    !$acc update &
-    !$acc device(NQ,NQAUX) &
-    !$acc device(QRADVAR, QRAD, QRADHI, QPTOT, QREITOT) &
-    !$acc device(fspace_type) &
-    !$acc device(do_inelastic_scattering) &
-    !$acc device(comoving)
-    !$acc device(flatten_pp_threshold = -1.e0_rt)
-
-  end subroutine ca_init_radhydro_pars
-#endif
 
 end module meth_params_module

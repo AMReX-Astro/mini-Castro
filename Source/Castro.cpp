@@ -29,6 +29,8 @@
 using namespace amrex;
 
 int          Castro::verbose       = 0;
+Real         Castro::fixed_dt      = -1.0;
+int          Castro::sum_interval  = -1;
 ErrorList    Castro::err_list;
 int          Castro::radius_grow   = 1;
 BCRec        Castro::phys_bc;
@@ -99,6 +101,7 @@ Castro::read_params ()
 #include <castro_queries.H>
 
     pp.query("v",verbose);
+    pp.query("fixed_dt",fixed_dt);
     pp.query("sum_interval",sum_interval);
 
     // Get boundary conditions
@@ -752,29 +755,8 @@ Castro::post_timestep (int iteration)
 	Real dtlev = parent->dtLevel(0);
 	Real cumtime = parent->cumTime() + dtlev;
 
-	bool sum_int_test = false;
-
-	if (sum_interval > 0) {
-
-	  if (nstep%sum_interval == 0)
-	    sum_int_test = true;
-
-	}
-
-	bool sum_per_test = false;
-
-	if (sum_per > 0.0) {
-
-	  const int num_per_old = floor((cumtime - dtlev) / sum_per);
-	  const int num_per_new = floor((cumtime        ) / sum_per);
-
-	  if (num_per_old != num_per_new)
-	    sum_per_test = true;
-
-	}
-
-        if (sum_int_test || sum_per_test)
-	  sum_integrated_quantities();
+	if (sum_interval > 0 && nstep%sum_interval == 0)
+	    sum_integrated_quantities();
 
     }
 
@@ -812,36 +794,13 @@ Castro::post_init (Real stop_time)
     for (int k = finest_level-1; k>= 0; k--)
         getLevel(k).avgDown();
 
-// Allow the user to define their own post_init functions.
-
         int nstep = parent->levelSteps(0);
 	Real dtlev = parent->dtLevel(0);
 	Real cumtime = parent->cumTime();
 	if (cumtime != 0.0) cumtime += dtlev;
 
-	bool sum_int_test = false;
-
-	if (sum_interval > 0) {
-
-	  if (nstep%sum_interval == 0)
-	    sum_int_test = true;
-
-	}
-
-	bool sum_per_test = false;
-
-	if (sum_per > 0.0) {
-
-	  const int num_per_old = floor((cumtime - dtlev) / sum_per);
-	  const int num_per_new = floor((cumtime        ) / sum_per);
-
-	  if (num_per_old != num_per_new)
-	    sum_per_test = true;
-
-	}
-
-        if (sum_int_test || sum_per_test)
-	  sum_integrated_quantities();
+	if (sum_interval > 0 && nstep%sum_interval == 0)
+	    sum_integrated_quantities();
 
 }
 
@@ -1194,6 +1153,8 @@ Castro::reset_internal_energy(MultiFab& S_new)
     MultiFab old_state;
 
     int ng = S_new.nGrow();
+
+    int print_fortran_warnings = 0;
 
     // Ensure (rho e) isn't too small or negative
 #ifdef _OPENMP
