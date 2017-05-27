@@ -108,12 +108,7 @@ Bpack	+= $(foreach dir, $(Pdirs), $(AMREX_HOME)/Src/$(dir)/Make.package)
 
 
 # Castro directories
-Bdirs 	:= Source Source/param_includes Source/Src_$(DIM)d Source/Src_nd
-
-ifeq ($(USE_RAD), TRUE)
-Bdirs +=   Source/Radiation Source/Radiation/_interpbndry \
-           Source/Radiation/RadSrc_$(DIM)d Source/Radiation/RadSrc_nd
-endif
+Bdirs 	:= Source Source/param_includes
 
 Bpack	+= $(foreach dir, $(Bdirs), $(TOP)/$(dir)/Make.package)
 Blocs	+= $(foreach dir, $(Bdirs), $(TOP)/$(dir))

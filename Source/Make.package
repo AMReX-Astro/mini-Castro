@@ -17,3 +17,33 @@ FEXE_headers += Castro_F.H
 FEXE_headers += Problem_F.H
 FEXE_headers += Castro_error_F.H
 
+ca_f90EXE_sources += ppm_$(DIM)d.f90
+
+ca_F90EXE_sources += Castro_mol_$(DIM)d.F90 
+
+ca_F90EXE_sources += riemann_$(DIM)d.F90 
+ca_F90EXE_sources += advection_util_$(DIM)d.F90 
+
+ca_F90EXE_sources += bc_fill_$(DIM)d.F90
+ca_f90EXE_sources += Prob_$(DIM)d.f90
+
+ca_F90EXE_sources += Castro_nd.F90
+ca_f90EXE_sources += amrinfo.f90
+ca_F90EXE_sources += Castro_util.F90
+ca_F90EXE_sources += advection_util_nd.F90
+ca_f90EXE_sources += Tagging_nd.f90
+ca_F90EXE_sources += meth_params.F90
+ca_f90EXE_sources += prob_params.f90
+
+ca_F90EXE_sources += timestep.F90
+ca_f90EXE_sources += riemann_util.f90
+
+ca_F90EXE_sources += flatten_nd.F90
+
+ca_f90EXE_sources += io.f90
+ca_f90EXE_sources += constants_cgs.f90
+
+ca_F90EXE_sources += castro_c_interfaces_nd.F90
+ifeq ($(USE_CUDA), TRUE)
+ca_F90EXE_sources += castro_cuda_interfaces_nd.F90
+endif
