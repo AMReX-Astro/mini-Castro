@@ -221,17 +221,7 @@ Castro::variableSetUp ()
 
   ca_get_tagging_params(probin_file_name.dataPtr(),&probin_file_length);
 
-  Interpolater* interp;
-
-  if (state_interp_order == 0) {
-    interp = &pc_interp;
-  }
-  else {
-    if (lin_limit_state_interp == 1)
-      interp = &lincc_interp;
-    else
-      interp = &cell_cons_interp;
-  }
+  Interpolater* interp = &cell_cons_interp;
 
   // Note that the default is state_data_extrap = false,
   // store_in_checkpoint = true.  We only need to put these in
@@ -240,8 +230,7 @@ Castro::variableSetUp ()
   bool state_data_extrap = false;
   bool store_in_checkpoint;
 
-  int ngrow_state = state_nghost;
-  BL_ASSERT(ngrow_state >= 0);
+  int ngrow_state = 0;
 
   store_in_checkpoint = true;
   desc_lst.addDescriptor(State_Type,IndexType::TheCellType(),
