@@ -3,9 +3,8 @@ CASTRO_HOME ?= /path/to/Castro
 
 TOP := $(CASTRO_HOME)
 
-EOS_HOME ?= $(TOP)/Microphysics/EOS
-NETWORK_HOME ?= $(TOP)/Microphysics/networks
-COND_HOME ?= $(TOP)/Microphysics/conductivity
+EOS_HOME ?= $(TOP)/Source/EOS
+NETWORK_HOME ?= $(TOP)/Source/networks
 
 EBASE = Castro
 
@@ -27,15 +26,6 @@ DEFINES += -DCRSEGRNDOMP
 ifeq ($(USE_ACC), TRUE)
    DEFINES += -DACC
 endif
-
-ifeq ($(USE_GRAV), TRUE)
-   DEFINES += -DGRAVITY
-endif
-
-ifeq ($(USE_SHOCK_VAR), TRUE)
-   DEFINES += -DSHOCK_VAR
-endif
-
 
 all: $(executable)
 	@echo SUCCESS
@@ -60,7 +50,7 @@ ifndef GENERAL_NET_INPUTS
    ifneq "$(wildcard $(NETWORK_INPUTS))" ""
       GENERAL_NET_INPUTS := $(NETWORK_INPUTS)
    else
-      GENERAL_NET_INPUTS := $(CASTRO_HOME)/Microphysics/networks/general_null/$(NETWORK_INPUTS)
+      GENERAL_NET_INPUTS := $(CASTRO_HOME)/Source/networks/general_null/$(NETWORK_INPUTS)
    endif
 endif
 
@@ -108,7 +98,7 @@ Bpack	+= $(foreach dir, $(Pdirs), $(AMREX_HOME)/Src/$(dir)/Make.package)
 
 
 # Castro directories
-Bdirs 	:= Source Source/param_includes
+Bdirs 	:= Source
 
 Bpack	+= $(foreach dir, $(Bdirs), $(TOP)/$(dir)/Make.package)
 Blocs	+= $(foreach dir, $(Bdirs), $(TOP)/$(dir))
