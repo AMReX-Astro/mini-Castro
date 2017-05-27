@@ -148,10 +148,6 @@ main (int   argc,
 
     }
 
-#ifdef DO_PROBLEM_POST_SIMULATION
-    Castro::problem_post_simulation(amrptr->getAmrLevels());
-#endif
-
 #ifdef HAS_XGRAPH
     xgraphptr->draw(amrptr->levelSteps(0),amrptr->cumTime(), 1);
 #endif

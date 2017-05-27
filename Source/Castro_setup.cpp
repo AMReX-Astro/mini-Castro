@@ -544,20 +544,6 @@ Castro::variableSetUp ()
     derive_lst.addComponent(aux_names[i],desc_lst,State_Type,FirstAux+i,1);
   }
 
-#if 0
-  //
-  // A derived quantity equal to all the state variables.
-  //
-  derive_lst.add("FULLSTATE",IndexType::TheCellType(),NUM_STATE,FORT_DERCOPY,the_same_box);
-  derive_lst.addComponent("FULLSTATE",desc_lst,State_Type,Density,NUM_STATE);
-
-#endif
-
-
-  //
-  // Problem-specific adds
-#include <Problem_Derives.H>
-
   //
   // DEFINE ERROR ESTIMATION QUANTITIES
   //

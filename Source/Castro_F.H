@@ -354,7 +354,5 @@ BL_FORT_PROC_DECL(CA_EXT_SRC,ca_ext_src)
      BL_FORT_FAB_ARG(ext_src),
      const amrex::Real* prob_lo, const amrex::Real* dx,
      const amrex::Real* time, const amrex::Real* dt);
-/* problem-specific includes */
-#include <Problem_F.H>
 
 #endif

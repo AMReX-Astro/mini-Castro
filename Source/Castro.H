@@ -283,11 +283,6 @@ public:
     //
     void post_grown_restart ();
 
-#ifdef DO_PROBLEM_POST_SIMULATION
-    // Do work at the end of the simulation -- before the last outputs
-    static void problem_post_simulation (amrex::Array<std::unique_ptr<AmrLevel> >& amr_level);
-#endif
-
     //
     // Error estimation for regridding.
     //
@@ -552,9 +547,6 @@ protected:
 
     static int Knapsack_Weight_Type;
     static int num_state_type;
-
-/* problem-specific includes */
-#include <Problem.H>
 
 };
 
