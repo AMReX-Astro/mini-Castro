@@ -1,6 +1,7 @@
 module tagging_module
 
   use amrex_fort_module, only : rt => amrex_real
+
   implicit none
 
   real(rt)        , save ::    denerr,   dengrad
@@ -15,8 +16,6 @@ module tagging_module
   integer         , save ::  max_temperr_lev,  max_tempgrad_lev
   integer         , save ::  max_presserr_lev, max_pressgrad_lev
   integer         , save ::  max_raderr_lev,   max_radgrad_lev
-
-  public
 
 contains
 
@@ -35,8 +34,8 @@ contains
                          bind(C, name="ca_denerror")
 
     use prob_params_module, only: dg
-
     use amrex_fort_module, only : rt => amrex_real
+
     implicit none
 
     integer          :: set, clear, nd, level
@@ -96,8 +95,8 @@ contains
                           bind(C, name="ca_temperror")
 
     use prob_params_module, only: dg
-
     use amrex_fort_module, only : rt => amrex_real
+
     implicit none
 
     integer          :: set, clear, np, level
@@ -157,8 +156,8 @@ contains
                            bind(C, name="ca_presserror")
 
     use prob_params_module, only: dg
-
     use amrex_fort_module, only : rt => amrex_real
+
     implicit none
 
     integer          :: set, clear, np, level
@@ -218,8 +217,8 @@ contains
                          bind(C, name="ca_velerror")
 
     use prob_params_module, only: dg
-
     use amrex_fort_module, only : rt => amrex_real
+
     implicit none
 
     integer          :: set, clear, nv, level
@@ -266,134 +265,5 @@ contains
     endif
 
   end subroutine ca_velerror
-
-  ! ::: -----------------------------------------------------------
-  ! ::: This routine will tag high error cells based on the radiation
-  ! ::: -----------------------------------------------------------
-
-  subroutine ca_raderror(tag,taglo,taghi, &
-                         set,clear, &
-                         rad,radlo,radhi, &
-                         lo,hi,nr,domlo,domhi, &
-                         delta,xlo,problo,time,level) &
-                         bind(C, name="ca_raderror")
-
-    use prob_params_module, only: dg
-
-    use amrex_fort_module, only : rt => amrex_real
-    implicit none
-
-    integer          :: set, clear, nr, level
-    integer          :: taglo(3), taghi(3)
-    integer          :: radlo(3), radhi(3)
-    integer          :: lo(3), hi(3), domlo(3), domhi(3)
-    integer          :: tag(taglo(1):taghi(1),taglo(2):taghi(2),taglo(3):taghi(3))
-    real(rt)         :: rad(radlo(1):radhi(1),radlo(2):radhi(2),radlo(3):radhi(3),nr)
-    real(rt)         :: delta(3), xlo(3), problo(3), time
-
-    real(rt)         :: ax, ay, az
-    integer          :: i, j, k
-
-    !     Tag on regions of high radiation
-    if (level .lt. max_raderr_lev) then
-       do k = lo(3), hi(3)
-          do j = lo(2), hi(2)
-             do i = lo(1), hi(1)
-                if (rad(i,j,k,1) .ge. raderr) then
-                   tag(i,j,k) = set
-                endif
-             enddo
-          enddo
-       enddo
-    endif
-
-    !     Tag on regions of high radiation gradient
-    if (level .lt. max_radgrad_lev) then
-       do k = lo(3), hi(3)
-          do j = lo(2), hi(2)
-             do i = lo(1), hi(1)
-                ax = ABS(rad(i+1*dg(1),j,k,1) - rad(i,j,k,1))
-                ay = ABS(rad(i,j+1*dg(2),k,1) - rad(i,j,k,1))
-                az = ABS(rad(i,j,k+1*dg(3),1) - rad(i,j,k,1))
-                ax = MAX(ax,ABS(rad(i,j,k,1) - rad(i-1*dg(1),j,k,1)))
-                ay = MAX(ay,ABS(rad(i,j,k,1) - rad(i,j-1*dg(2),k,1)))
-                az = MAX(az,ABS(rad(i,j,k,1) - rad(i,j,k-1*dg(3),1)))
-                if ( MAX(ax,ay,az) .ge. radgrad) then
-                   tag(i,j,k) = set
-                endif
-             enddo
-          enddo
-       enddo
-    endif
-
-  end subroutine ca_raderror
-
-  ! ::: -----------------------------------------------------------
-  ! ::: This routine will tag high error cells based on the entropy
-  ! ::: -----------------------------------------------------------
-
-  subroutine ca_enterror(tag,taglo,taghi, &
-                         set,clear, &
-                         ent,entlo,enthi, &
-                         lo,hi,nr,domlo,domhi, &
-                         delta,xlo,problo,time,level) &
-                         bind(C, name="ca_enterror")
-
-    use prob_params_module, only: dg
-
-    use amrex_fort_module, only : rt => amrex_real
-    implicit none
-
-    integer          :: set, clear, nr, level
-    integer          :: taglo(3), taghi(3)
-    integer          :: entlo(3), enthi(3)
-    integer          :: lo(3), hi(3), domlo(3), domhi(3)
-    integer          :: tag(taglo(1):taghi(1),taglo(2):taghi(2),taglo(3):taghi(3))
-    real(rt)         :: ent(entlo(1):enthi(1),entlo(2):enthi(2),entlo(3):enthi(3),nr)
-    real(rt)         :: delta(3), xlo(3), problo(3), time
-
-    real(rt)         :: ax, ay, az
-    integer          :: i, j, k
-
-    !     Tag on regions of high radiation
-    if (level .lt. max_enterr_lev) then
-       do k = lo(3), hi(3)
-          do j = lo(2), hi(2)
-             do i = lo(1), hi(1)
-                if (ent(i,j,k,1) .ge. enterr) then
-                   tag(i,j,k) = set
-                endif
-             enddo
-          enddo
-       enddo
-    endif
-
-    !     Tag on regions of high radiation gradient
-    if (level .lt. max_entgrad_lev) then
-       do k = lo(3), hi(3)
-          do j = lo(2), hi(2)
-             do i = lo(1), hi(1)
-                ax = ABS(ent(i+1*dg(1),j,k,1) - ent(i,j,k,1))
-                ay = ABS(ent(i,j+1*dg(2),k,1) - ent(i,j,k,1))
-                az = ABS(ent(i,j,k+1*dg(3),1) - ent(i,j,k,1))
-                ax = MAX(ax,ABS(ent(i,j,k,1) - ent(i-1*dg(1),j,k,1)))
-                ay = MAX(ay,ABS(ent(i,j,k,1) - ent(i,j-1*dg(2),k,1)))
-                az = MAX(az,ABS(ent(i,j,k,1) - ent(i,j,k-1*dg(3),1)))
-                if ( MAX(ax,ay,az) .ge. entgrad) then
-                   tag(i,j,k) = set
-                endif
-             enddo
-          enddo
-       enddo
-    endif
-
-  end subroutine ca_enterror
-
-  ! ::: -----------------------------------------------------------
-  ! ::: This routine will tag cells based on the sound crossing time
-  ! ::: relative to the nuclear energy injection timescale.
-  ! ::: At present we tag for maximal refinement since this
-  ! ::: criterion is necessary for numerical burning stability.
-  ! ::: -----------------------------------------------------------
 
 end module tagging_module
