@@ -65,9 +65,6 @@ extern "C"
      const int* blocking_factor);
 
   void ca_get_tagging_params(const int* name, const int* namlen);
-#ifdef SPONGE
-  void ca_get_sponge_params(const int* name, const int* namlen);
-#endif
 
   void ca_ctoprim(const int* lo, const int* hi,
 	          const amrex::Real* u, const int* u_lo, const int* u_hi,
@@ -238,37 +235,9 @@ extern "C"
      const int&  verbose);
 
 
-#ifdef SPONGE
-  void ca_sponge
-    (const int* lo, const int* hi,
-     BL_FORT_FAB_ARG_3D(state),
-     BL_FORT_FAB_ARG_3D(source),
-     BL_FORT_FAB_ARG_3D(vol),
-     const amrex::Real* dx, const amrex::Real& dt, const amrex::Real* time);
-
-  void update_sponge_params(const amrex::Real* time);
-#endif
 
   void flush_output();
 
-#ifdef POINTMASS
-  void pm_compute_delta_mass
-    (const amrex::Real* pm_delta_mass, const int* lo, const int* hi,
-     const BL_FORT_FAB_ARG_3D(state),
-     BL_FORT_FAB_ARG_3D(stateout),
-     const BL_FORT_FAB_ARG_3D(volume),
-     const amrex::Real* problo, const amrex::Real* dx,
-     const amrex::Real* time, const amrex::Real* dt);
-
-  void pm_fix_solution
-    (const int* lo, const int* hi,
-     const BL_FORT_FAB_ARG_3D(stateold),
-     BL_FORT_FAB_ARG_3D(statenew),
-     const amrex::Real* problo, const amrex::Real* dx,
-     const amrex::Real* time, const amrex::Real* dt);
-
-  void set_pointmass(const amrex::Real* pointmass);
-#endif
 
 #ifdef GRAVITY
   void ca_gsrc

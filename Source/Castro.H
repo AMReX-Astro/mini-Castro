@@ -26,9 +26,6 @@ enum StateType { State_Type = 0,
 // Create storage for all source terms.
 
 enum sources { ext_src = 0,
-#ifdef SPONGE
-               sponge_src,
-#endif
 #ifdef GRAVITY
                grav_src,
 #endif
@@ -199,12 +196,6 @@ public:
 				   amrex::MultiFab& src_old,
 				   amrex::MultiFab& src_new,
 				   amrex::Real dt = 1.0);
-
-#ifdef SPONGE
-    void construct_old_sponge_source(amrex::Real time, amrex::Real dt);
-
-    void construct_new_sponge_source(amrex::Real time, amrex::Real dt);
-#endif
 
     void construct_old_ext_source(amrex::Real time, amrex::Real dt);
 

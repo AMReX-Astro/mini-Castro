@@ -27,14 +27,6 @@ Castro::source_flag(int src)
 {
     switch(src) {
 
-#ifdef SPONGE
-    case sponge_src:
-	if (do_sponge)
-	    return true;
-	else
-	    return false;
-#endif
-
     case ext_src:
 	if (add_ext_src)
 	    return true;
@@ -148,12 +140,6 @@ Castro::construct_old_source(int src, Real time, Real dt, int amr_iteration, int
 
     switch(src) {
 
-#ifdef SPONGE
-    case sponge_src:
-	construct_old_sponge_source(time, dt);
-	break;
-#endif
-
     case ext_src:
 	construct_old_ext_source(time, dt);
 	break;
@@ -176,12 +162,6 @@ Castro::construct_new_source(int src, Real time, Real dt, int amr_iteration, int
     BL_ASSERT(src >= 0 && src < num_src);
 
     switch(src) {
-
-#ifdef SPONGE
-    case sponge_src:
-	construct_new_sponge_source(time, dt);
-	break;
-#endif
 
     case ext_src:
 	construct_new_ext_source(time, dt);

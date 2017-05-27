@@ -261,13 +261,6 @@ Castro::variableSetUp ()
 
   ca_get_tagging_params(probin_file_name.dataPtr(),&probin_file_length);
 
-#ifdef SPONGE
-  // Read in the parameters for the sponge
-  // and store them in the Fortran module.
-
-  ca_get_sponge_params(probin_file_name.dataPtr(),&probin_file_length);
-#endif
-
   Interpolater* interp;
 
   if (state_interp_order == 0) {
@@ -582,10 +575,6 @@ Castro::variableSetUp ()
     source_names[n] = "";
 
   source_names[ext_src] = "user-defined external";
-
-#ifdef SPONGE
-  source_names[sponge_src] = "sponge";
-#endif
 
 #ifdef GRAVITY
   source_names[grav_src] = "gravity";
