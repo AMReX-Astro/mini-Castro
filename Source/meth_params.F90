@@ -100,7 +100,6 @@ module meth_params_module
 
   real(rt), save :: small_dens
   real(rt), save :: small_temp
-  integer         , save :: ppm_temp_fix
   integer         , save :: ppm_predict_gammae
   integer         , save :: ppm_reference_eigenvectors
   integer         , save :: hybrid_riemann
@@ -131,15 +130,14 @@ module meth_params_module
   integer         , save :: do_acc
 
   !$acc declare &
-  !$acc create(small_dens, small_temp, ppm_temp_fix) &
-  !$acc create(ppm_predict_gammae, ppm_reference_eigenvectors, hybrid_riemann) &
-  !$acc create(riemann_solver, cg_maxiter, cg_tol) &
-  !$acc create(cg_blend, use_flattening, dual_energy_update_E_from_e) &
-  !$acc create(dual_energy_eta1, dual_energy_eta2, dual_energy_eta3) &
-  !$acc create(limit_fluxes_on_small_dens, density_reset_method, allow_negative_energy) &
-  !$acc create(allow_small_energy, first_order_hydro, hse_zero_vels) &
-  !$acc create(hse_interp_temp, hse_reflect_vels, cfl) &
-  !$acc create(do_acc)
+  !$acc create(small_dens, small_temp, ppm_predict_gammae) &
+  !$acc create(ppm_reference_eigenvectors, hybrid_riemann, riemann_solver) &
+  !$acc create(cg_maxiter, cg_tol, cg_blend) &
+  !$acc create(use_flattening, dual_energy_update_E_from_e, dual_energy_eta1) &
+  !$acc create(dual_energy_eta2, dual_energy_eta3, limit_fluxes_on_small_dens) &
+  !$acc create(density_reset_method, allow_negative_energy, allow_small_energy) &
+  !$acc create(first_order_hydro, hse_zero_vels, hse_interp_temp) &
+  !$acc create(hse_reflect_vels, cfl, do_acc)
 
   ! End the declarations of the ParmParse parameters
 
@@ -160,7 +158,6 @@ contains
 
     small_dens = -1.d200;
     small_temp = -1.d200;
-    ppm_temp_fix = 0;
     ppm_predict_gammae = 0;
     ppm_reference_eigenvectors = 0;
     hybrid_riemann = 0;
@@ -192,7 +189,6 @@ contains
 
     call pp%query("small_dens", small_dens)
     call pp%query("small_temp", small_temp)
-    call pp%query("ppm_temp_fix", ppm_temp_fix)
     call pp%query("ppm_predict_gammae", ppm_predict_gammae)
     call pp%query("ppm_reference_eigenvectors", ppm_reference_eigenvectors)
     call pp%query("hybrid_riemann", hybrid_riemann)
@@ -223,15 +219,14 @@ contains
     call pp%query("do_acc", do_acc)
 
     !$acc update &
-    !$acc device(small_dens, small_temp, ppm_temp_fix) &
-    !$acc device(ppm_predict_gammae, ppm_reference_eigenvectors, hybrid_riemann) &
-    !$acc device(riemann_solver, cg_maxiter, cg_tol) &
-    !$acc device(cg_blend, use_flattening, dual_energy_update_E_from_e) &
-    !$acc device(dual_energy_eta1, dual_energy_eta2, dual_energy_eta3) &
-    !$acc device(limit_fluxes_on_small_dens, density_reset_method, allow_negative_energy) &
-    !$acc device(allow_small_energy, first_order_hydro, hse_zero_vels) &
-    !$acc device(hse_interp_temp, hse_reflect_vels, cfl) &
-    !$acc device(do_acc)
+    !$acc device(small_dens, small_temp, ppm_predict_gammae) &
+    !$acc device(ppm_reference_eigenvectors, hybrid_riemann, riemann_solver) &
+    !$acc device(cg_maxiter, cg_tol, cg_blend) &
+    !$acc device(use_flattening, dual_energy_update_E_from_e, dual_energy_eta1) &
+    !$acc device(dual_energy_eta2, dual_energy_eta3, limit_fluxes_on_small_dens) &
+    !$acc device(density_reset_method, allow_negative_energy, allow_small_energy) &
+    !$acc device(first_order_hydro, hse_zero_vels, hse_interp_temp) &
+    !$acc device(hse_reflect_vels, cfl, do_acc)
 
 
     ! now set the external BC flags

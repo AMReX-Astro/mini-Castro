@@ -8,7 +8,6 @@ pp.query("lin_limit_state_interp", lin_limit_state_interp);
 pp.query("state_nghost", state_nghost);
 pp.query("small_dens", small_dens);
 pp.query("small_temp", small_temp);
-pp.query("ppm_temp_fix", ppm_temp_fix);
 pp.query("ppm_predict_gammae", ppm_predict_gammae);
 pp.query("ppm_reference_eigenvectors", ppm_reference_eigenvectors);
 pp.query("hybrid_riemann", hybrid_riemann);

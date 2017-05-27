@@ -8,7 +8,6 @@ static int lin_limit_state_interp;
 static int state_nghost;
 static amrex::Real small_dens;
 static amrex::Real small_temp;
-static int ppm_temp_fix;
 static int ppm_predict_gammae;
 static int ppm_reference_eigenvectors;
 static int hybrid_riemann;
