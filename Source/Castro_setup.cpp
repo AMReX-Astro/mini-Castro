@@ -362,102 +362,13 @@ Castro::variableSetUp ()
   //
   // DEFINE DERIVED QUANTITIES
   //
+
+  //
   // Pressure
   //
   derive_lst.add("pressure",IndexType::TheCellType(),1,ca_derpres,the_same_box);
   derive_lst.addComponent("pressure",desc_lst,State_Type,Density,NUM_STATE);
 
-  //
-  // Kinetic energy
-  //
-  derive_lst.add("kineng",IndexType::TheCellType(),1,ca_derkineng,the_same_box);
-  derive_lst.addComponent("kineng",desc_lst,State_Type,Density,1);
-  derive_lst.addComponent("kineng",desc_lst,State_Type,Xmom,3);
-
-  //
-  // Sound speed (c)
-  //
-  derive_lst.add("soundspeed",IndexType::TheCellType(),1,ca_dersoundspeed,the_same_box);
-  derive_lst.addComponent("soundspeed",desc_lst,State_Type,Density,NUM_STATE);
-
-  //
-  // Mach number(M)
-  //
-  derive_lst.add("MachNumber",IndexType::TheCellType(),1,ca_dermachnumber,the_same_box);
-  derive_lst.addComponent("MachNumber",desc_lst,State_Type,Density,NUM_STATE);
-
-#if (BL_SPACEDIM == 1)
-  //
-  // Wave speed u+c
-  //
-  derive_lst.add("uplusc",IndexType::TheCellType(),1,ca_deruplusc,the_same_box);
-  derive_lst.addComponent("uplusc",desc_lst,State_Type,Density,NUM_STATE);
-
-  //
-  // Wave speed u-c
-  //
-  derive_lst.add("uminusc",IndexType::TheCellType(),1,ca_deruminusc,the_same_box);
-  derive_lst.addComponent("uminusc",desc_lst,State_Type,Density,NUM_STATE);
-#endif
-
-  //
-  // Gravitational forcing
-  //
-  //
-  // Entropy (S)
-  //
-  derive_lst.add("entropy",IndexType::TheCellType(),1,ca_derentropy,the_same_box);
-  derive_lst.addComponent("entropy",desc_lst,State_Type,Density,NUM_STATE);
-
-  //
-  // Vorticity
-  //
-  derive_lst.add("magvort",IndexType::TheCellType(),1,ca_dermagvort,grow_box_by_one);
-  // Here we exploit the fact that Xmom = Density + 1
-  //   in order to use the correct interpolation.
-  if (Xmom != Density+1)
-    amrex::Error("We are assuming Xmom = Density + 1 in Castro_setup.cpp");
-  derive_lst.addComponent("magvort",desc_lst,State_Type,Density,4);
-
-  //
-  // Div(u)
-  //
-  derive_lst.add("divu",IndexType::TheCellType(),1,ca_derdivu,grow_box_by_one);
-  derive_lst.addComponent("divu",desc_lst,State_Type,Density,1);
-  derive_lst.addComponent("divu",desc_lst,State_Type,Xmom,3);
-
-  //
-  // Internal energy as derived from rho*E, part of the state
-  //
-  derive_lst.add("eint_E",IndexType::TheCellType(),1,ca_dereint1,the_same_box);
-  derive_lst.addComponent("eint_E",desc_lst,State_Type,Density,NUM_STATE);
-
-  //
-  // Internal energy as derived from rho*e, part of the state
-  //
-  derive_lst.add("eint_e",IndexType::TheCellType(),1,ca_dereint2,the_same_box);
-  derive_lst.addComponent("eint_e",desc_lst,State_Type,Density,NUM_STATE);
-
-  //
-  // Log(density)
-  //
-  derive_lst.add("logden",IndexType::TheCellType(),1,ca_derlogden,the_same_box);
-  derive_lst.addComponent("logden",desc_lst,State_Type,Density,NUM_STATE);
-
-  derive_lst.add("StateErr",IndexType::TheCellType(),3,ca_derstate,grow_box_by_one);
-  derive_lst.addComponent("StateErr",desc_lst,State_Type,Density,1);
-  derive_lst.addComponent("StateErr",desc_lst,State_Type,Temp,1);
-  derive_lst.addComponent("StateErr",desc_lst,State_Type,FirstSpec,1);
-
-  //
-  // X from rhoX
-  //
-  for (int i = 0; i < NumSpec; i++){
-    std::string spec_string = "X("+spec_names[i]+")";
-    derive_lst.add(spec_string,IndexType::TheCellType(),1,ca_derspec,the_same_box);
-    derive_lst.addComponent(spec_string,desc_lst,State_Type,Density,1);
-    derive_lst.addComponent(spec_string,desc_lst,State_Type,FirstSpec+i,1);
-  }
   //
   // Velocities
   //
@@ -472,35 +383,6 @@ Castro::variableSetUp ()
   derive_lst.add("z_velocity",IndexType::TheCellType(),1,ca_dervel,the_same_box);
   derive_lst.addComponent("z_velocity",desc_lst,State_Type,Density,1);
   derive_lst.addComponent("z_velocity",desc_lst,State_Type,Zmom,1);
-
-  derive_lst.add("magvel",IndexType::TheCellType(),1,ca_dermagvel,the_same_box);
-  derive_lst.addComponent("magvel",desc_lst,State_Type,Density,1);
-  derive_lst.addComponent("magvel",desc_lst,State_Type,Xmom,3);
-
-  derive_lst.add("radvel",IndexType::TheCellType(),1,ca_derradialvel,the_same_box);
-  derive_lst.addComponent("radvel",desc_lst,State_Type,Density,1);
-  derive_lst.addComponent("radvel",desc_lst,State_Type,Xmom,3);
-
-  derive_lst.add("magmom",IndexType::TheCellType(),1,ca_dermagmom,the_same_box);
-  derive_lst.addComponent("magmom",desc_lst,State_Type,Xmom,3);
-
-  derive_lst.add("angular_momentum_x",IndexType::TheCellType(),1,ca_derangmomx,the_same_box);
-  derive_lst.addComponent("angular_momentum_x",desc_lst,State_Type,Density,1);
-  derive_lst.addComponent("angular_momentum_x",desc_lst,State_Type,Xmom,3);
-
-  derive_lst.add("angular_momentum_y",IndexType::TheCellType(),1,ca_derangmomy,the_same_box);
-  derive_lst.addComponent("angular_momentum_y",desc_lst,State_Type,Density,1);
-  derive_lst.addComponent("angular_momentum_y",desc_lst,State_Type,Xmom,3);
-
-  derive_lst.add("angular_momentum_z",IndexType::TheCellType(),1,ca_derangmomz,the_same_box);
-  derive_lst.addComponent("angular_momentum_z",desc_lst,State_Type,Density,1);
-  derive_lst.addComponent("angular_momentum_z",desc_lst,State_Type,Xmom,3);
-
-  for (int i = 0; i < NumAux; i++)  {
-    derive_lst.add(aux_names[i],IndexType::TheCellType(),1,ca_derspec,the_same_box);
-    derive_lst.addComponent(aux_names[i],desc_lst,State_Type,Density,1);
-    derive_lst.addComponent(aux_names[i],desc_lst,State_Type,FirstAux+i,1);
-  }
 
   //
   // DEFINE ERROR ESTIMATION QUANTITIES
