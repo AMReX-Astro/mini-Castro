@@ -367,7 +367,7 @@ Castro::variableSetUp ()
   ErrorSetUp();
 
   // method of lines Butcher tableau
-#define THIRDORDER_TVD
+#define SECONDORDER_TVD
 
 #ifdef THIRDORDER
   MOL_STAGES = 3;
