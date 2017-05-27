@@ -34,8 +34,6 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
 
     FArrayBox q, qaux;
 
-    int priv_nstep_fsp = -1;
-
     Real cflLoc = -1.0e+200;
 
     const int*  domain_lo = geom.Domain().loVect();
