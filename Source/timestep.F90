@@ -43,7 +43,11 @@ contains
              eos_state % xn  = u(i,j,k,UFS:UFS+nspec-1) * rhoInv
              eos_state % aux = u(i,j,k,UFX:UFX+naux-1) * rhoInv
 
+#ifdef CUDA
+             eos_state % cs = sqrt(5.d0/3.d0 * (2.d0/3.d0) * eos_state % e)
+#else
              call eos(eos_input_re, eos_state)
+#endif
 
              ! Compute velocity and then calculate CFL timestep.
 
