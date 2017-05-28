@@ -31,23 +31,22 @@ ca_F90EXE_sources += bc_fill.F90
 ca_F90EXE_sources += Prob.F90
 ca_F90EXE_sources += probdata.F90
 
-ca_F90EXE_sources += Castro_nd.F90
 ca_F90EXE_sources += amrinfo.F90
 ca_F90EXE_sources += Castro_util.F90
-ca_F90EXE_sources += advection_util_nd.F90
-ca_F90EXE_sources += Tagging_nd.F90
+ca_F90EXE_sources += advection_util.F90
+ca_F90EXE_sources += Tagging.F90
 ca_F90EXE_sources += meth_params.F90
 ca_F90EXE_sources += prob_params.F90
 
 ca_F90EXE_sources += timestep.F90
 
-ca_F90EXE_sources += flatten_nd.F90
+ca_F90EXE_sources += flatten.F90
 
 ca_F90EXE_sources += io.F90
 
-ca_F90EXE_sources += castro_c_interfaces_nd.F90
+ca_F90EXE_sources += castro_c_interfaces.F90
 ifeq ($(USE_CUDA), TRUE)
-ca_F90EXE_sources += castro_cuda_interfaces_nd.F90
+ca_F90EXE_sources += castro_cuda_interfaces.F90
 endif
 
 ca_F90EXE_sources += eos.F90
