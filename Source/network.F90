@@ -19,12 +19,13 @@
 
 module network
 
-  use bl_types, only : dp_t
-  use actual_network
+  use bl_types, only: dp_t
+  use actual_network, only: nspec, naux, aion, zion, &
+                            spec_names, short_spec_names, &
+                            aux_names, short_aux_names, &
+                            actual_network_init
 
   implicit none
-
-  private :: dp_t
 
   logical :: network_initialized = .false.
 
@@ -37,8 +38,8 @@ contains
 
   subroutine network_init
 
-    use bl_error_module, only : bl_error
-    use bl_constants_module, only : ONE
+    use bl_error_module, only: bl_error
+    use bl_constants_module, only: ONE
 
     implicit none
 

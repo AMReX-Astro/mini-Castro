@@ -1,18 +1,15 @@
 module bc_fill_module
 
-  use amrex_fort_module, only : rt => amrex_real
   implicit none
-
-  public
 
 contains
 
   subroutine ca_hypfill(adv,adv_l1,adv_l2,adv_l3,adv_h1,adv_h2, &
                         adv_h3,domlo,domhi,delta,xlo,time,bc) bind(C, name="ca_hypfill")
 
-    use meth_params_module, only : NVAR
+    use meth_params_module, only: NVAR
+    use amrex_fort_module, only: rt => amrex_real
 
-    use amrex_fort_module, only : rt => amrex_real
     implicit none
     
     include 'AMReX_bc_types.fi'
@@ -162,7 +159,8 @@ contains
   subroutine ca_denfill(adv,adv_l1,adv_l2,adv_l3,adv_h1,adv_h2, &
                         adv_h3,domlo,domhi,delta,xlo,time,bc) bind(C, name="ca_denfill")
 
-    use amrex_fort_module, only : rt => amrex_real
+    use amrex_fort_module, only: rt => amrex_real
+
     implicit none
     
     include 'AMReX_bc_types.fi'
@@ -258,10 +256,10 @@ contains
   subroutine bcnormal(u_int,u_ext,dir,sgn,rho_only)
 
     use probdata_module
-    use eos_module, only : gamma_const
-    use meth_params_module, only : NVAR, URHO, UMX, UMY, UMZ, UEDEN, UEINT
+    use eos_module, only: gamma_const
+    use meth_params_module, only: NVAR, URHO, UMX, UMY, UMZ, UEDEN, UEINT
+    use amrex_fort_module, only: rt => amrex_real
 
-    use amrex_fort_module, only : rt => amrex_real
     implicit none
 
     real(rt)         :: u_int(*),u_ext(*)

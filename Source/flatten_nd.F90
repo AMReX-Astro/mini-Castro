@@ -1,48 +1,37 @@
 module flatten_module
 
-  use mempool_module, only : bl_allocate, bl_deallocate
-  use bl_constants_module, only : ZERO
-
-  use amrex_fort_module, only : rt => amrex_real
   implicit none
 
-  private
-
-  public :: uflaten
 contains
-
-! :::
-! ::: ------------------------------------------------------------------
-! :::
 
   subroutine uflaten(lo, hi, p, u, v, w, flatn, q_lo, q_hi)
 
-    use prob_params_module, only : dg
-    use bl_constants_module
-    use amrex_fort_module, only : rt => amrex_real
+    use mempool_module, only: bl_allocate, bl_deallocate
+    use prob_params_module, only: dg
+    use bl_constants_module, only: ZERO, ONE
+    use amrex_fort_module, only: rt => amrex_real
 
     implicit none
 
-    integer, intent(in) :: lo(3), hi(3)
-    integer, intent(in) :: q_lo(3), q_hi(3)
-
-    real(rt)        , intent(in) :: p(q_lo(1):q_hi(1),q_lo(2):q_hi(2),q_lo(3):q_hi(3))
-    real(rt)        , intent(in) :: u(q_lo(1):q_hi(1),q_lo(2):q_hi(2),q_lo(3):q_hi(3))
-    real(rt)        , intent(in) :: v(q_lo(1):q_hi(1),q_lo(2):q_hi(2),q_lo(3):q_hi(3))
-    real(rt)        , intent(in) :: w(q_lo(1):q_hi(1),q_lo(2):q_hi(2),q_lo(3):q_hi(3))
-    real(rt)        , intent(inout) :: flatn(q_lo(1):q_hi(1),q_lo(2):q_hi(2),q_lo(3):q_hi(3))
+    integer,  intent(in   ) :: lo(3), hi(3)
+    integer,  intent(in   ) :: q_lo(3), q_hi(3)
+    real(rt), intent(in   ) :: p(q_lo(1):q_hi(1),q_lo(2):q_hi(2),q_lo(3):q_hi(3))
+    real(rt), intent(in   ) :: u(q_lo(1):q_hi(1),q_lo(2):q_hi(2),q_lo(3):q_hi(3))
+    real(rt), intent(in   ) :: v(q_lo(1):q_hi(1),q_lo(2):q_hi(2),q_lo(3):q_hi(3))
+    real(rt), intent(in   ) :: w(q_lo(1):q_hi(1),q_lo(2):q_hi(2),q_lo(3):q_hi(3))
+    real(rt), intent(inout) :: flatn(q_lo(1):q_hi(1),q_lo(2):q_hi(2),q_lo(3):q_hi(3))
 
     integer :: i, j, k, ishft
 
     real(rt), parameter :: small_pres = 1.e-200_rt
 
-    real(rt)         :: denom, zeta, tst, tmp, ftmp
+    real(rt) :: denom, zeta, tst, tmp, ftmp
 
     ! Local arrays
-    real(rt)        , pointer :: dp(:,:,:), z(:,:,:), chi(:,:,:)
+    real(rt), pointer :: dp(:,:,:), z(:,:,:), chi(:,:,:)
 
     ! Knobs for detection of strong shock
-    real(rt)        , parameter :: shktst = 0.33e0_rt, zcut1 = 0.75e0_rt, zcut2 = 0.85e0_rt, dzcut = ONE/(zcut2-zcut1)
+    real(rt), parameter :: shktst = 0.33e0_rt, zcut1 = 0.75e0_rt, zcut2 = 0.85e0_rt, dzcut = ONE/(zcut2-zcut1)
 
     call bl_allocate(dp ,lo(1)-1,hi(1)+1,lo(2)-1,hi(2)+1,lo(3)-1,hi(3)+1)
     call bl_allocate(z  ,lo(1)-1,hi(1)+1,lo(2)-1,hi(2)+1,lo(3)-1,hi(3)+1)

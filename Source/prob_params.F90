@@ -4,9 +4,9 @@
 
 module prob_params_module
 
-  use meth_params_module, only : UMX, UMZ
+  use meth_params_module, only: UMX, UMZ
+  use amrex_fort_module, only: rt => amrex_real
 
-  use amrex_fort_module, only : rt => amrex_real
   implicit none
 
   ! boundary condition information
@@ -36,6 +36,7 @@ module prob_params_module
   integer         , save, allocatable :: blocking_factor(:)
 
   integer, parameter :: MAX_MOM_INDEX = 5
+
   type momflux_t
      ! we want this to be able to use UMX, UMY, and UMZ to index here, but
      ! we can't use those to allocate, since they are not know until runtime.

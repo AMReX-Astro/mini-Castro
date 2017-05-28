@@ -1,26 +1,23 @@
 module tagging_module
 
-  use amrex_fort_module, only : rt => amrex_real
+  use amrex_fort_module, only: rt => amrex_real
 
   implicit none
 
-  real(rt)        , save ::    denerr,   dengrad
-  real(rt)        , save ::    enterr,   entgrad
-  real(rt)        , save ::    velerr,   velgrad
-  real(rt)        , save ::   temperr,  tempgrad
-  real(rt)        , save ::  presserr, pressgrad
-  real(rt)        , save ::    raderr,   radgrad
-  integer         , save ::  max_denerr_lev,   max_dengrad_lev
-  integer         , save ::  max_enterr_lev,   max_entgrad_lev
-  integer         , save ::  max_velerr_lev,   max_velgrad_lev
-  integer         , save ::  max_temperr_lev,  max_tempgrad_lev
-  integer         , save ::  max_presserr_lev, max_pressgrad_lev
-  integer         , save ::  max_raderr_lev,   max_radgrad_lev
+  real(rt), save ::    denerr,   dengrad
+  real(rt), save ::    enterr,   entgrad
+  real(rt), save ::    velerr,   velgrad
+  real(rt), save ::   temperr,  tempgrad
+  real(rt), save ::  presserr, pressgrad
+  real(rt), save ::    raderr,   radgrad
+  integer,  save ::  max_denerr_lev,   max_dengrad_lev
+  integer,  save ::  max_enterr_lev,   max_entgrad_lev
+  integer,  save ::  max_velerr_lev,   max_velgrad_lev
+  integer,  save ::  max_temperr_lev,  max_tempgrad_lev
+  integer,  save ::  max_presserr_lev, max_pressgrad_lev
+  integer,  save ::  max_raderr_lev,   max_radgrad_lev
 
 contains
-
-  ! All tagging subroutines in this file must be threadsafe because
-  ! they are called inside OpenMP parallel regions.
 
   ! ::: -----------------------------------------------------------
   ! ::: This routine will tag high error cells based on the density
@@ -34,22 +31,22 @@ contains
                          bind(C, name="ca_denerror")
 
     use prob_params_module, only: dg
-    use amrex_fort_module, only : rt => amrex_real
+    use amrex_fort_module, only: rt => amrex_real
 
     implicit none
 
-    integer          :: set, clear, nd, level
-    integer          :: taglo(3), taghi(3)
-    integer          :: denlo(3), denhi(3)
-    integer          :: lo(3), hi(3), domlo(3), domhi(3)
-    integer          :: tag(taglo(1):taghi(1),taglo(2):taghi(2),taglo(3):taghi(3))
-    real(rt)         :: den(denlo(1):denhi(1),denlo(2):denhi(2),denlo(3):denhi(3),nd)
-    real(rt)         :: delta(3), xlo(3), problo(3), time
+    integer,  intent(in   ) :: set, clear, nd, level
+    integer,  intent(in   ) :: taglo(3), taghi(3)
+    integer,  intent(in   ) :: denlo(3), denhi(3)
+    integer,  intent(in   ) :: lo(3), hi(3), domlo(3), domhi(3)
+    integer,  intent(inout) :: tag(taglo(1):taghi(1),taglo(2):taghi(2),taglo(3):taghi(3))
+    real(rt), intent(in   ) :: den(denlo(1):denhi(1),denlo(2):denhi(2),denlo(3):denhi(3),nd)
+    real(rt), intent(in   ) :: delta(3), xlo(3), problo(3), time
 
-    real(rt)         :: ax, ay, az
-    integer          :: i, j, k
+    real(rt) :: ax, ay, az
+    integer  :: i, j, k
 
-    !     Tag on regions of high density
+    ! Tag on regions of high density
     if (level .lt. max_denerr_lev) then
        do k = lo(3), hi(3)
           do j = lo(2), hi(2)
@@ -62,7 +59,7 @@ contains
        enddo
     endif
 
-    !     Tag on regions of high density gradient
+    ! Tag on regions of high density gradient
     if (level .lt. max_dengrad_lev) then
        do k = lo(3), hi(3)
           do j = lo(2), hi(2)
@@ -95,22 +92,22 @@ contains
                           bind(C, name="ca_temperror")
 
     use prob_params_module, only: dg
-    use amrex_fort_module, only : rt => amrex_real
+    use amrex_fort_module, only: rt => amrex_real
 
     implicit none
 
-    integer          :: set, clear, np, level
-    integer          :: taglo(3), taghi(3)
-    integer          :: templo(3), temphi(3)
-    integer          :: lo(3), hi(3), domlo(3), domhi(3)
-    integer          :: tag(taglo(1):taghi(1),taglo(2):taghi(2),taglo(3):taghi(3))
-    real(rt)         :: temp(templo(1):temphi(1),templo(2):temphi(2),templo(3):temphi(3),np)
-    real(rt)         :: delta(3), xlo(3), problo(3), time
+    integer,  intent(in   ) :: set, clear, np, level
+    integer,  intent(in   ) :: taglo(3), taghi(3)
+    integer,  intent(in   ) :: templo(3), temphi(3)
+    integer,  intent(in   ) :: lo(3), hi(3), domlo(3), domhi(3)
+    integer,  intent(inout) :: tag(taglo(1):taghi(1),taglo(2):taghi(2),taglo(3):taghi(3))
+    real(rt), intent(in   ) :: temp(templo(1):temphi(1),templo(2):temphi(2),templo(3):temphi(3),np)
+    real(rt), intent(in   ) :: delta(3), xlo(3), problo(3), time
 
-    real(rt)         :: ax, ay, az
-    integer          :: i, j, k
+    real(rt) :: ax, ay, az
+    integer  :: i, j, k
 
-    !     Tag on regions of high temperature
+    ! Tag on regions of high temperature
     if (level .lt. max_temperr_lev) then
        do k = lo(3), hi(3)
           do j = lo(2), hi(2)
@@ -123,7 +120,7 @@ contains
        enddo
     endif
 
-    !     Tag on regions of high temperature gradient
+    ! Tag on regions of high temperature gradient
     if (level .lt. max_tempgrad_lev) then
        do k = lo(3), hi(3)
           do j = lo(2), hi(2)
@@ -156,22 +153,22 @@ contains
                            bind(C, name="ca_presserror")
 
     use prob_params_module, only: dg
-    use amrex_fort_module, only : rt => amrex_real
+    use amrex_fort_module, only: rt => amrex_real
 
     implicit none
 
-    integer          :: set, clear, np, level
-    integer          :: taglo(3), taghi(3)
-    integer          :: presslo(3), presshi(3)
-    integer          :: lo(3), hi(3), domlo(3), domhi(3)
-    integer          :: tag(taglo(1):taghi(1),taglo(2):taghi(2),taglo(3):taghi(3))
-    real(rt)         :: press(presslo(1):presshi(1),presslo(2):presshi(2),presslo(3):presshi(3),np)
-    real(rt)         :: delta(3), xlo(3), problo(3), time
+    integer,  intent(in   ) :: set, clear, np, level
+    integer,  intent(in   ) :: taglo(3), taghi(3)
+    integer,  intent(in   ) :: presslo(3), presshi(3)
+    integer,  intent(in   ) :: lo(3), hi(3), domlo(3), domhi(3)
+    integer,  intent(inout) :: tag(taglo(1):taghi(1),taglo(2):taghi(2),taglo(3):taghi(3))
+    real(rt), intent(in   ) :: press(presslo(1):presshi(1),presslo(2):presshi(2),presslo(3):presshi(3),np)
+    real(rt), intent(in   ) :: delta(3), xlo(3), problo(3), time
 
-    real(rt)         :: ax, ay, az
-    integer          :: i, j, k
+    real(rt) :: ax, ay, az
+    integer  :: i, j, k
 
-    !     Tag on regions of high pressure
+    ! Tag on regions of high pressure
     if (level .lt. max_presserr_lev) then
        do k = lo(3), hi(3)
           do j = lo(2), hi(2)
@@ -184,7 +181,7 @@ contains
        enddo
     endif
 
-    !     Tag on regions of high pressure gradient
+    ! Tag on regions of high pressure gradient
     if (level .lt. max_pressgrad_lev) then
        do k = lo(3), hi(3)
           do j = lo(2), hi(2)
@@ -217,20 +214,20 @@ contains
                          bind(C, name="ca_velerror")
 
     use prob_params_module, only: dg
-    use amrex_fort_module, only : rt => amrex_real
+    use amrex_fort_module, only: rt => amrex_real
 
     implicit none
 
-    integer          :: set, clear, nv, level
-    integer          :: taglo(3), taghi(3)
-    integer          :: vello(3), velhi(3)
-    integer          :: lo(3), hi(3), domlo(3), domhi(3)
-    integer          :: tag(taglo(1):taghi(1),taglo(2):taghi(2),taglo(3):taghi(3))
-    real(rt)         :: vel(vello(1):velhi(1),vello(2):velhi(2),vello(3):velhi(3),nv)
-    real(rt)         :: delta(3), xlo(3), problo(3), time
+    integer,  intent(in   ) :: set, clear, nv, level
+    integer,  intent(in   ) :: taglo(3), taghi(3)
+    integer,  intent(in   ) :: vello(3), velhi(3)
+    integer,  intent(in   ) :: lo(3), hi(3), domlo(3), domhi(3)
+    integer,  intent(inout) :: tag(taglo(1):taghi(1),taglo(2):taghi(2),taglo(3):taghi(3))
+    real(rt), intent(in   ) :: vel(vello(1):velhi(1),vello(2):velhi(2),vello(3):velhi(3),nv)
+    real(rt), intent(in   ) :: delta(3), xlo(3), problo(3), time
 
-    real(rt)         :: ax, ay, az
-    integer          :: i, j, k
+    real(rt) :: ax, ay, az
+    integer  :: i, j, k
 
     !     Tag on regions of high velocity
     if (level .lt. max_velerr_lev) then

@@ -865,7 +865,7 @@ subroutine ca_dervel(vel,v_lo,v_hi,nv, &
   ! This routine will derive the velocity from the momentum.
   !
 
-  use amrex_fort_module, only : rt => amrex_real
+  use amrex_fort_module, only: rt => amrex_real
 
   implicit none
 

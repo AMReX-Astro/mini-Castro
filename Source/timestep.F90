@@ -1,9 +1,8 @@
 module timestep_module
 
-  use amrex_fort_module, only : rt => amrex_real
-  implicit none
+  use amrex_fort_module, only: rt => amrex_real
 
-  public
+  implicit none
 
 contains
 
@@ -12,11 +11,13 @@ contains
   subroutine ca_estdt(lo,hi,u,u_lo,u_hi,dx,dt) bind(C, name="ca_estdt")
 
     use network, only: nspec, naux
-    use eos_module
+    use eos_module, only: eos
+    use eos_type_module, only: eos_t, eos_input_re
     use meth_params_module, only: NVAR, URHO, UMX, UMY, UMZ, UEINT, UTEMP, UFS, UFX
     use prob_params_module, only: dim
-    use bl_constants_module
-    use amrex_fort_module, only : rt => amrex_real
+    use bl_constants_module, only: ONE
+    use amrex_fort_module, only: rt => amrex_real
+
     implicit none
 
     integer          :: lo(3), hi(3)

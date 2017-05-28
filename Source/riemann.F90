@@ -1,16 +1,14 @@
 module riemann_module
 
-  use bl_types
-  use bl_constants_module
-  use meth_params_module, only : NQ, NQAUX, NVAR, QRHO, QU, QV, QW, &
-                                 QPRES, QGAME, QREINT, QFS, &
-                                 QFX, URHO, UMX, UMY, UMZ, UEDEN, UEINT, &
-                                 UFS, UFX, &
-                                 NGDNV, GDRHO, GDPRES, GDGAME, &
-                                 QC, QCSML, QGAMC, &
-                                 small_dens, small_temp, &
-                                 npassive, upass_map, qpass_map
-  use amrex_fort_module, only : rt => amrex_real
+  use meth_params_module, only: NQ, NQAUX, NVAR, QRHO, QU, QV, QW, &
+                                QPRES, QGAME, QREINT, QFS, &
+                                QFX, URHO, UMX, UMY, UMZ, UEDEN, UEINT, &
+                                UFS, UFX, &
+                                NGDNV, GDRHO, GDPRES, GDGAME, &
+                                QC, QCSML, QGAMC, &
+                                small_dens, small_temp, &
+                                npassive, upass_map, qpass_map
+  use amrex_fort_module, only: rt => amrex_real
 
   implicit none
 
@@ -33,11 +31,12 @@ contains
                     shk, s_lo, s_hi, &
                     idir, ilo, ihi, jlo, jhi, kc, kflux, k3d, domlo, domhi)
 
-    use mempool_module, only : bl_allocate, bl_deallocate
+    use mempool_module, only: bl_allocate, bl_deallocate
     use eos_module, only: eos
     use eos_type_module, only: eos_t, eos_input_re
     use network, only: nspec, naux
-    use amrex_fort_module, only : rt => amrex_real
+    use amrex_fort_module, only: rt => amrex_real
+    use bl_constants_module, only: ZERO, HALF, ONE
 
     integer, intent(in) :: qpd_lo(3), qpd_hi(3)
     integer, intent(in) :: flx_lo(3), flx_hi(3)
@@ -185,27 +184,29 @@ contains
 
   subroutine shock(q,qd_lo,qd_hi,shk,s_lo,s_hi,lo,hi,dx)
 
-    use prob_params_module, only : coord_type
-    use bl_constants_module
+    use prob_params_module, only: coord_type
+    use bl_constants_module, only: ZERO, HALF, ONE
+    use amrex_fort_module, only: rt => amrex_real
 
-    use amrex_fort_module, only : rt => amrex_real
-    integer, intent(in) :: qd_lo(3), qd_hi(3)
-    integer, intent(in) :: s_lo(3), s_hi(3)
-    integer, intent(in) :: lo(3), hi(3)
-    real(rt)        , intent(in) :: dx(3)
-    real(rt)        , intent(in) :: q(qd_lo(1):qd_hi(1),qd_lo(2):qd_hi(2),qd_lo(3):qd_hi(3),NQ)
-    real(rt)        , intent(inout) :: shk(s_lo(1):s_hi(1),s_lo(2):s_hi(2),s_lo(3):s_hi(3))
+    implicit none
+
+    integer,  intent(in   ) :: qd_lo(3), qd_hi(3)
+    integer,  intent(in   ) :: s_lo(3), s_hi(3)
+    integer,  intent(in   ) :: lo(3), hi(3)
+    real(rt), intent(in   ) :: dx(3)
+    real(rt), intent(in   ) :: q(qd_lo(1):qd_hi(1),qd_lo(2):qd_hi(2),qd_lo(3):qd_hi(3),NQ)
+    real(rt), intent(inout) :: shk(s_lo(1):s_hi(1),s_lo(2):s_hi(2),s_lo(3):s_hi(3))
 
     integer :: i, j, k
 
-    real(rt)         :: dxinv, dyinv, dzinv
-    real(rt)         :: divU
-    real(rt)         :: px_pre, px_post, py_pre, py_post, pz_pre, pz_post
-    real(rt)         :: e_x, e_y, e_z, d
-    real(rt)         :: p_pre, p_post, pjump
+    real(rt) :: dxinv, dyinv, dzinv
+    real(rt) :: divU
+    real(rt) :: px_pre, px_post, py_pre, py_post, pz_pre, pz_post
+    real(rt) :: e_x, e_y, e_z, d
+    real(rt) :: p_pre, p_post, pjump
 
-    real(rt)        , parameter :: small = 1.e-10_rt
-    real(rt)        , parameter :: eps = 0.33e0_rt
+    real(rt), parameter :: small = 1.e-10_rt
+    real(rt), parameter :: eps = 0.33e0_rt
 
     ! This is a basic multi-dimensional shock detection algorithm.
     ! This implementation follows Flash, which in turn follows
@@ -298,9 +299,10 @@ contains
                        qint,q_lo,q_hi, &
                        idir,ilo,ihi,jlo,jhi,kc,kflux,k3d,domlo,domhi)
 
-    use mempool_module, only : bl_allocate, bl_deallocate
-    use prob_params_module, only : physbc_lo, physbc_hi, Symmetry, SlipWall, NoSlipWall
-    use amrex_fort_module, only : rt => amrex_real
+    use mempool_module, only: bl_allocate, bl_deallocate
+    use prob_params_module, only: physbc_lo, physbc_hi, Symmetry, SlipWall, NoSlipWall
+    use amrex_fort_module, only: rt => amrex_real
+    use bl_constants_module, only: ZERO, HALF, ONE
 
     real(rt), parameter :: small = 1.e-8_rt
     real(rt), parameter :: small_pres = 1.e-200_rt
@@ -593,7 +595,9 @@ contains
 
   pure function bc_test(idir, i, j, domlo, domhi) result (f)
 
-    use prob_params_module, only : physbc_lo, physbc_hi, Symmetry, SlipWall, NoSlipWall
+    use prob_params_module, only: physbc_lo, physbc_hi, Symmetry, SlipWall, NoSlipWall
+
+    implicit none
 
     integer, intent(in) :: idir, i, j, domlo(*), domhi(*)
     integer :: f
@@ -638,6 +642,10 @@ contains
 
   pure subroutine wsqge(p,v,gam,gdot,gstar,pstar,wsq,csq,gmin,gmax)
 
+    use bl_constants_module, only: ZERO, HALF, ONE
+
+    implicit none
+
     ! compute the lagrangian wave speeds.
 
     real(rt)        , intent(in) :: p,v,gam,gdot,pstar,csq,gmin,gmax
@@ -680,20 +688,24 @@ contains
                                   gdot, gmin, gmax, &
                                   pstar, gamstar, converged, pstar_hist_extra)
 
+    use bl_constants_module, only: ZERO, HALF, ONE
+
+    implicit none
+
     ! we want to zero                                                                     
     ! f(p*) = u*_l(p*) - u*_r(p*)                                                         
     ! we'll do bisection                                                                  
                                                   
-    real(rt)        , intent(inout) :: pstar_lo, pstar_hi
-    real(rt)        , intent(in) :: ul, pl, taul, gamel, clsql
-    real(rt)        , intent(in) :: ur, pr, taur, gamer, clsqr
-    real(rt)        , intent(in) :: gdot, gmin, gmax
-    real(rt)        , intent(out) :: pstar, gamstar
-    logical, intent(out) :: converged
-    real(rt)        , intent(out) :: pstar_hist_extra(:)
+    real(rt), intent(inout) :: pstar_lo, pstar_hi
+    real(rt), intent(in   ) :: ul, pl, taul, gamel, clsql
+    real(rt), intent(in   ) :: ur, pr, taur, gamer, clsqr
+    real(rt), intent(in   ) :: gdot, gmin, gmax
+    real(rt), intent(  out) :: pstar, gamstar
+    logical,  intent(  out) :: converged
+    real(rt), intent(  out) :: pstar_hist_extra(:)
 
-    real(rt)         :: pstar_c, ustar_l, ustar_r, f_lo, f_hi, f_c
-    real(rt)         :: wl, wr, wlsq, wrsq
+    real(rt) :: pstar_c, ustar_l, ustar_r, f_lo, f_hi, f_c
+    real(rt) :: wl, wr, wlsq, wrsq
 
     integer, parameter :: cg_maxiter = 12
     real(rt), parameter :: cg_tol = 1.e-5_rt
@@ -776,26 +788,29 @@ contains
 
   subroutine HLL(ql, qr, cl, cr, idir, ndim, f)
 
-    use meth_params_module, only : QVAR, NVAR, QRHO, QU, QV, QW, QPRES, QREINT, &
-                                   URHO, UMX, UMY, UMZ, UEDEN, UEINT, &
-                                   npassive, upass_map, qpass_map
-    use prob_params_module, only : mom_flux_has_p
+    use meth_params_module, only: QVAR, NVAR, QRHO, QU, QV, QW, QPRES, QREINT, &
+                                  URHO, UMX, UMY, UMZ, UEDEN, UEINT, &
+                                  npassive, upass_map, qpass_map
+    use prob_params_module, only: mom_flux_has_p
+    use amrex_fort_module, only: rt => amrex_real
+    use bl_constants_module, only: ZERO, HALF, ONE
 
-    use amrex_fort_module, only : rt => amrex_real
-    real(rt)        , intent(in) :: ql(QVAR), qr(QVAR), cl, cr
-    real(rt)        , intent(inout) :: f(NVAR)
-    integer, intent(in) :: idir, ndim
+    implicit none
 
-    integer :: ivel, ivelt, iveltt, imom, imomt, imomtt
-    real(rt)         :: a1, a4, bd, bl, bm, bp, br
-    real(rt)         :: cavg, uavg
-    real(rt)         :: fl_tmp, fr_tmp
-    real(rt)         :: rhod, rhoEl, rhoEr, rhol_sqrt, rhor_sqrt
-    integer :: n, nq
+    real(rt), intent(in   ) :: ql(QVAR), qr(QVAR), cl, cr
+    real(rt), intent(inout) :: f(NVAR)
+    integer,  intent(in   ) :: idir, ndim
 
-    integer :: ipassive
+    integer  :: ivel, ivelt, iveltt, imom, imomt, imomtt
+    real(rt) :: a1, a4, bd, bl, bm, bp, br
+    real(rt) :: cavg, uavg
+    real(rt) :: fl_tmp, fr_tmp
+    real(rt) :: rhod, rhoEl, rhoEr, rhol_sqrt, rhor_sqrt
+    integer  :: n, nq
 
-    real(rt)        , parameter :: small = 1.e-10_rt
+    integer  :: ipassive
+
+    real(rt), parameter :: small = 1.e-10_rt
 
     select case (idir)
     case (1)
@@ -933,11 +948,14 @@ contains
   pure subroutine cons_state(q, U)
 
     use meth_params_module, only: QVAR, QRHO, QU, QV, QW, QREINT, &
-         NVAR, URHO, UMX, UMY, UMZ, UEDEN, UEINT, UTEMP, &
-         npassive, upass_map, qpass_map
+                                  NVAR, URHO, UMX, UMY, UMZ, UEDEN, UEINT, UTEMP, &
+                                  npassive, upass_map, qpass_map
+    use bl_constants_module, only: ZERO, HALF
 
-    real(rt)        , intent(in)  :: q(QVAR)
-    real(rt)        , intent(out) :: U(NVAR)
+    implicit none
+
+    real(rt), intent(in   ) :: q(QVAR)
+    real(rt), intent(  out) :: U(NVAR)
 
     integer :: ipassive, n, nq
 
@@ -968,16 +986,17 @@ contains
   pure subroutine HLLC_state(idir, S_k, S_c, q, U)
 
     use meth_params_module, only: QVAR, QRHO, QU, QV, QW, QREINT, QPRES, &
-         NVAR, URHO, UMX, UMY, UMZ, UEDEN, UEINT, UTEMP, &
-         npassive, upass_map, qpass_map
+                                  NVAR, URHO, UMX, UMY, UMZ, UEDEN, UEINT, UTEMP, &
+                                  npassive, upass_map, qpass_map
+    use bl_constants_module, only: ZERO, HALF
 
-    integer, intent(in) :: idir
-    real(rt)        , intent(in)  :: S_k, S_c
-    real(rt)        , intent(in)  :: q(QVAR)
-    real(rt)        , intent(out) :: U(NVAR)
+    integer,  intent(in   ) :: idir
+    real(rt), intent(in   ) :: S_k, S_c
+    real(rt), intent(in   ) :: q(QVAR)
+    real(rt), intent(  out) :: U(NVAR)
 
-    real(rt)         :: hllc_factor, u_k
-    integer :: ipassive, n, nq
+    real(rt) :: hllc_factor, u_k
+    integer  :: ipassive, n, nq
 
     if (idir == 1) then
        u_k = q(QU)
@@ -1023,7 +1042,10 @@ contains
 
     use meth_params_module, only: NVAR, URHO, UMX, UMY, UMZ, UEDEN, UEINT, UTEMP, &
          npassive, upass_map
-    use prob_params_module, only : mom_flux_has_p
+    use prob_params_module, only: mom_flux_has_p
+    use bl_constants_module, only: ZERO
+
+    implicit none
 
     integer, intent(in) :: idir, ndim, bnd_fac
     real(rt)        , intent(in) :: U(NVAR)

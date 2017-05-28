@@ -1,13 +1,6 @@
 module advection_util_module
 
-  use amrex_fort_module, only : rt => amrex_real
-
   implicit none
-
-  private
-
-  public enforce_minimum_density, compute_cfl, ctoprim, srctoprim, dflux, &
-         normalize_species_fluxes, divu
 
 contains
 
@@ -16,10 +9,10 @@ contains
                                      vol,vol_lo,vol_hi, &
                                      lo,hi,frac_change,verbose)
 
-    use network, only : nspec, naux
-    use meth_params_module, only : NVAR, URHO, UEINT, UEDEN, small_dens
-    use bl_constants_module, only : ZERO
-    use amrex_fort_module, only : rt => amrex_real
+    use network, only: nspec, naux
+    use meth_params_module, only: NVAR, URHO, UEINT, UEDEN, small_dens
+    use bl_constants_module, only: ZERO
+    use amrex_fort_module, only: rt => amrex_real
 
     implicit none
 
@@ -144,7 +137,8 @@ contains
     use eos_type_module, only: eos_t, eos_input_rt
     use eos_module, only: eos
     use castro_util_module, only: position
-    use amrex_fort_module, only : rt => amrex_real
+    use amrex_fort_module, only: rt => amrex_real
+
     implicit none
 
     real(rt)         :: old_state(NVAR), new_state(NVAR)
@@ -201,8 +195,8 @@ contains
 
     use bl_constants_module, only: ZERO
     use meth_params_module, only: NVAR, URHO
+    use amrex_fort_module, only: rt => amrex_real
 
-    use amrex_fort_module, only : rt => amrex_real
     implicit none
 
     real(rt)         :: old_state(NVAR), new_state(NVAR), input_state(NVAR)
@@ -240,8 +234,8 @@ contains
     use bl_constants_module, only: ZERO, ONE
     use meth_params_module, only: NQ, QRHO, QU, QV, QW, QC, NQAUX
     use prob_params_module, only: dim
+    use amrex_fort_module, only: rt => amrex_real
 
-    use amrex_fort_module, only : rt => amrex_real
     implicit none
 
     integer :: lo(3), hi(3)
@@ -320,11 +314,11 @@ contains
                      q,     q_lo,   q_hi, &
                      qaux, qa_lo,  qa_hi)
 
-    use mempool_module, only : bl_allocate, bl_deallocate
-    use actual_network, only : nspec, naux
-    use eos_module, only : eos
-    use eos_type_module, only : eos_t, eos_input_re
-    use meth_params_module, only : NVAR, URHO, UMX, UMZ, &
+    use mempool_module, only: bl_allocate, bl_deallocate
+    use actual_network, only: nspec, naux
+    use eos_module, only: eos
+    use eos_type_module, only: eos_t, eos_input_re
+    use meth_params_module, only: NVAR, URHO, UMX, UMZ, &
                                    UEDEN, UEINT, UTEMP, &
                                    QRHO, QU, QV, QW, &
                                    QREINT, QPRES, QTEMP, QGAME, QFS, QFX, &
@@ -332,7 +326,8 @@ contains
                                    npassive, upass_map, qpass_map, small_dens
     use bl_constants_module, only: ZERO, HALF, ONE
     use castro_util_module, only: position
-    use amrex_fort_module, only : rt => amrex_real
+    use amrex_fort_module, only: rt => amrex_real
+
     implicit none
 
     integer, intent(in) :: lo(3), hi(3)
@@ -449,137 +444,6 @@ contains
 
 
 
-  subroutine srctoprim(lo, hi, &
-                       q,     q_lo,   q_hi, &
-                       qaux, qa_lo,  qa_hi, &
-                       src, src_lo, src_hi, &
-                       srcQ,srQ_lo, srQ_hi)
-
-    use mempool_module, only : bl_allocate, bl_deallocate
-    use actual_network, only : nspec, naux
-    use eos_module, only : eos
-    use eos_type_module, only : eos_t, eos_input_re
-    use meth_params_module, only : NVAR, URHO, UMX, UMY, UMZ, UEINT, &
-                                   QVAR, QRHO, QU, QV, QW, NQ, &
-                                   QREINT, QPRES, QDPDR, QDPDE, NQAUX, &
-                                   npassive, upass_map, qpass_map
-    use bl_constants_module, only: ZERO, HALF, ONE
-    use castro_util_module, only: position
-
-    use amrex_fort_module, only : rt => amrex_real
-    implicit none
-
-    integer, intent(in) :: lo(3), hi(3)
-    integer, intent(in) :: q_lo(3), q_hi(3)
-    integer, intent(in) :: qa_lo(3),   qa_hi(3)
-    integer, intent(in) :: src_lo(3), src_hi(3)
-    integer, intent(in) :: srQ_lo(3), srQ_hi(3)
-
-    real(rt)        , intent(in   ) :: q(q_lo(1):q_hi(1),q_lo(2):q_hi(2),q_lo(3):q_hi(3),NQ)
-    real(rt)        , intent(in   ) :: qaux(qa_lo(1):qa_hi(1),qa_lo(2):qa_hi(2),qa_lo(3):qa_hi(3),NQAUX)
-    real(rt)        , intent(in   ) :: src(src_lo(1):src_hi(1),src_lo(2):src_hi(2),src_lo(3):src_hi(3),NVAR)
-    real(rt)        , intent(inout) :: srcQ(srQ_lo(1):srQ_hi(1),srQ_lo(2):srQ_hi(2),srQ_lo(3):srQ_hi(3),QVAR)
-
-    integer          :: i, j, k
-    integer          :: n, iq, ipassive
-    real(rt)         :: rhoinv
-
-    srcQ(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),:) = ZERO
-
-    ! compute srcQ terms
-    do k = lo(3), hi(3)
-       do j = lo(2), hi(2)
-          do i = lo(1), hi(1)
-
-             rhoinv = ONE / q(i,j,k,QRHO)
-
-             srcQ(i,j,k,QRHO  ) = src(i,j,k,URHO)
-             srcQ(i,j,k,QU    ) = (src(i,j,k,UMX) - q(i,j,k,QU) * srcQ(i,j,k,QRHO)) * rhoinv
-             srcQ(i,j,k,QV    ) = (src(i,j,k,UMY) - q(i,j,k,QV) * srcQ(i,j,k,QRHO)) * rhoinv
-             srcQ(i,j,k,QW    ) = (src(i,j,k,UMZ) - q(i,j,k,QW) * srcQ(i,j,k,QRHO)) * rhoinv
-             srcQ(i,j,k,QREINT) = src(i,j,k,UEINT)
-             srcQ(i,j,k,QPRES ) = qaux(i,j,k,QDPDE)*(srcQ(i,j,k,QREINT) - &
-                                  q(i,j,k,QREINT)*srcQ(i,j,k,QRHO)*rhoinv) * rhoinv + &
-                                  qaux(i,j,k,QDPDR)*srcQ(i,j,k,QRHO)
-
-          enddo
-       enddo
-    enddo
-
-    do ipassive = 1, npassive
-       n = upass_map(ipassive)
-       iq = qpass_map(ipassive)
-
-       do k = lo(3), hi(3)
-          do j = lo(2), hi(2)
-             do i = lo(1), hi(1)
-                srcQ(i,j,k,iq) = ( src(i,j,k,n) - q(i,j,k,iq) * srcQ(i,j,k,QRHO) ) / &
-                                 q(i,j,k,QRHO)
-             enddo
-          enddo
-       enddo
-
-    enddo
-
-  end subroutine srctoprim
-  
-
-
-  ! Given a conservative state and its corresponding primitive state, calculate the
-  ! corresponding flux in a given direction.
-
-  function dflux(u, q, dir, idx) result(flux)
-
-    use bl_constants_module, only: ZERO
-    use meth_params_module, only: NVAR, URHO, UMX, UMZ, UEDEN, UEINT, &
-                                  NQ, QU, QPRES, &
-                                  npassive, upass_map
-    use prob_params_module, only: mom_flux_has_p
-    use amrex_fort_module, only : rt => amrex_real
-    implicit none
-
-    integer :: dir, idx(3)
-    real(rt)         :: u(NVAR), q(NQ), flux(NVAR)
-
-    real(rt)         :: v_adv
-    integer :: ipassive, n
-    ! Set everything to zero; this default matters because some
-    ! quantities like temperature are not updated through fluxes.
-
-    flux = ZERO
-
-    ! Determine the advection speed based on the flux direction.
-
-    v_adv = q(QU + dir - 1)
-
-    ! Core quantities (density, momentum, energy).
-
-    flux(URHO) = u(URHO) * v_adv
-    flux(UMX:UMZ) = u(UMX:UMZ) * v_adv
-    flux(UEDEN) = (u(UEDEN) + q(QPRES)) * v_adv
-    flux(UEINT) = u(UEINT) * v_adv
-
-    ! Optionally include the pressure term in the momentum flux.
-    ! It is optional because for some geometries we cannot write
-    ! the pressure term in a conservative form.
-
-    if (mom_flux_has_p(dir)%comp(UMX+dir-1)) then
-       flux(UMX + dir - 1) = flux(UMX + dir - 1) + q(QPRES)
-    endif
-
-    ! Passively advected quantities.
-
-    do ipassive = 1, npassive
-
-       n = upass_map(ipassive)
-       flux(n) = u(n) * v_adv
-
-    enddo
-
-  end function dflux
-
-
-
   subroutine normalize_species_fluxes(flux1,flux1_lo,flux1_hi, &
                                       flux2,flux2_lo,flux2_hi, &
                                       flux3,flux3_lo,flux3_hi, &
@@ -589,24 +453,24 @@ contains
     ! they sum to 0.  This is essentially the CMA procedure that is
     ! defined in Plewa & Muller, 1999, A&A, 342, 179
 
-    use network, only : nspec
-    use meth_params_module, only : NVAR, URHO, UFS
-    use bl_constants_module
+    use network, only: nspec
+    use meth_params_module, only: NVAR, URHO, UFS
+    use bl_constants_module, only: ZERO, ONE
+    use amrex_fort_module, only: rt => amrex_real
 
-    use amrex_fort_module, only : rt => amrex_real
     implicit none
 
-    integer, intent(in) :: lo(3), hi(3)
-    integer, intent(in) :: flux1_lo(3), flux1_hi(3)
-    integer, intent(in) :: flux2_lo(3), flux2_hi(3)
-    integer, intent(in) :: flux3_lo(3), flux3_hi(3)
-    real(rt)        , intent(inout) :: flux1(flux1_lo(1):flux1_hi(1),flux1_lo(2):flux1_hi(2),flux1_lo(3):flux1_hi(3),NVAR)
-    real(rt)        , intent(inout) :: flux2(flux2_lo(1):flux2_hi(1),flux2_lo(2):flux2_hi(2),flux2_lo(3):flux2_hi(3),NVAR)
-    real(rt)        , intent(inout) :: flux3(flux3_lo(1):flux3_hi(1),flux3_lo(2):flux3_hi(2),flux3_lo(3):flux3_hi(3),NVAR)
+    integer,  intent(in   ) :: lo(3), hi(3)
+    integer,  intent(in   ) :: flux1_lo(3), flux1_hi(3)
+    integer,  intent(in   ) :: flux2_lo(3), flux2_hi(3)
+    integer,  intent(in   ) :: flux3_lo(3), flux3_hi(3)
+    real(rt), intent(inout) :: flux1(flux1_lo(1):flux1_hi(1),flux1_lo(2):flux1_hi(2),flux1_lo(3):flux1_hi(3),NVAR)
+    real(rt), intent(inout) :: flux2(flux2_lo(1):flux2_hi(1),flux2_lo(2):flux2_hi(2),flux2_lo(3):flux2_hi(3),NVAR)
+    real(rt), intent(inout) :: flux3(flux3_lo(1):flux3_hi(1),flux3_lo(2):flux3_hi(2),flux3_lo(3):flux3_hi(3),NVAR)
 
     ! Local variables
-    integer          :: i, j, k, n
-    real(rt)         :: sum, fac
+    integer  :: i, j, k, n
+    real(rt) :: sum, fac
 
     do k = lo(3),hi(3)
        do j = lo(2),hi(2)
@@ -673,21 +537,21 @@ contains
 
   subroutine divu(lo,hi,q,q_lo,q_hi,dx,div,div_lo,div_hi)
 
-    use meth_params_module, only : QU, QV, QW, QVAR
-    use bl_constants_module
+    use meth_params_module, only: QU, QV, QW, QVAR
+    use bl_constants_module, only: FOURTH, ONE
+    use amrex_fort_module, only: rt => amrex_real
 
-    use amrex_fort_module, only : rt => amrex_real
     implicit none
 
-    integer, intent(in) :: lo(3), hi(3)
-    integer, intent(in) :: q_lo(3), q_hi(3)
-    integer, intent(in) :: div_lo(3), div_hi(3)
-    real(rt)        , intent(in) :: dx(3)
-    real(rt)        , intent(inout) :: div(div_lo(1):div_hi(1),div_lo(2):div_hi(2),div_lo(3):div_hi(3))
-    real(rt)        , intent(in) :: q(q_lo(1):q_hi(1),q_lo(2):q_hi(2),q_lo(3):q_hi(3),QVAR)
+    integer,  intent(in   ) :: lo(3), hi(3)
+    integer,  intent(in   ) :: q_lo(3), q_hi(3)
+    integer,  intent(in   ) :: div_lo(3), div_hi(3)
+    real(rt), intent(in   ) :: dx(3)
+    real(rt), intent(inout) :: div(div_lo(1):div_hi(1),div_lo(2):div_hi(2),div_lo(3):div_hi(3))
+    real(rt), intent(in   ) :: q(q_lo(1):q_hi(1),q_lo(2):q_hi(2),q_lo(3):q_hi(3),QVAR)
 
-    integer          :: i, j, k
-    real(rt)         :: ux, vy, wz, dxinv, dyinv, dzinv
+    integer  :: i, j, k
+    real(rt) :: ux, vy, wz, dxinv, dyinv, dzinv
 
     dxinv = ONE/dx(1)
     dyinv = ONE/dx(2)

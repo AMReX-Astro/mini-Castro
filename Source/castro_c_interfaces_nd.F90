@@ -178,35 +178,4 @@ contains
 
   end subroutine ca_ctoprim
 
-
-  subroutine ca_srctoprim(lo, hi, &
-                          q,     q_lo,   q_hi, &
-                          qaux, qa_lo,  qa_hi, &
-                          src, src_lo, src_hi, &
-                          srcQ,srQ_lo, srQ_hi, idx) bind(C, name = "ca_srctoprim")
-
-    use advection_util_module, only: srctoprim
-
-    implicit none
-
-    integer, intent(in) :: lo(3), hi(3)
-    integer, intent(in) :: q_lo(3), q_hi(3)
-    integer, intent(in) :: qa_lo(3),   qa_hi(3)
-    integer, intent(in) :: src_lo(3), src_hi(3)
-    integer, intent(in) :: srQ_lo(3), srQ_hi(3)
-
-    real(rt)        , intent(in   ) :: q(q_lo(1):q_hi(1),q_lo(2):q_hi(2),q_lo(3):q_hi(3),NQ)
-    real(rt)        , intent(in   ) :: qaux(qa_lo(1):qa_hi(1),qa_lo(2):qa_hi(2),qa_lo(3):qa_hi(3),NQAUX)
-    real(rt)        , intent(in   ) :: src(src_lo(1):src_hi(1),src_lo(2):src_hi(2),src_lo(3):src_hi(3),NVAR)
-    real(rt)        , intent(inout) :: srcQ(srQ_lo(1):srQ_hi(1),srQ_lo(2):srQ_hi(2),srQ_lo(3):srQ_hi(3),QVAR)
-    integer, intent(in)     :: idx
-
-    call srctoprim(lo, hi, &
-                   q,     q_lo,   q_hi, &
-                   qaux, qa_lo,  qa_hi, &
-                   src, src_lo, src_hi, &
-                   srcQ,srQ_lo, srQ_hi)
-
-  end subroutine ca_srctoprim
-
 end module c_interface_modules

@@ -17,16 +17,16 @@ subroutine ca_mol_single_stage(time, &
                                vol, vol_l1, vol_l2, vol_l3, vol_h1, vol_h2, vol_h3, &
                                courno, verbose) bind(C, name="ca_mol_single_stage")
 
-  use mempool_module, only : bl_allocate, bl_deallocate
-  use meth_params_module, only : NQ, QVAR, NVAR, NGDNV, GDPRES, &
+  use mempool_module, only: bl_allocate, bl_deallocate
+  use meth_params_module, only: NQ, QVAR, NVAR, NGDNV, GDPRES, &
                                  UTEMP, UEINT, USHK, UMX, GDU, GDV, GDW, &
                                  QU, QV, QW, QPRES, NQAUX
   use advection_util_module, only: compute_cfl, divu, normalize_species_fluxes
-  use bl_constants_module, only : ZERO, HALF, ONE, FOURTH
+  use bl_constants_module, only: ZERO, HALF, ONE, FOURTH
   use flatten_module, only: uflaten
   use riemann_module, only: cmpflx, shock
-  use ppm_module, only : ppm_reconstruct
-  use amrex_fort_module, only : rt => amrex_real
+  use ppm_module, only: ppm_reconstruct
+  use amrex_fort_module, only: rt => amrex_real
 
   implicit none
 
@@ -325,7 +325,6 @@ subroutine ca_mol_single_stage(time, &
 
   call bl_deallocate(qint)
   call bl_deallocate(shk)
-
 
   ! Compute divergence of velocity field (on surroundingNodes(lo,hi))
   call divu(lo,hi,q,q_lo,q_hi,dx,div,lo,hi+1)
