@@ -109,6 +109,11 @@ contains
        enddo
     endif
 
+    ! The following section is temporarily disabled when CUDA
+    ! is used. It will be turned on later, once the hydro update
+    ! is device-ready.
+
+#ifndef CUDA
     ! recompute the thermodynamics on the interface to make it
     ! all consistent
 
@@ -158,6 +163,7 @@ contains
 
        enddo
     enddo
+#endif
 
     call riemannus(qm, qp, qpd_lo, qpd_hi, &
                    gamcm, gamcp, cavg, smallc, gd_lo, gd_hi, &
