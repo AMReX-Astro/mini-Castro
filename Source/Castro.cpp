@@ -904,6 +904,8 @@ void
 Castro::enforce_consistent_e (MultiFab& S)
 {
 
+Device::beginDeviceLaunchRegion();
+
 #ifdef _OPENMP
 #pragma omp parallel
 #endif
@@ -916,6 +918,9 @@ Castro::enforce_consistent_e (MultiFab& S)
 	const int idx      = mfi.tileIndex();
         ca_enforce_consistent_e(ARLIM_3D(lo), ARLIM_3D(hi), BL_TO_FORTRAN_3D(S[mfi]), &idx);
     }
+
+Device::endDeviceLaunchRegion();
+
 }
 
 Real
