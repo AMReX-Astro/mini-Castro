@@ -265,6 +265,11 @@ public:
     //
     amrex::MultiFab fine_mask;
     amrex::MultiFab& build_fine_mask();
+    
+    //
+    // A record of how many cells we have advanced throughout the simulation
+    //
+    static int num_zones_advanced;
 
 protected:
 

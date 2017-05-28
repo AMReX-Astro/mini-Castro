@@ -261,4 +261,8 @@ Castro::finalize_advance(Real time, Real dt, int amr_iteration, int amr_ncycle)
     k_mol.clear();
     Sburn.clear();
 
+    // Record how many zones we have advanced.
+
+    num_zones_advanced += grids.numPts();
+
 }

@@ -37,6 +37,8 @@ BCRec        Castro::phys_bc;
 int          Castro::NUM_STATE     = -1;
 int          Castro::NUM_GROW      = -1;
 
+int          Castro::num_zones_advanced = 0;
+
 Real         Castro::frac_change   = 1.e200;
 
 int          Castro::Density       = -1;

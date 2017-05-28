@@ -169,6 +169,17 @@ main (int   argc,
     {
         std::cout << "Run time = " << runtime_total << std::endl;
         std::cout << "Run time w/o init = " << runtime_timestep << std::endl;
+
+	//
+	// Calculate the Figure of Merit.
+	//
+	int nProcs = ParallelDescriptor::NProcs();
+	Real fom = Castro::num_zones_advanced / runtime_timestep / 1.e6;
+
+	std::cout << "\n";
+	std::cout << "  Figure of Merit (zones / usec / processor): " << fom / nProcs << "\n";
+	std::cout << "  Figure of Merit (zones / usec)            : " << fom << "\n";
+	std::cout << "\n";
     }
 
     if (CArena* arena = dynamic_cast<CArena*>(amrex::The_Arena()))
