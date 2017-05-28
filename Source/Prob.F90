@@ -50,7 +50,7 @@ subroutine ca_initdata(level,time,lo,hi,nscal, &
                        delta,xlo,xhi)
 
   use probdata_module, only: probtype, r_init, exp_energy, nsub, p_ambient, dens_ambient
-  use eos_module, only: gamma_const
+  use actual_eos_module, only: gamma_const
   use bl_constants_module, only: M_PI, FOUR3RD
   use meth_params_module , only: NVAR, URHO, UMX, UMY, UMZ, UEDEN, UEINT, UFS
   use prob_params_module, only: center

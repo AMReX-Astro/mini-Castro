@@ -1,14 +1,8 @@
 ! This is a constant gamma equation of state, using an ideal gas.
-!
-! This a simplified version of the more general eos_gamma_general.
-!
 
 module actual_eos_module
 
-  use bl_types
-  use bl_error_module
-  use bl_constants_module
-  use eos_type_module
+  use amrex_fort_module, only: rt => amrex_real
 
   implicit none
 
@@ -19,21 +13,22 @@ module actual_eos_module
   logical, save :: assume_neutral
 
   ! boltzmann's constant
-  real(kind=dp_t), parameter :: k_B = 1.3806488e-16_dp_t   ! erg/K
+  real(rt), parameter :: k_B = 1.3806488e-16_rt   ! erg/K
 
   ! avogradro's Number
-  real(kind=dp_t), parameter :: n_A = 6.02214129e23_dp_t   ! mol^-1
+  real(rt), parameter :: n_A = 6.02214129e23_rt   ! mol^-1
 
 contains
 
   subroutine actual_eos_init
 
     use extern_probin_module, only: eos_gamma, eos_assume_neutral
+    use bl_constants_module, only: ZERO
 
     implicit none
 
     ! constant ratio of specific heats
-    if (eos_gamma .gt. 0.d0) then
+    if (eos_gamma .gt. ZERO) then
        gamma_const = eos_gamma
     else
        call bl_error("gamma_const cannot be < 0")
@@ -48,6 +43,13 @@ contains
   subroutine actual_eos(input, state)
 
     use network, only: aion, zion
+    use eos_type_module, only: eos_t, &
+                               eos_input_rt, eos_input_re, eos_input_rh, eos_input_rp, &
+                               eos_input_th, eos_input_tp, eos_input_ps, eos_input_ph
+    use bl_constants_module, only: ZERO, ONE
+#ifndef ACC
+    use bl_error_module, only: bl_error
+#endif
 
     implicit none
 
