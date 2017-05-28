@@ -77,8 +77,6 @@ contains
 
     !$acc routine seq
 
-    use eos_override_module, only: eos_override
-
     implicit none
 
     ! Input arguments
@@ -102,12 +100,6 @@ contains
 
     has_been_reset = .false.
     call reset_inputs(input, state, has_been_reset)
-
-    ! Allow the user to override any details of the
-    ! EOS state. This should generally occur right
-    ! before the actual_eos call.
-
-    call eos_override(state)
 
     ! Call the EOS.
 

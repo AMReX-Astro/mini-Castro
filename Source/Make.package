@@ -50,7 +50,6 @@ endif
 
 ca_F90EXE_sources += eos.F90
 ca_F90EXE_sources += eos_type.F90
-ca_F90EXE_sources += eos_override.F90
 ca_F90EXE_sources += gamma_law.F90
 
 ca_F90EXE_sources += network.F90
