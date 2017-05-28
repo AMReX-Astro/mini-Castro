@@ -14,13 +14,11 @@ section_sources = Preface/Preface.tex \
 	          FlowChart/FlowChart.tex \
                   runtime_parameters/runtime_parameters.tex \
                   runtime_parameters/rp_intro.tex \
-                  ManagingJobs/managingjobs.tex \
                   FAQ/faq.tex \
                   Hydrodynamics/Hydrodynamics.tex \
                   EOSNetwork/EOSNetwork.tex \
                   AMR/AMR.tex \
                   Visualization/CastroVisualization.tex \
-                  Verification/Verification.tex \
                   castrosymbols.tex
 
 

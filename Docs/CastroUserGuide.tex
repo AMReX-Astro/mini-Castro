@@ -110,7 +110,7 @@
 
 \renewcommand{\sectionmark}[1]{\markright{\thesection---#1}}
 
-\graphicspath{{Verification/}{Software/}{ConvertCheckpoint/}{Scaling/}{Visualization/}}
+\graphicspath{{Software/}{Visualization/}}
 
 % skip a bit of space between paragraphs, to enhance readability
 \usepackage{parskip}
@@ -329,9 +329,6 @@
 \input runtime_parameters/rp_intro.tex
 \input runtime_parameters/runtime_parameters.tex
 
-\chapter{Compilers, Managing Jobs, and Scaling}
-\input ManagingJobs/managingjobs.tex
-
 \chapter{Frequently Asked Questions}
 \input FAQ/faq.tex
 
@@ -347,9 +344,6 @@
 \chapter{Visualization}
 \input Visualization/CastroVisualization.tex
 
-\chapter{Verification Test Problems}
-\input Verification/Verification.tex
-
 
 %------------------------------------------------------------------------------
 \backmatter
@@ -357,7 +351,7 @@
 \renewcommand\bibname{References}
 \addcontentsline{toc}{chapter}{References}
 \bibliographystyle{plain}
-\bibliography{refs,Verification/verification}
+\bibliography{refs}
 
 \cleardoublepage
 \phantomsection
