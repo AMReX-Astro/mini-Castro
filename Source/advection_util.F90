@@ -4,15 +4,23 @@ module advection_util_module
 
 contains
 
+!#ifdef CUDA
+!  attributes(device) &
+!#endif
   subroutine enforce_minimum_density(uin,uin_lo,uin_hi, &
                                      uout,uout_lo,uout_hi, &
                                      vol,vol_lo,vol_hi, &
                                      lo,hi,frac_change,verbose)
 
     use network, only: nspec, naux
-    use meth_params_module, only: NVAR, URHO, UEINT, UEDEN, small_dens
     use bl_constants_module, only: ZERO
     use amrex_fort_module, only: rt => amrex_real
+!#ifdef CUDA
+!    use meth_params_module, only: NVAR => NVAR_d, URHO => URHO_d, UEINT => UEINT_d, &
+!                                  UEDEN => UEDEN_d, small_dens => small_dens_d
+!#else
+    use meth_params_module, only: NVAR, URHO, UEINT, UEDEN, small_dens
+!#endif
 
     implicit none
 
@@ -62,9 +70,11 @@ contains
 
              if (uout(i,j,k,URHO) .eq. ZERO) then
 
+!#ifndef CUDA
                 print *,'DENSITY EXACTLY ZERO AT CELL ',i,j,k
                 print *,'  in grid ',lo(1),lo(2),lo(3),hi(1),hi(2),hi(3)
                 call bl_error("Error:: advection_util_nd.F90 :: ca_enforce_minimum_density")
+!#endif
 
              else if (uout(i,j,k,URHO) < small_dens) then
 
@@ -129,6 +139,9 @@ contains
 
 
 
+!#ifdef CUDA
+!  attributes(device) &
+!#endif
   subroutine reset_to_small_state(old_state, new_state, idx, lo, hi, verbose)
 
     use bl_constants_module, only: ZERO

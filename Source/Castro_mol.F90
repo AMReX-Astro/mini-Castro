@@ -19,7 +19,7 @@ subroutine ca_mol_single_stage(time, &
 
   use mempool_module, only: bl_allocate, bl_deallocate
   use meth_params_module, only: NQ, QVAR, NVAR, NGDNV, GDPRES, &
-                                 UTEMP, UEINT, USHK, UMX, GDU, GDV, GDW, &
+                                 UTEMP, UEINT, UMX, GDU, GDV, GDW, &
                                  QU, QV, QW, QPRES, NQAUX
   use advection_util_module, only: compute_cfl, divu, normalize_species_fluxes
   use bl_constants_module, only: ZERO, HALF, ONE, FOURTH

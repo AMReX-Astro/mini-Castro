@@ -272,6 +272,34 @@ class Param(object):
 
         return tstr
 
+    def get_cuda_F90_decl_string(self):
+        # this is the line that goes into meth_params.F90
+
+        if not self.in_fortran:
+            return None
+
+        if self.F90_dtype == "int":
+            tstr = "integer, device :: {}_d\n".format(self.F90_name)
+        elif self.F90_dtype == "Real":
+            tstr = "real(rt), device :: {}_d\n".format(self.F90_name)
+        elif self.F90_dtype == "logical":
+            tstr = "logical, device :: {}_d\n".format(self.F90_name)
+        elif self.F90_dtype == "string":
+            print("warning: string parameter {} will not be available to CUDA".format(
+                self.F90_name))
+            tstr = " "
+        else:
+            sys.exit("unsupported datatype for Fortran: {}".format(self.name))
+
+        return tstr
+
+    def get_cuda_sync_string(self):
+        """this is the string that syncronizes the param to the device"""
+        if self.F90_dtype == "string":
+            return "\n"
+        else:
+            return "istat = cudaMemcpyAsync({}_d, {}, 1)\n".format(
+                self.F90_name, self.F90_name)
 
 def write_meth_module(plist, meth_template):
     """this writes the meth_params_module, starting with the meth_template
@@ -279,37 +307,42 @@ def write_meth_module(plist, meth_template):
        place
     """
 
-    try: mt = open(meth_template, "r")
+    try:
+        mt = open(meth_template, "r")
     except:
         sys.exit("invalid template file")
 
-    try: mo = open("meth_params.F90", "w")
+    try:
+        mo = open("meth_params.F90", "w")
     except:
         sys.exit("unable to open meth_params.F90 for writing")
 
 
     mo.write(FWARNING)
 
-    param_decls = [p.get_F90_decl_string() for p in plist if p.in_fortran == 1]
     params = [p for p in plist if p.in_fortran == 1]
-
-    decls = ""
-
-    for p in param_decls:
-        decls += "  {}".format(p)
+    param_decls = ["  {}".format(p.get_F90_decl_string()) for p in params]
+    cuda_decls = ["  {}".format(p.get_cuda_F90_decl_string()) for p in params]
 
     for line in mt:
         if line.find("@@F90_declarations@@") > 0:
-            mo.write(decls)
 
+            # Fortran declaractions
+            mo.writelines(param_decls)
+
+            # CUDA declarations
+            mo.write("\n")
+            mo.write("#ifdef CUDA\n")
+            mo.writelines(cuda_decls)
+            mo.write("#endif\n")
+            
             # Now do the OpenACC declarations
-
             mo.write("\n")
             mo.write("  !$acc declare &\n")
             mo.write("  !$acc create(")
 
             for n, p in enumerate(params):
-                if p.F90_dtype == "string": 
+                if p.F90_dtype == "string":
                     print("warning: string parameter {} will not be available on the GPU".format(p.name),
                           file=sys.stderr)
                     continue
@@ -333,8 +366,14 @@ def write_meth_module(plist, meth_template):
             for p in params:
                 mo.write(p.get_query_string("F90"))
 
+            # sync the CUDA device parameters
+            mo.write("\n")
+            mo.write("#ifdef CUDA\n")
+            for p in params:
+                mo.write("  {}".format(p.get_cuda_sync_string()))
+            mo.write("#endif\n")
+            
             # Now do the OpenACC device updates
-
             mo.write("\n")
             mo.write("    !$acc update &\n")
             mo.write("    !$acc device(")
@@ -366,7 +405,8 @@ def parse_params(infile, meth_template):
     cpp_class = None
     static = None
 
-    try: f = open(infile)
+    try:
+        f = open(infile)
     except:
         sys.exit("error openning the input file")
 
@@ -386,8 +426,10 @@ def parse_params(infile, meth_template):
                 namespace = fields[0]
                 cpp_class = fields[1]
 
-                try: static = fields[2]
-                except: static = ""
+                try:
+                    static = fields[2]
+                except:
+                    static = ""
 
                 # do we have the static keyword?
                 if "static" in static:
@@ -418,22 +460,30 @@ def parse_params(infile, meth_template):
         else:
             debug_default = None
 
-        try: in_fortran_string = fields[3]
-        except: in_fortran = 0
+        try:
+            in_fortran_string = fields[3]
+        except:
+            in_fortran = 0
         else:
             if in_fortran_string.lower().strip() == "y":
                 in_fortran = 1
             else:
                 in_fortran = 0
 
-        try: ifdef = fields[4]
-        except: ifdef = None
+        try:
+            ifdef = fields[4]
+        except:
+            ifdef = None
 
-        try: F90_name = fields[5]
-        except: F90_name = None
+        try:
+            F90_name = fields[5]
+        except:
+            F90_name = None
 
-        try: F90_dtype = fields[6]
-        except: F90_dtype = None
+        try:
+            F90_dtype = fields[6]
+        except:
+            F90_dtype = None
 
         if namespace is None:
             sys.exit("namespace not set")

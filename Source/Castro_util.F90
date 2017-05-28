@@ -326,6 +326,10 @@ subroutine ca_set_method_params(dm,Density,Xmom,Eden,Eint,Temp, &
   integer :: i
   integer :: ioproc
 
+#ifdef CUDA
+  integer :: istat
+#endif
+
   call parallel_initialize()
 
   !---------------------------------------------------------------------
@@ -363,7 +367,6 @@ subroutine ca_set_method_params(dm,Density,Xmom,Eden,Eint,Temp, &
      UFX = 1
   end if
 
-  USHK  = -1
   !---------------------------------------------------------------------
   ! primitive state components
   !---------------------------------------------------------------------
@@ -504,13 +507,47 @@ subroutine ca_set_method_params(dm,Density,Xmom,Eden,Eint,Temp, &
   !$acc update &
   !$acc device(NTHERM, NVAR) &
   !$acc device(NQ) &
-  !$acc device(URHO, UMX, UMY, UMZ, UMR, UML, UMP, UEDEN, UEINT, UTEMP, UFA, UFS, UFX) &
-  !$acc device(USHK) &
+  !$acc device(URHO, UMX, UMY, UMZ, UEDEN, UEINT, UTEMP, UFA, UFS, UFX) &
   !$acc device(QTHERM, QVAR) &
   !$acc device(QRHO, QU, QV, QW, QPRES, QREINT, QTEMP, QGAME) &
   !$acc device(QFA, QFS, QFX) &
   !$acc device(NQAUX, QGAMC, QC, QCSML, QDPDR, QDPDE) &
   !$acc device(small_dens, small_temp)
+
+#ifdef CUDA
+  NTHERM_d = NTHERM
+  NVAR_d = NVAR
+  URHO_d = URHO
+  UMX_d = UMX
+  UMY_d = UMY
+  UMZ_d = UMZ
+  UEDEN_d = UEDEN
+  UEINT_d = UEINT
+  UTEMP_d = UTEMP
+  UFA_d = UFA
+  UFS_d = UFS
+  UFX_d = UFX
+  QTHERM_d = QTHERM
+  QVAR_d = QVAR
+  QRHO_d = QRHO
+  QU_d = QU
+  QV_d = QV
+  QW_d = QW
+  QPRES_d = QPRES
+  QREINT_d = QREINT
+  QTEMP_d = QTEMP
+  QGAME_d = QGAME
+  NQAUX_d = NQAUX
+  QGAMC_d = QGAMC
+  QC_d = QC
+  QCSML_d = QCSML
+  QDPDR_d = QDPDR
+  QDPDE_d = QDPDE
+  QFA_d = QFA
+  QFS_d = QFS
+  QFX_d = QFX
+  NQ_d = NQ
+#endif
 
 end subroutine ca_set_method_params
 
@@ -913,11 +950,19 @@ module castro_util_module
 
 contains
 
+#ifdef CUDA
+  attributes(device) &
+#endif
   subroutine enforce_consistent_e(lo,hi,state,s_lo,s_hi)
 
-    use meth_params_module, only: NVAR, URHO, UMX, UMY, UMZ, UEDEN, UEINT
     use bl_constants_module, only: HALF, ONE
     use amrex_fort_module, only: rt => amrex_real
+#ifdef CUDA
+    use meth_params_module, only: NVAR => NVAR_d, URHO => URHO_d, UMX => UMX_d, UMY => UMY_d, &
+                                  UMZ => UMZ_d, UEDEN => UEDEN_d, UEINT => UEINT_d
+#else
+    use meth_params_module, only: NVAR, URHO, UMX, UMY, UMZ, UEDEN, UEINT
+#endif
 
     implicit none
 

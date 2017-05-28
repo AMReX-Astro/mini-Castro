@@ -116,21 +116,51 @@ contains
 
     implicit none
 
-    integer, intent(in) :: lo(3), hi(3), verbose
-    integer, intent(in) ::  uin_lo(3),  uin_hi(3)
-    integer, intent(in) :: uout_lo(3), uout_hi(3)
-    integer, intent(in) ::  vol_lo(3),  vol_hi(3)
+    integer,  intent(in   ) :: lo(3), hi(3), verbose
+    integer,  intent(in   ) ::  uin_lo(3),  uin_hi(3)
+    integer,  intent(in   ) :: uout_lo(3), uout_hi(3)
+    integer,  intent(in   ) ::  vol_lo(3),  vol_hi(3)
 
-    real(rt), intent(in) ::  uin( uin_lo(1): uin_hi(1), uin_lo(2): uin_hi(2), uin_lo(3): uin_hi(3),NVAR)
+    real(rt), intent(in   ) ::  uin( uin_lo(1): uin_hi(1), uin_lo(2): uin_hi(2), uin_lo(3): uin_hi(3),NVAR)
     real(rt), intent(inout) :: uout(uout_lo(1):uout_hi(1),uout_lo(2):uout_hi(2),uout_lo(3):uout_hi(3),NVAR)
-    real(rt), intent(in) ::  vol( vol_lo(1): vol_hi(1), vol_lo(2): vol_hi(2), vol_lo(3): vol_hi(3))
+    real(rt), intent(in   ) ::  vol( vol_lo(1): vol_hi(1), vol_lo(2): vol_hi(2), vol_lo(3): vol_hi(3))
     real(rt), intent(inout) :: frac_change
-    integer, intent(in)     :: idx
+    integer,  intent(in   ) :: idx
+
+! #ifdef CUDA
+
+!     attributes(device) :: state
+
+!     integer, device :: lo_d(3), hi_d(3)
+!     integer, device :: s_lo_d(3), s_hi_d(3)
+
+!     integer :: cuda_result
+!     integer(kind=cuda_stream_kind) :: stream
+!     type(dim3) :: numThreads, numBlocks
+
+!     stream = cuda_streams(mod(idx, max_cuda_streams) + 1)
+
+!     cuda_result = cudaMemcpyAsync(lo_d, lo, 3, cudaMemcpyHostToDevice, stream)
+!     cuda_result = cudaMemcpyAsync(hi_d, hi, 3, cudaMemcpyHostToDevice, stream)
+
+!     cuda_result = cudaMemcpyAsync(s_lo_d, s_lo, 3, cudaMemcpyHostToDevice, stream)
+!     cuda_result = cudaMemcpyAsync(s_hi_d, s_hi, 3, cudaMemcpyHostToDevice, stream)
+
+!     call threads_and_blocks(lo, hi, numBlocks, numThreads)
+
+!     call cuda_enforce_minimum_density<<<numBlocks, numThreads, 0, stream>>>(uin, uin_lo, uin_hi, &
+!                                                                             uout, uout_lo, uout_hi, &
+!                                                                             vol, vol_lo, vol_hi, &
+!                                                                             lo, hi, frac_change, verbose)
+
+! #else
 
     call enforce_minimum_density(uin, uin_lo, uin_hi, &
                                  uout, uout_lo, uout_hi, &
                                  vol, vol_lo, vol_hi, &
-                                 lo, hi, frac_change, verbose)                
+                                 lo, hi, frac_change, verbose)
+
+! #endif
 
   end subroutine ca_enforce_minimum_density
 

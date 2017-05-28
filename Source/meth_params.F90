@@ -22,8 +22,7 @@ implicit none
 
   ! NTHERM: number of thermodynamic variables
   integer, save :: NTHERM, NVAR
-  integer, save :: URHO, UMX, UMY, UMZ, UMR, UML, UMP, UEDEN, UEINT, UTEMP, UFA, UFS, UFX
-  integer, save :: USHK
+  integer, save :: URHO, UMX, UMY, UMZ, UEDEN, UEINT, UTEMP, UFA, UFS, UFX
 
   ! QTHERM: number of primitive variables
   integer, save :: QTHERM, QVAR
@@ -58,19 +57,34 @@ implicit none
 
   !$acc declare &
   !$acc create(NTHERM, NVAR) &
-  !$acc create(URHO, UMX, UMY, UMZ, UMR, UML, UMP, UEDEN, UEINT, UTEMP, UFA, UFS,UFX) &
-  !$acc create(USHK) &
+  !$acc create(URHO, UMX, UMY, UMZ, UMR, UML, UMP, UEDEN, UEINT, UTEMP, UFA, UFS, UFX) &
   !$acc create(QTHERM, QVAR) &
   !$acc create(QRHO, QU, QV, QW, QPRES, QREINT, QTEMP) &
   !$acc create(QGAMC, QGAME) &
   !$acc create(NQ) &
   !$acc create(QFA, QFS, QFX)
 
+#ifdef CUDA
+  integer, device :: NTHERM_d, NVAR_d
+  integer, device :: URHO_d, UMX_d, UMY_d, UMZ_d, UMR_d, UML_d, UMP_d, UEDEN_d, UEINT_d, UTEMP_d, UFA_d, UFS_d, UFX_d
+  integer, device :: QTHERM_d, QVAR_d
+  integer, device :: QRHO_d, QU_d, QV_d, QW_d, QPRES_d, QREINT_d, QTEMP_d, QGAME_d
+  integer, device :: NQAUX_d, QGAMC_d, QC_d, QCSML_d, QDPDR_d, QDPDE_d
+  integer, device :: QFA_d, QFS_d, QFX_d
+  integer, device :: NQ_d
+#endif
+
   ! Begin the declarations of the ParmParse parameters
 
   real(rt), save :: small_dens
   real(rt), save :: small_temp
   real(rt), save :: cfl
+
+#ifdef CUDA
+  real(rt), device :: small_dens_d
+  real(rt), device :: small_temp_d
+  real(rt), device :: cfl_d
+#endif
 
   !$acc declare &
   !$acc create(small_dens, small_temp, cfl)
@@ -83,8 +97,15 @@ contains
 
     use amrex_parmparse_module, only: amrex_parmparse_build, amrex_parmparse_destroy, amrex_parmparse
     use amrex_fort_module, only: rt => amrex_real
+#ifdef CUDA
+    use cudafor, only: cudaMemcpyAsync
+#endif
 
     implicit none
+
+#ifdef CUDA
+    integer :: istat
+#endif
 
     type (amrex_parmparse) :: pp
 
@@ -97,6 +118,12 @@ contains
     call pp%query("small_dens", small_dens)
     call pp%query("small_temp", small_temp)
     call pp%query("cfl", cfl)
+
+#ifdef CUDA
+  istat = cudaMemcpyAsync(small_dens_d, small_dens, 1)
+  istat = cudaMemcpyAsync(small_temp_d, small_temp, 1)
+  istat = cudaMemcpyAsync(cfl_d, cfl, 1)
+#endif
 
     !$acc update &
     !$acc device(small_dens, small_temp, cfl)
