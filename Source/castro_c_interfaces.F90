@@ -90,7 +90,7 @@ contains
 
 
   subroutine ca_normalize_species(u, u_lo, u_hi, lo, hi, idx) &
-       bind(C, name="ca_normalize_species")
+                                  bind(C, name="ca_normalize_species")
 
     use castro_util_module, only: normalize_species
 
@@ -101,7 +101,34 @@ contains
     real(rt), intent(inout) :: u(u_lo(1):u_hi(1),u_lo(2):u_hi(2),u_lo(3):u_hi(3),NVAR)
     integer, intent(in)     :: idx
 
+#ifdef CUDA
+
+    attributes(device) :: u
+
+    integer, device :: lo_d(3), hi_d(3)
+    integer, device :: u_lo_d(3), u_hi_d(3)
+
+    integer :: cuda_result
+    integer(kind=cuda_stream_kind) :: stream
+    type(dim3) :: numThreads, numBlocks
+
+    stream = cuda_streams(mod(idx, max_cuda_streams) + 1)
+
+    cuda_result = cudaMemcpyAsync(lo_d, lo, 3, cudaMemcpyHostToDevice, stream)
+    cuda_result = cudaMemcpyAsync(hi_d, hi, 3, cudaMemcpyHostToDevice, stream)
+
+    cuda_result = cudaMemcpyAsync(u_lo_d, u_lo, 3, cudaMemcpyHostToDevice, stream)
+    cuda_result = cudaMemcpyAsync(u_hi_d, u_hi, 3, cudaMemcpyHostToDevice, stream)
+
+    call threads_and_blocks(lo, hi, numBlocks, numThreads)
+
+    call cuda_normalize_species<<<numBlocks, numThreads, 0, stream>>>(u, u_lo_d, u_hi_d, lo_d, hi_d)
+
+#else
+
     call normalize_species(u, u_lo, u_hi, lo, hi)
+
+#endif
 
   end subroutine ca_normalize_species
 

@@ -1203,13 +1203,21 @@ contains
 
 
 
+#ifdef CUDA
+  attributes(device) &
+#endif
   subroutine normalize_species(u, u_lo, u_hi, lo, hi)
 
     use network, only: nspec
-    use meth_params_module, only: NVAR, URHO, UFS
     use bl_constants_module, only: ONE
-    use extern_probin_module, only: small_x
     use amrex_fort_module, only: rt => amrex_real
+#ifdef CUDA
+    use extern_probin_module, only: small_x => small_x_d
+    use meth_params_module, only: NVAR => NVAR_d, URHO => URHO_d, UFS => UFS_d
+#else
+    use extern_probin_module, only: small_x
+    use meth_params_module, only: NVAR, URHO, UFS
+#endif
 
     implicit none
 

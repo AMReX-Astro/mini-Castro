@@ -11,8 +11,6 @@
     integer, intent(in)     :: s_lo(3), s_hi(3)
     real(rt), intent(inout) :: state(s_lo(1):s_hi(1),s_lo(2):s_hi(2),s_lo(3):s_hi(3),NVAR)
 
-    !    attributes(device) :: lo, hi, s_lo, s_hi, state
-
     integer :: idx(3)
 
     ! Get our spatial index based on the CUDA thread index
@@ -51,8 +49,6 @@
     real(rt), intent(inout) :: frac_change
     integer,  intent(in   ) :: verbose
 
-    !    attributes(device) :: lo, hi, s_lo, s_hi, state
-
     integer :: idx(3)
 
     ! Get our spatial index based on the CUDA thread index
@@ -69,3 +65,37 @@
 !                                 idx, idx, frac_change, verbose)
 
   end subroutine cuda_enforce_minimum_density
+
+
+
+#ifdef CUDA
+  attributes(global) &
+#endif
+  subroutine cuda_normalize_species(u, u_lo, u_hi, lo, hi)
+
+    use amrex_fort_module, only: rt => amrex_real
+    use castro_util_module, only: normalize_species
+#ifdef CUDA
+    use meth_params_module, only: NVAR => NVAR_d
+#else
+    use meth_params_module, only: NVAR
+#endif
+
+    implicit none
+
+    integer,  intent(in   ) :: lo(3), hi(3)
+    integer,  intent(in   ) :: u_lo(3), u_hi(3)
+    real(rt), intent(inout) :: u(u_lo(1):u_hi(1),u_lo(2):u_hi(2),u_lo(3):u_hi(3),NVAR)
+
+    integer :: idx(3)
+
+    ! Get our spatial index based on the CUDA thread index
+
+    idx(1) = lo(1) + (threadIdx%x - 1) + blockDim%x * (blockIdx%x - 1)
+    idx(2) = lo(2) + (threadIdx%y - 1) + blockDim%y * (blockIdx%y - 1)
+    idx(3) = lo(3) + (threadIdx%z - 1) + blockDim%z * (blockIdx%z - 1)
+
+    call normalize_species(u, u_lo, u_hi, idx, idx)
+
+  end subroutine cuda_normalize_species
+

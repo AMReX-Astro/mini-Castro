@@ -9,10 +9,19 @@ module extern_probin_module
 
   real (kind=dp_t), save, public :: eos_gamma = 5.d0/3.d0
   !$acc declare create(eos_gamma)
+#ifdef CUDA
+  real (kind=dp_t), device, public :: eos_gamma_d
+#endif
   logical, save, public :: eos_assume_neutral = .true.
   !$acc declare create(eos_assume_neutral)
+#ifdef CUDA
+  logical, device, public :: eos_assume_neutral_d
+#endif
   real (kind=dp_t), save, public :: small_x = 1.d-3
   !$acc declare create(small_x)
+#ifdef CUDA
+  real (kind=dp_t), device, public :: small_x_d
+#endif
 
 end module extern_probin_module
 
@@ -70,6 +79,12 @@ subroutine runtime_init(name,namlen)
 
   !$acc update &
   !$acc device(eos_gamma, eos_assume_neutral, small_x)
+
+#ifdef CUDA
+  eos_gamma_d = eos_gamma
+  eos_assume_neutral_d = eos_assume_neutral
+  small_x_d = small_x
+#endif
 
 end subroutine runtime_init
 

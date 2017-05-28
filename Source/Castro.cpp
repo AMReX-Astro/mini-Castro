@@ -885,6 +885,9 @@ Castro::avgDown ()
 void
 Castro::normalize_species (MultiFab& S_new)
 {
+
+    Device::beginDeviceLaunchRegion();
+
     int ng = S_new.nGrow();
 
 #ifdef _OPENMP
@@ -898,6 +901,9 @@ Castro::normalize_species (MultiFab& S_new)
        ca_normalize_species(BL_TO_FORTRAN_3D(S_new[mfi]), 
 			    ARLIM_3D(bx.loVect()), ARLIM_3D(bx.hiVect()), &idx);
     }
+
+    Device::endDeviceLaunchRegion();
+
 }
 
 void
@@ -1248,8 +1254,6 @@ Castro::clean_state(MultiFab& state) {
     // Ensure all species are normalized.
 
     normalize_species(state);
-
-    // Sync the linear and hybrid momenta.
 
     // Compute the temperature (note that this will also reset
     // the internal energy for consistency with the total energy).
