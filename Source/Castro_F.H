@@ -30,9 +30,6 @@ extern "C"
 
   void ca_set_special_tagging_flag(const amrex::Real& max_den, const int* flag);
 
-  void ca_set_amr_info(const int& level, const int& iteration, const int& ncycle,
-		       const amrex::Real& time, const amrex::Real& dt);
-
   void ca_get_method_params(int* HYP_GROW);
 
   void ca_set_method_params

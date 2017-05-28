@@ -31,7 +31,6 @@ ca_F90EXE_sources += bc_fill.F90
 ca_F90EXE_sources += Prob.F90
 ca_F90EXE_sources += probdata.F90
 
-ca_F90EXE_sources += amrinfo.F90
 ca_F90EXE_sources += Castro_util.F90
 ca_F90EXE_sources += advection_util.F90
 ca_F90EXE_sources += Tagging.F90

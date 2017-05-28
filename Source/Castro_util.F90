@@ -170,43 +170,6 @@ end subroutine ca_get_nqaux
 ! ::: ----------------------------------------------------------------
 ! :::
 
-subroutine ca_set_amr_info(level_in, iteration_in, ncycle_in, time_in, dt_in) &
-     bind(C, name="ca_set_amr_info")
-
-  use amrinfo_module, only: amr_level, amr_iteration, amr_ncycle, amr_time, amr_dt
-  use amrex_fort_module, only: rt => amrex_real
-
-  implicit none
-
-  integer,  intent(in) :: level_in, iteration_in, ncycle_in
-  real(rt), intent(in) :: time_in, dt_in
-
-  if (level_in .ge. 0) then
-     amr_level = level_in
-  endif
-
-  if (iteration_in .ge. 0) then
-     amr_iteration = iteration_in
-  endif
-
-  if (ncycle_in .ge. 0) then
-     amr_ncycle = ncycle_in
-  endif
-
-  if (time_in .ge. 0.0) then
-     amr_time = time_in
-  endif
-
-  if (dt_in .ge. 0.0) then
-     amr_dt = dt_in
-  endif
-
-end subroutine ca_set_amr_info
-
-! :::
-! ::: ----------------------------------------------------------------
-! :::
-
 subroutine ca_get_method_params(nGrowHyp) bind(C, name="ca_get_method_params")
 
   ! Passing data from F90 back to C++

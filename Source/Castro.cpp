@@ -415,8 +415,6 @@ Castro::initData ()
 	amrex::Abort("We don't support dx != dy != dz");
     }
 
-    ca_set_amr_info(level, -1, -1, -1.0, -1.0);
-
     if (verbose && ParallelDescriptor::IOProcessor())
        std::cout << "Initializing the data at level " << level << std::endl;
 
@@ -519,8 +517,6 @@ Castro::estTimeStep (Real dt_old)
 
     if (fixed_dt > 0.0)
         return fixed_dt;
-
-    ca_set_amr_info(level, -1, -1, -1.0, -1.0);
 
     Real max_dt = 1.e200;
 
@@ -713,10 +709,6 @@ void
 Castro::post_timestep (int iteration)
 {
     BL_PROFILE("Castro::post_timestep()");
-
-    // Pass some information about the state of the simulation to a Fortran module.
-
-    ca_set_amr_info(level, iteration, -1, -1.0, -1.0);
 
     //
     // Integration cycle on fine level grids is complete
@@ -1007,8 +999,6 @@ Castro::errorEst (TagBoxArray& tags,
                   int          ngrow)
 {
     BL_PROFILE("Castro::errorEst()");
-
-    ca_set_amr_info(level, -1, -1, -1.0, -1.0);
 
     Real t = time;
 
