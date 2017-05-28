@@ -43,10 +43,10 @@ extern "C"
      const int& FirstSpec, const int& FirstAux, 
      const int& NumAdv);
 
-
   void ca_set_castro_method_params();
 
   void ca_init_godunov_indices();
+
   void ca_set_problem_params
     (const int& dm,
      const int* physbc_lo, const int* physbc_hi,
@@ -70,12 +70,6 @@ extern "C"
 		  const amrex::Real* q, const int* q_lo, const int* q_hi,
 		  const amrex::Real* qaux, const int* qa_lo, const int* qa_hi, const int* idx);
 
-  void ca_srctoprim(const int* lo,   const int* hi,
-		    const amrex::Real* q,   const int* q_lo,   const int* q_hi,
-		    const amrex::Real* qaux, const int* qa_lo, const int* qa_hi,
-		    const amrex::Real* src, const int* src_lo, const int* src_hi,
-		    const amrex::Real* srQ, const int* srQ_lo, const int* srQ_hi, const int* idx);
-
   void ca_check_initial_species
     (const int* lo, const int* hi, BL_FORT_FAB_ARG_3D(state), const int* idx);
 
@@ -89,11 +83,6 @@ extern "C"
   void ca_normalize_species
     (BL_FORT_FAB_ARG_3D(S_new), const int* lo, const int* hi, const int* idx);
 
-  void ca_get_center(amrex::Real* center);
-  void ca_set_center(amrex::Real* center);
-  void ca_find_center(amrex::Real* data, amrex::Real* center, int* icen,
-		      const amrex::Real* dx, const amrex::Real* problo);
-
   void ca_compute_temp
     (const int* lo, const int* hi, const BL_FORT_FAB_ARG_3D(state), const int* idx);
 
@@ -103,7 +92,6 @@ extern "C"
   void ca_reset_internal_e
     (const int* lo, const int* hi, BL_FORT_FAB_ARG_3D(S_new),
      const int& verbose, const int* idx);
-
 
   void ca_hypfill
     (BL_FORT_FAB_ARG(state),
@@ -135,29 +123,6 @@ extern "C"
      const amrex::Real dx[], const amrex::Real glo[],
      const amrex::Real* time, const int bc[]);
 
-  void ca_zerofill
-    (BL_FORT_FAB_ARG(state),
-     const int dlo[], const int dhi[],
-     const amrex::Real dx[], const amrex::Real glo[],
-     const amrex::Real* time, const int bc[]);
-
-  void ca_default_fill
-    (BL_FORT_FAB_ARG(state),
-     const int dlo[], const int dhi[],
-     const amrex::Real dx[], const amrex::Real glo[],
-     const amrex::Real* time, const int bc[]);
-
-  inline void ca_nullfill
-    (BL_FORT_FAB_ARG(state),
-     const int dlo[], const int dhi[],
-     const amrex::Real dx[], const amrex::Real glo[],
-     const amrex::Real* time, const int bc[])
-#ifdef __cplusplus
-  { amrex::Abort("Not supposed to call ca_nullfill"); }
-#else
-    ;
-#endif
-
   void ca_estdt
     (const int* lo, const int* hi,
      const BL_FORT_FAB_ARG_3D(state),
@@ -168,37 +133,6 @@ extern "C"
      const BL_FORT_FAB_ARG_3D(state_new),
      const int* lo, const int* hi,
      const amrex::Real* dx, const amrex::Real* dt_old, amrex::Real* dt);
-
-  void ca_ctu_update
-    (const int* is_finest_level,
-     const amrex::Real* time,
-     const int    lo[], const int    hi[],
-     const int domlo[], const int domhi[],
-     const BL_FORT_FAB_ARG(state),
-     BL_FORT_FAB_ARG(stateout),
-     BL_FORT_FAB_ARG(q),
-     BL_FORT_FAB_ARG(qaux),
-     BL_FORT_FAB_ARG(src_q),
-     BL_FORT_FAB_ARG(update),
-     const amrex::Real dx[], const amrex::Real* dt,
-     D_DECL(BL_FORT_FAB_ARG(xflux),
-            BL_FORT_FAB_ARG(yflux),
-            BL_FORT_FAB_ARG(zflux)),
-     D_DECL(BL_FORT_FAB_ARG(xarea),
-            BL_FORT_FAB_ARG(yarea),
-            BL_FORT_FAB_ARG(zarea)),
-     const BL_FORT_FAB_ARG(volume),
-     amrex::Real* cflLoc,
-     const int&  verbose,
-     amrex::Real& mass_lost,
-     amrex::Real& xmom_lost,
-     amrex::Real& ymom_lost,
-     amrex::Real& zmom_lost,
-     amrex::Real& eden_lost,
-     amrex::Real& xang_lost,
-     amrex::Real& yang_lost,
-     amrex::Real& zang_lost);
-
 
   void ca_mol_single_stage
     (const amrex::Real* time,
@@ -255,13 +189,5 @@ BL_FORT_PROC_DECL(CA_INITDATA,ca_initdata)
      const int& num_state,
      BL_FORT_FAB_ARG(state),
      const amrex::Real* dx, const amrex::Real* xlo, const amrex::Real* xhi);
-
-BL_FORT_PROC_DECL(CA_EXT_SRC,ca_ext_src)
-    (const int* lo, const int* hi,
-     const BL_FORT_FAB_ARG(old_state),
-     const BL_FORT_FAB_ARG(new_state),
-     BL_FORT_FAB_ARG(ext_src),
-     const amrex::Real* prob_lo, const amrex::Real* dx,
-     const amrex::Real* time, const amrex::Real* dt);
 
 #endif
