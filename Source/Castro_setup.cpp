@@ -92,26 +92,19 @@ Castro::variableSetUp ()
 {
 
   // Castro::variableSetUp is called in the constructor of Amr.cpp, so
-  // it should get called every time we start or restart a job
-
-
-  // initialize the start time for our CPU-time tracker
-  startCPUTime = ParallelDescriptor::second();
-
+  // it will get called when we start the job.
 
   // Output the git commit hashes used to build the executable.
 
   if (ParallelDescriptor::IOProcessor()) {
 
-    const char* castro_hash  = buildInfoGetGitHash(1);
-    const char* amrex_hash  = buildInfoGetGitHash(2);
+    const char* castro_hash = buildInfoGetGitHash(1);
+    const char* amrex_hash = buildInfoGetGitHash(2);
 
-    if (strlen(castro_hash) > 0) {
+    if (strlen(castro_hash) > 0)
       std::cout << "\n" << "Castro git describe: " << castro_hash << "\n";
-    }
-    if (strlen(amrex_hash) > 0) {
+    if (strlen(amrex_hash) > 0)
       std::cout << "AMReX git describe: " << amrex_hash << "\n";
-    }
 
     std::cout << "\n";
   }
@@ -141,44 +134,24 @@ Castro::variableSetUp ()
   Eint = cnt++;
   Temp = cnt++;
 
-#ifdef NUM_ADV
-  NumAdv = NUM_ADV;
-#else
   NumAdv = 0;
-#endif
-
-  if (NumAdv > 0)
-    {
-      FirstAdv = cnt;
-      cnt += NumAdv;
-    }
 
   int dm = BL_SPACEDIM;
 
   // Get the number of species from the network model.
   ca_get_num_spec(&NumSpec);
 
-  if (NumSpec > 0)
-    {
+  if (NumSpec > 0) {
       FirstSpec = cnt;
       cnt += NumSpec;
-    }
+  }
 
-  // Get the number of auxiliary quantities from the network model.
-  ca_get_num_aux(&NumAux);
-
-  if (NumAux > 0)
-    {
-      FirstAux = cnt;
-      cnt += NumAux;
-    }
+  NumAux = 0;
 
   NUM_STATE = cnt;
 
   // Define NUM_GROW from the F90 module.
   ca_get_method_params(&NUM_GROW);
-
-  const Real run_strt = ParallelDescriptor::second() ;
 
   // Read in the input values to Fortran.
 
@@ -191,13 +164,6 @@ Castro::variableSetUp ()
 
   ca_get_qvar(&QVAR);
   ca_get_nqaux(&NQAUX);
-
-  Real run_stop = ParallelDescriptor::second() - run_strt;
-
-  ParallelDescriptor::ReduceRealMax(run_stop,ParallelDescriptor::IOProcessorNumber());
-
-  if (ParallelDescriptor::IOProcessor())
-    std::cout << "\nTime in ca_set_method_params: " << run_stop << '\n' ;
 
   int coord_type = Geometry::Coord();
 
@@ -223,10 +189,6 @@ Castro::variableSetUp ()
 
   Interpolater* interp = &cell_cons_interp;
 
-  // Note that the default is state_data_extrap = false,
-  // store_in_checkpoint = true.  We only need to put these in
-  // explicitly if we want to do something different,
-  // like not store the state data in a checkpoint directory
   bool state_data_extrap = false;
   bool store_in_checkpoint;
 
@@ -241,21 +203,13 @@ Castro::variableSetUp ()
   Array<std::string> name(NUM_STATE);
 
   BCRec bc;
-  cnt = 0;
-  set_scalar_bc(bc,phys_bc); bcs[cnt] = bc; name[cnt] = "density";
+  cnt=0; set_scalar_bc(bc,phys_bc); bcs[cnt] = bc; name[cnt] = "density";
   cnt++; set_x_vel_bc(bc,phys_bc);  bcs[cnt] = bc; name[cnt] = "xmom";
   cnt++; set_y_vel_bc(bc,phys_bc);  bcs[cnt] = bc; name[cnt] = "ymom";
   cnt++; set_z_vel_bc(bc,phys_bc);  bcs[cnt] = bc; name[cnt] = "zmom";
   cnt++; set_scalar_bc(bc,phys_bc); bcs[cnt] = bc; name[cnt] = "rho_E";
   cnt++; set_scalar_bc(bc,phys_bc); bcs[cnt] = bc; name[cnt] = "rho_e";
   cnt++; set_scalar_bc(bc,phys_bc); bcs[cnt] = bc; name[cnt] = "Temp";
-
-  for (int i=0; i<NumAdv; ++i)
-    {
-      char buf[64];
-      sprintf(buf, "adv_%d", i);
-      cnt++; set_scalar_bc(bc,phys_bc); bcs[cnt] = bc; name[cnt] = string(buf);
-    }
 
   // Get the species names from the network model.
   std::vector<std::string> spec_names;
@@ -271,51 +225,12 @@ Castro::variableSetUp ()
     spec_names.push_back(std::string(char_spec_names));
   }
 
-  if ( ParallelDescriptor::IOProcessor())
-    {
-      std::cout << NumSpec << " Species: " << std::endl;
-      for (int i = 0; i < NumSpec; i++)
-	std::cout << spec_names[i] << ' ' << ' ';
-      std::cout << std::endl;
-    }
-
-  for (int i=0; i<NumSpec; ++i)
-    {
+  for (int i=0; i<NumSpec; ++i) {
       cnt++;
       set_scalar_bc(bc,phys_bc);
       bcs[cnt] = bc;
       name[cnt] = "rho_" + spec_names[i];
-    }
-
-  // Get the auxiliary names from the network model.
-  std::vector<std::string> aux_names;
-  for (int i = 0; i < NumAux; i++) {
-    int len = 20;
-    Array<int> int_aux_names(len);
-    // This call return the actual length of each string in "len"
-    ca_get_aux_names(int_aux_names.dataPtr(),&i,&len);
-    char char_aux_names[len+1];
-    for (int j = 0; j < len; j++)
-      char_aux_names[j] = int_aux_names[j];
-    char_aux_names[len] = '\0';
-    aux_names.push_back(std::string(char_aux_names));
   }
-
-  if ( ParallelDescriptor::IOProcessor())
-    {
-      std::cout << NumAux << " Auxiliary Variables: " << std::endl;
-      for (int i = 0; i < NumAux; i++)
-	std::cout << aux_names[i] << ' ' << ' ';
-      std::cout << std::endl;
-    }
-
-  for (int i=0; i<NumAux; ++i)
-    {
-      cnt++;
-      set_scalar_bc(bc,phys_bc);
-      bcs[cnt] = bc;
-      name[cnt] = "rho_" + aux_names[i];
-    }
 
   desc_lst.setComponent(State_Type,
 			Density,

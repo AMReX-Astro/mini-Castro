@@ -74,11 +74,6 @@ std::string  Castro::probin_file = "probin";
 
 IntVect      Castro::hydro_tile_size(1024,16,16);
 
-// this will be reset upon restart
-Real         Castro::previousCPUTimeUsed = 0.0;
-
-Real         Castro::startCPUTime = 0.0;
-
 int          Castro::num_state_type = 0;
 
 // Note: Castro::variableSetUp is in Castro_setup.cpp
@@ -765,19 +760,10 @@ Castro::post_timestep (int iteration)
 }
 
 void
-Castro::postCoarseTimeStep (Real cumtime)
-{
-    // postCoarseTimeStep() is only called by level 0.
-    BL_ASSERT(level == 0);
-    AmrLevel::postCoarseTimeStep(cumtime);
-}
-
-void
 Castro::post_regrid (int lbase,
                      int new_finest)
 {
     fine_mask.clear();
-
 }
 
 void
@@ -1104,25 +1090,6 @@ Castro::apply_tagging_func(TagBoxArray& tags, int clearval, int tagval, Real tim
     }
 }
 
-
-
-std::unique_ptr<MultiFab>
-Castro::derive (const std::string& name,
-                Real           time,
-                int            ngrow)
-{
-   return AmrLevel::derive(name,time,ngrow);
-}
-
-void
-Castro::derive (const std::string& name,
-                Real           time,
-                MultiFab&      mf,
-                int            dcomp)
-{
-    AmrLevel::derive(name,time,mf,dcomp);
-}
-
 void
 Castro::network_init ()
 {
@@ -1198,22 +1165,6 @@ Castro::computeTemp(MultiFab& State)
     }
 }
 
-Real
-Castro::getCPUTime()
-{
-
-  int numCores = ParallelDescriptor::NProcs();
-#ifdef _OPENMP
-  numCores = numCores*omp_get_max_threads();
-#endif
-
-  Real T = numCores*(ParallelDescriptor::second() - startCPUTime) +
-    previousCPUTimeUsed;
-
-  return T;
-}
-
-
 MultiFab&
 Castro::build_fine_mask()
 {
@@ -1245,30 +1196,6 @@ Castro::build_fine_mask()
     }
 
     return fine_mask;
-}
-
-iMultiFab&
-Castro::build_interior_boundary_mask (int ng)
-{
-    for (int i = 0; i < ib_mask.size(); ++i)
-    {
-	if (ib_mask[i]->nGrow() == ng) {
-	    return *ib_mask[i];
-	}
-    }
-
-    //  If we got here, we need to build a new one
-    ib_mask.push_back(std::unique_ptr<iMultiFab>(new iMultiFab(grids, dmap, 1, ng)));
-
-    iMultiFab& imf = *ib_mask.back();
-
-    int ghost_covered_by_valid = 0;
-    int other_cells = 1; // uncovered ghost, valid, and outside domain cells are set to 1
-
-    imf.BuildMask(geom.Domain(), geom.periodicity(),
-		  ghost_covered_by_valid, other_cells, other_cells, other_cells);
-
-    return imf;
 }
 
 // Fill a version of the state with ng ghost zones from the state data.
@@ -1322,30 +1249,6 @@ Castro::clean_state(MultiFab& state) {
     MultiFab::Copy(temp_state, state, 0, 0, state.nComp(), state.nGrow());
 
     Real frac_change = enforce_min_density(temp_state, state);
-
-    // Ensure all species are normalized.
-
-    normalize_species(state);
-
-    // Sync the linear and hybrid momenta.
-
-    // Compute the temperature (note that this will also reset
-    // the internal energy for consistency with the total energy).
-
-    computeTemp(state);
-
-    return frac_change;
-
-}
-
-
-
-Real
-Castro::clean_state(MultiFab& state, MultiFab& state_old) {
-
-    // Enforce a minimum density.
-
-    Real frac_change = enforce_min_density(state_old, state);
 
     // Ensure all species are normalized.
 

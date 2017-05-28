@@ -54,15 +54,12 @@ public:
     */
     virtual std::string thePlotFileType () const override;
 
-    virtual void setPlotVariables () override;
     //
     //Write a plotfile to specified directory.
     //
     virtual void writePlotFile (const std::string& dir,
                                 ostream&       os,
                                 amrex::VisMF::How     how) override;
-
-    void writeJobInfo (const std::string& dir);
 
     //
     // Define data descriptors.
@@ -184,17 +181,9 @@ public:
     //
     void setGridInfo();
     //
-    // Print information about energy budget.
-    //
-    void do_energy_diagnostics();
-    //
     // Do work after timestep().
     //
     virtual void post_timestep (int iteration) override;
-    //
-    // Contains operations to be done only after a full coarse timestep.
-    //
-    virtual void postCoarseTimeStep (amrex::Real cumtime) override;
     //
     // Do work after regrid().
     //
@@ -219,20 +208,6 @@ public:
     // Apply a given tagging function.
     //
     void apply_tagging_func (amrex::TagBoxArray& tags, int clearval, int setval, amrex::Real time, int j);
-
-    // Returns a MultiFab containing the derived data for this level.
-    // If ngrow>0 the MultiFab is built on the appropriately grown BoxArray.
-    virtual std::unique_ptr<amrex::MultiFab> derive (const std::string& name,
-						     amrex::Real        time,
-						     int                ngrow) override;
-
-    // This version of derive() fills the dcomp'th component of mf with the derived quantity.
-    virtual void derive (const std::string& name,
-			 amrex::Real               time,
-			 amrex::MultiFab&          mf,
-			 int                dcomp) override;
-
-    static int numGrow();
 
     void reset_internal_energy (amrex::MultiFab& State);
 
@@ -338,8 +313,6 @@ protected:
 
     amrex::Real clean_state (amrex::MultiFab& state);
 
-    amrex::Real clean_state (amrex::MultiFab& state, amrex::MultiFab& state_old);
-
     void avgDown ();
 
     void avgDown (int state_indx);
@@ -369,25 +342,16 @@ protected:
     //
 #include <castro_params.H>
 
-    static int       radius_grow;
-    static int       verbose;
-    static amrex::Real fixed_dt;
-    static int       sum_interval;
+    static int              radius_grow;
+    static int              verbose;
+    static amrex::Real      fixed_dt;
+    static int              sum_interval;
     static amrex::ErrorList err_list;
     static amrex::BCRec     phys_bc;
-    static int       NUM_GROW;
+    static int              NUM_GROW;
 
     // for keeping track of mass changes from negative density resets
     static amrex::Real      frac_change;
-
-    // for keeping track of the amount of CPU time used -- this will persist
-    // after restarts
-    static amrex::Real      previousCPUTimeUsed;
-    static amrex::Real      startCPUTime;
-
-    static amrex::Real getCPUTime();
-
-    bool             FillPatchedOldState_ok;
 
     // Name of the probin file and its length.
     static std::string probin_file;
@@ -397,38 +361,6 @@ protected:
     static int num_state_type;
 
 };
-
-//
-// Inlines.
-//
-
-inline
-int
-Castro::numGrow()
-{
-    return NUM_GROW;
-}
-
-inline
-amrex::MultiFab*
-Castro::Area ()
-{
-    return area;
-}
-
-inline
-amrex::MultiFab&
-Castro::Area (int dir)
-{
-    return area[dir];
-}
-
-inline
-amrex::MultiFab&
-Castro::Volume ()
-{
-    return volume;
-}
 
 inline
 Castro&

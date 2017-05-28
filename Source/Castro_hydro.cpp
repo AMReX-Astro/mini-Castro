@@ -11,9 +11,6 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
   // divergence) using method of lines integration.  The output, as a
   // update to the state, is stored in the k_mol array of multifabs.
 
-  if (verbose && ParallelDescriptor::IOProcessor())
-    std::cout << "... Entering hydro advance" << std::endl << std::endl;
-
   int finest_level = parent->finestLevel();
 
   const Real *dx = geom.CellSize();
@@ -119,8 +116,5 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
 
   if (courno > 1.0)
     amrex::Abort("CFL is too high at this level");
-
-  if (verbose && ParallelDescriptor::IOProcessor())
-    std::cout << std::endl << "... Leaving hydro advance" << std::endl << std::endl;
 
 }

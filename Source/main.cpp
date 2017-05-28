@@ -33,16 +33,10 @@ main (int   argc,
       char* argv[])
 {
 
-    //
-    // Make sure to catch new failures.
-    //
     amrex::Initialize(argc,argv);
 
-    // Refuse to continue if we did not provide an inputs file.
-
-    if (argc <= 1) {
+    if (argc <= 1)
 	amrex::Abort("Error: no inputs file provided on command line.");
-    }
 
     // Save the inputs file name for later.
 
@@ -57,27 +51,17 @@ main (int   argc,
     std::cout << std::setprecision(10);
 
     int  max_step;
-    Real strt_time;
     Real stop_time;
-    ParmParse pp; 
+    ParmParse pp;
 
     max_step  = -1;
-    strt_time =  0.0;
     stop_time = -1.0;
 
     pp.query("max_step",max_step);
-    pp.query("strt_time",strt_time);
     pp.query("stop_time",stop_time);
 
-    if (strt_time < 0.0)
-    {
-        amrex::Abort("MUST SPECIFY a non-negative strt_time"); 
-    }
-
-    if (max_step < 0 && stop_time < 0.0) {
-      amrex::Abort(
-       "Exiting because neither max_step nor stop_time is non-negative.");
-    }
+    if (max_step < 0 && stop_time < 0.0)
+      amrex::Abort("Exiting because neither max_step nor stop_time is non-negative.");
 
     // Print the current date and time.
 
@@ -97,26 +81,10 @@ main (int   argc,
 		<< time_pointer->tm_year + 1900 << "-"
 		<< std::setw(2) << time_pointer->tm_mon + 1 << "-"
 		<< std::setw(2) << time_pointer->tm_mday << "." << std::endl;
-    
-    //
-    // Initialize random seed after we're running in parallel.
-    //
 
     Amr* amrptr = new Amr;
 
-    amrptr->init(strt_time,stop_time);
-
-    // If we set the regrid_on_restart flag and if we are *not* going to take
-    //    a time step then we want to go ahead and regrid here.
-    if ( amrptr->RegridOnRestart() && 
-         ( (amrptr->levelSteps(0) >= max_step) ||
-           (amrptr->cumTime() >= stop_time) ) )
-           {
-           //
-           // Regrid only!
-           //
-           amrptr->RegridOnly(amrptr->cumTime());
-           }
+    amrptr->init(0.0,stop_time);
 
     Real dRunTime2 = ParallelDescriptor::second();
 
@@ -150,11 +118,9 @@ main (int   argc,
 		<< time_pointer->tm_year + 1900 << "-"
 		<< std::setw(2) << time_pointer->tm_mon + 1 << "-"
 		<< std::setw(2) << time_pointer->tm_mday << "." << std::endl;
-    
+
     delete amrptr;
-    //
-    // This MUST follow the above delete as ~Amr() may dump files to disk.
-    //
+
     const int IOProc = ParallelDescriptor::IOProcessorNumber();
 
     Real dRunTime3 = ParallelDescriptor::second();
@@ -168,41 +134,18 @@ main (int   argc,
     if (ParallelDescriptor::IOProcessor())
     {
         std::cout << "Run time = " << runtime_total << std::endl;
-        std::cout << "Run time w/o init = " << runtime_timestep << std::endl;
+        std::cout << "Run time without initialization = " << runtime_timestep << std::endl;
 
-	//
-	// Calculate the Figure of Merit.
-	//
 	int nProcs = ParallelDescriptor::NProcs();
+#ifdef _OPENMP
+	nProcs *= omp_get_max_threads();
+#endif
 	Real fom = Castro::num_zones_advanced / runtime_timestep / 1.e6;
 
 	std::cout << "\n";
-	std::cout << "  Figure of Merit (zones / usec / processor): " << fom / nProcs << "\n";
-	std::cout << "  Figure of Merit (zones / usec)            : " << fom << "\n";
+	std::cout << "  Figure of Merit (zones / usec / processor): " << std::fixed << std::setprecision(3) << (fom / nProcs) << "\n";
+	std::cout << "  Figure of Merit (zones / usec)            : " << std::fixed << std::setprecision(3) << fom << "\n";
 	std::cout << "\n";
-    }
-
-    if (CArena* arena = dynamic_cast<CArena*>(amrex::The_Arena()))
-    {
-        //
-        // A barrier to make sure our output follows that of RunStats.
-        //
-        ParallelDescriptor::Barrier();
-        //
-        // We're using a CArena -- output some FAB memory stats.
-        //
-        // This'll output total # of bytes of heap space in the Arena.
-        //
-        // It's actually the high water mark of heap space required by FABs.
-        //
-        char buf[256];
-
-        sprintf(buf,
-                "CPU(%d): Heap Space (bytes) used by Coalescing FAB Arena: %ld",
-                ParallelDescriptor::MyProc(),
-                arena->heap_space_used());
-
-        std::cout << buf << std::endl;
     }
 
     BL_PROFILE_VAR_STOP(pmain);

@@ -114,6 +114,9 @@ Castro::do_advance (Real time,
       // define the temperature now
       clean_state(S_new);
 
+      // Check for NaN's
+      check_for_nan(S_new);
+
     }
 
     finalize_do_advance(time, dt, amr_iteration, amr_ncycle, sub_iteration, sub_ncycle);
