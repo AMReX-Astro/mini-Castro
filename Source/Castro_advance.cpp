@@ -139,7 +139,7 @@ Castro::initialize_do_advance(Real time, Real dt, int amr_iteration, int amr_ncy
     // Indicate that our local MultiFabs should have a device copy of their data
 
     MFInfo info;
-    info.SetDevice(true);
+//    info.SetDevice(true);
 
     int finest_level = parent->finestLevel();
 
