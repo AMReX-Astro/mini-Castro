@@ -547,6 +547,11 @@ subroutine ca_set_method_params(dm,Density,Xmom,Eden,Eint,Temp, &
   QFS_d = QFS
   QFX_d = QFX
   NQ_d = NQ
+  npassive_d = npassive
+  allocate(upass_map_d(size(upass_map)))
+  upass_map_d = upass_map
+  allocate(qpass_map_d(size(qpass_map)))
+  qpass_map_d = qpass_map
 #endif
 
 end subroutine ca_set_method_params
@@ -858,89 +863,6 @@ end subroutine ca_summass
 
 
 
-subroutine ca_dervel(vel,v_lo,v_hi,nv, &
-                    dat,d_lo,d_hi,nc,lo,hi,domlo, &
-                    domhi,delta,xlo,time,dt,bc,level,grid_no) &
-                    bind(C, name="ca_dervel")
-  !
-  ! This routine will derive the velocity from the momentum.
-  !
-
-  use amrex_fort_module, only: rt => amrex_real
-
-  implicit none
-
-  integer          :: lo(3), hi(3)
-  integer          :: v_lo(3), v_hi(3), nv
-  integer          :: d_lo(3), d_hi(3), nc
-  integer          :: domlo(3), domhi(3)
-  integer          :: bc(3,2,nc)
-  real(rt)         :: delta(3), xlo(3), time, dt
-  real(rt)         :: vel(v_lo(1):v_hi(1),v_lo(2):v_hi(2),v_lo(3):v_hi(3),nv)
-  real(rt)         :: dat(d_lo(1):d_hi(1),d_lo(2):d_hi(2),d_lo(3):d_hi(3),nc)
-  integer          :: level, grid_no
-
-  integer          :: i, j, k
-
-  do k = lo(3), hi(3)
-     do j = lo(2), hi(2)
-        do i = lo(1), hi(1)
-           vel(i,j,k,1) = dat(i,j,k,2) / dat(i,j,k,1)
-        end do
-     end do
-  end do
-
-end subroutine ca_dervel
-
-
-
-subroutine ca_derpres(p,p_lo,p_hi,ncomp_p, &
-                      u,u_lo,u_hi,ncomp_u,lo,hi,domlo, &
-                      domhi,dx,xlo,time,dt,bc,level,grid_no) &
-                      bind(C, name="ca_derpres")
-
-  use network, only: nspec, naux
-  use eos_module, only: eos
-  use eos_type_module, only: eos_t, eos_input_re
-  use meth_params_module, only: URHO, UEINT, UTEMP, UFS, UFX
-  use bl_constants_module, only: ONE
-  use amrex_fort_module, only: rt => amrex_real
-
-  implicit none
-
-  integer          :: lo(3), hi(3)
-  integer          :: p_lo(3), p_hi(3), ncomp_p
-  integer          :: u_lo(3), u_hi(3), ncomp_u
-  integer          :: domlo(3), domhi(3)
-  real(rt)         :: p(p_lo(1):p_hi(1),p_lo(2):p_hi(2),p_lo(3):p_hi(3),ncomp_p)
-  real(rt)         :: u(u_lo(1):u_hi(1),u_lo(2):u_hi(2),u_lo(3):u_hi(3),ncomp_u)
-  real(rt)         :: dx(3), xlo(3), time, dt
-  integer          :: bc(3,2,ncomp_u), level, grid_no
-
-  real(rt)         :: rhoInv
-  integer          :: i, j, k
-
-  type (eos_t) :: eos_state
-
-  do k = lo(3), hi(3)
-     do j = lo(2), hi(2)
-        do i = lo(1), hi(1)
-           rhoInv = ONE / u(i,j,k,URHO)
-
-           eos_state % rho  = u(i,j,k,URHO)
-           eos_state % T    = u(i,j,k,UTEMP)
-           eos_state % e    = u(i,j,k,UEINT) * rhoInv
-           eos_state % xn   = u(i,j,k,UFS:UFS+nspec-1) * rhoInv
-           eos_state % aux  = u(i,j,k,UFX:UFX+naux-1) * rhoInv
-
-           call eos(eos_input_re, eos_state)
-
-           p(i,j,k,1) = eos_state % p
-        enddo
-     enddo
-  enddo
-
-end subroutine ca_derpres
 
 
 
@@ -997,14 +919,23 @@ contains
 
 
 
+#ifdef CUDA
+  attributes(device) &
+#endif
   subroutine reset_internal_e(lo,hi,u,u_lo,u_hi,verbose)
 
     use eos_module, only: eos
     use eos_type_module, only: eos_t, eos_input_re, eos_input_rt
     use network, only: nspec, naux
-    use meth_params_module, only: NVAR, URHO, UMX, UMY, UMZ, UEDEN, UEINT, UFS, UFX, UTEMP, small_temp
     use bl_constants_module, only: ZERO, HALF, ONE
     use amrex_fort_module, only: rt => amrex_real
+#ifdef CUDA
+    use meth_params_module, only: NVAR => NVAR_d, URHO => URHO_d, UMX => UMX_d, UMY => UMY_d, UMZ => UMZ_d, &
+                                  UEDEN => UEDEN_d, UEINT => UEINT_d, UFS => UFS_d, UFX => UFX_d, &
+                                  UTEMP => UTEMP_d, small_temp => small_temp_d
+#else
+    use meth_params_module, only: NVAR, URHO, UMX, UMY, UMZ, UEDEN, UEINT, UFS, UFX, UTEMP, small_temp
+#endif
 
     implicit none
 
@@ -1091,14 +1022,22 @@ contains
 
 
 
+#ifdef CUDA
+  attributes(device) &
+#endif
   subroutine compute_temp(lo,hi,state,s_lo,s_hi)
 
     use network, only: nspec, naux
     use eos_module, only: eos
     use eos_type_module, only: eos_input_re, eos_t
-    use meth_params_module, only: NVAR, URHO, UEDEN, UEINT, UTEMP, UFS, UFX
     use bl_constants_module, only: ZERO, ONE
     use amrex_fort_module, only: rt => amrex_real
+#ifdef CUDA
+    use meth_params_module, only: NVAR => NVAR_d, URHO => URHO_d, UEDEN => UEDEN_d, &
+                                  UEINT => UEINT_d, UTEMP => UTEMP_d, UFS => UFS_d, UFX => UFX_d
+#else
+    use meth_params_module, only: NVAR, URHO, UEDEN, UEINT, UTEMP, UFS, UFX
+#endif
 
     implicit none
 
@@ -1117,6 +1056,7 @@ contains
        do j = lo(2),hi(2)
           do i = lo(1),hi(1)
 
+#ifndef CUDA
              if (state(i,j,k,URHO) <= ZERO) then
                 print *,'   '
                 print *,'>>> Error: Castro_util.F90::ca_compute_temp ',i,j,k
@@ -1132,6 +1072,7 @@ contains
                 print *,'   '
                 call bl_error("Error:: compute_temp_nd.F90")
              end if
+#endif
 
           enddo
        enddo
@@ -1246,5 +1187,100 @@ contains
     enddo
 
   end subroutine normalize_species
+
+
+#ifdef CUDA
+  attributes(device) &
+#endif
+  subroutine dervel(vel,v_lo,v_hi,nv, &
+                    dat,d_lo,d_hi,nc,lo,hi,domlo, &
+                    domhi,delta,xlo,time,dt,bc,level,grid_no)
+
+    !
+    ! This routine will derive the velocity from the momentum.
+    !
+  
+    use amrex_fort_module, only: rt => amrex_real
+
+    implicit none
+
+    integer,  intent(in   ) :: lo(3), hi(3)
+    integer,  intent(in   ) :: v_lo(3), v_hi(3), nv
+    integer,  intent(in   ) :: d_lo(3), d_hi(3), nc
+    integer,  intent(in   ) :: domlo(3), domhi(3)
+    integer,  intent(in   ) :: bc(3,2,nc)
+    real(rt), intent(in   ) :: delta(3), xlo(3), time, dt
+    real(rt), intent(inout) :: vel(v_lo(1):v_hi(1),v_lo(2):v_hi(2),v_lo(3):v_hi(3),nv)
+    real(rt), intent(in   ) :: dat(d_lo(1):d_hi(1),d_lo(2):d_hi(2),d_lo(3):d_hi(3),nc)
+    integer,  intent(in   ) :: level, grid_no
+
+    integer :: i, j, k
+
+    do k = lo(3), hi(3)
+       do j = lo(2), hi(2)
+          do i = lo(1), hi(1)
+             vel(i,j,k,1) = dat(i,j,k,2) / dat(i,j,k,1)
+          end do
+       end do
+    end do
+
+  end subroutine dervel
+
+
+
+#ifdef CUDA
+attributes(device) &
+#endif
+  subroutine derpres(p,p_lo,p_hi,ncomp_p, &
+                     u,u_lo,u_hi,ncomp_u,lo,hi,domlo, &
+                     domhi,dx,xlo,time,dt,bc,level,grid_no)
+
+    use network, only: nspec, naux
+    use eos_module, only: eos
+    use eos_type_module, only: eos_t, eos_input_re
+    use bl_constants_module, only: ONE
+    use amrex_fort_module, only: rt => amrex_real
+#ifdef CUDA
+    use meth_params_module, only: URHO => URHO_d, UEINT => UEINT_d, &
+                                  UTEMP => UTEMP_d, UFS => UFS_d, UFX => UFX_d
+#else
+    use meth_params_module, only: URHO, UEINT, UTEMP, UFS, UFX
+#endif
+
+    implicit none
+
+    integer,  intent(in   ) :: lo(3), hi(3)
+    integer,  intent(in   ) :: p_lo(3), p_hi(3), ncomp_p
+    integer,  intent(in   ) :: u_lo(3), u_hi(3), ncomp_u
+    integer,  intent(in   ) :: domlo(3), domhi(3)
+    real(rt), intent(inout) :: p(p_lo(1):p_hi(1),p_lo(2):p_hi(2),p_lo(3):p_hi(3),ncomp_p)
+    real(rt), intent(in   ) :: u(u_lo(1):u_hi(1),u_lo(2):u_hi(2),u_lo(3):u_hi(3),ncomp_u)
+    real(rt), intent(in   ) :: dx(3), xlo(3), time, dt
+    integer,  intent(in   ) :: bc(3,2,ncomp_u), level, grid_no
+
+    real(rt) :: rhoInv
+    integer  :: i, j, k
+
+    type (eos_t) :: eos_state
+
+    do k = lo(3), hi(3)
+       do j = lo(2), hi(2)
+          do i = lo(1), hi(1)
+             rhoInv = ONE / u(i,j,k,URHO)
+
+             eos_state % rho  = u(i,j,k,URHO)
+             eos_state % T    = u(i,j,k,UTEMP)
+             eos_state % e    = u(i,j,k,UEINT) * rhoInv
+             eos_state % xn   = u(i,j,k,UFS:UFS+nspec-1) * rhoInv
+             eos_state % aux  = u(i,j,k,UFX:UFX+naux-1) * rhoInv
+
+             call eos(eos_input_re, eos_state)
+
+             p(i,j,k,1) = eos_state % p
+          enddo
+       enddo
+    enddo
+
+  end subroutine derpres
 
 end module castro_util_module

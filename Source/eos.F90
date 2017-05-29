@@ -16,8 +16,14 @@ contains
     use amrex_fort_module, only: rt => amrex_real
     use parallel, only: parallel_IOProcessor
     use bl_error_module, only: bl_warn
-    use eos_type_module, only: mintemp, mindens
+    use eos_type_module, only: mintemp, maxtemp, mindens, maxdens, minx, maxx, &
+                               minye, maxye, mine, maxe, minp, maxp, minh, maxh, mins, maxs
     use actual_eos_module, only: actual_eos_init
+#ifdef CUDA
+    use eos_type_module, only: mintemp_d, maxtemp_d, mindens_d, maxdens_d, &
+                               minx_d, maxx_d, minye_d, maxye_d, mine_d, maxe_d, &
+                               minp_d, maxp_d, minh_d, maxh_d, mins_d, maxs_d
+#endif
 
     implicit none
 
@@ -65,17 +71,39 @@ contains
     !$acc device(mintemp, maxtemp, mindens, maxdens, minx, maxx, minye, maxye) &
     !$acc device(mine, maxe, minp, maxp, mins, maxs, minh, maxh)
 
+#ifdef CUDA
+    mintemp_d = mintemp
+    maxtemp_d = maxtemp
+    mindens_d = mindens
+    maxdens_d = maxdens
+    minx_d    = minx
+    maxx_d    = maxx
+    minye_d   = minye
+    maxye_d   = maxye
+    mine_d    = mine
+    maxe_d    = maxe
+    minp_d    = minp
+    maxp_d    = maxp
+    mins_d    = mins
+    maxs_d    = maxs
+    minh_d    = minh
+    maxh_d    = maxh
+#endif
+
   end subroutine eos_init
 
 
 
+#ifdef CUDA
+  attributes(device) &
+#endif
   subroutine eos(input, state)
 
     !$acc routine seq
 
     use eos_type_module, only: eos_t, composition, composition_derivatives
     use actual_eos_module, only: actual_eos
-#ifndef ACC
+#if !(defined(ACC) || defined(CUDA))
     use bl_error_module, only: bl_error
 #endif
 
@@ -90,7 +118,7 @@ contains
 
     ! Local variables
 
-#ifndef ACC
+#if !(defined(ACC) || defined(CUDA))
     if (.not. initialized) call bl_error('EOS: not initialized')
 #endif
 
@@ -117,6 +145,9 @@ contains
 
 
 
+#ifdef CUDA
+  attributes(device) &
+#endif
   subroutine reset_inputs(input, state, has_been_reset)
 
     !$acc routine seq
@@ -182,11 +213,19 @@ contains
 
   ! For density, just ensure that it is within mindens and maxdens.
 
+#ifdef CUDA
+  attributes(device) &
+#endif
   subroutine reset_rho(state, has_been_reset)
 
     !$acc routine seq
 
-    use eos_type_module, only: eos_t, mindens, maxdens
+    use eos_type_module, only: eos_t
+#ifdef CUDA
+    use eos_type_module, only: mindens => mindens_d, maxdens => maxdens_d
+#else
+    use eos_type_module, only: mindens, maxdens
+#endif
 
     implicit none
 
@@ -201,11 +240,19 @@ contains
 
   ! For temperature, just ensure that it is within mintemp and maxtemp.
 
+#ifdef CUDA
+  attributes(device) &
+#endif
   subroutine reset_T(state, has_been_reset)
 
     !$acc routine seq
 
-    use eos_type_module, only: eos_t, mintemp, maxtemp
+    use eos_type_module, only: eos_t
+#ifdef CUDA
+    use eos_type_module, only: mintemp => mintemp_d, maxtemp => maxtemp_d
+#else
+    use eos_type_module, only: mintemp, maxtemp
+#endif
 
     implicit none
 
@@ -218,11 +265,19 @@ contains
 
 
 
+#ifdef CUDA
+  attributes(device) &
+#endif
   subroutine reset_e(state, has_been_reset)
 
     !$acc routine seq
 
-    use eos_type_module, only: eos_t, mine, maxe
+    use eos_type_module, only: eos_t
+#ifdef CUDA
+    use eos_type_module, only: mine => mine_d, maxe => maxe_d
+#else
+    use eos_type_module, only: mine, maxe
+#endif
 
     implicit none
 
@@ -237,11 +292,19 @@ contains
 
 
 
+#ifdef CUDA
+  attributes(device) &
+#endif
   subroutine reset_h(state, has_been_reset)
 
     !$acc routine seq
 
-    use eos_type_module, only: eos_t, minh, maxh
+    use eos_type_module, only: eos_t
+#ifdef CUDA
+    use eos_type_module, only: minh => minh_d, maxh => maxh_d
+#else
+    use eos_type_module, only: minh, maxh
+#endif
 
     implicit none
 
@@ -256,11 +319,19 @@ contains
 
 
 
+#ifdef CUDA
+  attributes(device) &
+#endif
   subroutine reset_s(state, has_been_reset)
 
     !$acc routine seq
 
-    use eos_type_module, only: eos_t, mins, maxs
+    use eos_type_module, only: eos_t
+#ifdef CUDA
+    use eos_type_module, only: mins => mins_d, maxs => maxs_d
+#else
+    use eos_type_module, only: mins, maxs
+#endif
 
     implicit none
 
@@ -274,12 +345,19 @@ contains
   end subroutine reset_s
 
 
-
+#ifdef CUDA
+  attributes(device) &
+#endif
   subroutine reset_p(state, has_been_reset)
 
     !$acc routine seq
 
-    use eos_type_module, only: eos_t, minp, maxp
+    use eos_type_module, only: eos_t
+#ifdef CUDA
+    use eos_type_module, only: minp => minp_d, maxp => maxp_d
+#else
+    use eos_type_module, only: minp, maxp
+#endif
 
     implicit none
 
@@ -297,12 +375,21 @@ contains
   ! Given an EOS state, ensure that rho and T are
   ! valid, then call with eos_input_rt.
 
+#ifdef CUDA
+  attributes(device) &
+#endif
   subroutine eos_reset(state, has_been_reset)
 
     !$acc routine seq
 
-    use eos_type_module, only: eos_t, eos_input_rt, mintemp, maxtemp, mindens, maxdens
     use actual_eos_module, only: actual_eos
+    use eos_type_module, only: eos_t, eos_input_rt
+#ifdef CUDA
+    use eos_type_module, only: mintemp => mintemp_d, maxtemp => maxtemp_d, &
+                               mindens => mindens_d, maxdens => maxdens_d
+#else
+    use eos_type_module, only: mintemp, maxtemp, mindens, maxdens
+#endif
 
     implicit none
 
@@ -320,7 +407,7 @@ contains
 
 
 
-#ifndef ACC
+#if !(defined(ACC) || defined(CUDA))
   subroutine check_inputs(input, state)
 
     !$acc routine seq

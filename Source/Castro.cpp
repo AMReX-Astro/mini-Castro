@@ -886,7 +886,7 @@ void
 Castro::normalize_species (MultiFab& S_new)
 {
 
-    Device::beginDeviceLaunchRegion();
+//    Device::beginDeviceLaunchRegion();
 
     int ng = S_new.nGrow();
 
@@ -902,7 +902,7 @@ Castro::normalize_species (MultiFab& S_new)
 			    ARLIM_3D(bx.loVect()), ARLIM_3D(bx.hiVect()), &idx);
     }
 
-    Device::endDeviceLaunchRegion();
+//    Device::endDeviceLaunchRegion();
 
 }
 
@@ -910,7 +910,7 @@ void
 Castro::enforce_consistent_e (MultiFab& S)
 {
 
-Device::beginDeviceLaunchRegion();
+  // Device::beginDeviceLaunchRegion();
 
 #ifdef _OPENMP
 #pragma omp parallel
@@ -925,7 +925,7 @@ Device::beginDeviceLaunchRegion();
         ca_enforce_consistent_e(ARLIM_3D(lo), ARLIM_3D(hi), BL_TO_FORTRAN_3D(S[mfi]), &idx);
     }
 
-Device::endDeviceLaunchRegion();
+  // Device::endDeviceLaunchRegion();
 
 }
 

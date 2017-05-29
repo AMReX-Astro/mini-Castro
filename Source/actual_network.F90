@@ -19,6 +19,10 @@ module actual_network
   integer, parameter :: nrates = 1
   integer, parameter :: num_rate_groups = 1
 
+#ifdef CUDA
+  double precision, device :: aion_d(nspec), zion_d(nspec)
+#endif
+
 contains
   
   subroutine actual_network_init
@@ -30,6 +34,11 @@ contains
     aion(1) = 1.0
 
     zion(1) = 1.0
+
+#ifdef CUDA
+    aion_d = aion
+    zion_d = zion
+#endif
 
   end subroutine actual_network_init
 

@@ -4,9 +4,9 @@ module advection_util_module
 
 contains
 
-!#ifdef CUDA
-!  attributes(device) &
-!#endif
+#ifdef CUDA
+  attributes(device) &
+#endif
   subroutine enforce_minimum_density(uin,uin_lo,uin_hi, &
                                      uout,uout_lo,uout_hi, &
                                      vol,vol_lo,vol_hi, &
@@ -15,12 +15,12 @@ contains
     use network, only: nspec, naux
     use bl_constants_module, only: ZERO
     use amrex_fort_module, only: rt => amrex_real
-!#ifdef CUDA
-!    use meth_params_module, only: NVAR => NVAR_d, URHO => URHO_d, UEINT => UEINT_d, &
-!                                  UEDEN => UEDEN_d, small_dens => small_dens_d
-!#else
+#ifdef CUDA
+    use meth_params_module, only: NVAR => NVAR_d, URHO => URHO_d, UEINT => UEINT_d, &
+                                  UEDEN => UEDEN_d, small_dens => small_dens_d
+#else
     use meth_params_module, only: NVAR, URHO, UEINT, UEDEN, small_dens
-!#endif
+#endif
 
     implicit none
 
@@ -38,7 +38,8 @@ contains
     integer  :: i,ii,j,jj,k,kk
     integer  :: i_set, j_set, k_set
     real(rt) :: max_dens
-    real(rt) :: unew(NVAR)
+    real(rt) :: f_c
+    real(rt) :: old_state(NVAR), new_state(NVAR), unew(NVAR)
     integer  :: num_positive_zones
 
     real(rt) :: initial_mass, final_mass
@@ -70,22 +71,29 @@ contains
 
              if (uout(i,j,k,URHO) .eq. ZERO) then
 
-!#ifndef CUDA
+#ifndef CUDA
                 print *,'DENSITY EXACTLY ZERO AT CELL ',i,j,k
                 print *,'  in grid ',lo(1),lo(2),lo(3),hi(1),hi(2),hi(3)
                 call bl_error("Error:: advection_util_nd.F90 :: ca_enforce_minimum_density")
-!#endif
+#endif
 
              else if (uout(i,j,k,URHO) < small_dens) then
 
                 have_reset = .true.
 
+                old_state = uin(i,j,k,:)
+
                 ! Store the maximum (negative) fractional change in the density
 
-                if ( uout(i,j,k,URHO) < ZERO .and. &
-                     (uout(i,j,k,URHO) - uin(i,j,k,URHO)) / uin(i,j,k,URHO) < frac_change) then
+                if ( uout(i,j,k,URHO) < ZERO ) then
 
-                   frac_change = (uout(i,j,k,URHO) - uin(i,j,k,URHO)) / uin(i,j,k,URHO)
+                   f_c = (uout(i,j,k,URHO) - uin(i,j,k,URHO)) / uin(i,j,k,URHO)
+
+#ifdef CUDA
+                   frac_change = atomicmin(frac_change, f_c)
+#else
+                   frac_change = min(frac_change, f_c)
+#endif
 
                 endif
 
@@ -115,15 +123,17 @@ contains
 
                    ! We could not find any nearby zones with sufficient density.
 
-                   call reset_to_small_state(uin(i,j,k,:), uout(i,j,k,:), [i, j, k], lo, hi, verbose)
+                   call reset_to_small_state(old_state, new_state, [i, j, k], lo, hi, verbose)
 
                 else
 
                    unew = uout(i_set,j_set,k_set,:)
 
-                   call reset_to_zone_state(uin(i,j,k,:), uout(i,j,k,:), unew(:), [i, j, k], lo, hi, verbose)
+                   call reset_to_zone_state(old_state, new_state, unew, [i, j, k], lo, hi, verbose)
 
                 endif
+
+                uout(i,j,k,:) = new_state
 
              endif
 
@@ -139,31 +149,40 @@ contains
 
 
 
-!#ifdef CUDA
-!  attributes(device) &
-!#endif
+#ifdef CUDA
+  attributes(device) &
+#endif
   subroutine reset_to_small_state(old_state, new_state, idx, lo, hi, verbose)
 
     use bl_constants_module, only: ZERO
     use network, only: nspec, naux
-    use meth_params_module, only: NVAR, URHO, UMX, UMY, UMZ, UTEMP, UEINT, UEDEN, UFS, small_temp, small_dens, npassive, upass_map
     use eos_type_module, only: eos_t, eos_input_rt
     use eos_module, only: eos
     use amrex_fort_module, only: rt => amrex_real
+#ifdef CUDA
+    use meth_params_module, only: NVAR => NVAR_d, URHO => URHO_d, UMX => UMX_d, UMY => UMY_d, &
+                                  UMZ => UMZ_d, UTEMP => UTEMP_d, UEINT => UEINT_d, UEDEN => UEDEN_d, &
+                                  UFS => UFS_d, small_temp => small_temp_d, small_dens => small_dens_d, &
+                                  npassive => npassive_d, upass_map => upass_map_d
+#else
+    use meth_params_module, only: NVAR, URHO, UMX, UMY, UMZ, UTEMP, UEINT, UEDEN, UFS, small_temp, small_dens, npassive, upass_map
+#endif
 
     implicit none
 
-    real(rt)         :: old_state(NVAR), new_state(NVAR)
-    integer          :: idx(3), lo(3), hi(3), verbose
+    real(rt), intent(in   ) :: old_state(NVAR)
+    real(rt), intent(inout) :: new_state(NVAR)
+    integer,  intent(in   ) :: idx(3), lo(3), hi(3), verbose
 
-    integer          :: n, ipassive
-    type (eos_t)     :: eos_state
+    integer      :: n, ipassive
+    type (eos_t) :: eos_state
 
     ! If no neighboring zones are above small_dens, our only recourse
     ! is to set the density equal to small_dens, and the temperature
     ! equal to small_temp. We set the velocities to zero,
     ! though any choice here would be arbitrary.
 
+#ifndef CUDA
     if (verbose .gt. 0) then
        print *,'   '
        if (new_state(URHO) < ZERO) then
@@ -176,6 +195,7 @@ contains
        print *,'>>> ORIGINAL DENSITY FOR OLD STATE WAS ',old_state(URHO)
        print *,'   '
     end if
+#endif
 
     do ipassive = 1, npassive
        n = upass_map(ipassive)
@@ -203,17 +223,26 @@ contains
 
 
 
+#ifdef CUDA
+  attributes(device) &
+#endif
   subroutine reset_to_zone_state(old_state, new_state, input_state, idx, lo, hi, verbose)
 
     use bl_constants_module, only: ZERO
-    use meth_params_module, only: NVAR, URHO
     use amrex_fort_module, only: rt => amrex_real
+#ifdef CUDA
+    use meth_params_module, only: NVAR => NVAR_d
+#else
+    use meth_params_module, only: NVAR, URHO
+#endif
 
     implicit none
 
-    real(rt)         :: old_state(NVAR), new_state(NVAR), input_state(NVAR)
-    integer          :: idx(3), lo(3), hi(3), verbose
+    real(rt), intent(in   ) :: old_state(NVAR), input_state(NVAR)
+    real(rt), intent(inout) :: new_state(NVAR)
+    integer,  intent(in   ) :: idx(3), lo(3), hi(3), verbose
 
+#ifndef CUDA
     if (verbose .gt. 0) then
        if (new_state(URHO) < ZERO) then
           print *,'   '
@@ -231,6 +260,7 @@ contains
           print *,'   '
        end if
     end if
+#endif
 
     new_state(:) = input_state(:)
 
@@ -321,23 +351,37 @@ contains
 
 
 
+#ifdef CUDA
+  attributes(device) &
+#endif
   subroutine ctoprim(lo, hi, &
                      uin, uin_lo, uin_hi, &
                      q,     q_lo,   q_hi, &
                      qaux, qa_lo,  qa_hi)
 
-    use mempool_module, only: bl_allocate, bl_deallocate
     use actual_network, only: nspec, naux
     use eos_module, only: eos
     use eos_type_module, only: eos_t, eos_input_re
-    use meth_params_module, only: NVAR, URHO, UMX, UMZ, &
-                                   UEDEN, UEINT, UTEMP, &
-                                   QRHO, QU, QV, QW, &
-                                   QREINT, QPRES, QTEMP, QGAME, QFS, QFX, &
-                                   NQ, QC, QCSML, QGAMC, QDPDR, QDPDE, NQAUX, &
-                                   npassive, upass_map, qpass_map, small_dens
     use bl_constants_module, only: ZERO, HALF, ONE
     use amrex_fort_module, only: rt => amrex_real
+#ifdef CUDA
+    use meth_params_module, only: NVAR => NVAR_d, URHO => URHO_d, UMX => UMX_d, UMZ => UMZ_d, &
+                                  UEDEN => UEDEN_d, UEINT => UEINT_d, UTEMP => UTEMP_d, &
+                                  QRHO => QRHO_d, QU => QU_d, QV => QV_d, QW => QW_d, &
+                                  QREINT => QREINT_d, QPRES => QPRES_d, QTEMP => QTEMP_d, &
+                                  QGAME => QGAME_d, QFS => QFS_d, QFX => QFX_d, NQ => NQ_d, &
+                                  QC => QC_d, QCSML => QCSML_d, QGAMC => QGAMC_d, &
+                                  QDPDR => QDPDR_d, QDPDE => QDPDE_d, NQAUX => NQAUX_d, &
+                                  npassive => npassive_d, upass_map => upass_map_d, &
+                                  qpass_map => qpass_map_d, small_dens => small_dens_d
+#else
+    use meth_params_module, only: NVAR, URHO, UMX, UMZ, &
+                                  UEDEN, UEINT, UTEMP, &
+                                  QRHO, QU, QV, QW, &
+                                  QREINT, QPRES, QTEMP, QGAME, QFS, QFX, &
+                                  NQ, QC, QCSML, QGAMC, QDPDR, QDPDE, NQAUX, &
+                                  npassive, upass_map, qpass_map, small_dens
+#endif
 
     implicit none
 
@@ -364,6 +408,7 @@ contains
        do j = lo(2), hi(2)
 
           do i = lo(1), hi(1)
+#ifndef CUDA
              if (uin(i,j,k,URHO) .le. ZERO) then
                 print *,'   '
                 print *,'>>> Error: advection_util_nd.F90::ctoprim ',i, j, k
@@ -375,6 +420,7 @@ contains
                 print *,'>>> ... small density ', uin(i,j,k,URHO)
                 call bl_error("Error:: advection_util_nd.F90 :: ctoprim")
              endif
+#endif
           end do
 
           do i = lo(1), hi(1)

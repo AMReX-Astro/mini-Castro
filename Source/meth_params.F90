@@ -72,6 +72,8 @@ implicit none
   integer, device :: NQAUX_d, QGAMC_d, QC_d, QCSML_d, QDPDR_d, QDPDE_d
   integer, device :: QFA_d, QFS_d, QFX_d
   integer, device :: NQ_d
+  integer, device :: npassive_d
+  integer, allocatable, device :: upass_map_d(:), qpass_map_d(:)
 #endif
 
   ! Begin the declarations of the ParmParse parameters

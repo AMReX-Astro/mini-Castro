@@ -62,6 +62,25 @@ module eos_type_module
   !$acc create(mintemp, maxtemp, mindens, maxdens, minx, maxx, minye, maxye) &
   !$acc create(mine, maxe, minp, maxp, mins, maxs, minh, maxh)
 
+#ifdef CUDA
+  real(dp_t), device :: mintemp_d
+  real(dp_t), device :: maxtemp_d
+  real(dp_t), device :: mindens_d
+  real(dp_t), device :: maxdens_d
+  real(dp_t), device :: minx_d
+  real(dp_t), device :: maxx_d
+  real(dp_t), device :: minye_d
+  real(dp_t), device :: maxye_d
+  real(dp_t), device :: mine_d
+  real(dp_t), device :: maxe_d
+  real(dp_t), device :: minp_d
+  real(dp_t), device :: maxp_d
+  real(dp_t), device :: mins_d
+  real(dp_t), device :: maxs_d
+  real(dp_t), device :: minh_d
+  real(dp_t), device :: maxh_d
+#endif
+
   ! A generic structure holding thermodynamic quantities and their derivatives,
   ! plus some other quantities of interest.
 
@@ -154,12 +173,19 @@ contains
   ! Given a set of mass fractions, calculate quantities that depend
   ! on the composition like abar and zbar.
 
+#ifdef CUDA
+  attributes(device) &
+#endif
   subroutine composition(state)
 
     !$acc routine seq
 
     use bl_constants_module, only: ONE
+#ifdef CUDA
+    use network, only: aion => aion_d, aion_inv => aion_inv_d, zion => zion_d
+#else
     use network, only: aion, aion_inv, zion
+#endif
 
     implicit none
 
@@ -181,12 +207,19 @@ contains
 
   ! Compute thermodynamic derivatives with respect to xn(:)
 
+#ifdef CUDA
+  attributes(device) &
+#endif
   subroutine composition_derivatives(state)
 
     !$acc routine seq
 
     use bl_constants_module, only: ZERO
+#ifdef CUDA
+    use network, only: aion => aion_d, aion_inv => aion_inv_d, zion => zion_d
+#else
     use network, only: aion, aion_inv, zion
+#endif
 
     implicit none
 
@@ -217,18 +250,29 @@ contains
   ! Normalize the mass fractions: they must be individually positive
   ! and less than one, and they must all sum to unity.
 
+#ifdef CUDA
+  attributes(device) &
+#endif
   subroutine normalize_abundances(state)
 
     !$acc routine seq
 
     use bl_constants_module, only: ONE
+#ifdef CUDA
+    use extern_probin_module, only: small_x_d
+#else
     use extern_probin_module, only: small_x
+#endif
 
     implicit none
 
     type (eos_t), intent(inout) :: state
 
+#ifdef CUDA
+    state % xn = max(small_x_d, min(ONE, state % xn))
+#else
     state % xn = max(small_x, min(ONE, state % xn))
+#endif
 
     state % xn = state % xn / sum(state % xn)
 
@@ -238,6 +282,9 @@ contains
 
   ! Ensure that inputs are within reasonable limits.
 
+#ifdef CUDA
+  attributes(device) &
+#endif
   subroutine clean_state(state)
 
     !$acc routine seq
@@ -246,8 +293,13 @@ contains
 
     type (eos_t), intent(inout) :: state
 
+#ifdef CUDA
+    state % T = min(maxtemp_d, max(mintemp_d, state % T))
+    state % rho = min(maxdens_d, max(mindens_d, state % rho))
+#else
     state % T = min(maxtemp, max(mintemp, state % T))
     state % rho = min(maxdens, max(mindens, state % rho))
+#endif
 
   end subroutine clean_state
 

@@ -199,7 +199,7 @@ Castro::variableSetUp ()
 			 StateDescriptor::Point,ngrow_state,NUM_STATE,
 			 interp,state_data_extrap,store_in_checkpoint);
 
-  desc_lst.setDeviceCopy(State_Type, true);
+//  desc_lst.setDeviceCopy(State_Type, true);
 
   Array<BCRec>       bcs(NUM_STATE);
   Array<std::string> name(NUM_STATE);

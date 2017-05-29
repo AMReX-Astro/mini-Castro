@@ -24,6 +24,9 @@ module network
                             spec_names, short_spec_names, &
                             aux_names, short_aux_names, &
                             actual_network_init
+#ifdef CUDA
+  use actual_network, only: aion_d, zion_d
+#endif
 
   implicit none
 
@@ -33,6 +36,10 @@ module network
   real(kind=dp_t) :: aion_inv(nspec)
 
   !$acc declare create(aion_inv)
+
+#ifdef CUDA
+  real(kind=dp_t), device :: aion_inv_d(nspec)
+#endif
 
 contains
 
@@ -64,6 +71,10 @@ contains
     aion_inv(:) = ONE/aion(:)
 
     !$acc update device(aion_inv)
+
+#ifdef CUDA
+    aion_inv_d = aion
+#endif
 
     network_initialized = .true.
 
