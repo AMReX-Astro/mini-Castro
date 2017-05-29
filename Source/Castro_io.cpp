@@ -26,7 +26,7 @@ using namespace amrex;
 std::string
 Castro::thePlotFileType () const
 {
-    static const std::string the_plot_file_type("StarLord-V1.0");
+    static const std::string the_plot_file_type("HyperCLaw-V1.1");
 
     return the_plot_file_type;
 }
