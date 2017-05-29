@@ -527,8 +527,8 @@ contains
 
 #else
 
-    call derpres(p,p_lo,p_hi,ncomp_p, &
-                 u,u_lo,u_hi,ncomp_u,lo,hi,domlo, &
+    call derpres(p,p_lo,p_hi,np, &
+                 u,u_lo,u_hi,nc,lo,hi,domlo, &
                  domhi,dx,xlo,time,dt,bc,level,grid_no)
 
 #endif
