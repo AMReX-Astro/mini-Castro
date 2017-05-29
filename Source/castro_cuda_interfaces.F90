@@ -105,6 +105,8 @@ contains
     idx(2) = lo(2) + (threadIdx%y - 1) + blockDim%y * (blockIdx%y - 1)
     idx(3) = lo(3) + (threadIdx%z - 1) + blockDim%z * (blockIdx%z - 1)
 
+    if (idx(1) .gt. hi(1) .or. idx(2) .gt. hi(2) .or. idx(3) .gt. hi(3)) return
+
     call normalize_species(u, u_lo, u_hi, idx, idx)
 
   end subroutine cuda_normalize_species
