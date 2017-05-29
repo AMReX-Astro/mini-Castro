@@ -146,7 +146,7 @@ contains
 
     if (idx(1) .gt. hi(1) .or. idx(2) .gt. hi(2) .or. idx(3) .gt. hi(3)) return
 
-    call ctoprim(lo, hi, &
+    call ctoprim(idx, idx, &
                  uin, uin_lo, uin_hi, &
                  q,     q_lo,   q_hi, &
                  qaux, qa_lo,  qa_hi)
@@ -290,7 +290,7 @@ contains
 
     if (idx(1) .gt. hi(1) .or. idx(2) .gt. hi(2) .or. idx(3) .gt. hi(3)) return
 
-    call compute_temp(lo, hi, state, s_lo, s_hi)
+    call compute_temp(idx, idx, state, s_lo, s_hi)
 
   end subroutine cuda_compute_temp
 
