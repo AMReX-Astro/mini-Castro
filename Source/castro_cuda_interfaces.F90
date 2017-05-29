@@ -4,9 +4,7 @@ module cuda_interfaces_module
 
 contains
 
-#ifdef CUDA
   attributes(global) &
-#endif
   subroutine cuda_enforce_consistent_e(lo,hi,state,s_lo,s_hi)
 
     use amrex_fort_module, only: rt => amrex_real
@@ -35,9 +33,7 @@ contains
 
 
 
-#ifdef CUDA
   attributes(global) &
-#endif
   subroutine cuda_enforce_minimum_density(uin, uin_lo, uin_hi, &
                                           uout, uout_lo, uout_hi, &
                                           vol, vol_lo, vol_hi, &
@@ -78,18 +74,12 @@ contains
 
 
 
-#ifdef CUDA
   attributes(global) &
-#endif
   subroutine cuda_normalize_species(u, u_lo, u_hi, lo, hi)
 
     use amrex_fort_module, only: rt => amrex_real
     use castro_util_module, only: normalize_species
-#ifdef CUDA
     use meth_params_module, only: NVAR => NVAR_d
-#else
-    use meth_params_module, only: NVAR
-#endif
 
     implicit none
 
@@ -113,9 +103,7 @@ contains
 
 
 
-#ifdef CUDA
   attributes(global) &
-#endif
   subroutine cuda_ctoprim(lo, hi, &
                           uin, uin_lo, uin_hi, &
                           q,     q_lo,   q_hi, &
@@ -155,9 +143,7 @@ contains
 
 
 
-#ifdef CUDA
   attributes(global) &
-#endif
   subroutine cuda_reset_internal_e(lo,hi,u,u_lo,u_hi,verbose)
 
     use amrex_fort_module, only: rt => amrex_real
@@ -186,9 +172,7 @@ contains
 
 
 
-#ifdef CUDA
   attributes(global) &
-#endif
   subroutine cuda_dervel(vel,v_lo,v_hi,nv, &
                          dat,d_lo,d_hi,nc,lo,hi,domlo, &
                          domhi,delta,xlo,time,dt,bc,level,grid_no)
@@ -226,9 +210,7 @@ contains
 
 
 
-#ifdef CUDA
   attributes(global) &
-#endif
   subroutine cuda_derpres(p,p_lo,p_hi,ncomp_p, &
                           u,u_lo,u_hi,ncomp_u,lo,hi,domlo, &
                           domhi,dx,xlo,time,dt,bc,level,grid_no)
@@ -265,9 +247,7 @@ contains
 
 
 
-#ifdef CUDA
   attributes(global) &
-#endif
   subroutine cuda_compute_temp(lo,hi,state,s_lo,s_hi)
 
     use amrex_fort_module, only: rt => amrex_real
@@ -293,5 +273,36 @@ contains
     call compute_temp(idx, idx, state, s_lo, s_hi)
 
   end subroutine cuda_compute_temp
+
+
+
+  attributes(global) &
+  subroutine cuda_estdt(lo,hi,u,u_lo,u_hi,dx,dt)
+
+    use amrex_fort_module, only: rt => amrex_real
+    use meth_params_module, only: NVAR => NVAR_d
+    use timestep_module, only: estdt
+
+    implicit none
+
+    integer,  intent(in   ) :: lo(3), hi(3)
+    integer,  intent(in   ) :: u_lo(3), u_hi(3)
+    real(rt), intent(in   ) :: u(u_lo(1):u_hi(1),u_lo(2):u_hi(2),u_lo(3):u_hi(3),NVAR)
+    real(rt), intent(in   ) :: dx(3)
+    real(rt), intent(inout) :: dt
+
+    integer :: idx(3)
+
+    ! Get our spatial index based on the CUDA thread index
+
+    idx(1) = lo(1) + (threadIdx%x - 1) + blockDim%x * (blockIdx%x - 1)
+    idx(2) = lo(2) + (threadIdx%y - 1) + blockDim%y * (blockIdx%y - 1)
+    idx(3) = lo(3) + (threadIdx%z - 1) + blockDim%z * (blockIdx%z - 1)
+
+    if (idx(1) .gt. hi(1) .or. idx(2) .gt. hi(2) .or. idx(3) .gt. hi(3)) return
+
+    call estdt(idx,idx,u,u_lo,u_hi,dx,dt)
+
+  end subroutine cuda_estdt
 
 end module cuda_interfaces_module

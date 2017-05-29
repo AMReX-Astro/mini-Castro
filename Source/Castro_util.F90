@@ -660,6 +660,9 @@ subroutine ca_set_problem_params(dm,physbc_lo_in,physbc_hi_in,&
   mom_flux_has_p(3)%comp(UMY) = .false.
   mom_flux_has_p(3)%comp(UMZ) = .true.
 
+#ifdef CUDA
+  dim_d = dim
+#endif
 
 end subroutine ca_set_problem_params
 

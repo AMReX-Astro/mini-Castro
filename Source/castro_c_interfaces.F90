@@ -535,4 +535,67 @@ contains
 
   end subroutine ca_derpres
 
+  subroutine ca_estdt(lo,hi,u,u_lo,u_hi,dx,dt,idx) bind(C, name="ca_estdt")
+
+    use timestep_module, only: estdt
+#ifdef CUDA
+    use cuda_interfaces_module, only: cuda_estdt
+#endif
+
+    implicit none
+
+    integer,  intent(in   ) :: lo(3), hi(3)
+    integer,  intent(in   ) :: u_lo(3), u_hi(3)
+    real(rt), intent(in   ) :: u(u_lo(1):u_hi(1),u_lo(2):u_hi(2),u_lo(3):u_hi(3),NVAR)
+    real(rt), intent(in   ) :: dx(3)
+    real(rt), intent(inout) :: dt
+    integer,  intent(in   ) :: idx
+
+#ifdef CUDA
+
+    attributes(device) :: u
+
+    integer,  device :: lo_d(3), hi_d(3)
+    integer,  device :: u_lo_d(3), u_hi_d(3)
+    real(rt), device :: dx_d(3)
+    real(rt), device :: dt_loc_d
+
+    integer                   :: cuda_result
+    integer(cuda_stream_kind) :: stream
+    type(dim3)                :: numThreads, numBlocks
+
+    real(rt) :: dt_loc
+
+    stream = cuda_streams(mod(idx, max_cuda_streams) + 1)
+
+    cuda_result = cudaMemcpyAsync(lo_d, lo, 3, cudaMemcpyHostToDevice, stream)
+    cuda_result = cudaMemcpyAsync(hi_d, hi, 3, cudaMemcpyHostToDevice, stream)
+
+    cuda_result = cudaMemcpyAsync(u_lo_d, u_lo, 3, cudaMemcpyHostToDevice, stream)
+    cuda_result = cudaMemcpyAsync(u_hi_d, u_hi, 3, cudaMemcpyHostToDevice, stream)
+
+    cuda_result = cudaMemcpyAsync(dx_d, dx, 3, cudaMemcpyHostToDevice, stream)
+
+    dt_loc = dt
+
+    cuda_result = cudaMemcpyAsync(dt_loc_d, dt, 1, cudaMemcpyHostToDevice, stream)
+
+    call threads_and_blocks(lo, hi, numBlocks, numThreads)
+
+    call cuda_estdt<<<numBlocks, numThreads, 0, stream>>>(lo_d, hi_d, u, u_lo_d, u_hi_d, dx_d, dt_loc_d)
+
+    cuda_result = cudaMemcpyAsync(dt_loc, dt_loc_d, 1, cudaMemcpyDeviceToHost, stream)
+
+    cuda_result = cudaStreamSynchronize(stream)
+
+    dt = min(dt, dt_loc)
+
+#else
+
+    call estdt(lo, hi, u, u_lo, u_hi, dx, dt)
+
+#endif
+
+  end subroutine ca_estdt
+
 end module c_interface_modules

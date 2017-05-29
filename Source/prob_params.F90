@@ -48,5 +48,11 @@ module prob_params_module
 
   ! one component for each coordinate direction flux
   type (momflux_t), save :: mom_flux_has_p(3)
+
+#ifdef CUDA
+
+  integer, device :: dim_d
+
+#endif
   
 end module prob_params_module

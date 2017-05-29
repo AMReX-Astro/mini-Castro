@@ -8,25 +8,36 @@ contains
 
   ! Courant-condition limited timestep
 
-  subroutine ca_estdt(lo,hi,u,u_lo,u_hi,dx,dt) bind(C, name="ca_estdt")
+#ifdef CUDA
+  attributes(device) &
+#endif
+  subroutine estdt(lo,hi,u,u_lo,u_hi,dx,dt)
 
     use network, only: nspec, naux
     use eos_module, only: eos
     use eos_type_module, only: eos_t, eos_input_re
-    use meth_params_module, only: NVAR, URHO, UMX, UMY, UMZ, UEINT, UTEMP, UFS, UFX
-    use prob_params_module, only: dim
     use bl_constants_module, only: ONE
     use amrex_fort_module, only: rt => amrex_real
+#ifdef CUDA
+    use meth_params_module, only: NVAR => NVAR_d, URHO => URHO_d, UMX => UMX_d, &
+                                  UMY => UMY_d, UMZ => UMZ_d, UEINT => UEINT_d, &
+                                  UTEMP => UTEMP_d, UFS => UFS_d, UFX => UFX_d
+    use prob_params_module, only: dim => dim_d
+#else
+    use meth_params_module, only: NVAR, URHO, UMX, UMY, UMZ, UEINT, UTEMP, UFS, UFX
+    use prob_params_module, only: dim
+#endif
 
     implicit none
 
-    integer          :: lo(3), hi(3)
-    integer          :: u_lo(3), u_hi(3)
-    real(rt)         :: u(u_lo(1):u_hi(1),u_lo(2):u_hi(2),u_lo(3):u_hi(3),NVAR)
-    real(rt)         :: dx(3), dt, dt_tmp
+    integer,  intent(in   ) :: lo(3), hi(3)
+    integer,  intent(in   ) :: u_lo(3), u_hi(3)
+    real(rt), intent(in   ) :: u(u_lo(1):u_hi(1),u_lo(2):u_hi(2),u_lo(3):u_hi(3),NVAR)
+    real(rt), intent(in   ) :: dx(3)
+    real(rt), intent(inout) :: dt
 
-    real(rt)         :: rhoInv, ux, uy, uz, c, dt1, dt2, dt3
-    integer          :: i, j, k
+    real(rt) :: rhoInv, ux, uy, uz, c, dt1, dt2, dt3, dt_tmp
+    integer  :: i, j, k
 
     type (eos_t) :: eos_state
 
@@ -43,11 +54,7 @@ contains
              eos_state % xn  = u(i,j,k,UFS:UFS+nspec-1) * rhoInv
              eos_state % aux = u(i,j,k,UFX:UFX+naux-1) * rhoInv
 
-#ifdef CUDA
-             eos_state % cs = sqrt(5.d0/3.d0 * (2.d0/3.d0) * eos_state % e)
-#else
              call eos(eos_input_re, eos_state)
-#endif
 
              ! Compute velocity and then calculate CFL timestep.
 
@@ -76,12 +83,17 @@ contains
              if (dim == 3) then
                 dt_tmp = dt_tmp + ONE/dt3
              endif
+
+#ifdef CUDA
+             dt_tmp = atomicmin(dt, ONE/dt_tmp)
+#else
              dt = min(dt, ONE/dt_tmp)
+#endif
 
           enddo
        enddo
     enddo
 
-  end subroutine ca_estdt
+  end subroutine estdt
 
 end module timestep_module

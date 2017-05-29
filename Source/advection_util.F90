@@ -90,7 +90,7 @@ contains
                    f_c = (uout(i,j,k,URHO) - uin(i,j,k,URHO)) / uin(i,j,k,URHO)
 
 #ifdef CUDA
-                   frac_change = atomicmin(frac_change, f_c)
+                   f_c = atomicmin(frac_change, f_c)
 #else
                    frac_change = min(frac_change, f_c)
 #endif
