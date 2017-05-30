@@ -8,9 +8,9 @@ module actual_eos_module
 
   character (len=64) :: eos_name = "gamma_law"
 
-  double precision, save :: gamma_const
+  double precision, allocatable, save :: gamma_const
 
-  logical, save :: assume_neutral
+  logical, allocatable, save :: assume_neutral
 
   ! boltzmann's constant
   real(rt), parameter :: k_B = 1.3806488e-16_rt   ! erg/K
@@ -19,8 +19,7 @@ module actual_eos_module
   real(rt), parameter :: n_A = 6.02214129e23_rt   ! mol^-1
 
 #ifdef CUDA
-  double precision, device :: gamma_const_d
-  logical, device :: assume_neutral_d
+  attributes(managed) :: gamma_const, assume_neutral
 #endif
 
 contains
@@ -32,6 +31,9 @@ contains
 
     implicit none
 
+    allocate(gamma_const)
+    allocate(assume_neutral)
+
     ! constant ratio of specific heats
     if (eos_gamma .gt. ZERO) then
        gamma_const = eos_gamma
@@ -40,11 +42,6 @@ contains
     end if
 
     assume_neutral = eos_assume_neutral
-
-#ifdef CUDA
-    gamma_const_d = gamma_const
-    assume_neutral_d = assume_neutral
-#endif
 
   end subroutine actual_eos_init
 
@@ -62,11 +59,7 @@ contains
 #if !(defined(ACC) || defined(CUDA))
     use bl_error_module, only: bl_error
 #endif
-#ifdef CUDA
-    use network, only: aion => aion_d, zion => zion_d
-#else
     use network, only: aion, zion
-#endif
 
     implicit none
 
@@ -77,20 +70,9 @@ contains
 
     double precision :: poverrho
 
-    double precision :: gamma
-    logical :: neutral
-
-#ifdef CUDA
-    gamma = gamma_const_d
-    neutral = assume_neutral_d
-#else
-    gamma = gamma_const
-    neutral = assume_neutral
-#endif
-
     ! Calculate mu.
 
-    if (neutral) then
+    if (assume_neutral) then
        state % mu = state % abar
     else
        state % mu = ONE / sum( (ONE + zion(:)) * state % xn(:) / aion(:) )
@@ -101,10 +83,10 @@ contains
     case (eos_input_rt)
 
        ! dens, temp and xmass are inputs
-       state % cv = R / (state % mu * (gamma-ONE))
+       state % cv = R / (state % mu * (gamma_const-ONE))
        state % e = state % cv * state % T
-       state % p = (gamma-ONE) * state % rho * state % e
-       state % gam1 = gamma
+       state % p = (gamma_const-ONE) * state % rho * state % e
+       state % gam1 = gamma_const
 
     case (eos_input_rh)
 
@@ -128,24 +110,24 @@ contains
 
        poverrho = state % p / state % rho
        state % T = poverrho * state % mu * (ONE/R)
-       state % e = poverrho * (ONE/(gamma-ONE))
-       state % gam1 = gamma
+       state % e = poverrho * (ONE/(gamma_const-ONE))
+       state % gam1 = gamma_const
 
     case (eos_input_re)
 
        ! dens, energy, and xmass are inputs
 
-       poverrho = (gamma - ONE) * state % e
+       poverrho = (gamma_const - ONE) * state % e
 
        state % p = poverrho * state % rho
        state % T = poverrho * state % mu * (ONE/R)
-       state % gam1 = gamma
+       state % gam1 = gamma_const
 
        ! sound speed
-       state % cs = sqrt(gamma * poverrho)
+       state % cs = sqrt(gamma_const * poverrho)
 
        state % dpdr_e = poverrho
-       state % dpde = (gamma-ONE) * state % rho
+       state % dpde = (gamma_const-ONE) * state % rho
 
        ! Try to avoid the expensive log function.  Since we don't need entropy
        ! in hydro solver, set it to an invalid but "nice" value for the plotfile.

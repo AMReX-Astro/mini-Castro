@@ -12,11 +12,7 @@ contains
 !    use mempool_module, only: bl_allocate, bl_deallocate
     use bl_constants_module, only: ZERO, ONE
     use amrex_fort_module, only: rt => amrex_real
-#ifdef CUDA
-    use prob_params_module, only: dg => dg_d
-#else
     use prob_params_module, only: dg
-#endif
 
     implicit none
 

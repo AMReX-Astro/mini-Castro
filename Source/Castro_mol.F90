@@ -33,16 +33,9 @@ contains
     use riemann_module, only: cmpflx
     use ppm_module, only: ppm_reconstruct
     use amrex_fort_module, only: rt => amrex_real
-#ifdef CUDA
-    use meth_params_module, only: NQ => NQ_d, QVAR => QVAR_d, NVAR => NVAR_d, NGDNV => NGDNV_d, &
-                                  GDPRES => GDPRES_d, UTEMP => UTEMP_d, UEINT => UEINT_d, UMX => UMX_d, &
-                                  GDU => GDU_d, GDV => GDV_d, GDW => GDW_d, QU => QU_d, QV => QV_d, &
-                                  QW => QW_d, QPRES => QPRES_d, NQAUX => NQAUX_d
-#else
     use meth_params_module, only: NQ, QVAR, NVAR, NGDNV, GDPRES, &
                                    UTEMP, UEINT, UMX, GDU, GDV, GDW, &
                                    QU, QV, QW, QPRES, NQAUX
-#endif
 
     implicit none
 

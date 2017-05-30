@@ -194,12 +194,15 @@ class Param(object):
 
         if not self.debug_default is None:
             ostr += "#ifdef DEBUG\n"
-            ostr += "    {} = {};\n".format(name, debug_default)
+            ostr += "    allocate({})\n".format(name, debug_default)
+            ostr += "    {} = {}\n".format(name, debug_default)
             ostr += "#else\n"
-            ostr += "    {} = {};\n".format(name, default)
+            ostr += "    allocate({})\n".format(name, default)
+            ostr += "    {} = {}\n".format(name, default)
             ostr += "#endif\n"
         else:
-            ostr += "    {} = {};\n".format(name, default)
+            ostr += "    allocate({})\n".format(name, default)
+            ostr += "    {} = {}\n".format(name, default)
 
         return ostr
 
@@ -260,11 +263,11 @@ class Param(object):
             return None
 
         if self.F90_dtype == "int":
-            tstr = "integer         , save :: {}\n".format(self.F90_name)
+            tstr = "integer,  allocatable, save :: {}\n".format(self.F90_name)
         elif self.F90_dtype == "Real":
-            tstr = "real(rt), save :: {}\n".format(self.F90_name)
+            tstr = "real(rt), allocatable, save :: {}\n".format(self.F90_name)
         elif self.F90_dtype == "logical":
-            tstr = "logical         , save :: {}\n".format(self.F90_name)
+            tstr = "logical,  allocatable, save :: {}\n".format(self.F90_name)
         elif self.F90_dtype == "string":
             tstr = "character (len=128), save :: {}\n".format(self.F90_name)
         else:
@@ -279,11 +282,11 @@ class Param(object):
             return None
 
         if self.F90_dtype == "int":
-            tstr = "integer, device :: {}_d\n".format(self.F90_name)
+            tstr = "attributes(managed) :: {}\n".format(self.F90_name)
         elif self.F90_dtype == "Real":
-            tstr = "real(rt), device :: {}_d\n".format(self.F90_name)
+            tstr = "attributes(managed) :: {}\n".format(self.F90_name)
         elif self.F90_dtype == "logical":
-            tstr = "logical, device :: {}_d\n".format(self.F90_name)
+            tstr = "attributes(managed) :: {}\n".format(self.F90_name)
         elif self.F90_dtype == "string":
             print("warning: string parameter {} will not be available to CUDA".format(
                 self.F90_name))
@@ -292,14 +295,6 @@ class Param(object):
             sys.exit("unsupported datatype for Fortran: {}".format(self.name))
 
         return tstr
-
-    def get_cuda_sync_string(self):
-        """this is the string that syncronizes the param to the device"""
-        if self.F90_dtype == "string":
-            return "\n"
-        else:
-            return "istat = cudaMemcpyAsync({}_d, {}, 1)\n".format(
-                self.F90_name, self.F90_name)
 
 def write_meth_module(plist, meth_template):
     """this writes the meth_params_module, starting with the meth_template
@@ -365,13 +360,6 @@ def write_meth_module(plist, meth_template):
 
             for p in params:
                 mo.write(p.get_query_string("F90"))
-
-            # sync the CUDA device parameters
-            mo.write("\n")
-            mo.write("#ifdef CUDA\n")
-            for p in params:
-                mo.write("  {}".format(p.get_cuda_sync_string()))
-            mo.write("#endif\n")
             
             # Now do the OpenACC device updates
             mo.write("\n")

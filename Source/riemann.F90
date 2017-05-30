@@ -1,18 +1,6 @@
 module riemann_module
 
   use amrex_fort_module, only: rt => amrex_real
-#ifdef CUDA
-  use meth_params_module, only: NQ => NQ_d, NQAUX => NQAUX_d, NVAR => NVAR_d, QRHO => QRHO_d, &
-                                QU => QU_d, QV => QV_d, QW => QW_d, QPRES => QPRES_d, &
-                                QGAME => QGAME_d, QREINT => QREINT_d, QFS => QFS_d, &
-                                QFX => QFX_d, URHO => URHO_d, UMX => UMX_d, UMY => UMY_d, UMZ => UMZ_d, &
-                                UEDEN => UEDEN_d, UEINT => UEINT_d, UFS => UFS_d, UFX => UFX_d, &
-                                NGDNV => NGDNV_d, GDRHO => GDRHO_d, GDPRES => GDPRES_d, &
-                                GDGAME => GDGAME_d, QC => QC_d, QCSML => QCSML_d, &
-                                QGAMC => QGAMC_d, small_dens => small_dens_d, &
-                                small_temp => small_temp_d, npassive => npassive_d, &
-                                upass_map => upass_map_d, qpass_map => qpass_map_d
-#else
   use meth_params_module, only: NQ, NQAUX, NVAR, QRHO, QU, QV, QW, &
                                 QPRES, QGAME, QREINT, QFS, &
                                 QFX, URHO, UMX, UMY, UMZ, UEDEN, UEINT, &
@@ -21,7 +9,6 @@ module riemann_module
                                 QC, QCSML, QGAMC, &
                                 small_dens, small_temp, &
                                 npassive, upass_map, qpass_map
-#endif
 
   implicit none
 
@@ -226,12 +213,7 @@ contains
   !    use mempool_module, only: bl_allocate, bl_deallocate
     use amrex_fort_module, only: rt => amrex_real
     use bl_constants_module, only: ZERO, HALF, ONE
-#ifdef CUDA
-  use prob_params_module, only: physbc_lo => physbc_lo_d, physbc_hi => physbc_hi_d, &
-                                Symmetry => Symmetry_d, SlipWall => SlipWall_d, NoSlipWall => NoSlipWall_d
-#else
-  use prob_params_module, only: physbc_lo, physbc_hi, Symmetry, SlipWall, NoSlipWall
-#endif
+    use prob_params_module, only: physbc_lo, physbc_hi, Symmetry, SlipWall, NoSlipWall
 
     real(rt), parameter :: small = 1.e-8_rt
     real(rt), parameter :: small_pres = 1.e-200_rt

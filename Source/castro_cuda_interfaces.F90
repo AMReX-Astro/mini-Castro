@@ -8,7 +8,7 @@ contains
   subroutine cuda_enforce_consistent_e(lo,hi,state,s_lo,s_hi)
 
     use amrex_fort_module, only: rt => amrex_real
-    use meth_params_module, only: NVAR => NVAR_d
+    use meth_params_module, only: NVAR
     use castro_util_module, only: enforce_consistent_e
 
     implicit none
@@ -40,7 +40,7 @@ contains
                                           lo, hi, frac_change, verbose)
 
     use amrex_fort_module, only: rt => amrex_real
-    use meth_params_module, only: NVAR => NVAR_d
+    use meth_params_module, only: NVAR
     use advection_util_module, only: enforce_minimum_density
 
     implicit none
@@ -79,7 +79,7 @@ contains
 
     use amrex_fort_module, only: rt => amrex_real
     use castro_util_module, only: normalize_species
-    use meth_params_module, only: NVAR => NVAR_d
+    use meth_params_module, only: NVAR
 
     implicit none
 
@@ -110,7 +110,7 @@ contains
                           qaux, qa_lo,  qa_hi)
 
     use amrex_fort_module, only: rt => amrex_real
-    use meth_params_module, only: NVAR => NVAR_d, NQ => NQ_d, NQAUX => NQAUX_d
+    use meth_params_module, only: NVAR, NQ, NQAUX
     use advection_util_module, only: ctoprim
 
     implicit none
@@ -147,7 +147,7 @@ contains
   subroutine cuda_reset_internal_e(lo,hi,u,u_lo,u_hi,verbose)
 
     use amrex_fort_module, only: rt => amrex_real
-    use meth_params_module, only: NVAR => NVAR_d
+    use meth_params_module, only: NVAR
     use castro_util_module, only: reset_internal_e
 
     implicit none
@@ -251,7 +251,7 @@ contains
   subroutine cuda_compute_temp(lo,hi,state,s_lo,s_hi)
 
     use amrex_fort_module, only: rt => amrex_real
-    use meth_params_module, only: NVAR => NVAR_d
+    use meth_params_module, only: NVAR
     use castro_util_module, only: compute_temp
 
     implicit none
@@ -280,7 +280,7 @@ contains
   subroutine cuda_estdt(lo,hi,u,u_lo,u_hi,dx,dt)
 
     use amrex_fort_module, only: rt => amrex_real
-    use meth_params_module, only: NVAR => NVAR_d
+    use meth_params_module, only: NVAR
     use timestep_module, only: estdt
 
     implicit none
@@ -325,7 +325,7 @@ contains
                                    courno, verbose)
 
     use amrex_fort_module, only: rt => amrex_real
-    use meth_params_module, only: NQ => NQ_d, NQAUX => NQAUX_d, NVAR => NVAR_d
+    use meth_params_module, only: NQ, NQAUX, NVAR
     use mol_module, only: mol_single_stage
 
     implicit none

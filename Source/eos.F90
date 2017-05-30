@@ -19,16 +19,48 @@ contains
     use eos_type_module, only: mintemp, maxtemp, mindens, maxdens, minx, maxx, &
                                minye, maxye, mine, maxe, minp, maxp, minh, maxh, mins, maxs
     use actual_eos_module, only: actual_eos_init
-#ifdef CUDA
-    use eos_type_module, only: mintemp_d, maxtemp_d, mindens_d, maxdens_d, &
-                               minx_d, maxx_d, minye_d, maxye_d, mine_d, maxe_d, &
-                               minp_d, maxp_d, minh_d, maxh_d, mins_d, maxs_d
-#endif
 
     implicit none
 
     real(rt), optional :: small_temp
     real(rt), optional :: small_dens
+
+    ! Allocate and set default values
+
+    allocate(mintemp)
+    allocate(maxtemp)
+    allocate(mindens)
+    allocate(maxdens)
+    allocate(minx)
+    allocate(maxx)
+    allocate(minye)
+    allocate(maxye)
+    allocate(mine)
+    allocate(maxe)
+    allocate(maxe)
+    allocate(minp)
+    allocate(maxp)
+    allocate(mins)
+    allocate(maxs)
+    allocate(minh)
+    allocate(maxh)
+
+    mintemp = 1.d-200
+    maxtemp = 1.d200
+    mindens = 1.d-200
+    maxdens = 1.d200
+    minx    = 1.d-200
+    maxx    = 1.d0 + 1.d-12
+    minye   = 1.d-200
+    maxye   = 1.d0 + 1.d-12
+    mine    = 1.d-200
+    maxe    = 1.d200
+    minp    = 1.d-200
+    maxp    = 1.d200
+    mins    = 1.d-200
+    maxs    = 1.d200
+    minh    = 1.d-200
+    maxh    = 1.d200
 
     ! Set up any specific parameters or initialization steps required by the EOS we are using.
 
@@ -70,25 +102,6 @@ contains
     !$acc update &
     !$acc device(mintemp, maxtemp, mindens, maxdens, minx, maxx, minye, maxye) &
     !$acc device(mine, maxe, minp, maxp, mins, maxs, minh, maxh)
-
-#ifdef CUDA
-    mintemp_d = mintemp
-    maxtemp_d = maxtemp
-    mindens_d = mindens
-    maxdens_d = maxdens
-    minx_d    = minx
-    maxx_d    = maxx
-    minye_d   = minye
-    maxye_d   = maxye
-    mine_d    = mine
-    maxe_d    = maxe
-    minp_d    = minp
-    maxp_d    = maxp
-    mins_d    = mins
-    maxs_d    = maxs
-    minh_d    = minh
-    maxh_d    = maxh
-#endif
 
   end subroutine eos_init
 
@@ -220,12 +233,7 @@ contains
 
     !$acc routine seq
 
-    use eos_type_module, only: eos_t
-#ifdef CUDA
-    use eos_type_module, only: mindens => mindens_d, maxdens => maxdens_d
-#else
-    use eos_type_module, only: mindens, maxdens
-#endif
+    use eos_type_module, only: eos_t, mindens, maxdens
 
     implicit none
 
@@ -247,12 +255,7 @@ contains
 
     !$acc routine seq
 
-    use eos_type_module, only: eos_t
-#ifdef CUDA
-    use eos_type_module, only: mintemp => mintemp_d, maxtemp => maxtemp_d
-#else
-    use eos_type_module, only: mintemp, maxtemp
-#endif
+    use eos_type_module, only: eos_t, mintemp, maxtemp
 
     implicit none
 
@@ -272,12 +275,7 @@ contains
 
     !$acc routine seq
 
-    use eos_type_module, only: eos_t
-#ifdef CUDA
-    use eos_type_module, only: mine => mine_d, maxe => maxe_d
-#else
-    use eos_type_module, only: mine, maxe
-#endif
+    use eos_type_module, only: eos_t, mine, maxe
 
     implicit none
 
@@ -299,12 +297,7 @@ contains
 
     !$acc routine seq
 
-    use eos_type_module, only: eos_t
-#ifdef CUDA
-    use eos_type_module, only: minh => minh_d, maxh => maxh_d
-#else
-    use eos_type_module, only: minh, maxh
-#endif
+    use eos_type_module, only: eos_t, minh, maxh
 
     implicit none
 
@@ -326,12 +319,7 @@ contains
 
     !$acc routine seq
 
-    use eos_type_module, only: eos_t
-#ifdef CUDA
-    use eos_type_module, only: mins => mins_d, maxs => maxs_d
-#else
-    use eos_type_module, only: mins, maxs
-#endif
+    use eos_type_module, only: eos_t, mins, maxs
 
     implicit none
 
@@ -352,12 +340,7 @@ contains
 
     !$acc routine seq
 
-    use eos_type_module, only: eos_t
-#ifdef CUDA
-    use eos_type_module, only: minp => minp_d, maxp => maxp_d
-#else
-    use eos_type_module, only: minp, maxp
-#endif
+    use eos_type_module, only: eos_t, minp, maxp
 
     implicit none
 
@@ -383,13 +366,7 @@ contains
     !$acc routine seq
 
     use actual_eos_module, only: actual_eos
-    use eos_type_module, only: eos_t, eos_input_rt
-#ifdef CUDA
-    use eos_type_module, only: mintemp => mintemp_d, maxtemp => maxtemp_d, &
-                               mindens => mindens_d, maxdens => maxdens_d
-#else
-    use eos_type_module, only: mintemp, maxtemp, mindens, maxdens
-#endif
+    use eos_type_module, only: eos_t, eos_input_rt, mintemp, maxtemp, mindens, maxdens
 
     implicit none
 

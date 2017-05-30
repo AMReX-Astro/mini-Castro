@@ -15,12 +15,7 @@ contains
     use network, only: nspec, naux
     use bl_constants_module, only: ZERO
     use amrex_fort_module, only: rt => amrex_real
-#ifdef CUDA
-    use meth_params_module, only: NVAR => NVAR_d, URHO => URHO_d, UEINT => UEINT_d, &
-                                  UEDEN => UEDEN_d, small_dens => small_dens_d
-#else
     use meth_params_module, only: NVAR, URHO, UEINT, UEDEN, small_dens
-#endif
 
     implicit none
 
@@ -159,14 +154,7 @@ contains
     use eos_type_module, only: eos_t, eos_input_rt
     use eos_module, only: eos
     use amrex_fort_module, only: rt => amrex_real
-#ifdef CUDA
-    use meth_params_module, only: NVAR => NVAR_d, URHO => URHO_d, UMX => UMX_d, UMY => UMY_d, &
-                                  UMZ => UMZ_d, UTEMP => UTEMP_d, UEINT => UEINT_d, UEDEN => UEDEN_d, &
-                                  UFS => UFS_d, small_temp => small_temp_d, small_dens => small_dens_d, &
-                                  npassive => npassive_d, upass_map => upass_map_d
-#else
     use meth_params_module, only: NVAR, URHO, UMX, UMY, UMZ, UTEMP, UEINT, UEDEN, UFS, small_temp, small_dens, npassive, upass_map
-#endif
 
     implicit none
 
@@ -230,11 +218,7 @@ contains
 
     use bl_constants_module, only: ZERO
     use amrex_fort_module, only: rt => amrex_real
-#ifdef CUDA
-    use meth_params_module, only: NVAR => NVAR_d
-#else
     use meth_params_module, only: NVAR, URHO
-#endif
 
     implicit none
 
@@ -278,14 +262,8 @@ contains
 
     use bl_constants_module, only: ZERO, ONE
     use amrex_fort_module, only: rt => amrex_real
-#ifdef CUDA
-    use meth_params_module, only: NQ => NQ_d, QRHO => QRHO_d, QU => QU_d, QV => QV_d, &
-                                  QW => QW_d, QC => QC_d, NQAUX => NQAUX_d
-    use prob_params_module, only: dim => dim_d
-#else
     use meth_params_module, only: NQ, QRHO, QU, QV, QW, QC, NQAUX
     use prob_params_module, only: dim
-#endif
 
     implicit none
 
@@ -379,24 +357,12 @@ contains
     use eos_type_module, only: eos_t, eos_input_re
     use bl_constants_module, only: ZERO, HALF, ONE
     use amrex_fort_module, only: rt => amrex_real
-#ifdef CUDA
-    use meth_params_module, only: NVAR => NVAR_d, URHO => URHO_d, UMX => UMX_d, UMZ => UMZ_d, &
-                                  UEDEN => UEDEN_d, UEINT => UEINT_d, UTEMP => UTEMP_d, &
-                                  QRHO => QRHO_d, QU => QU_d, QV => QV_d, QW => QW_d, &
-                                  QREINT => QREINT_d, QPRES => QPRES_d, QTEMP => QTEMP_d, &
-                                  QGAME => QGAME_d, QFS => QFS_d, QFX => QFX_d, NQ => NQ_d, &
-                                  QC => QC_d, QCSML => QCSML_d, QGAMC => QGAMC_d, &
-                                  QDPDR => QDPDR_d, QDPDE => QDPDE_d, NQAUX => NQAUX_d, &
-                                  npassive => npassive_d, upass_map => upass_map_d, &
-                                  qpass_map => qpass_map_d, small_dens => small_dens_d
-#else
     use meth_params_module, only: NVAR, URHO, UMX, UMZ, &
                                   UEDEN, UEINT, UTEMP, &
                                   QRHO, QU, QV, QW, &
                                   QREINT, QPRES, QTEMP, QGAME, QFS, QFX, &
                                   NQ, QC, QCSML, QGAMC, QDPDR, QDPDE, NQAUX, &
                                   npassive, upass_map, qpass_map, small_dens
-#endif
 
     implicit none
 
@@ -531,11 +497,7 @@ contains
     use network, only: nspec
     use bl_constants_module, only: ZERO, ONE
     use amrex_fort_module, only: rt => amrex_real
-#ifdef CUDA
-    use meth_params_module, only: NVAR => NVAR_d, URHO => URHO_d, UFS => UFS_d
-#else
     use meth_params_module, only: NVAR, URHO, UFS
-#endif
 
     implicit none
 
@@ -621,11 +583,7 @@ contains
 
     use bl_constants_module, only: FOURTH, ONE
     use amrex_fort_module, only: rt => amrex_real
-#ifdef CUDA
-    use meth_params_module, only: QU => QU_d, QV => QV_d, QW => QW_d, QVAR => QVAR_d
-#else
     use meth_params_module, only: QU, QV, QW, QVAR
-#endif
 
     implicit none
 

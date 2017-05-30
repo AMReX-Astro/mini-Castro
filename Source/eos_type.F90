@@ -41,44 +41,44 @@ module eos_type_module
 
   ! Minimum and maximum thermodynamic quantities permitted by the EOS.
 
-  real(dp_t), save :: mintemp = 1.d-200
-  real(dp_t), save :: maxtemp = 1.d200
-  real(dp_t), save :: mindens = 1.d-200
-  real(dp_t), save :: maxdens = 1.d200
-  real(dp_t), save :: minx    = 1.d-200
-  real(dp_t), save :: maxx    = 1.d0 + 1.d-12
-  real(dp_t), save :: minye   = 1.d-200
-  real(dp_t), save :: maxye   = 1.d0 + 1.d-12
-  real(dp_t), save :: mine    = 1.d-200
-  real(dp_t), save :: maxe    = 1.d200
-  real(dp_t), save :: minp    = 1.d-200
-  real(dp_t), save :: maxp    = 1.d200
-  real(dp_t), save :: mins    = 1.d-200
-  real(dp_t), save :: maxs    = 1.d200
-  real(dp_t), save :: minh    = 1.d-200
-  real(dp_t), save :: maxh    = 1.d200
+  real(dp_t), allocatable, save :: mintemp
+  real(dp_t), allocatable, save :: maxtemp
+  real(dp_t), allocatable, save :: mindens
+  real(dp_t), allocatable, save :: maxdens
+  real(dp_t), allocatable, save :: minx
+  real(dp_t), allocatable, save :: maxx
+  real(dp_t), allocatable, save :: minye
+  real(dp_t), allocatable, save :: maxye
+  real(dp_t), allocatable, save :: mine
+  real(dp_t), allocatable, save :: maxe
+  real(dp_t), allocatable, save :: minp
+  real(dp_t), allocatable, save :: maxp
+  real(dp_t), allocatable, save :: mins
+  real(dp_t), allocatable, save :: maxs
+  real(dp_t), allocatable, save :: minh
+  real(dp_t), allocatable, save :: maxh
 
   !$acc declare &
   !$acc create(mintemp, maxtemp, mindens, maxdens, minx, maxx, minye, maxye) &
   !$acc create(mine, maxe, minp, maxp, mins, maxs, minh, maxh)
 
 #ifdef CUDA
-  real(dp_t), device :: mintemp_d
-  real(dp_t), device :: maxtemp_d
-  real(dp_t), device :: mindens_d
-  real(dp_t), device :: maxdens_d
-  real(dp_t), device :: minx_d
-  real(dp_t), device :: maxx_d
-  real(dp_t), device :: minye_d
-  real(dp_t), device :: maxye_d
-  real(dp_t), device :: mine_d
-  real(dp_t), device :: maxe_d
-  real(dp_t), device :: minp_d
-  real(dp_t), device :: maxp_d
-  real(dp_t), device :: mins_d
-  real(dp_t), device :: maxs_d
-  real(dp_t), device :: minh_d
-  real(dp_t), device :: maxh_d
+  attributes(managed) :: mintemp
+  attributes(managed) :: maxtemp
+  attributes(managed) :: mindens
+  attributes(managed) :: maxdens
+  attributes(managed) :: minx
+  attributes(managed) :: maxx
+  attributes(managed) :: minye
+  attributes(managed) :: maxye
+  attributes(managed) :: mine
+  attributes(managed) :: maxe
+  attributes(managed) :: minp
+  attributes(managed) :: maxp
+  attributes(managed) :: mins
+  attributes(managed) :: maxs
+  attributes(managed) :: minh
+  attributes(managed) :: maxh
 #endif
 
   ! A generic structure holding thermodynamic quantities and their derivatives,
@@ -181,11 +181,7 @@ contains
     !$acc routine seq
 
     use bl_constants_module, only: ONE
-#ifdef CUDA
-    use network, only: aion => aion_d, aion_inv => aion_inv_d, zion => zion_d
-#else
     use network, only: aion, aion_inv, zion
-#endif
 
     implicit none
 
@@ -215,11 +211,7 @@ contains
     !$acc routine seq
 
     use bl_constants_module, only: ZERO
-#ifdef CUDA
-    use network, only: aion => aion_d, aion_inv => aion_inv_d, zion => zion_d
-#else
     use network, only: aion, aion_inv, zion
-#endif
 
     implicit none
 
@@ -258,21 +250,13 @@ contains
     !$acc routine seq
 
     use bl_constants_module, only: ONE
-#ifdef CUDA
-    use extern_probin_module, only: small_x_d
-#else
     use extern_probin_module, only: small_x
-#endif
 
     implicit none
 
     type (eos_t), intent(inout) :: state
 
-#ifdef CUDA
-    state % xn = max(small_x_d, min(ONE, state % xn))
-#else
     state % xn = max(small_x, min(ONE, state % xn))
-#endif
 
     state % xn = state % xn / sum(state % xn)
 
@@ -293,13 +277,8 @@ contains
 
     type (eos_t), intent(inout) :: state
 
-#ifdef CUDA
-    state % T = min(maxtemp_d, max(mintemp_d, state % T))
-    state % rho = min(maxdens_d, max(mindens_d, state % rho))
-#else
     state % T = min(maxtemp, max(mintemp, state % T))
     state % rho = min(maxdens, max(mindens, state % rho))
-#endif
 
   end subroutine clean_state
 

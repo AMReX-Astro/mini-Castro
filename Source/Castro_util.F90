@@ -326,15 +326,25 @@ subroutine ca_set_method_params(dm,Density,Xmom,Eden,Eint,Temp, &
   integer :: i
   integer :: ioproc
 
-#ifdef CUDA
-  integer :: istat
-#endif
-
   call parallel_initialize()
 
   !---------------------------------------------------------------------
   ! conserved state components
   !---------------------------------------------------------------------
+
+  allocate(NTHERM)
+  allocate(NVAR)
+  allocate(nadv)
+  allocate(URHO)
+  allocate(UMX)
+  allocate(UMY)
+  allocate(UMZ)
+  allocate(UEDEN)
+  allocate(UEINT)
+  allocate(UTEMP)
+  allocate(UFA)
+  allocate(UFS)
+  allocate(UFX)
 
   ! NTHERM: number of thermodynamic variables (rho, 3 momenta, rho*e, rho*E, T)
   ! NVAR  : number of total variables in initial system
@@ -370,6 +380,22 @@ subroutine ca_set_method_params(dm,Density,Xmom,Eden,Eint,Temp, &
   !---------------------------------------------------------------------
   ! primitive state components
   !---------------------------------------------------------------------
+
+  allocate(QTHERM)
+  allocate(QVAR)
+  allocate(NQ)
+  allocate(QRHO)
+  allocate(QU)
+  allocate(QV)
+  allocate(QW)
+  allocate(QGAME)
+  allocate(QPRES)
+  allocate(QPRES)
+  allocate(QREINT)
+  allocate(QTEMP)
+  allocate(QFA)
+  allocate(QFS)
+  allocate(QFX)
 
   ! QTHERM: number of primitive variables: rho, p, (rho e), T + 3 velocity components 
   ! QVAR  : number of total variables in primitive form
@@ -416,6 +442,13 @@ subroutine ca_set_method_params(dm,Density,Xmom,Eden,Eint,Temp, &
 
   end if
 
+  allocate(NQAUX)
+  allocate(QGAMC)
+  allocate(QC)
+  allocate(QCSML)
+  allocate(QDPDR)
+  allocate(QDPDE)
+
   ! The NQAUX here are auxiliary quantities (game, gamc, c, csml, dpdr, dpde)
   ! that we create in the primitive variable call but that do not need to
   ! participate in tracing.
@@ -434,6 +467,7 @@ subroutine ca_set_method_params(dm,Density,Xmom,Eden,Eint,Temp, &
   ! in a single loop.
   allocate(qpass_map(QVAR))
   allocate(upass_map(NVAR))
+  allocate(npassive)
 
   ! Transverse velocities
 
@@ -514,53 +548,6 @@ subroutine ca_set_method_params(dm,Density,Xmom,Eden,Eint,Temp, &
   !$acc device(NQAUX, QGAMC, QC, QCSML, QDPDR, QDPDE) &
   !$acc device(small_dens, small_temp)
 
-#ifdef CUDA
-  NTHERM_d = NTHERM
-  NVAR_d = NVAR
-  URHO_d = URHO
-  UMX_d = UMX
-  UMY_d = UMY
-  UMZ_d = UMZ
-  UEDEN_d = UEDEN
-  UEINT_d = UEINT
-  UTEMP_d = UTEMP
-  UFA_d = UFA
-  UFS_d = UFS
-  UFX_d = UFX
-  QTHERM_d = QTHERM
-  QVAR_d = QVAR
-  QRHO_d = QRHO
-  QU_d = QU
-  QV_d = QV
-  QW_d = QW
-  QPRES_d = QPRES
-  QREINT_d = QREINT
-  QTEMP_d = QTEMP
-  QGAME_d = QGAME
-  NQAUX_d = NQAUX
-  QGAMC_d = QGAMC
-  QC_d = QC
-  QCSML_d = QCSML
-  QDPDR_d = QDPDR
-  QDPDE_d = QDPDE
-  QFA_d = QFA
-  QFS_d = QFS
-  QFX_d = QFX
-  NQ_d = NQ
-  npassive_d = npassive
-  allocate(upass_map_d(size(upass_map)))
-  upass_map_d = upass_map
-  allocate(qpass_map_d(size(qpass_map)))
-  qpass_map_d = qpass_map
-  NGDNV_d = NGDNV
-  GDRHO_d = GDRHO
-  GDU_d = GDU
-  GDV_d = GDV
-  GDW_d = GDW
-  GDPRES_d = GDPRES
-  GDGAME_d = GDGAME
-#endif
-
 end subroutine ca_set_method_params
 
 
@@ -571,6 +558,14 @@ subroutine ca_init_godunov_indices() bind(C, name="ca_init_godunov_indices")
   use amrex_fort_module, only: rt => amrex_real
 
   implicit none
+
+  allocate(NGDNV)
+  allocate(GDRHO)
+  allocate(GDU)
+  allocate(GDV)
+  allocate(GDW)
+  allocate(GDPRES)
+  allocate(GDGAME)
 
   NGDNV = 6
   GDRHO = 1
@@ -613,10 +608,22 @@ subroutine ca_set_problem_params(dm,physbc_lo_in,physbc_hi_in,&
   integer,  intent(in) :: coord_type_in
   real(rt), intent(in) :: problo_in(dm), probhi_in(dm), center_in(dm)
 
+  allocate(dim)
+
   dim = dm
+
+  allocate(physbc_lo(3))
+  allocate(physbc_hi(3))
 
   physbc_lo(1:dm) = physbc_lo_in(1:dm)
   physbc_hi(1:dm) = physbc_hi_in(1:dm)
+
+  allocate(Interior)
+  allocate(Inflow)
+  allocate(Outflow)
+  allocate(Symmetry)
+  allocate(SlipWall)
+  allocate(NoSlipWall)
 
   Interior   = Interior_in
   Inflow     = Inflow_in
@@ -634,6 +641,8 @@ subroutine ca_set_problem_params(dm,physbc_lo_in,physbc_hi_in,&
   problo(1:dm) = problo_in(1:dm)
   probhi(1:dm) = probhi_in(1:dm)
   center(1:dm) = center_in(1:dm)
+
+  allocate(dg(3))
 
   dg(:) = 1
 
@@ -666,19 +675,6 @@ subroutine ca_set_problem_params(dm,physbc_lo_in,physbc_hi_in,&
   mom_flux_has_p(3)%comp(UMX) = .false.
   mom_flux_has_p(3)%comp(UMY) = .false.
   mom_flux_has_p(3)%comp(UMZ) = .true.
-
-#ifdef CUDA
-  physbc_lo_d = physbc_lo
-  physbc_hi_d = physbc_hi
-  Interior_d = Interior
-  Inflow_d = Inflow
-  Outflow_d = Outflow
-  Symmetry_d = Symmetry
-  SlipWall_d = SlipWall
-  NoSlipWall_d = NoSlipWall
-  dim_d = dim
-  dg_d = dg
-#endif
 
 end subroutine ca_set_problem_params
 
@@ -898,12 +894,7 @@ contains
 
     use bl_constants_module, only: HALF, ONE
     use amrex_fort_module, only: rt => amrex_real
-#ifdef CUDA
-    use meth_params_module, only: NVAR => NVAR_d, URHO => URHO_d, UMX => UMX_d, UMY => UMY_d, &
-                                  UMZ => UMZ_d, UEDEN => UEDEN_d, UEINT => UEINT_d
-#else
     use meth_params_module, only: NVAR, URHO, UMX, UMY, UMZ, UEDEN, UEINT
-#endif
 
     implicit none
 
@@ -948,13 +939,7 @@ contains
     use network, only: nspec, naux
     use bl_constants_module, only: ZERO, HALF, ONE
     use amrex_fort_module, only: rt => amrex_real
-#ifdef CUDA
-    use meth_params_module, only: NVAR => NVAR_d, URHO => URHO_d, UMX => UMX_d, UMY => UMY_d, UMZ => UMZ_d, &
-                                  UEDEN => UEDEN_d, UEINT => UEINT_d, UFS => UFS_d, UFX => UFX_d, &
-                                  UTEMP => UTEMP_d, small_temp => small_temp_d
-#else
     use meth_params_module, only: NVAR, URHO, UMX, UMY, UMZ, UEDEN, UEINT, UFS, UFX, UTEMP, small_temp
-#endif
 
     implicit none
 
@@ -1051,12 +1036,7 @@ contains
     use eos_type_module, only: eos_input_re, eos_t
     use bl_constants_module, only: ZERO, ONE
     use amrex_fort_module, only: rt => amrex_real
-#ifdef CUDA
-    use meth_params_module, only: NVAR => NVAR_d, URHO => URHO_d, UEDEN => UEDEN_d, &
-                                  UEINT => UEINT_d, UTEMP => UTEMP_d, UFS => UFS_d, UFX => UFX_d
-#else
     use meth_params_module, only: NVAR, URHO, UEDEN, UEINT, UTEMP, UFS, UFX
-#endif
 
     implicit none
 
@@ -1129,9 +1109,8 @@ contains
 
     use network           , only: nspec
     use meth_params_module, only: NVAR, URHO, UFS
-    use bl_constants_module
-
     use amrex_fort_module, only: rt => amrex_real
+
     implicit none
 
     integer, intent(in) :: lo(3), hi(3)
@@ -1171,13 +1150,8 @@ contains
     use network, only: nspec
     use bl_constants_module, only: ONE
     use amrex_fort_module, only: rt => amrex_real
-#ifdef CUDA
-    use extern_probin_module, only: small_x => small_x_d
-    use meth_params_module, only: NVAR => NVAR_d, URHO => URHO_d, UFS => UFS_d
-#else
     use extern_probin_module, only: small_x
     use meth_params_module, only: NVAR, URHO, UFS
-#endif
 
     implicit none
 
@@ -1259,12 +1233,7 @@ attributes(device) &
     use eos_type_module, only: eos_t, eos_input_re
     use bl_constants_module, only: ONE
     use amrex_fort_module, only: rt => amrex_real
-#ifdef CUDA
-    use meth_params_module, only: URHO => URHO_d, UEINT => UEINT_d, &
-                                  UTEMP => UTEMP_d, UFS => UFS_d, UFX => UFX_d
-#else
     use meth_params_module, only: URHO, UEINT, UTEMP, UFS, UFX
-#endif
 
     implicit none
 

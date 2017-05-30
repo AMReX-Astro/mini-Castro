@@ -10,21 +10,21 @@ module prob_params_module
   implicit none
 
   ! boundary condition information
-  integer, save :: physbc_lo(3)
-  integer, save :: physbc_hi(3)
-  integer, save :: Interior, Inflow, Outflow, Symmetry, SlipWall, NoSlipWall
+  integer, allocatable, save :: physbc_lo(:)
+  integer, allocatable, save :: physbc_hi(:)
+  integer, allocatable, save :: Interior, Inflow, Outflow, Symmetry, SlipWall, NoSlipWall
 
   ! geometry information
-  integer         , save :: coord_type
-  real(rt)        , save :: center(3), problo(3), probhi(3)
+  integer,  save :: coord_type
+  real(rt), save :: center(3), problo(3), probhi(3)
 
   ! dimension information
-  integer         , save :: dim
+  integer, allocatable, save :: dim
 
   ! indices that we use for dimension agnostic routines 
   ! to ensure we don't illegally access non-existent ghost cells
   ! the format is dg(1:dim) = 1, dg(dim+1:3) = 0
-  integer         , save :: dg(3)
+  integer, allocatable, save :: dg(:)
 
   ! grid information
   integer         , save              :: max_level
@@ -51,12 +51,10 @@ module prob_params_module
 
 #ifdef CUDA
 
-  integer, device :: physbc_lo_d(3)
-  integer, device :: physbc_hi_d(3)
-  integer, device :: Interior_d, Inflow_d, Outflow_d, Symmetry_d, SlipWall_d, NoSlipWall_d
-  
-  integer, device :: dim_d
-  integer, device :: dg_d(3)
+  attributes(managed) :: physbc_lo, physbc_hi
+  attributes(managed) :: Interior, Inflow, Outflow, Symmetry, Slipwall, NoSlipWall
+  attributes(managed) :: dim
+  attributes(managed) :: dg
 
 #endif
   

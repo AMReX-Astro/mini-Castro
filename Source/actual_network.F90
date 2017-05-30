@@ -1,7 +1,7 @@
 
 module actual_network
 
-  use bl_types
+  use amrex_fort_module, only: rt => amrex_real
 
   implicit none
 
@@ -14,13 +14,13 @@ module actual_network
   character (len=16), save :: aux_names(naux)
   character (len= 5), save :: short_aux_names(naux)
 
-  double precision, save   :: aion(nspec), zion(nspec)
+  real(rt), allocatable, save :: aion(:), zion(:)
 
   integer, parameter :: nrates = 1
   integer, parameter :: num_rate_groups = 1
 
 #ifdef CUDA
-  double precision, device :: aion_d(nspec), zion_d(nspec)
+  attributes(managed) :: aion, zion
 #endif
 
 contains
@@ -31,14 +31,12 @@ contains
 
     short_spec_names(1) = "X"
 
+    allocate(aion(nspec))
+    allocate(zion(nspec))
+
     aion(1) = 1.0
 
     zion(1) = 1.0
-
-#ifdef CUDA
-    aion_d = aion
-    zion_d = zion
-#endif
 
   end subroutine actual_network_init
 

@@ -7,20 +7,20 @@ module extern_probin_module
 
   private
 
-  real (kind=dp_t), save, public :: eos_gamma = 5.d0/3.d0
+  real (kind=dp_t), allocatable, save, public :: eos_gamma
   !$acc declare create(eos_gamma)
 #ifdef CUDA
-  real (kind=dp_t), device, public :: eos_gamma_d
+  attributes(managed) :: eos_gamma
 #endif
-  logical, save, public :: eos_assume_neutral = .true.
+  logical, allocatable, save, public :: eos_assume_neutral
   !$acc declare create(eos_assume_neutral)
 #ifdef CUDA
-  logical, device, public :: eos_assume_neutral_d
+  attributes(managed) :: eos_assume_neutral
 #endif
-  real (kind=dp_t), save, public :: small_x = 1.d-3
+  real (kind=dp_t), allocatable, save, public :: small_x
   !$acc declare create(small_x)
 #ifdef CUDA
-  real (kind=dp_t), device, public :: small_x_d
+  attributes(managed) :: small_x
 #endif
 
 end module extern_probin_module
@@ -39,10 +39,13 @@ subroutine runtime_init(name,namlen)
   integer, parameter :: maxlen = 256
   character (len=maxlen) :: probin
 
-
   namelist /extern/ eos_gamma
   namelist /extern/ eos_assume_neutral
   namelist /extern/ small_x
+
+  allocate(eos_gamma)
+  allocate(eos_assume_neutral)
+  allocate(small_x)
 
   eos_gamma = 5.d0/3.d0
   eos_assume_neutral = .true.
@@ -79,12 +82,6 @@ subroutine runtime_init(name,namlen)
 
   !$acc update &
   !$acc device(eos_gamma, eos_assume_neutral, small_x)
-
-#ifdef CUDA
-  eos_gamma_d = eos_gamma
-  eos_assume_neutral_d = eos_assume_neutral
-  small_x_d = small_x
-#endif
 
 end subroutine runtime_init
 

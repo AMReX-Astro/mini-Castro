@@ -18,15 +18,8 @@ contains
     use eos_type_module, only: eos_t, eos_input_re
     use bl_constants_module, only: ONE
     use amrex_fort_module, only: rt => amrex_real
-#ifdef CUDA
-    use meth_params_module, only: NVAR => NVAR_d, URHO => URHO_d, UMX => UMX_d, &
-                                  UMY => UMY_d, UMZ => UMZ_d, UEINT => UEINT_d, &
-                                  UTEMP => UTEMP_d, UFS => UFS_d, UFX => UFX_d
-    use prob_params_module, only: dim => dim_d
-#else
     use meth_params_module, only: NVAR, URHO, UMX, UMY, UMZ, UEINT, UTEMP, UFS, UFX
     use prob_params_module, only: dim
-#endif
 
     implicit none
 

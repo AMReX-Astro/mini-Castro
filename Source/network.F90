@@ -19,26 +19,23 @@
 
 module network
 
-  use bl_types, only: dp_t
+  use amrex_fort_module, only: rt => amrex_real
   use actual_network, only: nspec, naux, aion, zion, &
                             spec_names, short_spec_names, &
                             aux_names, short_aux_names, &
                             actual_network_init
-#ifdef CUDA
-  use actual_network, only: aion_d, zion_d
-#endif
 
   implicit none
 
   logical :: network_initialized = .false.
 
   ! this will be computed here, not in the actual network
-  real(kind=dp_t) :: aion_inv(nspec)
+  real(rt), allocatable, save :: aion_inv(:)
 
   !$acc declare create(aion_inv)
 
 #ifdef CUDA
-  real(kind=dp_t), device :: aion_inv_d(nspec)
+  attributes(managed) :: aion_inv
 #endif
 
 contains
@@ -49,6 +46,8 @@ contains
     use bl_constants_module, only: ONE
 
     implicit none
+
+    allocate(aion_inv(nspec))
 
     ! First, we call the specific network initialization.
     ! This should set the number of species and number of
@@ -71,10 +70,6 @@ contains
     aion_inv(:) = ONE/aion(:)
 
     !$acc update device(aion_inv)
-
-#ifdef CUDA
-    aion_inv_d = aion
-#endif
 
     network_initialized = .true.
 

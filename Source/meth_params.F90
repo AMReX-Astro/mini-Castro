@@ -21,27 +21,27 @@ implicit none
   integer, parameter :: NHYP = 4
 
   ! NTHERM: number of thermodynamic variables
-  integer, save :: NTHERM, NVAR
-  integer, save :: URHO, UMX, UMY, UMZ, UEDEN, UEINT, UTEMP, UFA, UFS, UFX
+  integer, allocatable, save :: NTHERM, NVAR
+  integer, allocatable, save :: URHO, UMX, UMY, UMZ, UEDEN, UEINT, UTEMP, UFA, UFS, UFX
 
   ! QTHERM: number of primitive variables
-  integer, save :: QTHERM, QVAR
-  integer, save :: QRHO, QU, QV, QW, QPRES, QREINT, QTEMP, QGAME
-  integer, save :: NQAUX, QGAMC, QC, QCSML, QDPDR, QDPDE
-  integer, save :: QFA, QFS, QFX
+  integer, allocatable, save :: QTHERM, QVAR
+  integer, allocatable, save :: QRHO, QU, QV, QW, QPRES, QREINT, QTEMP, QGAME
+  integer, allocatable, save :: NQAUX, QGAMC, QC, QCSML, QDPDR, QDPDE
+  integer, allocatable, save :: QFA, QFS, QFX
 
-  integer, save :: nadv
+  integer, allocatable, save :: nadv
 
   ! NQ will be the total number of primitive variables, hydro + radiation
-  integer, save :: NQ         
+  integer, allocatable, save :: NQ
 
-  integer, save :: npassive
-  integer, save, allocatable :: qpass_map(:), upass_map(:)
+  integer, allocatable, save :: npassive
+  integer, allocatable, save :: qpass_map(:), upass_map(:)
 
   ! These are used for the Godunov state
   ! Note that the velocity indices here are picked to be the same value
   ! as in the primitive variable array
-  integer, save :: NGDNV, GDRHO, GDU, GDV, GDW, GDPRES, GDGAME
+  integer, allocatable, save :: NGDNV, GDRHO, GDU, GDV, GDW, GDPRES, GDGAME
 
   integer, save :: numpts_1d
 
@@ -65,28 +65,28 @@ implicit none
   !$acc create(QFA, QFS, QFX)
 
 #ifdef CUDA
-  integer, device :: NTHERM_d, NVAR_d
-  integer, device :: URHO_d, UMX_d, UMY_d, UMZ_d, UMR_d, UML_d, UMP_d, UEDEN_d, UEINT_d, UTEMP_d, UFA_d, UFS_d, UFX_d
-  integer, device :: QTHERM_d, QVAR_d
-  integer, device :: QRHO_d, QU_d, QV_d, QW_d, QPRES_d, QREINT_d, QTEMP_d, QGAME_d
-  integer, device :: NQAUX_d, QGAMC_d, QC_d, QCSML_d, QDPDR_d, QDPDE_d
-  integer, device :: QFA_d, QFS_d, QFX_d
-  integer, device :: NQ_d
-  integer, device :: npassive_d
-  integer, allocatable, device :: upass_map_d(:), qpass_map_d(:)
-  integer, device :: NGDNV_d, GDRHO_d, GDU_d, GDV_d, GDW_d, GDPRES_d, GDGAME_d
+  attributes(managed) :: NTHERM, NVAR
+  attributes(managed) :: URHO, UMX, UMY, UMZ, UMR, UML, UMP, UEDEN, UEINT, UTEMP, UFA, UFS, UFX
+  attributes(managed) :: QTHERM, QVAR
+  attributes(managed) :: QRHO, QU, QV, QW, QPRES, QREINT, QTEMP, QGAME
+  attributes(managed) :: NQAUX, QGAMC, QC, QCSML, QDPDR, QDPDE
+  attributes(managed) :: QFA, QFS, QFX
+  attributes(managed) :: NQ
+  attributes(managed) :: npassive
+  attributes(managed) :: NGDNV, GDRHO, GDU, GDV, GDW, GDPRES, GDGAME
+  attributes(managed) :: upass_map, qpass_map
 #endif
 
   ! Begin the declarations of the ParmParse parameters
 
-  real(rt), save :: small_dens
-  real(rt), save :: small_temp
-  real(rt), save :: cfl
+  real(rt), allocatable, save :: small_dens
+  real(rt), allocatable, save :: small_temp
+  real(rt), allocatable, save :: cfl
 
 #ifdef CUDA
-  real(rt), device :: small_dens_d
-  real(rt), device :: small_temp_d
-  real(rt), device :: cfl_d
+  attributes(managed) :: small_dens
+  attributes(managed) :: small_temp
+  attributes(managed) :: cfl
 #endif
 
   !$acc declare &
@@ -114,19 +114,16 @@ contains
 
     call amrex_parmparse_build(pp, "castro")
 
-    small_dens = -1.d200;
-    small_temp = -1.d200;
-    cfl = 0.8d0;
+    allocate(small_dens)
+    small_dens = -1.d200
+    allocate(small_temp)
+    small_temp = -1.d200
+    allocate(cfl)
+    cfl = 0.8d0
 
     call pp%query("small_dens", small_dens)
     call pp%query("small_temp", small_temp)
     call pp%query("cfl", cfl)
-
-#ifdef CUDA
-  istat = cudaMemcpyAsync(small_dens_d, small_dens, 1)
-  istat = cudaMemcpyAsync(small_temp_d, small_temp, 1)
-  istat = cudaMemcpyAsync(cfl_d, cfl, 1)
-#endif
 
     !$acc update &
     !$acc device(small_dens, small_temp, cfl)
