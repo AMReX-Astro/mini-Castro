@@ -51,7 +51,12 @@ module prob_params_module
 
 #ifdef CUDA
 
+  integer, device :: physbc_lo_d(3)
+  integer, device :: physbc_hi_d(3)
+  integer, device :: Interior_d, Inflow_d, Outflow_d, Symmetry_d, SlipWall_d, NoSlipWall_d
+  
   integer, device :: dim_d
+  integer, device :: dg_d(3)
 
 #endif
   

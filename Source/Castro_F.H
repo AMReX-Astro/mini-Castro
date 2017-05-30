@@ -149,7 +149,7 @@ extern "C"
             BL_FORT_FAB_ARG(zarea)),
      const BL_FORT_FAB_ARG(volume),
      amrex::Real* cflLoc,
-     const int&  verbose);
+     const int&  verbose, const int* idx);
 
   void flush_output();
 

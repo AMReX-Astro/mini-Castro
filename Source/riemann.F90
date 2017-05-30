@@ -1,5 +1,18 @@
 module riemann_module
 
+  use amrex_fort_module, only: rt => amrex_real
+#ifdef CUDA
+  use meth_params_module, only: NQ => NQ_d, NQAUX => NQAUX_d, NVAR => NVAR_d, QRHO => QRHO_d, &
+                                QU => QU_d, QV => QV_d, QW => QW_d, QPRES => QPRES_d, &
+                                QGAME => QGAME_d, QREINT => QREINT_d, QFS => QFS_d, &
+                                QFX => QFX_d, URHO => URHO_d, UMX => UMX_d, UMY => UMY_d, UMZ => UMZ_d, &
+                                UEDEN => UEDEN_d, UEINT => UEINT_d, UFS => UFS_d, UFX => UFX_d, &
+                                NGDNV => NGDNV_d, GDRHO => GDRHO_d, GDPRES => GDPRES_d, &
+                                GDGAME => GDGAME_d, QC => QC_d, QCSML => QCSML_d, &
+                                QGAMC => QGAMC_d, small_dens => small_dens_d, &
+                                small_temp => small_temp_d, npassive => npassive_d, &
+                                upass_map => upass_map_d, qpass_map => qpass_map_d
+#else
   use meth_params_module, only: NQ, NQAUX, NVAR, QRHO, QU, QV, QW, &
                                 QPRES, QGAME, QREINT, QFS, &
                                 QFX, URHO, UMX, UMY, UMZ, UEDEN, UEINT, &
@@ -8,7 +21,7 @@ module riemann_module
                                 QC, QCSML, QGAMC, &
                                 small_dens, small_temp, &
                                 npassive, upass_map, qpass_map
-  use amrex_fort_module, only: rt => amrex_real
+#endif
 
   implicit none
 
@@ -16,6 +29,9 @@ module riemann_module
 
 contains
 
+#ifdef CUDA
+  attributes(device) &
+#endif
   subroutine cmpflx(qm, qp, qpd_lo, qpd_hi, &
                     flx, flx_lo, flx_hi, &
                     qint, q_lo, q_hi, &
@@ -23,7 +39,7 @@ contains
                     shk, s_lo, s_hi, &
                     idir, ilo, ihi, jlo, jhi, kc, kflux, k3d, domlo, domhi)
 
-    use mempool_module, only: bl_allocate, bl_deallocate
+!    use mempool_module, only: bl_allocate, bl_deallocate
     use eos_module, only: eos
     use eos_type_module, only: eos_t, eos_input_re
     use network, only: nspec, naux
@@ -62,8 +78,12 @@ contains
 
     integer           :: i, j
     integer           :: gd_lo(2), gd_hi(2)
+#if 0
     real(rt), pointer :: smallc(:,:), cavg(:,:)
     real(rt), pointer :: gamcm(:,:), gamcp(:,:)
+#endif
+    real(rt), allocatable :: smallc(:,:), cavg(:,:)
+    real(rt), allocatable :: gamcm(:,:), gamcp(:,:)
     integer           :: is_shock
     real(rt)          :: cl, cr
     type (eos_t)      :: eos_state
@@ -72,10 +92,17 @@ contains
     gd_lo = (/ ilo, jlo /)
     gd_hi = (/ ihi, jhi /)
 
+#if 0
     call bl_allocate ( smallc, gd_lo(1),gd_hi(1),gd_lo(2),gd_hi(2))
     call bl_allocate (   cavg, gd_lo(1),gd_hi(1),gd_lo(2),gd_hi(2))
     call bl_allocate (  gamcm, gd_lo(1),gd_hi(1),gd_lo(2),gd_hi(2))
     call bl_allocate (  gamcp, gd_lo(1),gd_hi(1),gd_lo(2),gd_hi(2))
+#endif
+
+    allocate ( smallc(gd_lo(1):gd_hi(1),gd_lo(2):gd_hi(2)))
+    allocate (   cavg(gd_lo(1):gd_hi(1),gd_lo(2):gd_hi(2)))
+    allocate (  gamcm(gd_lo(1):gd_hi(1),gd_lo(2):gd_hi(2)))
+    allocate (  gamcp(gd_lo(1):gd_hi(1),gd_lo(2):gd_hi(2)))
 
     if (idir == 1) then
        do j = jlo, jhi
@@ -171,26 +198,40 @@ contains
                    qint, q_lo, q_hi, &
                    idir, ilo, ihi, jlo, jhi, kc, kflux, k3d, domlo, domhi)
 
-
+#if 0
     call bl_deallocate(smallc)
     call bl_deallocate(  cavg)
     call bl_deallocate( gamcm)
     call bl_deallocate( gamcp)
+#endif
+
+    deallocate(smallc)
+    deallocate(  cavg)
+    deallocate( gamcm)
+    deallocate( gamcp)
 
   end subroutine cmpflx
 
 
 
+#ifdef CUDA
+  attributes(device) &
+#endif
   subroutine riemannus(ql,qr,qpd_lo,qpd_hi, &
                        gamcl,gamcr,cav,smallc,gd_lo,gd_hi, &
                        uflx,uflx_lo,uflx_hi, &
                        qint,q_lo,q_hi, &
                        idir,ilo,ihi,jlo,jhi,kc,kflux,k3d,domlo,domhi)
 
-    use mempool_module, only: bl_allocate, bl_deallocate
-    use prob_params_module, only: physbc_lo, physbc_hi, Symmetry, SlipWall, NoSlipWall
+  !    use mempool_module, only: bl_allocate, bl_deallocate
     use amrex_fort_module, only: rt => amrex_real
     use bl_constants_module, only: ZERO, HALF, ONE
+#ifdef CUDA
+  use prob_params_module, only: physbc_lo => physbc_lo_d, physbc_hi => physbc_hi_d, &
+                                Symmetry => Symmetry_d, SlipWall => SlipWall_d, NoSlipWall => NoSlipWall_d
+#else
+  use prob_params_module, only: physbc_lo, physbc_hi, Symmetry, SlipWall, NoSlipWall
+#endif
 
     real(rt), parameter :: small = 1.e-8_rt
     real(rt), parameter :: small_pres = 1.e-200_rt
@@ -231,7 +272,11 @@ contains
     real(rt)         :: sgnm, spin, spout, ushock, frac
     real(rt)         :: wsmall, csmall,qavg
 
+#if 0
     real(rt)        , pointer :: us1d(:)
+#endif
+
+    real(rt), allocatable :: us1d(:)
 
     real(rt)         :: u_adv
 
@@ -240,7 +285,10 @@ contains
     real(rt)         :: bnd_fac_x, bnd_fac_y, bnd_fac_z
     real(rt)         :: wwinv, roinv, co2inv
 
+#if 0
     call bl_allocate(us1d,ilo,ihi)
+#endif
+    allocate(us1d(ilo:ihi))
 
     if (idir .eq. 1) then
        iu = QU
@@ -475,7 +523,10 @@ contains
        enddo
     enddo
 
+#if 0
     call bl_deallocate(us1d)
+#endif
+    deallocate(us1d)
 
   end subroutine riemannus
 

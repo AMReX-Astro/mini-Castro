@@ -268,15 +268,24 @@ contains
 
 
 
+#ifdef CUDA
+  attributes(device) &
+#endif
   subroutine compute_cfl(q, q_lo, q_hi, &
                          qaux, qa_lo, qa_hi, &
                          lo, hi, dt, dx, courno) &
                          bind(C, name = "compute_cfl")
 
     use bl_constants_module, only: ZERO, ONE
+    use amrex_fort_module, only: rt => amrex_real
+#ifdef CUDA
+    use meth_params_module, only: NQ => NQ_d, QRHO => QRHO_d, QU => QU_d, QV => QV_d, &
+                                  QW => QW_d, QC => QC_d, NQAUX => NQAUX_d
+    use prob_params_module, only: dim => dim_d
+#else
     use meth_params_module, only: NQ, QRHO, QU, QV, QW, QC, NQAUX
     use prob_params_module, only: dim
-    use amrex_fort_module, only: rt => amrex_real
+#endif
 
     implicit none
 
@@ -332,6 +341,7 @@ contains
                 courtmp = courtmp + courz
              endif
 
+#ifndef CUDA
              ! note: it might not be 1 for all RK integrators
              if (courtmp > ONE) then
                 print *,'   '
@@ -340,8 +350,13 @@ contains
                 print *,'>>> ... u,v,w, c            ', q(i,j,k,QU), q(i,j,k,QV), q(i,j,k,QW), qaux(i,j,k,QC)
                 print *,'>>> ... density             ', q(i,j,k,QRHO)
              endif
-                
+#endif
+
+#ifdef CUDA
+             courtmp = atomicmax(courno, courtmp)
+#else
              courno = max(courno, courtmp)
+#endif
 
           enddo
        enddo
@@ -501,6 +516,9 @@ contains
 
 
 
+#ifdef CUDA
+  attributes(device) &
+#endif
   subroutine normalize_species_fluxes(flux1,flux1_lo,flux1_hi, &
                                       flux2,flux2_lo,flux2_hi, &
                                       flux3,flux3_lo,flux3_hi, &
@@ -511,9 +529,13 @@ contains
     ! defined in Plewa & Muller, 1999, A&A, 342, 179
 
     use network, only: nspec
-    use meth_params_module, only: NVAR, URHO, UFS
     use bl_constants_module, only: ZERO, ONE
     use amrex_fort_module, only: rt => amrex_real
+#ifdef CUDA
+    use meth_params_module, only: NVAR => NVAR_d, URHO => URHO_d, UFS => UFS_d
+#else
+    use meth_params_module, only: NVAR, URHO, UFS
+#endif
 
     implicit none
 
@@ -592,11 +614,18 @@ contains
 ! ::: ------------------------------------------------------------------
 ! :::
 
+#ifdef CUDA
+  attributes(device) &
+#endif
   subroutine divu(lo,hi,q,q_lo,q_hi,dx,div,div_lo,div_hi)
 
-    use meth_params_module, only: QU, QV, QW, QVAR
     use bl_constants_module, only: FOURTH, ONE
     use amrex_fort_module, only: rt => amrex_real
+#ifdef CUDA
+    use meth_params_module, only: QU => QU_d, QV => QV_d, QW => QW_d, QVAR => QVAR_d
+#else
+    use meth_params_module, only: QU, QV, QW, QVAR
+#endif
 
     implicit none
 

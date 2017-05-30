@@ -88,7 +88,7 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
 		  BL_TO_FORTRAN(area[1][mfi]),
 		  BL_TO_FORTRAN(area[2][mfi])),
 	   BL_TO_FORTRAN(volume[mfi]),
-	   &cflLoc, verbose);
+	   &cflLoc, verbose, &idx);
 
 	// Store the fluxes from this advance -- we weight them by the
 	// integrator weight for this stage

@@ -305,4 +305,88 @@ contains
 
   end subroutine cuda_estdt
 
+
+  attributes(global) &
+  subroutine cuda_mol_single_stage(time, &
+                                   lo, hi, domlo, domhi, &
+                                   uin, uin_l1, uin_l2, uin_l3, uin_h1, uin_h2, uin_h3, &
+                                   uout, uout_l1, uout_l2, uout_l3, uout_h1, uout_h2, uout_h3, &
+                                   q, q_l1, q_l2, q_l3, q_h1, q_h2, q_h3, &
+                                   qaux, qa_l1, qa_l2, qa_l3, qa_h1, qa_h2, qa_h3, &
+                                   update, updt_l1, updt_l2, updt_l3, updt_h1, updt_h2, updt_h3, &
+                                   dx, dt, &
+                                   flux1, flux1_l1, flux1_l2, flux1_l3, flux1_h1, flux1_h2, flux1_h3, &
+                                   flux2, flux2_l1, flux2_l2, flux2_l3, flux2_h1, flux2_h2, flux2_h3, &
+                                   flux3, flux3_l1, flux3_l2, flux3_l3, flux3_h1, flux3_h2, flux3_h3, &
+                                   area1, area1_l1, area1_l2, area1_l3, area1_h1, area1_h2, area1_h3, &
+                                   area2, area2_l1, area2_l2, area2_l3, area2_h1, area2_h2, area2_h3, &
+                                   area3, area3_l1, area3_l2, area3_l3, area3_h1, area3_h2, area3_h3, &
+                                   vol, vol_l1, vol_l2, vol_l3, vol_h1, vol_h2, vol_h3, &
+                                   courno, verbose)
+
+    use amrex_fort_module, only: rt => amrex_real
+    use meth_params_module, only: NQ => NQ_d, NQAUX => NQAUX_d, NVAR => NVAR_d
+    use mol_module, only: mol_single_stage
+
+    implicit none
+
+    integer,  intent(in   ) :: lo(3), hi(3), verbose
+    integer,  intent(in   ) :: domlo(3), domhi(3)
+    integer,  intent(in   ) :: uin_l1, uin_l2, uin_l3, uin_h1, uin_h2, uin_h3
+    integer,  intent(in   ) :: uout_l1, uout_l2, uout_l3, uout_h1, uout_h2, uout_h3
+    integer,  intent(in   ) :: q_l1, q_l2, q_l3, q_h1, q_h2, q_h3
+    integer,  intent(in   ) :: qa_l1, qa_l2, qa_l3, qa_h1, qa_h2, qa_h3
+    integer,  intent(in   ) :: updt_l1, updt_l2, updt_l3, updt_h1, updt_h2, updt_h3
+    integer,  intent(in   ) :: flux1_l1, flux1_l2, flux1_l3, flux1_h1, flux1_h2, flux1_h3
+    integer,  intent(in   ) :: flux2_l1, flux2_l2, flux2_l3, flux2_h1, flux2_h2, flux2_h3
+    integer,  intent(in   ) :: flux3_l1, flux3_l2, flux3_l3, flux3_h1, flux3_h2, flux3_h3
+    integer,  intent(in   ) :: area1_l1, area1_l2, area1_l3, area1_h1, area1_h2, area1_h3
+    integer,  intent(in   ) :: area2_l1, area2_l2, area2_l3, area2_h1, area2_h2, area2_h3
+    integer,  intent(in   ) :: area3_l1, area3_l2, area3_l3, area3_h1, area3_h2, area3_h3
+    integer,  intent(in   ) :: vol_l1, vol_l2, vol_l3, vol_h1, vol_h2, vol_h3
+
+    real(rt), intent(in   ) :: uin(uin_l1:uin_h1, uin_l2:uin_h2, uin_l3:uin_h3, NVAR)
+    real(rt), intent(inout) :: uout(uout_l1:uout_h1, uout_l2:uout_h2, uout_l3:uout_h3, NVAR)
+    real(rt), intent(inout) :: q(q_l1:q_h1, q_l2:q_h2, q_l3:q_h3, NQ)
+    real(rt), intent(inout) :: qaux(qa_l1:qa_h1, qa_l2:qa_h2, qa_l3:qa_h3, NQAUX)
+    real(rt), intent(inout) :: update(updt_l1:updt_h1, updt_l2:updt_h2, updt_l3:updt_h3, NVAR)
+    real(rt), intent(inout) :: flux1(flux1_l1:flux1_h1, flux1_l2:flux1_h2, flux1_l3:flux1_h3, NVAR)
+    real(rt), intent(inout) :: flux2(flux2_l1:flux2_h1, flux2_l2:flux2_h2, flux2_l3:flux2_h3, NVAR)
+    real(rt), intent(inout) :: flux3(flux3_l1:flux3_h1, flux3_l2:flux3_h2, flux3_l3:flux3_h3, NVAR)
+    real(rt), intent(in   ) :: area1(area1_l1:area1_h1, area1_l2:area1_h2, area1_l3:area1_h3)
+    real(rt), intent(in   ) :: area2(area2_l1:area2_h1, area2_l2:area2_h2, area2_l3:area2_h3)
+    real(rt), intent(in   ) :: area3(area3_l1:area3_h1, area3_l2:area3_h2, area3_l3:area3_h3)
+    real(rt), intent(in   ) :: vol(vol_l1:vol_h1, vol_l2:vol_h2, vol_l3:vol_h3)
+    real(rt), intent(in   ) :: dx(3), dt, time
+    real(rt), intent(inout) :: courno
+
+    integer :: idx(3)
+
+    ! Get our spatial index based on the CUDA thread index
+
+    idx(1) = lo(1) + (threadIdx%x - 1) + blockDim%x * (blockIdx%x - 1)
+    idx(2) = lo(2) + (threadIdx%y - 1) + blockDim%y * (blockIdx%y - 1)
+    idx(3) = lo(3) + (threadIdx%z - 1) + blockDim%z * (blockIdx%z - 1)
+
+    if (idx(1) .gt. hi(1) .or. idx(2) .gt. hi(2) .or. idx(3) .gt. hi(3)) return
+
+    call mol_single_stage(time, &
+                          idx, idx, domlo, domhi, &
+                          uin, uin_l1, uin_l2, uin_l3, uin_h1, uin_h2, uin_h3, &
+                          uout, uout_l1, uout_l2, uout_l3, uout_h1, uout_h2, uout_h3, &
+                          q, q_l1, q_l2, q_l3, q_h1, q_h2, q_h3, &
+                          qaux, qa_l1, qa_l2, qa_l3, qa_h1, qa_h2, qa_h3, &
+                          update, updt_l1, updt_l2, updt_l3, updt_h1, updt_h2, updt_h3, &
+                          dx, dt, &
+                          flux1, flux1_l1, flux1_l2, flux1_l3, flux1_h1, flux1_h2, flux1_h3, &
+                          flux2, flux2_l1, flux2_l2, flux2_l3, flux2_h1, flux2_h2, flux2_h3, &
+                          flux3, flux3_l1, flux3_l2, flux3_l3, flux3_h1, flux3_h2, flux3_h3, &
+                          area1, area1_l1, area1_l2, area1_l3, area1_h1, area1_h2, area1_h3, &
+                          area2, area2_l1, area2_l2, area2_l3, area2_h1, area2_h2, area2_h3, &
+                          area3, area3_l1, area3_l2, area3_l3, area3_h1, area3_h2, area3_h3, &
+                          vol, vol_l1, vol_l2, vol_l3, vol_h1, vol_h2, vol_h3, &
+                          courno, verbose)
+    
+  end subroutine cuda_mol_single_stage
+
 end module cuda_interfaces_module

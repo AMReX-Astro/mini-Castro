@@ -552,6 +552,13 @@ subroutine ca_set_method_params(dm,Density,Xmom,Eden,Eint,Temp, &
   upass_map_d = upass_map
   allocate(qpass_map_d(size(qpass_map)))
   qpass_map_d = qpass_map
+  NGDNV_d = NGDNV
+  GDRHO_d = GDRHO
+  GDU_d = GDU
+  GDV_d = GDV
+  GDW_d = GDW
+  GDPRES_d = GDPRES
+  GDGAME_d = GDGAME
 #endif
 
 end subroutine ca_set_method_params
@@ -661,7 +668,16 @@ subroutine ca_set_problem_params(dm,physbc_lo_in,physbc_hi_in,&
   mom_flux_has_p(3)%comp(UMZ) = .true.
 
 #ifdef CUDA
+  physbc_lo_d = physbc_lo
+  physbc_hi_d = physbc_hi
+  Interior_d = Interior
+  Inflow_d = Inflow
+  Outflow_d = Outflow
+  Symmetry_d = Symmetry
+  SlipWall_d = SlipWall
+  NoSlipWall_d = NoSlipWall
   dim_d = dim
+  dg_d = dg
 #endif
 
 end subroutine ca_set_problem_params

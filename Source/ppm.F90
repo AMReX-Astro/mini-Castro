@@ -1,20 +1,18 @@
 module ppm_module
 
-
   ! this does the parabolic reconstruction on a variable and the (optional)
   ! integration under the characteristic domain of the parabola
 
-  use bl_constants_module
+  use bl_constants_module, only: ZERO, SIXTH, HALF, ONE, TWO, THREE
   use amrex_fort_module, only: rt => amrex_real
 
   implicit none
 
-  private
-
-  public ppm_reconstruct, ppm_int_profile
-
 contains
 
+#ifdef CUDA
+  attributes(device) &
+#endif
   subroutine ppm_reconstruct(s, s_lo, s_hi, &
                              flatn, f_lo, f_hi, &
                              sxm, sxp, sym, syp, szm, szp, sd_lo, sd_hi, &
@@ -50,6 +48,9 @@ contains
   ! ::: ----------------------------------------------------------------
   ! :::
 
+#ifdef CUDA
+  attributes(device) &
+#endif
   subroutine ppm_type1(s, s_lo, s_hi, &
                        flatn, f_lo, f_hi, &
                        sxm, sxp, sym, syp, szm, szp, sd_lo, sd_hi, &
@@ -77,21 +78,30 @@ contains
     real(rt)        , intent(in) :: dx(3)
 
     ! local
-    integer i,j,k
+    integer :: i,j,k
 
-    real(rt)         dsl, dsr, dsc
-    real(rt)         sigma, s6
+    real(rt) :: dsl, dsr, dsc
+    real(rt) :: sigma, s6
 
     ! s_{\ib,+}, s_{\ib,-}
-    real(rt)         :: sm, sp
+    real(rt) :: sm, sp
 
     ! \delta s_{\ib}^{vL}
-    real(rt)        , pointer :: dsvl(:,:)
-    real(rt)         :: dsvlm, dsvl0, dsvlp
+#if 0
+    real(rt), pointer :: dsvl(:,:)
+#endif
+    real(rt) :: dsvlm, dsvl0, dsvlp
+
+    real(rt), allocatable :: dsvl(:,:)
 
     ! s_{i+\half}^{H.O.}
-    real(rt)        , pointer :: sedge(:,:)
+#if 0
+    real(rt), pointer :: sedge(:,:)
+#endif
 
+    real(rt), allocatable :: sedge(:,:)
+
+#ifndef CUDA
     if (s_lo(1) .gt. ilo1-3 .or. s_lo(2) .gt. ilo2-3) then
          print *,'Low bounds of array: ',s_lo(1), s_lo(2)
          print *,'Low bounds of  loop: ',ilo1 , ilo2
@@ -102,13 +112,19 @@ contains
          print *,'Hi  bounds of array: ',s_hi(1), s_hi(2)
          print *,'Hi  bounds of  loop: ',ihi1 , ihi2
          call bl_error("Need more ghost cells on array in ppm_type1")
-    end if
+      end if
+#endif
 
+#if 0
     ! cell-centered indexing w/extra ghost cell
     call bl_allocate(dsvl,ilo1-2,ihi1+2,ilo2-2,ihi2+2)
 
     ! edge-centered indexing
     call bl_allocate(sedge,ilo1-1,ihi1+2,ilo2-1,ihi2+2)
+#endif
+
+    allocate(dsvl(ilo1-2:ihi1+2,ilo2-2:ihi2+2))
+    allocate(sedge(ilo1-1:ihi1+2,ilo2-1:ihi2+2))
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     ! x-direction
@@ -329,276 +345,14 @@ contains
        end do
     end do
 
+#if 0
     call bl_deallocate(dsvl)
     call bl_deallocate(sedge)
+#endif
+
+    deallocate(dsvl)
+    deallocate(sedge)
 
   end subroutine ppm_type1
-
-
-  subroutine ppm_int_profile(s, s_lo, s_hi, &
-                             u, cspd, qd_lo, qd_hi, &
-                             sxm, sxp, sym, syp, szm, szp, sd_lo, sd_hi, &
-                             Ip, Im, I_lo, I_hi, &
-                             ilo1, ilo2, ihi1, ihi2, dx, dt, k3d, kc)
-
-    implicit none
-
-    integer, intent(in) ::  s_lo(3),  s_hi(3)
-    integer, intent(in) :: qd_lo(3), qd_hi(3)
-    integer, intent(in) :: sd_lo(3), sd_hi(3)
-    integer, intent(in) ::  I_lo(3),  I_hi(3)
-    integer, intent(in) :: ilo1, ilo2, ihi1, ihi2
-    integer, intent(in) :: k3d, kc
-
-    real(rt)        , intent(in) ::     s( s_lo(1): s_hi(1), s_lo(2): s_hi(2), s_lo(3): s_hi(3))
-    real(rt)        , intent(in) ::     u(qd_lo(1):qd_hi(1),qd_lo(2):qd_hi(2),qd_lo(3):qd_hi(3),3)
-    real(rt)        , intent(in) ::  cspd(qd_lo(1):qd_hi(1),qd_lo(2):qd_hi(2),qd_lo(3):qd_hi(3))
-    real(rt)        , intent(in) ::   sxm( sd_lo(1): sd_hi(1), sd_lo(2): sd_hi(2), sd_lo(3): sd_hi(3))
-    real(rt)        , intent(in) ::   sxp( sd_lo(1): sd_hi(1), sd_lo(2): sd_hi(2), sd_lo(3): sd_hi(3))
-    real(rt)        , intent(in) ::   sym( sd_lo(1): sd_hi(1), sd_lo(2): sd_hi(2), sd_lo(3): sd_hi(3))
-    real(rt)        , intent(in) ::   syp( sd_lo(1): sd_hi(1), sd_lo(2): sd_hi(2), sd_lo(3): sd_hi(3))
-    real(rt)        , intent(in) ::   szm( sd_lo(1): sd_hi(1), sd_lo(2): sd_hi(2), sd_lo(3): sd_hi(3))
-    real(rt)        , intent(in) ::   szp( sd_lo(1): sd_hi(1), sd_lo(2): sd_hi(2), sd_lo(3): sd_hi(3))
-    real(rt)        , intent(inout) :: Ip(I_lo(1):I_hi(1),I_lo(2):I_hi(2),I_lo(3):I_hi(3),1:3,1:3)
-    real(rt)        , intent(inout) :: Im(I_lo(1):I_hi(1),I_lo(2):I_hi(2),I_lo(3):I_hi(3),1:3,1:3)
-
-    real(rt)        , intent(in) :: dx(3), dt
-
-
-    ! local
-    integer i,j,k
-
-    real(rt)         dtdx, dtdy, dtdz
-    real(rt)         sigma, s6
-    real(rt)         :: sm, sp
-
-    dtdx = dt/dx(1)
-    dtdy = dt/dx(2)
-    dtdz = dt/dx(3)
-
-    if (s_lo(1) .gt. ilo1-3 .or. s_lo(2) .gt. ilo2-3) then
-         print *,'Low bounds of array: ',s_lo(1), s_lo(2)
-         print *,'Low bounds of  loop: ',ilo1 , ilo2
-         call bl_error("Need more ghost cells on array in ppm_type1")
-    end if
-
-    if (s_hi(1) .lt. ihi1+3 .or. s_hi(2) .lt. ihi2+3) then
-         print *,'Hi  bounds of array: ',s_hi(1), s_hi(2)
-         print *,'Hi  bounds of  loop: ',ihi1 , ihi2
-         call bl_error("Need more ghost cells on array in ppm_type1")
-    end if
-
-
-    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    ! x-direction
-    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-    do j=ilo2-1,ihi2+1
-       do i=ilo1-1,ihi1+1
-
-          ! copy sedge into sp and sm
-          sp = sxp(i,j,kc)
-          sm = sxm(i,j,kc) 
-
-
-          ! compute x-component of Ip and Im
-          s6 = SIX*s(i,j,k3d) - THREE*(sm+sp)
-
-          ! Ip/m is the integral under the parabola for the extent
-          ! that a wave can travel over a timestep
-          !
-          ! Ip integrates to the right edge of a cell
-          ! Im integrates to the left edge of a cell
-
-          ! u-c wave
-          sigma = abs(u(i,j,k3d,1)-cspd(i,j,k3d))*dtdx
-
-          if (u(i,j,k3d,1)-cspd(i,j,k3d) <= ZERO) then
-             Ip(i,j,kc,1,1) = sp
-          else
-             Ip(i,j,kc,1,1) = sp - &
-               HALF*sigma*(sp-sm-(ONE-TWO3RD*sigma)*s6)
-          endif
-
-          if (u(i,j,k3d,1)-cspd(i,j,k3d) >= ZERO) then
-             Im(i,j,kc,1,1) = sm
-          else
-             Im(i,j,kc,1,1) = sm + &
-               HALF*sigma*(sp-sm+(ONE-TWO3RD*sigma)*s6)
-          endif
-
-          ! u wave
-          sigma = abs(u(i,j,k3d,1))*dtdx
-
-          if (u(i,j,k3d,1) <= ZERO) then
-             Ip(i,j,kc,1,2) = sp
-          else
-             Ip(i,j,kc,1,2) = sp - &
-               HALF*sigma*(sp-sm-(ONE-TWO3RD*sigma)*s6)
-          endif
-
-          if (u(i,j,k3d,1) >= ZERO) then
-             Im(i,j,kc,1,2) = sm
-          else
-             Im(i,j,kc,1,2) = sm + &
-               HALF*sigma*(sp-sm+(ONE-TWO3RD*sigma)*s6)
-          endif
-
-          ! u+c wave
-          sigma = abs(u(i,j,k3d,1)+cspd(i,j,k3d))*dtdx
-
-          if (u(i,j,k3d,1)+cspd(i,j,k3d) <= ZERO) then
-             Ip(i,j,kc,1,3) = sp
-          else
-             Ip(i,j,kc,1,3) = sp - &
-               HALF*sigma*(sp-sm-(ONE-TWO3RD*sigma)*s6)
-          endif
-
-          if (u(i,j,k3d,1)+cspd(i,j,k3d) >= ZERO) then
-             Im(i,j,kc,1,3) = sm
-          else
-             Im(i,j,kc,1,3) = sm + &
-               HALF*sigma*(sp-sm+(ONE-TWO3RD*sigma)*s6)
-          endif
-
-       end do
-    end do
-
-    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    ! y-direction
-    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-    do j=ilo2-1,ihi2+1
-       do i=ilo1-1,ihi1+1
-
-          ! copy sedge into sp and sm
-          sp = syp(i,j,kc)
-          sm = sym(i,j,kc)
-
-          ! compute y-component of Ip and Im
-          s6 = SIX*s(i,j,k3d) - THREE*(sm+sp)
-
-          ! v-c wave
-          sigma = abs(u(i,j,k3d,2)-cspd(i,j,k3d))*dtdy
-
-          if (u(i,j,k3d,2)-cspd(i,j,k3d) <= ZERO) then
-             Ip(i,j,kc,2,1) = sp
-          else
-             Ip(i,j,kc,2,1) = sp - &
-               HALF*sigma*(sp-sm-(ONE-TWO3RD*sigma)*s6)
-          endif
-
-          if (u(i,j,k3d,2)-cspd(i,j,k3d) >= ZERO) then
-             Im(i,j,kc,2,1) = sm
-          else
-             Im(i,j,kc,2,1) = sm + &
-               HALF*sigma*(sp-sm+(ONE-TWO3RD*sigma)*s6)
-          endif
-
-          ! v wave
-          sigma = abs(u(i,j,k3d,2))*dtdy
-
-          if (u(i,j,k3d,2) <= ZERO) then
-             Ip(i,j,kc,2,2) = sp
-          else
-             Ip(i,j,kc,2,2) = sp - &
-               HALF*sigma*(sp-sm-(ONE-TWO3RD*sigma)*s6)
-          endif
-
-          if (u(i,j,k3d,2) >= ZERO) then
-             Im(i,j,kc,2,2) = sm
-          else
-             Im(i,j,kc,2,2) = sm + &
-               HALF*sigma*(sp-sm+(ONE-TWO3RD*sigma)*s6)
-          endif
-
-          ! v+c wave
-          sigma = abs(u(i,j,k3d,2)+cspd(i,j,k3d))*dtdy
-
-          if (u(i,j,k3d,2)+cspd(i,j,k3d) <= ZERO) then
-             Ip(i,j,kc,2,3) = sp
-          else
-             Ip(i,j,kc,2,3) = sp - &
-               HALF*sigma*(sp-sm-(ONE-TWO3RD*sigma)*s6)
-          endif
-
-          if (u(i,j,k3d,2)+cspd(i,j,k3d) >= ZERO) then
-             Im(i,j,kc,2,3) = sm
-          else
-             Im(i,j,kc,2,3) = sm + &
-               HALF*sigma*(sp-sm+(ONE-TWO3RD*sigma)*s6)
-          endif
-
-       end do
-    end do
-
-    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    ! z-direction
-    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-    do j=ilo2-1,ihi2+1
-       do i=ilo1-1,ihi1+1
-
-          sp = szp(i,j,kc)
-          sm = szm(i,j,kc)
-
-          ! compute z-component of Ip and Im
-          s6 = SIX*s(i,j,k3d) - THREE*(sm+sp)
-
-          ! w-c wave
-          sigma = abs(u(i,j,k3d,3)-cspd(i,j,k3d))*dtdz
-
-          if (u(i,j,k3d,3)-cspd(i,j,k3d) <= ZERO) then
-             Ip(i,j,kc,3,1) = sp
-          else
-             Ip(i,j,kc,3,1) = sp - &
-               HALF*sigma*(sp-sm-(ONE-TWO3RD*sigma)*s6)
-          endif
-
-          if (u(i,j,k3d,3)-cspd(i,j,k3d) >= ZERO) then
-             Im(i,j,kc,3,1) = sm
-          else
-             Im(i,j,kc,3,1) = sm + &
-               HALF*sigma*(sp-sm+(ONE-TWO3RD*sigma)*s6)
-          endif
-
-          ! w wave
-          sigma = abs(u(i,j,k3d,3))*dtdz
-
-          if (u(i,j,k3d,3) <= ZERO) then
-             Ip(i,j,kc,3,2) = sp
-          else
-             Ip(i,j,kc,3,2) = sp - &
-               HALF*sigma*(sp-sm-(ONE-TWO3RD*sigma)*s6)
-          endif
-
-          if (u(i,j,k3d,3) >= ZERO) then
-             Im(i,j,kc,3,2) = sm
-          else
-             Im(i,j,kc,3,2) = sm + &
-               HALF*sigma*(sp-sm+(ONE-TWO3RD*sigma)*s6)
-          endif
-
-          ! w+c wave
-          sigma = abs(u(i,j,k3d,3)+cspd(i,j,k3d))*dtdz
-
-          if (u(i,j,k3d,3)+cspd(i,j,k3d) <= ZERO) then
-             Ip(i,j,kc,3,3) = sp
-          else
-             Ip(i,j,kc,3,3) = sp - &
-               HALF*sigma*(sp-sm-(ONE-TWO3RD*sigma)*s6)
-          endif
-
-          if (u(i,j,k3d,3)+cspd(i,j,k3d) >= ZERO) then
-             Im(i,j,kc,3,3) = sm
-          else
-             Im(i,j,kc,3,3) = sm + &
-               HALF*sigma*(sp-sm+(ONE-TWO3RD*sigma)*s6)
-          endif
-
-       end do
-    end do
-
-  end subroutine ppm_int_profile
 
 end module ppm_module
