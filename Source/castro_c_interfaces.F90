@@ -706,6 +706,27 @@ contains
     cuda_result = cudaMemcpyAsync(uout_h2_d, uout_h2, 1, cudaMemcpyHostToDevice, stream)
     cuda_result = cudaMemcpyAsync(uout_h3_d, uout_h3, 1, cudaMemcpyHostToDevice, stream)
 
+    cuda_result = cudaMemcpyAsync(q_l1_d, q_l1, 1, cudaMemcpyHostToDevice, stream)
+    cuda_result = cudaMemcpyAsync(q_l2_d, q_l2, 1, cudaMemcpyHostToDevice, stream)
+    cuda_result = cudaMemcpyAsync(q_l3_d, q_l3, 1, cudaMemcpyHostToDevice, stream)
+    cuda_result = cudaMemcpyAsync(q_h1_d, q_h1, 1, cudaMemcpyHostToDevice, stream)
+    cuda_result = cudaMemcpyAsync(q_h2_d, q_h2, 1, cudaMemcpyHostToDevice, stream)
+    cuda_result = cudaMemcpyAsync(q_h3_d, q_h3, 1, cudaMemcpyHostToDevice, stream)
+
+    cuda_result = cudaMemcpyAsync(qa_l1_d, qa_l1, 1, cudaMemcpyHostToDevice, stream)
+    cuda_result = cudaMemcpyAsync(qa_l2_d, qa_l2, 1, cudaMemcpyHostToDevice, stream)
+    cuda_result = cudaMemcpyAsync(qa_l3_d, qa_l3, 1, cudaMemcpyHostToDevice, stream)
+    cuda_result = cudaMemcpyAsync(qa_h1_d, qa_h1, 1, cudaMemcpyHostToDevice, stream)
+    cuda_result = cudaMemcpyAsync(qa_h2_d, qa_h2, 1, cudaMemcpyHostToDevice, stream)
+    cuda_result = cudaMemcpyAsync(qa_h3_d, qa_h3, 1, cudaMemcpyHostToDevice, stream)
+
+    cuda_result = cudaMemcpyAsync(updt_l1_d, updt_l1, 1, cudaMemcpyHostToDevice, stream)
+    cuda_result = cudaMemcpyAsync(updt_l2_d, updt_l2, 1, cudaMemcpyHostToDevice, stream)
+    cuda_result = cudaMemcpyAsync(updt_l3_d, updt_l3, 1, cudaMemcpyHostToDevice, stream)
+    cuda_result = cudaMemcpyAsync(updt_h1_d, updt_h1, 1, cudaMemcpyHostToDevice, stream)
+    cuda_result = cudaMemcpyAsync(updt_h2_d, updt_h2, 1, cudaMemcpyHostToDevice, stream)
+    cuda_result = cudaMemcpyAsync(updt_h3_d, updt_h3, 1, cudaMemcpyHostToDevice, stream)
+
     cuda_result = cudaMemcpyAsync(dx_d, dx, 3, cudaMemcpyHostToDevice, stream)
     cuda_result = cudaMemcpyAsync(dt_d, dt, 1, cudaMemcpyHostToDevice, stream)
 
