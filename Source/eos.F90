@@ -37,7 +37,6 @@ contains
     allocate(maxye)
     allocate(mine)
     allocate(maxe)
-    allocate(maxe)
     allocate(minp)
     allocate(maxp)
     allocate(mins)
