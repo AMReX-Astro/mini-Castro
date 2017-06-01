@@ -1,6 +1,50 @@
 module advection_util_module
 
+  use amrex_fort_module, only: rt => amrex_real
+
   implicit none
+
+  ! This derived type stores all of the temporary arrays needed
+  ! during a hydro update.
+
+  type :: ht
+
+     ! Arrays for workspace
+     real(rt), pointer :: flatn(:,:,:)
+     real(rt), pointer :: div(:,:,:)
+     real(rt), pointer :: pdivu(:,:,:)
+
+     ! Edge-centered primitive variables (Riemann state)
+     real(rt), pointer :: q1(:,:,:,:)
+     real(rt), pointer :: q2(:,:,:,:)
+     real(rt), pointer :: q3(:,:,:,:)
+     real(rt), pointer :: qint(:,:,:,:)
+
+     real(rt), pointer :: shk(:,:,:)
+
+     ! Local arrays for flattening
+     real(rt), pointer :: dp(:,:,:), z(:,:,:), chi(:,:,:)
+
+     ! Local arrays in cmpflx
+     real(rt), pointer :: smallc(:,:), cavg(:,:)
+     real(rt), pointer :: gamcm(:,:), gamcp(:,:)
+
+     real(rt), pointer :: us1d(:)
+
+     ! \delta s_{\ib}^{vL}
+     real(rt), pointer :: dsvl(:,:)
+
+     ! s_{i+\half}^{H.O.}
+     real(rt), pointer :: sedge(:,:)
+
+     ! temporary interface values of the parabola
+     real(rt), pointer :: sxm(:,:,:,:), sym(:,:,:,:), szm(:,:,:,:)
+     real(rt), pointer :: sxp(:,:,:,:), syp(:,:,:,:), szp(:,:,:,:)
+
+     real(rt), pointer :: qxm(:,:,:,:), qym(:,:,:,:), qzm(:,:,:,:)
+     real(rt), pointer :: qxp(:,:,:,:), qyp(:,:,:,:), qzp(:,:,:,:)
+
+  end type ht
 
 contains
 
@@ -630,5 +674,132 @@ contains
     enddo
 
   end subroutine divu
+
+
+
+  ! Allocate the components of a hydro temporary.
+
+  subroutine allocate_ht(h, lo, hi, flux1_lo, flux1_hi, flux2_lo, flux2_hi, &
+                         flux3_lo, flux3_hi, st_lo, st_hi, It_lo, It_hi, &
+                         shk_lo, shk_hi, g_lo, g_hi, gd_lo, gd_hi, q_lo, q_hi)
+
+    use mempool_module, only: bl_allocate
+    use meth_params_module, only: NGDNV, NQ
+
+    implicit none
+
+    type(ht), intent(inout) :: h
+
+    integer, intent(in) :: lo(3), hi(3)
+    integer, intent(in) :: flux1_lo(3), flux1_hi(3)
+    integer, intent(in) :: flux2_lo(3), flux2_hi(3)
+    integer, intent(in) :: flux3_lo(3), flux3_hi(3)
+    integer, intent(in) :: q_lo(3), q_hi(3)
+    integer, intent(in) :: It_lo(3), It_hi(3)
+    integer, intent(in) :: st_lo(3), st_hi(3)
+    integer, intent(in) :: shk_lo(3), shk_hi(3)
+    integer, intent(in) :: g_lo(3), g_hi(3)
+    integer, intent(in) :: gd_lo(2), gd_hi(2)
+
+    call bl_allocate(h % div, lo(1), hi(1)+1, lo(2), hi(2)+1, lo(3), hi(3)+1)
+    call bl_allocate(h % pdivu, lo(1), hi(1)  , lo(2), hi(2)  , lo(3), hi(3))
+
+    call bl_allocate(h % q1, flux1_lo, flux1_hi, NGDNV)
+    call bl_allocate(h % q2, flux2_lo, flux2_hi, NGDNV)
+    call bl_allocate(h % q3, flux3_lo, flux3_hi, NGDNV)
+
+    call bl_allocate(h % sxm, st_lo, st_hi, NQ)
+    call bl_allocate(h % sxp, st_lo, st_hi, NQ)
+    call bl_allocate(h % sym, st_lo, st_hi, NQ)
+    call bl_allocate(h % syp, st_lo, st_hi, NQ)
+    call bl_allocate(h % szm, st_lo, st_hi, NQ)
+    call bl_allocate(h % szp, st_lo, st_hi, NQ)
+
+    call bl_allocate (h % qxm, It_lo, It_hi, NQ)
+    call bl_allocate (h % qxp, It_lo, It_hi, NQ)
+
+    call bl_allocate (h % qym, It_lo, It_hi, NQ)
+    call bl_allocate (h % qyp, It_lo, It_hi, NQ)
+
+    call bl_allocate (h % qzm, It_lo, It_hi, NQ)
+    call bl_allocate (h % qzp, It_lo, It_hi, NQ)
+
+    call bl_allocate(h % qint, It_lo, It_hi, NGDNV)
+
+    call bl_allocate(h % shk, shk_lo, shk_hi)
+
+    call bl_allocate(h % dp ,g_lo(1)-1,g_hi(1)+1,g_lo(2)-1,g_hi(2)+1,g_lo(3)-1,g_hi(3)+1)
+    call bl_allocate(h % z  ,g_lo(1)-1,g_hi(1)+1,g_lo(2)-1,g_hi(2)+1,g_lo(3)-1,g_hi(3)+1)
+    call bl_allocate(h % chi,g_lo(1)-1,g_hi(1)+1,g_lo(2)-1,g_hi(2)+1,g_lo(3)-1,g_hi(3)+1)
+
+    call bl_allocate(h % dsvl,lo(1)-2,hi(1)+2,lo(2)-2,hi(2)+2)
+
+    call bl_allocate(h % sedge,lo(1)-1,hi(1)+2,lo(2)-1,hi(2)+2)
+
+    call bl_allocate (h % smallc, gd_lo(1),gd_hi(1),gd_lo(2),gd_hi(2))
+    call bl_allocate (h %   cavg, gd_lo(1),gd_hi(1),gd_lo(2),gd_hi(2))
+    call bl_allocate (h %  gamcm, gd_lo(1),gd_hi(1),gd_lo(2),gd_hi(2))
+    call bl_allocate (h %  gamcp, gd_lo(1),gd_hi(1),gd_lo(2),gd_hi(2))
+
+    call bl_allocate(h % us1d, gd_lo(1), gd_hi(1))
+
+    call bl_allocate(h % flatn, q_lo, q_hi)
+
+  end subroutine allocate_ht
+
+
+
+
+  subroutine deallocate_ht(h)
+
+    use mempool_module, only: bl_deallocate
+
+    implicit none
+
+    type(ht), intent(inout) :: h
+
+    call bl_deallocate(h % dsvl)
+    call bl_deallocate(h % sedge)
+
+    call bl_deallocate(h % dp )
+    call bl_deallocate(h % z  )
+    call bl_deallocate(h % chi)
+
+    call bl_deallocate(h % smallc)
+    call bl_deallocate(h %  cavg)
+    call bl_deallocate(h % gamcm)
+    call bl_deallocate(h % gamcp)
+
+    call bl_deallocate(h % us1d)
+
+    call bl_deallocate(h % flatn)
+
+    call bl_deallocate(h % sxm)
+    call bl_deallocate(h % sxp)
+    call bl_deallocate(h % sym)
+    call bl_deallocate(h % syp)
+    call bl_deallocate(h % szm)
+    call bl_deallocate(h % szp)
+
+    call bl_deallocate(h % qxm)
+    call bl_deallocate(h % qxp)
+
+    call bl_deallocate(h % qym)
+    call bl_deallocate(h % qyp)
+
+    call bl_deallocate(h % qzm)
+    call bl_deallocate(h % qzp)
+
+    call bl_deallocate(h % qint)
+    call bl_deallocate(h % shk)
+
+    call bl_deallocate(h % div)
+    call bl_deallocate(h % pdivu)
+
+    call bl_deallocate(h % q1)
+    call bl_deallocate(h % q2)
+    call bl_deallocate(h % q3)
+
+  end subroutine deallocate_ht
 
 end module advection_util_module

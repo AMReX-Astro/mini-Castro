@@ -26,8 +26,8 @@ contains
                               vol, vol_l1, vol_l2, vol_l3, vol_h1, vol_h2, vol_h3, &
                               courno, verbose)
 
-    use mempool_module, only: bl_allocate, bl_deallocate
-    use advection_util_module, only: compute_cfl, divu, normalize_species_fluxes
+    use advection_util_module, only: compute_cfl, divu, normalize_species_fluxes, &
+                                     ht, allocate_ht, deallocate_ht
     use bl_constants_module, only: ZERO, HALF, ONE, FOURTH
     use flatten_module, only: uflaten
     use riemann_module, only: cmpflx
@@ -69,41 +69,6 @@ contains
     real(rt), intent(in   ) :: dx(3), dt, time
     real(rt), intent(inout) :: courno
 
-    ! Arrays for workspace
-    real(rt), pointer :: flatn(:,:,:)
-    real(rt), pointer :: div(:,:,:)
-    real(rt), pointer :: pdivu(:,:,:)
-
-    ! Edge-centered primitive variables (Riemann state)
-    real(rt), pointer :: q1(:,:,:,:)
-    real(rt), pointer :: q2(:,:,:,:)
-    real(rt), pointer :: q3(:,:,:,:)
-    real(rt), pointer :: qint(:,:,:,:)
-
-    real(rt), pointer :: shk(:,:,:)
-
-    ! Local arrays for flattening
-    real(rt), pointer :: dp(:,:,:), z(:,:,:), chi(:,:,:)
-
-    ! Local arrays in cmpflx
-    real(rt), pointer :: smallc(:,:), cavg(:,:)
-    real(rt), pointer :: gamcm(:,:), gamcp(:,:)
-
-    real(rt), pointer :: us1d(:)
-
-    ! \delta s_{\ib}^{vL}
-    real(rt), pointer :: dsvl(:,:)
-
-    ! s_{i+\half}^{H.O.}
-    real(rt), pointer :: sedge(:,:)
-
-    ! temporary interface values of the parabola
-    real(rt), pointer :: sxm(:,:,:,:), sym(:,:,:,:), szm(:,:,:,:)
-    real(rt), pointer :: sxp(:,:,:,:), syp(:,:,:,:), szp(:,:,:,:)
-
-    real(rt), pointer :: qxm(:,:,:,:), qym(:,:,:,:), qzm(:,:,:,:)
-    real(rt), pointer :: qxp(:,:,:,:), qyp(:,:,:,:), qzp(:,:,:,:)
-
     integer :: ngf
     integer :: uin_lo(3), uin_hi(3)
     integer :: uout_lo(3), uout_hi(3)
@@ -129,6 +94,8 @@ contains
     real(rt) :: div1
     integer :: i, j, k, n
     integer :: kc, km, kt, k3d
+
+    type(ht) :: h
 
     ngf = 1
 
@@ -180,51 +147,12 @@ contains
     shk_lo(:) = lo(:) - 1
     shk_hi(:) = hi(:) + 1
 
-    call bl_allocate(   div, lo(1), hi(1)+1, lo(2), hi(2)+1, lo(3), hi(3)+1)
-    call bl_allocate( pdivu, lo(1), hi(1)  , lo(2), hi(2)  , lo(3), hi(3)  )
+    ! Allocate all the temporaries we will need.
+    call allocate_ht(h, lo, hi, flux1_lo, flux1_hi, flux2_lo, flux2_hi, &
+                     flux3_lo, flux3_hi, st_lo, st_hi, It_lo, It_hi, &
+                     shk_lo, shk_hi, g_lo, g_hi, gd_lo, gd_hi, q_lo, q_hi)
 
-    call bl_allocate(q1, flux1_lo, flux1_hi, NGDNV)
-    call bl_allocate(q2, flux2_lo, flux2_hi, NGDNV)
-    call bl_allocate(q3, flux3_lo, flux3_hi, NGDNV)
-
-    call bl_allocate(sxm, st_lo, st_hi, NQ)
-    call bl_allocate(sxp, st_lo, st_hi, NQ)
-    call bl_allocate(sym, st_lo, st_hi, NQ)
-    call bl_allocate(syp, st_lo, st_hi, NQ)
-    call bl_allocate(szm, st_lo, st_hi, NQ)
-    call bl_allocate(szp, st_lo, st_hi, NQ)
-
-    call bl_allocate ( qxm, It_lo, It_hi, NQ)
-    call bl_allocate ( qxp, It_lo, It_hi, NQ)
-
-    call bl_allocate ( qym, It_lo, It_hi, NQ)
-    call bl_allocate ( qyp, It_lo, It_hi, NQ)
-
-    call bl_allocate ( qzm, It_lo, It_hi, NQ)
-    call bl_allocate ( qzp, It_lo, It_hi, NQ)
-
-    call bl_allocate(qint, It_lo, It_hi, NGDNV)
-
-    call bl_allocate(shk, shk_lo, shk_hi)
-
-    call bl_allocate(dp ,g_lo(1)-1,g_hi(1)+1,g_lo(2)-1,g_hi(2)+1,g_lo(3)-1,g_hi(3)+1)
-    call bl_allocate(z  ,g_lo(1)-1,g_hi(1)+1,g_lo(2)-1,g_hi(2)+1,g_lo(3)-1,g_hi(3)+1)
-    call bl_allocate(chi,g_lo(1)-1,g_hi(1)+1,g_lo(2)-1,g_hi(2)+1,g_lo(3)-1,g_hi(3)+1)
-
-    call bl_allocate(dsvl,lo(1)-2,hi(1)+2,lo(2)-2,hi(2)+2)
-
-    call bl_allocate(sedge,lo(1)-1,hi(1)+2,lo(2)-1,hi(2)+2)
-
-    call bl_allocate ( smallc, gd_lo(1),gd_hi(1),gd_lo(2),gd_hi(2))
-    call bl_allocate (   cavg, gd_lo(1),gd_hi(1),gd_lo(2),gd_hi(2))
-    call bl_allocate (  gamcm, gd_lo(1),gd_hi(1),gd_lo(2),gd_hi(2))
-    call bl_allocate (  gamcp, gd_lo(1),gd_hi(1),gd_lo(2),gd_hi(2))
-
-    call bl_allocate(us1d, gd_lo(1), gd_hi(1))
-
-    call bl_allocate( flatn, q_lo, q_hi)
-
-    shk(:,:,:) = ZERO
+    h%shk(:,:,:) = ZERO
 
     ! Check if we have violated the CFL criterion.
     call compute_cfl(q, q_lo, q_hi, &
@@ -235,7 +163,7 @@ contains
 
     call uflaten(g_lo, g_hi, &
                  q(:,:,:,QPRES), q(:,:,:,QU), q(:,:,:,QV), q(:,:,:,QW), &
-                 flatn, q_lo, q_hi, dp, z, chi)
+                 h%flatn, q_lo, q_hi, h%dp, h%z, h%chi)
 
     ! We come into this routine with a 3-d box of data, but we operate
     ! on it locally by considering 2 planes that encompass all of the
@@ -263,10 +191,10 @@ contains
 
        do n = 1, NQ
           call ppm_reconstruct(q(:,:,:,n  ), q_lo, q_hi, &
-                               flatn, q_lo, q_hi, &
-                               sxm(:,:,:,n), sxp(:,:,:,n), sym(:,:,:,n), &
-                               syp(:,:,:,n), szm(:,:,:,n), szp(:,:,:,n), st_lo, st_hi, &
-                               dsvl, sedge, &
+                               h%flatn, q_lo, q_hi, &
+                               h%sxm(:,:,:,n), h%sxp(:,:,:,n), h%sym(:,:,:,n), &
+                               h%syp(:,:,:,n), h%szm(:,:,:,n), h%szp(:,:,:,n), st_lo, st_hi, &
+                               h%dsvl, h%sedge, &
                                lo(1), lo(2), hi(1), hi(2), dx, k3d, kc)
 
           ! Construct the interface states -- this is essentially just a
@@ -278,26 +206,26 @@ contains
                 ! x-edges
 
                 ! left state at i-1/2 interface
-                qxm(i,j,kc,n) = sxp(i-1,j,kc,n)
+                h%qxm(i,j,kc,n) = h%sxp(i-1,j,kc,n)
 
                 ! right state at i-1/2 interface
-                qxp(i,j,kc,n) = sxm(i,j,kc,n)
+                h%qxp(i,j,kc,n) = h%sxm(i,j,kc,n)
 
                 ! y-edges
 
                 ! left state at j-1/2 interface
-                qym(i,j,kc,n) = syp(i,j-1,kc,n)
+                h%qym(i,j,kc,n) = h%syp(i,j-1,kc,n)
 
                 ! right state at j-1/2 interface
-                qyp(i,j,kc,n) = sym(i,j,kc,n)
+                h%qyp(i,j,kc,n) = h%sym(i,j,kc,n)
 
                 ! z-edges
 
                 ! left state at k3d-1/2 interface
-                qzm(i,j,kc,n) = szp(i,j,km,n)
+                h%qzm(i,j,kc,n) = h%szp(i,j,km,n)
 
                 ! right state at k3d-1/2 interface
-                qzp(i,j,kc,n) = szm(i,j,kc,n)
+                h%qzp(i,j,kc,n) = h%szm(i,j,kc,n)
 
              enddo
           enddo
@@ -308,49 +236,49 @@ contains
 
           ! Compute F^x at kc (k3d)
           if (k3d <= hi(3)) then
-             call cmpflx(qxm, qxp, It_lo, It_hi, &
+             call cmpflx(h%qxm, h%qxp, It_lo, It_hi, &
                          flux1, flux1_lo, flux1_hi, &
-                         qint, It_lo, It_hi, &  ! temporary
+                         h%qint, It_lo, It_hi, &  ! temporary
                          qaux, qa_lo, qa_hi, &
-                         shk, shk_lo, shk_hi, &
-                         smallc, cavg, gamcm, gamcp, us1d, gd_lo, gd_hi, &
+                         h%shk, shk_lo, shk_hi, &
+                         h%smallc, h%cavg, h%gamcm, h%gamcp, h%us1d, gd_lo, gd_hi, &
                          1, lo(1), hi(1)+1, lo(2), hi(2), kc, k3d, k3d, domlo, domhi)
 
              do j = lo(2), hi(2)
                 do i = lo(1), hi(1)+1
-                   q1(i,j,k3d,:) = qint(i,j,kc,:)
+                   h%q1(i,j,k3d,:) = h%qint(i,j,kc,:)
                 enddo
              enddo
 
              ! Compute F^y at kc (k3d)
-             call cmpflx(qym, qyp, It_lo, It_hi, &
+             call cmpflx(h%qym, h%qyp, It_lo, It_hi, &
                          flux2, flux2_lo, flux2_hi, &
-                         qint, It_lo, It_hi, &  ! temporary
+                         h%qint, It_lo, It_hi, &  ! temporary
                          qaux, qa_lo, qa_hi, &
-                         shk, shk_lo, shk_hi, &
-                         smallc, cavg, gamcm, gamcp, us1d, gd_lo, gd_hi, &
+                         h%shk, shk_lo, shk_hi, &
+                         h%smallc, h%cavg, h%gamcm, h%gamcp, h%us1d, gd_lo, gd_hi, &
                          2, lo(1), hi(1), lo(2), hi(2)+1, kc, k3d, k3d, domlo, domhi)
 
              do j = lo(2), hi(2)+1
                 do i = lo(1), hi(1)
-                   q2(i,j,k3d,:) = qint(i,j,kc,:)
+                   h%q2(i,j,k3d,:) = h%qint(i,j,kc,:)
                 enddo
              enddo
           endif  ! hi(3) check
 
           ! Compute F^z at kc (k3d)
 
-          call cmpflx(qzm, qzp, It_lo, It_hi, &
+          call cmpflx(h%qzm, h%qzp, It_lo, It_hi, &
                       flux3, flux3_lo, flux3_hi, &
-                      qint, It_lo, It_hi, &
+                      h%qint, It_lo, It_hi, &
                       qaux, qa_lo, qa_hi, &
-                      shk, shk_lo, shk_hi, &
-                      smallc, cavg, gamcm, gamcp, us1d, gd_lo, gd_hi, &
+                      h%shk, shk_lo, shk_hi, &
+                      h%smallc, h%cavg, h%gamcm, h%gamcp, h%us1d, gd_lo, gd_hi, &
                       3, lo(1), hi(1), lo(2), hi(2), kc, k3d, k3d, domlo, domhi)
 
           do j=lo(2), hi(2)
              do i=lo(1), hi(1)
-                q3(i,j,k3d,:) = qint(i,j,kc,:)
+                h%q3(i,j,k3d,:) = h%qint(i,j,kc,:)
              enddo
           enddo
 
@@ -362,18 +290,18 @@ contains
     ! Compute divergence of velocity field (on surroundingNodes(lo,hi))
     edge_lo = lo
     edge_hi = hi + 1
-    call divu(lo,hi,q,q_lo,q_hi,dx,div,edge_lo,edge_hi)
+    call divu(lo,hi,q,q_lo,q_hi,dx,h%div,edge_lo,edge_hi)
 
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
-             pdivu(i,j,k) = &
-                  HALF*(q1(i+1,j,k,GDPRES) + q1(i,j,k,GDPRES)) * &
-                       (q1(i+1,j,k,GDU) - q1(i,j,k,GDU))/dx(1) + &
-                  HALF*(q2(i,j+1,k,GDPRES) + q2(i,j,k,GDPRES)) * &
-                       (q2(i,j+1,k,GDV) - q2(i,j,k,GDV))/dx(2) + &
-                  HALF*(q3(i,j,k+1,GDPRES) + q3(i,j,k,GDPRES)) * &
-                       (q3(i,j,k+1,GDW) - q3(i,j,k,GDW))/dx(3)
+             h%pdivu(i,j,k) = &
+                  HALF*(h%q1(i+1,j,k,GDPRES) + h%q1(i,j,k,GDPRES)) * &
+                       (h%q1(i+1,j,k,GDU) - h%q1(i,j,k,GDU))/dx(1) + &
+                  HALF*(h%q2(i,j+1,k,GDPRES) + h%q2(i,j,k,GDPRES)) * &
+                       (h%q2(i,j+1,k,GDV) - h%q2(i,j,k,GDV))/dx(2) + &
+                  HALF*(h%q3(i,j,k+1,GDPRES) + h%q3(i,j,k,GDPRES)) * &
+                       (h%q3(i,j,k+1,GDW) - h%q3(i,j,k,GDW))/dx(3)
           enddo
        enddo
     enddo
@@ -389,8 +317,8 @@ contains
           do k = lo(3), hi(3)
              do j = lo(2), hi(2)
                 do i = lo(1), hi(1)+1
-                   div1 = FOURTH*(div(i,j,k) + div(i,j+1,k) + &
-                                  div(i,j,k+1) + div(i,j+1,k+1))
+                   div1 = FOURTH*(h%div(i,j,k) + h%div(i,j+1,k) + &
+                                  h%div(i,j,k+1) + h%div(i,j+1,k+1))
                    div1 = difmag*min(ZERO,div1)
 
                    flux1(i,j,k,n) = flux1(i,j,k,n) + &
@@ -402,8 +330,8 @@ contains
           do k = lo(3), hi(3)
              do j = lo(2), hi(2)+1
                 do i = lo(1), hi(1)
-                   div1 = FOURTH*(div(i,j,k) + div(i+1,j,k) + &
-                                  div(i,j,k+1) + div(i+1,j,k+1))
+                   div1 = FOURTH*(h%div(i,j,k) + h%div(i+1,j,k) + &
+                                  h%div(i,j,k+1) + h%div(i+1,j,k+1))
                    div1 = difmag*min(ZERO,div1)
 
                    flux2(i,j,k,n) = flux2(i,j,k,n) + &
@@ -415,8 +343,8 @@ contains
           do k = lo(3), hi(3)+1
              do j = lo(2), hi(2)
                 do i = lo(1), hi(1)
-                   div1 = FOURTH*(div(i,j,k) + div(i+1,j,k) + &
-                                  div(i,j+1,k) + div(i+1,j+1,k))
+                   div1 = FOURTH*(h%div(i,j,k) + h%div(i+1,j,k) + &
+                                  h%div(i,j+1,k) + h%div(i+1,j+1,k))
                    div1 = difmag*min(ZERO,div1)
 
                    flux3(i,j,k,n) = flux3(i,j,k,n) + &
@@ -449,7 +377,7 @@ contains
 
                 ! Add the p div(u) source term to (rho e).
                 if (n .eq. UEINT) then
-                   update(i,j,k,n) = update(i,j,k,n) - pdivu(i,j,k)
+                   update(i,j,k,n) = update(i,j,k,n) - h%pdivu(i,j,k)
                 endif
 
              enddo
@@ -489,47 +417,7 @@ contains
        enddo
     enddo
 
-    call bl_deallocate(dsvl)
-    call bl_deallocate(sedge)
-
-    call bl_deallocate(dp )
-    call bl_deallocate(z  )
-    call bl_deallocate(chi)
-
-    call bl_deallocate(smallc)
-    call bl_deallocate(  cavg)
-    call bl_deallocate( gamcm)
-    call bl_deallocate( gamcp)
-
-    call bl_deallocate(us1d)
-
-    call bl_deallocate(flatn)
-
-    call bl_deallocate(sxm)
-    call bl_deallocate(sxp)
-    call bl_deallocate(sym)
-    call bl_deallocate(syp)
-    call bl_deallocate(szm)
-    call bl_deallocate(szp)
-
-    call bl_deallocate(qxm)
-    call bl_deallocate(qxp)
-
-    call bl_deallocate(qym)
-    call bl_deallocate(qyp)
-
-    call bl_deallocate(qzm)
-    call bl_deallocate(qzp)
-
-    call bl_deallocate(qint)
-    call bl_deallocate(shk)
-
-    call bl_deallocate(   div)
-    call bl_deallocate( pdivu)
-
-    call bl_deallocate(    q1)
-    call bl_deallocate(    q2)
-    call bl_deallocate(    q3)
+    call deallocate_ht(h)
 
   end subroutine mol_single_stage
 
