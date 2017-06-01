@@ -163,7 +163,7 @@ contains
 
     call uflaten(g_lo, g_hi, &
                  q(:,:,:,QPRES), q(:,:,:,QU), q(:,:,:,QV), q(:,:,:,QW), &
-                 h%flatn, q_lo, q_hi, h%dp, h%z, h%chi)
+                 q_lo, q_hi, h)
 
     ! We come into this routine with a 3-d box of data, but we operate
     ! on it locally by considering 2 planes that encompass all of the
