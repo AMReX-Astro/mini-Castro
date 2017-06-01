@@ -314,7 +314,7 @@ contains
                                    q, q_l1, q_l2, q_l3, q_h1, q_h2, q_h3, &
                                    qaux, qa_l1, qa_l2, qa_l3, qa_h1, qa_h2, qa_h3, &
                                    update, updt_l1, updt_l2, updt_l3, updt_h1, updt_h2, updt_h3, &
-                                   dx, dt, &
+                                   dx, dt, h, &
                                    flux1, flux1_l1, flux1_l2, flux1_l3, flux1_h1, flux1_h2, flux1_h3, &
                                    flux2, flux2_l1, flux2_l2, flux2_l3, flux2_h1, flux2_h2, flux2_h3, &
                                    flux3, flux3_l1, flux3_l2, flux3_l3, flux3_h1, flux3_h2, flux3_h3, &
@@ -327,6 +327,7 @@ contains
     use amrex_fort_module, only: rt => amrex_real
     use meth_params_module, only: NQ, NQAUX, NVAR
     use mol_module, only: mol_single_stage
+    use advection_util_module, only: ht
 
     implicit none
 
@@ -358,6 +359,7 @@ contains
     real(rt), intent(in   ) :: area3(area3_l1:area3_h1, area3_l2:area3_h2, area3_l3:area3_h3)
     real(rt), intent(in   ) :: vol(vol_l1:vol_h1, vol_l2:vol_h2, vol_l3:vol_h3)
     real(rt), intent(in   ) :: dx(3), dt, time
+    type(ht), intent(inout) :: h
     real(rt), intent(inout) :: courno
 
     integer :: idx(3)
@@ -377,7 +379,7 @@ contains
                           q, q_l1, q_l2, q_l3, q_h1, q_h2, q_h3, &
                           qaux, qa_l1, qa_l2, qa_l3, qa_h1, qa_h2, qa_h3, &
                           update, updt_l1, updt_l2, updt_l3, updt_h1, updt_h2, updt_h3, &
-                          dx, dt, &
+                          dx, dt, h, &
                           flux1, flux1_l1, flux1_l2, flux1_l3, flux1_h1, flux1_h2, flux1_h3, &
                           flux2, flux2_l1, flux2_l2, flux2_l3, flux2_h1, flux2_h2, flux2_h3, &
                           flux3, flux3_l1, flux3_l2, flux3_l3, flux3_h1, flux3_h2, flux3_h3, &

@@ -16,7 +16,7 @@ contains
                               q, q_l1, q_l2, q_l3, q_h1, q_h2, q_h3, &
                               qaux, qa_l1, qa_l2, qa_l3, qa_h1, qa_h2, qa_h3, &
                               update, updt_l1, updt_l2, updt_l3, updt_h1, updt_h2, updt_h3, &
-                              dx, dt, &
+                              dx, dt, h, &
                               flux1, flux1_l1, flux1_l2, flux1_l3, flux1_h1, flux1_h2, flux1_h3, &
                               flux2, flux2_l1, flux2_l2, flux2_l3, flux2_h1, flux2_h2, flux2_h3, &
                               flux3, flux3_l1, flux3_l2, flux3_l3, flux3_h1, flux3_h2, flux3_h3, &
@@ -27,7 +27,7 @@ contains
                               courno, verbose)
 
     use advection_util_module, only: compute_cfl, divu, normalize_species_fluxes, &
-                                     ht, allocate_ht, deallocate_ht
+                                     ht
     use bl_constants_module, only: ZERO, HALF, ONE, FOURTH
     use flatten_module, only: uflaten
     use riemann_module, only: cmpflx
@@ -67,6 +67,7 @@ contains
     real(rt), intent(in   ) :: area3(area3_l1:area3_h1, area3_l2:area3_h2, area3_l3:area3_h3)
     real(rt), intent(in   ) :: vol(vol_l1:vol_h1, vol_l2:vol_h2, vol_l3:vol_h3)
     real(rt), intent(in   ) :: dx(3), dt, time
+    type(ht), intent(inout) :: h
     real(rt), intent(inout) :: courno
 
     integer :: ngf
@@ -81,21 +82,15 @@ contains
     integer :: vol_lo(3), vol_hi(3)
     integer :: q_lo(3), q_hi(3)
     integer :: qa_lo(3), qa_hi(3)
-    integer :: It_lo(3), It_hi(3)
-    integer :: st_lo(3), st_hi(3)
-    integer :: shk_lo(3), shk_hi(3)
 
     integer :: edge_lo(3), edge_hi(3)
     integer :: g_lo(3), g_hi(3)
-    integer :: gd_lo(2), gd_hi(2)
 
     real(rt), parameter :: difmag = 0.1d0
 
     real(rt) :: div1
     integer :: i, j, k, n
     integer :: kc, km, kt, k3d
-
-    type(ht) :: h
 
     ngf = 1
 
@@ -132,27 +127,16 @@ contains
     vol_lo = [ vol_l1, vol_l2, vol_l3 ]
     vol_hi = [ vol_h1, vol_h2, vol_h3 ]
 
-    It_lo = [lo(1) - 1, lo(2) - 1, 1]
-    It_hi = [hi(1) + 1, hi(2) + 1, 2]
-
-    st_lo = [lo(1) - 2, lo(2) - 2, 1]
-    st_hi = [hi(1) + 2, hi(2) + 2, 2]
-
-    gd_lo = [lo(1), lo(2)]
-    gd_hi = [hi(1) + 1, hi(2) + 1]
-
     g_lo = lo - ngf
     g_hi = hi + ngf
 
-    shk_lo(:) = lo(:) - 1
-    shk_hi(:) = hi(:) + 1
-
-    ! Allocate all the temporaries we will need.
-    call allocate_ht(h, lo, hi, flux1_lo, flux1_hi, flux2_lo, flux2_hi, &
-                     flux3_lo, flux3_hi, st_lo, st_hi, It_lo, It_hi, &
-                     shk_lo, shk_hi, g_lo, g_hi, gd_lo, gd_hi, q_lo, q_hi)
-
-    h%shk(:,:,:) = ZERO
+    do k = lo(3), hi(3)
+       do j = lo(2), hi(2)
+          do i = lo(1), hi(1)
+             h%shk(i,j,k) = ZERO
+          enddo
+       enddo
+    enddo
 
     ! Check if we have violated the CFL criterion.
     call compute_cfl(q, q_lo, q_hi, &
@@ -397,8 +381,6 @@ contains
           enddo
        enddo
     enddo
-
-    call deallocate_ht(h)
 
   end subroutine mol_single_stage
 
