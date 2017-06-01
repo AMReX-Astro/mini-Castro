@@ -7,21 +7,19 @@ contains
 #ifdef CUDA
   attributes(device) &
 #endif
-  subroutine uflaten(lo, hi, p, u, v, w, q_lo, q_hi, h)
+  subroutine uflaten(lo, hi, q, q_lo, q_hi, h)
 
     use bl_constants_module, only: ZERO, ONE
     use amrex_fort_module, only: rt => amrex_real
     use prob_params_module, only: dg
     use advection_util_module, only: ht
+    use meth_params_module, only: NQ, QU, QV, QW, QPRES
 
     implicit none
 
     integer,  intent(in   ) :: lo(3), hi(3)
     integer,  intent(in   ) :: q_lo(3), q_hi(3)
-    real(rt), intent(in   ), contiguous :: p(q_lo(1):q_hi(1),q_lo(2):q_hi(2),q_lo(3):q_hi(3))
-    real(rt), intent(in   ), contiguous :: u(q_lo(1):q_hi(1),q_lo(2):q_hi(2),q_lo(3):q_hi(3))
-    real(rt), intent(in   ), contiguous :: v(q_lo(1):q_hi(1),q_lo(2):q_hi(2),q_lo(3):q_hi(3))
-    real(rt), intent(in   ), contiguous :: w(q_lo(1):q_hi(1),q_lo(2):q_hi(2),q_lo(3):q_hi(3))
+    real(rt), intent(in   ) :: q(q_lo(1):q_hi(1),q_lo(2):q_hi(2),q_lo(3):q_hi(3),NQ)
     type(ht), intent(inout) :: h
 
     integer :: i, j, k, ishft
@@ -38,16 +36,16 @@ contains
        do j = lo(2),hi(2)
           !dir$ ivdep
           do i = lo(1)-1*dg(1),hi(1)+1*dg(1)
-             h%dp(i,j,k) = p(i+1*dg(1),j,k) - p(i-1*dg(1),j,k)
-             denom = max(small_pres,abs(p(i+2*dg(1),j,k)-p(i-2*dg(1),j,k)))
+             h%dp(i,j,k) = q(i+1*dg(1),j,k,QPRES) - q(i-1*dg(1),j,k,QPRES)
+             denom = max(small_pres,abs(q(i+2*dg(1),j,k,QPRES)-q(i-2*dg(1),j,k,QPRES)))
              zeta = abs(h%dp(i,j,k))/denom
              h%z(i,j,k) = min( ONE, max( ZERO, dzcut*(zeta - zcut1) ) )
-             if (u(i-1*dg(1),j,k)-u(i+1*dg(1),j,k) .ge. ZERO) then
+             if (q(i-1*dg(1),j,k,QU)-q(i+1*dg(1),j,k,QU) .ge. ZERO) then
                 tst = ONE
              else
                 tst = ZERO
              endif
-             tmp = min(p(i+1*dg(1),j,k),p(i-1*dg(1),j,k))
+             tmp = min(q(i+1*dg(1),j,k,QPRES),q(i-1*dg(1),j,k,QPRES))
              if ((abs(h%dp(i,j,k))/tmp).gt.shktst) then
                 h%chi(i,j,k) = tst
              else
@@ -71,16 +69,16 @@ contains
        do j = lo(2)-1*dg(2),hi(2)+1*dg(2)
           !dir$ ivdep
           do i = lo(1),hi(1)
-             h%dp(i,j,k) = p(i,j+1*dg(2),k) - p(i,j-1*dg(2),k)
-             denom = max(small_pres,abs(p(i,j+2*dg(2),k)-p(i,j-2*dg(2),k)))
+             h%dp(i,j,k) = q(i,j+1*dg(2),k,QPRES) - q(i,j-1*dg(2),k,QPRES)
+             denom = max(small_pres,abs(q(i,j+2*dg(2),k,QPRES)-q(i,j-2*dg(2),k,QPRES)))
              zeta = abs(h%dp(i,j,k))/denom
              h%z(i,j,k) = min( ONE, max( ZERO, dzcut*(zeta - zcut1) ) )
-             if (v(i,j-1*dg(2),k)-v(i,j+1*dg(2),k) .ge. ZERO) then
+             if (q(i,j-1*dg(2),k,QV)-q(i,j+1*dg(2),k,QV) .ge. ZERO) then
                 tst = ONE
              else
                 tst = ZERO
              endif
-             tmp = min(p(i,j+1*dg(2),k),p(i,j-1*dg(2),k))
+             tmp = min(q(i,j+1*dg(2),k,QPRES),q(i,j-1*dg(2),k,QPRES))
              if ((abs(h%dp(i,j,k))/tmp).gt.shktst) then
                 h%chi(i,j,k) = tst
              else
@@ -107,16 +105,16 @@ contains
        do j = lo(2),hi(2)
           !dir$ ivdep
           do i = lo(1),hi(1)
-             h%dp(i,j,k) = p(i,j,k+1*dg(3)) - p(i,j,k-1*dg(3))
-             denom = max(small_pres,abs(p(i,j,k+2*dg(3))-p(i,j,k-2*dg(3))))
+             h%dp(i,j,k) = q(i,j,k+1*dg(3),QPRES) - q(i,j,k-1*dg(3),QPRES)
+             denom = max(small_pres,abs(q(i,j,k+2*dg(3),QPRES)-q(i,j,k-2*dg(3),QPRES)))
              zeta = abs(h%dp(i,j,k))/denom
              h%z(i,j,k) = min( ONE, max( ZERO, dzcut*(zeta - zcut1) ) )
-             if (w(i,j,k-1*dg(3))-w(i,j,k+1*dg(3)) .ge. ZERO) then
+             if (q(i,j,k-1*dg(3),QW)-q(i,j,k+1*dg(3),QW) .ge. ZERO) then
                 tst = ONE
              else
                 tst = ZERO
              endif
-             tmp = min(p(i,j,k+1*dg(3)),p(i,j,k-1*dg(3)))
+             tmp = min(q(i,j,k+1*dg(3),QPRES),q(i,j,k-1*dg(3),QPRES))
              if ((abs(h%dp(i,j,k))/tmp).gt.shktst) then
                 h%chi(i,j,k) = tst
              else

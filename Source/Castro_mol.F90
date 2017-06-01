@@ -161,9 +161,7 @@ contains
 
     ! Compute flattening coefficient for slope calculations.
 
-    call uflaten(g_lo, g_hi, &
-                 q(:,:,:,QPRES), q(:,:,:,QU), q(:,:,:,QV), q(:,:,:,QW), &
-                 q_lo, q_hi, h)
+    call uflaten(g_lo, g_hi, q, q_lo, q_hi, h)
 
     ! We come into this routine with a 3-d box of data, but we operate
     ! on it locally by considering 2 planes that encompass all of the
