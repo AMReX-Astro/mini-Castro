@@ -26,7 +26,7 @@ contains
                               vol, vol_l1, vol_l2, vol_l3, vol_h1, vol_h2, vol_h3, &
                               courno, verbose)
 
-!    use mempool_module, only: bl_allocate, bl_deallocate
+    use mempool_module, only: bl_allocate, bl_deallocate
     use advection_util_module, only: compute_cfl, divu, normalize_species_fluxes
     use bl_constants_module, only: ZERO, HALF, ONE, FOURTH
     use flatten_module, only: uflaten
@@ -69,7 +69,6 @@ contains
     real(rt), intent(in   ) :: dx(3), dt, time
     real(rt), intent(inout) :: courno
 
-#if 0
     ! Automatic arrays for workspace
     real(rt), pointer :: flatn(:,:,:)
     real(rt), pointer :: div(:,:,:)
@@ -89,27 +88,6 @@ contains
 
     real(rt), pointer :: qxm(:,:,:,:), qym(:,:,:,:), qzm(:,:,:,:)
     real(rt), pointer :: qxp(:,:,:,:), qyp(:,:,:,:), qzp(:,:,:,:)
-#endif
-
-    ! Automatic arrays for workspace
-    real(rt), allocatable :: flatn(:,:,:)
-    real(rt), allocatable :: div(:,:,:)
-    real(rt), allocatable :: pdivu(:,:,:)
-
-    ! Edge-centered primitive variables (Riemann state)
-    real(rt), allocatable :: q1(:,:,:,:)
-    real(rt), allocatable :: q2(:,:,:,:)
-    real(rt), allocatable :: q3(:,:,:,:)
-    real(rt), allocatable :: qint(:,:,:,:)
-
-    real(rt), allocatable :: shk(:,:,:)
-
-    ! temporary interface values of the parabola
-    real(rt), allocatable :: sxm(:,:,:,:), sym(:,:,:,:), szm(:,:,:,:)
-    real(rt), allocatable :: sxp(:,:,:,:), syp(:,:,:,:), szp(:,:,:,:)
-
-    real(rt), allocatable :: qxm(:,:,:,:), qym(:,:,:,:), qzm(:,:,:,:)
-    real(rt), allocatable :: qxp(:,:,:,:), qyp(:,:,:,:), qzp(:,:,:,:)
 
     integer :: ngf
     integer :: uin_lo(3), uin_hi(3)
@@ -180,10 +158,6 @@ contains
     shk_lo(:) = lo(:) - 1
     shk_hi(:) = hi(:) + 1
 
-    ! Note -- these should be bl_allocates. This is temporarily disabled
-    ! until bl_allocate is callable on the device.
-
-#if 0
     call bl_allocate(   div, lo(1), hi(1)+1, lo(2), hi(2)+1, lo(3), hi(3)+1)
     call bl_allocate( pdivu, lo(1), hi(1)  , lo(2), hi(2)  , lo(3), hi(3)  )
 
@@ -210,34 +184,6 @@ contains
     call bl_allocate(qint, It_lo, It_hi, NGDNV)
 
     call bl_allocate(shk, shk_lo, shk_hi)
-#endif
-
-    allocate(   div(lo(1):hi(1)+1, lo(2):hi(2)+1, lo(3):hi(3)+1))
-    allocate( pdivu(lo(1):hi(1)  , lo(2):hi(2)  , lo(3):hi(3)  ))
-
-    allocate(q1(flux1_lo(1):flux1_hi(1), flux1_lo(2):flux1_hi(2), flux1_lo(3):flux1_hi(3), NGDNV))
-    allocate(q2(flux2_lo(1):flux2_hi(1), flux2_lo(2):flux2_hi(2), flux2_hi(3):flux2_hi(3), NGDNV))
-    allocate(q3(flux3_lo(1):flux3_hi(1), flux3_lo(2):flux3_hi(2), flux3_hi(3):flux3_hi(3), NGDNV))
-
-    allocate(sxm(st_lo(1):st_hi(1), st_lo(2):st_hi(2), st_lo(3):st_hi(3), NQ))
-    allocate(sxp(st_lo(1):st_hi(1), st_lo(2):st_hi(2), st_lo(3):st_hi(3), NQ))
-    allocate(sym(st_lo(1):st_hi(1), st_lo(2):st_hi(2), st_lo(3):st_hi(3), NQ))
-    allocate(syp(st_lo(1):st_hi(1), st_lo(2):st_hi(2), st_lo(3):st_hi(3), NQ))
-    allocate(szm(st_lo(1):st_hi(1), st_lo(2):st_hi(2), st_lo(3):st_hi(3), NQ))
-    allocate(szp(st_lo(1):st_hi(1), st_lo(2):st_hi(2), st_lo(3):st_hi(3), NQ))
-
-    allocate ( qxm(It_lo(1):It_hi(1), It_lo(2):It_hi(2), It_lo(3):It_hi(3), NQ))
-    allocate ( qxp(It_lo(1):It_hi(1), It_lo(2):It_hi(2), It_lo(3):It_hi(3), NQ))
-
-    allocate ( qym(It_lo(1):It_hi(1), It_lo(2):It_hi(2), It_lo(3):It_hi(3), NQ))
-    allocate ( qyp(It_lo(1):It_hi(1), It_lo(2):It_hi(2), It_lo(3):It_hi(3), NQ))
-
-    allocate ( qzm(It_lo(1):It_hi(1), It_lo(2):It_hi(2), It_lo(3):It_hi(3), NQ))
-    allocate ( qzp(It_lo(1):It_hi(1), It_lo(2):It_hi(2), It_lo(3):It_hi(3), NQ))
-
-    allocate(qint(It_lo(1):It_hi(1), It_lo(2):It_hi(2), It_lo(3):It_hi(3), NGDNV))
-
-    allocate(shk(shk_lo(1):shk_hi(1),shk_lo(2):shk_hi(2),shk_lo(3):shk_hi(3)))
 
     shk(:,:,:) = ZERO
 
@@ -247,11 +193,7 @@ contains
                      lo, hi, dt, dx, courno)
 
     ! Compute flattening coefficient for slope calculations.
-#if 0
-    call allocate( flatn, q_lo, q_hi)
-#endif
-
-    allocate( flatn(q_lo(1):q_hi(1), q_lo(2):q_hi(2), q_lo(3):q_hi(3)))
+    call bl_allocate( flatn, q_lo, q_hi)
 
     g_lo = lo - ngf
     g_hi = hi + ngf
@@ -378,49 +320,26 @@ contains
 
     enddo
 
-#if 0
-    call deallocate(flatn)
+    call bl_deallocate(flatn)
 
-    call deallocate(sxm)
-    call deallocate(sxp)
-    call deallocate(sym)
-    call deallocate(syp)
-    call deallocate(szm)
-    call deallocate(szp)
+    call bl_deallocate(sxm)
+    call bl_deallocate(sxp)
+    call bl_deallocate(sym)
+    call bl_deallocate(syp)
+    call bl_deallocate(szm)
+    call bl_deallocate(szp)
 
-    call deallocate(qxm)
-    call deallocate(qxp)
+    call bl_deallocate(qxm)
+    call bl_deallocate(qxp)
 
-    call deallocate(qym)
-    call deallocate(qyp)
+    call bl_deallocate(qym)
+    call bl_deallocate(qyp)
 
-    call deallocate(qzm)
-    call deallocate(qzp)
+    call bl_deallocate(qzm)
+    call bl_deallocate(qzp)
 
-    call deallocate(qint)
-    call deallocate(shk)
-#endif
-
-    deallocate(flatn)
-
-    deallocate(sxm)
-    deallocate(sxp)
-    deallocate(sym)
-    deallocate(syp)
-    deallocate(szm)
-    deallocate(szp)
-
-    deallocate(qxm)
-    deallocate(qxp)
-
-    deallocate(qym)
-    deallocate(qyp)
-
-    deallocate(qzm)
-    deallocate(qzp)
-
-    deallocate(qint)
-    deallocate(shk)
+    call bl_deallocate(qint)
+    call bl_deallocate(shk)
 
     ! Compute divergence of velocity field (on surroundingNodes(lo,hi))
     edge_lo = lo
@@ -552,21 +471,12 @@ contains
        enddo
     enddo
 
-#if 0
-    call deallocate(   div)
-    call deallocate( pdivu)
+    call bl_deallocate(   div)
+    call bl_deallocate( pdivu)
 
-    call deallocate(    q1)
-    call deallocate(    q2)
-    call deallocate(    q3)
-#endif
-
-    deallocate(   div)
-    deallocate( pdivu)
-
-    deallocate(    q1)
-    deallocate(    q2)
-    deallocate(    q3)
+    call bl_deallocate(    q1)
+    call bl_deallocate(    q2)
+    call bl_deallocate(    q3)
 
   end subroutine mol_single_stage
 

@@ -26,7 +26,7 @@ contains
                     shk, s_lo, s_hi, &
                     idir, ilo, ihi, jlo, jhi, kc, kflux, k3d, domlo, domhi)
 
-!    use mempool_module, only: bl_allocate, bl_deallocate
+    use mempool_module, only: bl_allocate, bl_deallocate
     use eos_module, only: eos
     use eos_type_module, only: eos_t, eos_input_re
     use network, only: nspec, naux
@@ -65,12 +65,8 @@ contains
 
     integer           :: i, j
     integer           :: gd_lo(2), gd_hi(2)
-#if 0
     real(rt), pointer :: smallc(:,:), cavg(:,:)
     real(rt), pointer :: gamcm(:,:), gamcp(:,:)
-#endif
-    real(rt), allocatable :: smallc(:,:), cavg(:,:)
-    real(rt), allocatable :: gamcm(:,:), gamcp(:,:)
     integer           :: is_shock
     real(rt)          :: cl, cr
     type (eos_t)      :: eos_state
@@ -79,17 +75,10 @@ contains
     gd_lo = (/ ilo, jlo /)
     gd_hi = (/ ihi, jhi /)
 
-#if 0
     call bl_allocate ( smallc, gd_lo(1),gd_hi(1),gd_lo(2),gd_hi(2))
     call bl_allocate (   cavg, gd_lo(1),gd_hi(1),gd_lo(2),gd_hi(2))
     call bl_allocate (  gamcm, gd_lo(1),gd_hi(1),gd_lo(2),gd_hi(2))
     call bl_allocate (  gamcp, gd_lo(1),gd_hi(1),gd_lo(2),gd_hi(2))
-#endif
-
-    allocate ( smallc(gd_lo(1):gd_hi(1),gd_lo(2):gd_hi(2)))
-    allocate (   cavg(gd_lo(1):gd_hi(1),gd_lo(2):gd_hi(2)))
-    allocate (  gamcm(gd_lo(1):gd_hi(1),gd_lo(2):gd_hi(2)))
-    allocate (  gamcp(gd_lo(1):gd_hi(1),gd_lo(2):gd_hi(2)))
 
     if (idir == 1) then
        do j = jlo, jhi
@@ -185,17 +174,10 @@ contains
                    qint, q_lo, q_hi, &
                    idir, ilo, ihi, jlo, jhi, kc, kflux, k3d, domlo, domhi)
 
-#if 0
     call bl_deallocate(smallc)
     call bl_deallocate(  cavg)
     call bl_deallocate( gamcm)
     call bl_deallocate( gamcp)
-#endif
-
-    deallocate(smallc)
-    deallocate(  cavg)
-    deallocate( gamcm)
-    deallocate( gamcp)
 
   end subroutine cmpflx
 
@@ -210,7 +192,7 @@ contains
                        qint,q_lo,q_hi, &
                        idir,ilo,ihi,jlo,jhi,kc,kflux,k3d,domlo,domhi)
 
-  !    use mempool_module, only: bl_allocate, bl_deallocate
+    use mempool_module, only: bl_allocate, bl_deallocate
     use amrex_fort_module, only: rt => amrex_real
     use bl_constants_module, only: ZERO, HALF, ONE
     use prob_params_module, only: physbc_lo, physbc_hi, Symmetry, SlipWall, NoSlipWall
@@ -254,11 +236,7 @@ contains
     real(rt)         :: sgnm, spin, spout, ushock, frac
     real(rt)         :: wsmall, csmall,qavg
 
-#if 0
     real(rt)        , pointer :: us1d(:)
-#endif
-
-    real(rt), allocatable :: us1d(:)
 
     real(rt)         :: u_adv
 
@@ -267,10 +245,7 @@ contains
     real(rt)         :: bnd_fac_x, bnd_fac_y, bnd_fac_z
     real(rt)         :: wwinv, roinv, co2inv
 
-#if 0
     call bl_allocate(us1d,ilo,ihi)
-#endif
-    allocate(us1d(ilo:ihi))
 
     if (idir .eq. 1) then
        iu = QU
@@ -505,10 +480,7 @@ contains
        enddo
     enddo
 
-#if 0
     call bl_deallocate(us1d)
-#endif
-    deallocate(us1d)
 
   end subroutine riemannus
 

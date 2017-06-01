@@ -87,19 +87,12 @@ contains
     real(rt) :: sm, sp
 
     ! \delta s_{\ib}^{vL}
-#if 0
     real(rt), pointer :: dsvl(:,:)
-#endif
+
     real(rt) :: dsvlm, dsvl0, dsvlp
 
-    real(rt), allocatable :: dsvl(:,:)
-
     ! s_{i+\half}^{H.O.}
-#if 0
     real(rt), pointer :: sedge(:,:)
-#endif
-
-    real(rt), allocatable :: sedge(:,:)
 
 #ifndef CUDA
     if (s_lo(1) .gt. ilo1-3 .or. s_lo(2) .gt. ilo2-3) then
@@ -115,16 +108,11 @@ contains
       end if
 #endif
 
-#if 0
     ! cell-centered indexing w/extra ghost cell
     call bl_allocate(dsvl,ilo1-2,ihi1+2,ilo2-2,ihi2+2)
 
     ! edge-centered indexing
     call bl_allocate(sedge,ilo1-1,ihi1+2,ilo2-1,ihi2+2)
-#endif
-
-    allocate(dsvl(ilo1-2:ihi1+2,ilo2-2:ihi2+2))
-    allocate(sedge(ilo1-1:ihi1+2,ilo2-1:ihi2+2))
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     ! x-direction
@@ -345,13 +333,8 @@ contains
        end do
     end do
 
-#if 0
     call bl_deallocate(dsvl)
     call bl_deallocate(sedge)
-#endif
-
-    deallocate(dsvl)
-    deallocate(sedge)
 
   end subroutine ppm_type1
 
