@@ -7,9 +7,8 @@ contains
 #ifdef CUDA
   attributes(device) &
 #endif
-  subroutine uflaten(lo, hi, p, u, v, w, flatn, q_lo, q_hi)
+  subroutine uflaten(lo, hi, p, u, v, w, flatn, q_lo, q_hi, dp, z, chi)
 
-    use mempool_module, only: bl_allocate, bl_deallocate
     use bl_constants_module, only: ZERO, ONE
     use amrex_fort_module, only: rt => amrex_real
     use prob_params_module, only: dg
@@ -22,6 +21,9 @@ contains
     real(rt), intent(in   ), contiguous :: u(q_lo(1):q_hi(1),q_lo(2):q_hi(2),q_lo(3):q_hi(3))
     real(rt), intent(in   ), contiguous :: v(q_lo(1):q_hi(1),q_lo(2):q_hi(2),q_lo(3):q_hi(3))
     real(rt), intent(in   ), contiguous :: w(q_lo(1):q_hi(1),q_lo(2):q_hi(2),q_lo(3):q_hi(3))
+    real(rt), intent(inout) :: dp(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1)
+    real(rt), intent(inout) :: z(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1)
+    real(rt), intent(inout) :: chi(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1)
     real(rt), intent(inout) :: flatn(q_lo(1):q_hi(1),q_lo(2):q_hi(2),q_lo(3):q_hi(3))
 
     integer :: i, j, k, ishft
@@ -30,16 +32,9 @@ contains
 
     real(rt) :: denom, zeta, tst, tmp, ftmp
 
-    ! Local arrays
-    real(rt), pointer :: dp(:,:,:), z(:,:,:), chi(:,:,:)
-
     ! Knobs for detection of strong shock
     real(rt), parameter :: shktst = 0.33e0_rt, zcut1 = 0.75e0_rt, zcut2 = 0.85e0_rt, dzcut = ONE/(zcut2-zcut1)
 
-    call bl_allocate(dp ,lo(1)-1,hi(1)+1,lo(2)-1,hi(2)+1,lo(3)-1,hi(3)+1)
-    call bl_allocate(z  ,lo(1)-1,hi(1)+1,lo(2)-1,hi(2)+1,lo(3)-1,hi(3)+1)
-    call bl_allocate(chi,lo(1)-1,hi(1)+1,lo(2)-1,hi(2)+1,lo(3)-1,hi(3)+1)
-    
     ! x-direction flattening coef
     do k = lo(3),hi(3)
        do j = lo(2),hi(2)
@@ -146,10 +141,6 @@ contains
           enddo
        enddo
     enddo
-
-    call bl_deallocate(dp )
-    call bl_deallocate(z  )
-    call bl_deallocate(chi)
 
   end subroutine uflaten
 

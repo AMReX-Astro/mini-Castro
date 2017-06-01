@@ -69,7 +69,7 @@ contains
     real(rt), intent(in   ) :: dx(3), dt, time
     real(rt), intent(inout) :: courno
 
-    ! Automatic arrays for workspace
+    ! Arrays for workspace
     real(rt), pointer :: flatn(:,:,:)
     real(rt), pointer :: div(:,:,:)
     real(rt), pointer :: pdivu(:,:,:)
@@ -81,6 +81,21 @@ contains
     real(rt), pointer :: qint(:,:,:,:)
 
     real(rt), pointer :: shk(:,:,:)
+
+    ! Local arrays for flattening
+    real(rt), pointer :: dp(:,:,:), z(:,:,:), chi(:,:,:)
+
+    ! Local arrays in cmpflx
+    real(rt), pointer :: smallc(:,:), cavg(:,:)
+    real(rt), pointer :: gamcm(:,:), gamcp(:,:)
+
+    real(rt), pointer :: us1d(:)
+
+    ! \delta s_{\ib}^{vL}
+    real(rt), pointer :: dsvl(:,:)
+
+    ! s_{i+\half}^{H.O.}
+    real(rt), pointer :: sedge(:,:)
 
     ! temporary interface values of the parabola
     real(rt), pointer :: sxm(:,:,:,:), sym(:,:,:,:), szm(:,:,:,:)
@@ -107,6 +122,7 @@ contains
 
     integer :: edge_lo(3), edge_hi(3)
     integer :: g_lo(3), g_hi(3)
+    integer :: gd_lo(2), gd_hi(2)
 
     real(rt), parameter :: difmag = 0.1d0
 
@@ -155,6 +171,12 @@ contains
     st_lo = [lo(1) - 2, lo(2) - 2, 1]
     st_hi = [hi(1) + 2, hi(2) + 2, 2]
 
+    gd_lo = [lo(1), lo(2)]
+    gd_hi = [hi(1) + 1, hi(2) + 1]
+
+    g_lo = lo - ngf
+    g_hi = hi + ngf
+
     shk_lo(:) = lo(:) - 1
     shk_hi(:) = hi(:) + 1
 
@@ -185,6 +207,23 @@ contains
 
     call bl_allocate(shk, shk_lo, shk_hi)
 
+    call bl_allocate(dp ,g_lo(1)-1,g_hi(1)+1,g_lo(2)-1,g_hi(2)+1,g_lo(3)-1,g_hi(3)+1)
+    call bl_allocate(z  ,g_lo(1)-1,g_hi(1)+1,g_lo(2)-1,g_hi(2)+1,g_lo(3)-1,g_hi(3)+1)
+    call bl_allocate(chi,g_lo(1)-1,g_hi(1)+1,g_lo(2)-1,g_hi(2)+1,g_lo(3)-1,g_hi(3)+1)
+
+    call bl_allocate(dsvl,lo(1)-2,hi(1)+2,lo(2)-2,hi(2)+2)
+
+    call bl_allocate(sedge,lo(1)-1,hi(1)+2,lo(2)-1,hi(2)+2)
+
+    call bl_allocate ( smallc, gd_lo(1),gd_hi(1),gd_lo(2),gd_hi(2))
+    call bl_allocate (   cavg, gd_lo(1),gd_hi(1),gd_lo(2),gd_hi(2))
+    call bl_allocate (  gamcm, gd_lo(1),gd_hi(1),gd_lo(2),gd_hi(2))
+    call bl_allocate (  gamcp, gd_lo(1),gd_hi(1),gd_lo(2),gd_hi(2))
+
+    call bl_allocate(us1d, gd_lo(1), gd_hi(1))
+
+    call bl_allocate( flatn, q_lo, q_hi)
+
     shk(:,:,:) = ZERO
 
     ! Check if we have violated the CFL criterion.
@@ -193,14 +232,10 @@ contains
                      lo, hi, dt, dx, courno)
 
     ! Compute flattening coefficient for slope calculations.
-    call bl_allocate( flatn, q_lo, q_hi)
-
-    g_lo = lo - ngf
-    g_hi = hi + ngf
 
     call uflaten(g_lo, g_hi, &
                  q(:,:,:,QPRES), q(:,:,:,QU), q(:,:,:,QV), q(:,:,:,QW), &
-                 flatn, q_lo, q_hi)
+                 flatn, q_lo, q_hi, dp, z, chi)
 
     ! We come into this routine with a 3-d box of data, but we operate
     ! on it locally by considering 2 planes that encompass all of the
@@ -231,6 +266,7 @@ contains
                                flatn, q_lo, q_hi, &
                                sxm(:,:,:,n), sxp(:,:,:,n), sym(:,:,:,n), &
                                syp(:,:,:,n), szm(:,:,:,n), szp(:,:,:,n), st_lo, st_hi, &
+                               dsvl, sedge, &
                                lo(1), lo(2), hi(1), hi(2), dx, k3d, kc)
 
           ! Construct the interface states -- this is essentially just a
@@ -277,6 +313,7 @@ contains
                          qint, It_lo, It_hi, &  ! temporary
                          qaux, qa_lo, qa_hi, &
                          shk, shk_lo, shk_hi, &
+                         smallc, cavg, gamcm, gamcp, us1d, gd_lo, gd_hi, &
                          1, lo(1), hi(1)+1, lo(2), hi(2), kc, k3d, k3d, domlo, domhi)
 
              do j = lo(2), hi(2)
@@ -291,6 +328,7 @@ contains
                          qint, It_lo, It_hi, &  ! temporary
                          qaux, qa_lo, qa_hi, &
                          shk, shk_lo, shk_hi, &
+                         smallc, cavg, gamcm, gamcp, us1d, gd_lo, gd_hi, &
                          2, lo(1), hi(1), lo(2), hi(2)+1, kc, k3d, k3d, domlo, domhi)
 
              do j = lo(2), hi(2)+1
@@ -307,6 +345,7 @@ contains
                       qint, It_lo, It_hi, &
                       qaux, qa_lo, qa_hi, &
                       shk, shk_lo, shk_hi, &
+                      smallc, cavg, gamcm, gamcp, us1d, gd_lo, gd_hi, &
                       3, lo(1), hi(1), lo(2), hi(2), kc, k3d, k3d, domlo, domhi)
 
           do j=lo(2), hi(2)
@@ -319,28 +358,7 @@ contains
 
 
     enddo
-
-    call bl_deallocate(flatn)
-
-    call bl_deallocate(sxm)
-    call bl_deallocate(sxp)
-    call bl_deallocate(sym)
-    call bl_deallocate(syp)
-    call bl_deallocate(szm)
-    call bl_deallocate(szp)
-
-    call bl_deallocate(qxm)
-    call bl_deallocate(qxp)
-
-    call bl_deallocate(qym)
-    call bl_deallocate(qyp)
-
-    call bl_deallocate(qzm)
-    call bl_deallocate(qzp)
-
-    call bl_deallocate(qint)
-    call bl_deallocate(shk)
-
+   
     ! Compute divergence of velocity field (on surroundingNodes(lo,hi))
     edge_lo = lo
     edge_hi = hi + 1
@@ -470,6 +488,41 @@ contains
           enddo
        enddo
     enddo
+
+    call bl_deallocate(dsvl)
+    call bl_deallocate(sedge)
+
+    call bl_deallocate(dp )
+    call bl_deallocate(z  )
+    call bl_deallocate(chi)
+
+    call bl_deallocate(smallc)
+    call bl_deallocate(  cavg)
+    call bl_deallocate( gamcm)
+    call bl_deallocate( gamcp)
+
+    call bl_deallocate(us1d)
+
+    call bl_deallocate(flatn)
+
+    call bl_deallocate(sxm)
+    call bl_deallocate(sxp)
+    call bl_deallocate(sym)
+    call bl_deallocate(syp)
+    call bl_deallocate(szm)
+    call bl_deallocate(szp)
+
+    call bl_deallocate(qxm)
+    call bl_deallocate(qxp)
+
+    call bl_deallocate(qym)
+    call bl_deallocate(qyp)
+
+    call bl_deallocate(qzm)
+    call bl_deallocate(qzp)
+
+    call bl_deallocate(qint)
+    call bl_deallocate(shk)
 
     call bl_deallocate(   div)
     call bl_deallocate( pdivu)

@@ -24,9 +24,9 @@ contains
                     qint, q_lo, q_hi, &
                     qaux, qa_lo, qa_hi, &
                     shk, s_lo, s_hi, &
+                    smallc, cavg, gamcm, gamcp, us1d, gd_lo, gd_hi, &
                     idir, ilo, ihi, jlo, jhi, kc, kflux, k3d, domlo, domhi)
 
-    use mempool_module, only: bl_allocate, bl_deallocate
     use eos_module, only: eos
     use eos_type_module, only: eos_t, eos_input_re
     use network, only: nspec, naux
@@ -38,6 +38,7 @@ contains
     integer, intent(in) :: q_lo(3), q_hi(3)
     integer, intent(in) :: qa_lo(3), qa_hi(3)
     integer, intent(in) :: s_lo(3), s_hi(3)
+    integer, intent(in) :: gd_lo(2), gd_hi(2)
     integer, intent(in) :: idir,ilo,ihi,jlo,jhi,kc,kflux,k3d
     integer, intent(in) :: domlo(3),domhi(3)
 
@@ -50,6 +51,12 @@ contains
 
     real(rt), intent(inout) :: qm(qpd_lo(1):qpd_hi(1),qpd_lo(2):qpd_hi(2),qpd_lo(3):qpd_hi(3),NQ)
     real(rt), intent(inout) :: qp(qpd_lo(1):qpd_hi(1),qpd_lo(2):qpd_hi(2),qpd_lo(3):qpd_hi(3),NQ)
+
+    real(rt), intent(inout) :: smallc(gd_lo(1):gd_hi(1),gd_lo(2):gd_hi(2))
+    real(rt), intent(inout) ::   cavg(gd_lo(1):gd_hi(1),gd_lo(2):gd_hi(2))
+    real(rt), intent(inout) ::  gamcm(gd_lo(1):gd_hi(1),gd_lo(2):gd_hi(2))
+    real(rt), intent(inout) ::  gamcp(gd_lo(1):gd_hi(1),gd_lo(2):gd_hi(2))
+    real(rt), intent(inout) ::   us1d(gd_lo(1):gd_hi(1))
 
     real(rt), intent(inout) ::    flx(flx_lo(1):flx_hi(1),flx_lo(2):flx_hi(2),flx_lo(3):flx_hi(3),NVAR)
     real(rt), intent(inout) ::   qint(q_lo(1):q_hi(1),q_lo(2):q_hi(2),q_lo(3):q_hi(3),NGDNV)
@@ -64,21 +71,10 @@ contains
     ! local variables
 
     integer           :: i, j
-    integer           :: gd_lo(2), gd_hi(2)
-    real(rt), pointer :: smallc(:,:), cavg(:,:)
-    real(rt), pointer :: gamcm(:,:), gamcp(:,:)
     integer           :: is_shock
     real(rt)          :: cl, cr
     type (eos_t)      :: eos_state
     real(rt)          :: rhoInv
-
-    gd_lo = (/ ilo, jlo /)
-    gd_hi = (/ ihi, jhi /)
-
-    call bl_allocate ( smallc, gd_lo(1),gd_hi(1),gd_lo(2),gd_hi(2))
-    call bl_allocate (   cavg, gd_lo(1),gd_hi(1),gd_lo(2),gd_hi(2))
-    call bl_allocate (  gamcm, gd_lo(1),gd_hi(1),gd_lo(2),gd_hi(2))
-    call bl_allocate (  gamcp, gd_lo(1),gd_hi(1),gd_lo(2),gd_hi(2))
 
     if (idir == 1) then
        do j = jlo, jhi
@@ -169,15 +165,10 @@ contains
 #endif
 
     call riemannus(qm, qp, qpd_lo, qpd_hi, &
-                   gamcm, gamcp, cavg, smallc, gd_lo, gd_hi, &
+                   gamcm, gamcp, cavg, smallc, us1d, gd_lo, gd_hi, &
                    flx, flx_lo, flx_hi, &
                    qint, q_lo, q_hi, &
                    idir, ilo, ihi, jlo, jhi, kc, kflux, k3d, domlo, domhi)
-
-    call bl_deallocate(smallc)
-    call bl_deallocate(  cavg)
-    call bl_deallocate( gamcm)
-    call bl_deallocate( gamcp)
 
   end subroutine cmpflx
 
@@ -187,12 +178,11 @@ contains
   attributes(device) &
 #endif
   subroutine riemannus(ql,qr,qpd_lo,qpd_hi, &
-                       gamcl,gamcr,cav,smallc,gd_lo,gd_hi, &
+                       gamcl,gamcr,cav,smallc,us1d,gd_lo,gd_hi, &
                        uflx,uflx_lo,uflx_hi, &
                        qint,q_lo,q_hi, &
                        idir,ilo,ihi,jlo,jhi,kc,kflux,k3d,domlo,domhi)
 
-    use mempool_module, only: bl_allocate, bl_deallocate
     use amrex_fort_module, only: rt => amrex_real
     use bl_constants_module, only: ZERO, HALF, ONE
     use prob_params_module, only: physbc_lo, physbc_hi, Symmetry, SlipWall, NoSlipWall
@@ -200,22 +190,23 @@ contains
     real(rt), parameter :: small = 1.e-8_rt
     real(rt), parameter :: small_pres = 1.e-200_rt
 
-    integer :: qpd_lo(3),qpd_hi(3)
-    integer :: gd_lo(2),gd_hi(2)
-    integer :: uflx_lo(3),uflx_hi(3)
-    integer :: q_lo(3),q_hi(3)
-    integer :: idir,ilo,ihi,jlo,jhi
-    integer :: domlo(3),domhi(3)
+    integer,  intent(in   ) :: qpd_lo(3),qpd_hi(3)
+    integer,  intent(in   ) :: gd_lo(2),gd_hi(2)
+    integer,  intent(in   ) :: uflx_lo(3),uflx_hi(3)
+    integer,  intent(in   ) :: q_lo(3),q_hi(3)
+    integer,  intent(in   ) :: idir,ilo,ihi,jlo,jhi
+    integer,  intent(in   ) :: domlo(3),domhi(3)
 
-    real(rt)         :: ql(qpd_lo(1):qpd_hi(1),qpd_lo(2):qpd_hi(2),qpd_lo(3):qpd_hi(3),NQ)
-    real(rt)         :: qr(qpd_lo(1):qpd_hi(1),qpd_lo(2):qpd_hi(2),qpd_lo(3):qpd_hi(3),NQ)
+    real(rt), intent(in   ) :: ql(qpd_lo(1):qpd_hi(1),qpd_lo(2):qpd_hi(2),qpd_lo(3):qpd_hi(3),NQ)
+    real(rt), intent(in   ) :: qr(qpd_lo(1):qpd_hi(1),qpd_lo(2):qpd_hi(2),qpd_lo(3):qpd_hi(3),NQ)
 
-    real(rt)         ::  gamcl(gd_lo(1):gd_hi(1),gd_lo(2):gd_hi(2))
-    real(rt)         ::  gamcr(gd_lo(1):gd_hi(1),gd_lo(2):gd_hi(2))
-    real(rt)         ::    cav(gd_lo(1):gd_hi(1),gd_lo(2):gd_hi(2))
-    real(rt)         :: smallc(gd_lo(1):gd_hi(1),gd_lo(2):gd_hi(2))
-    real(rt)         :: uflx(uflx_lo(1):uflx_hi(1),uflx_lo(2):uflx_hi(2),uflx_lo(3):uflx_hi(3),NVAR)
-    real(rt)         ::    qint(q_lo(1):q_hi(1),q_lo(2):q_hi(2),q_lo(3):q_hi(3),NGDNV)
+    real(rt), intent(inout) ::  gamcl(gd_lo(1):gd_hi(1),gd_lo(2):gd_hi(2))
+    real(rt), intent(inout) ::  gamcr(gd_lo(1):gd_hi(1),gd_lo(2):gd_hi(2))
+    real(rt), intent(inout) ::    cav(gd_lo(1):gd_hi(1),gd_lo(2):gd_hi(2))
+    real(rt), intent(inout) :: smallc(gd_lo(1):gd_hi(1),gd_lo(2):gd_hi(2))
+    real(rt), intent(inout) :: us1d(gd_lo(1):gd_hi(1))
+    real(rt), intent(inout) :: uflx(uflx_lo(1):uflx_hi(1),uflx_lo(2):uflx_hi(2),uflx_lo(3):uflx_hi(3),NVAR)
+    real(rt), intent(inout) ::    qint(q_lo(1):q_hi(1),q_lo(2):q_hi(2),q_lo(3):q_hi(3),NGDNV)
 
     ! Note:  Here k3d is the k corresponding to the full 3d array --
     !         it should be used for print statements or tests against domlo, domhi, etc
@@ -227,25 +218,21 @@ contains
     integer :: i,j,kc,kflux,k3d
     integer :: n, nqp, ipassive
 
-    real(rt)         :: regdnv
-    real(rt)         :: rl, ul, v1l, v2l, pl, rel
-    real(rt)         :: rr, ur, v1r, v2r, pr, rer
-    real(rt)         :: wl, wr, rhoetot, scr
-    real(rt)         :: rstar, cstar, estar, pstar, ustar
-    real(rt)         :: ro, uo, po, reo, co, gamco, entho, drho
-    real(rt)         :: sgnm, spin, spout, ushock, frac
-    real(rt)         :: wsmall, csmall,qavg
+    real(rt) :: regdnv
+    real(rt) :: rl, ul, v1l, v2l, pl, rel
+    real(rt) :: rr, ur, v1r, v2r, pr, rer
+    real(rt) :: wl, wr, rhoetot, scr
+    real(rt) :: rstar, cstar, estar, pstar, ustar
+    real(rt) :: ro, uo, po, reo, co, gamco, entho, drho
+    real(rt) :: sgnm, spin, spout, ushock, frac
+    real(rt) :: wsmall, csmall,qavg
 
-    real(rt)        , pointer :: us1d(:)
-
-    real(rt)         :: u_adv
+    real(rt) :: u_adv
 
     integer :: iu, iv1, iv2, im1, im2, im3
     logical :: special_bnd_lo, special_bnd_hi, special_bnd_lo_x, special_bnd_hi_x
     real(rt)         :: bnd_fac_x, bnd_fac_y, bnd_fac_z
     real(rt)         :: wwinv, roinv, co2inv
-
-    call bl_allocate(us1d,ilo,ihi)
 
     if (idir .eq. 1) then
        iu = QU
@@ -479,8 +466,6 @@ contains
 
        enddo
     enddo
-
-    call bl_deallocate(us1d)
 
   end subroutine riemannus
 

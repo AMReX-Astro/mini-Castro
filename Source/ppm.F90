@@ -16,29 +16,33 @@ contains
   subroutine ppm_reconstruct(s, s_lo, s_hi, &
                              flatn, f_lo, f_hi, &
                              sxm, sxp, sym, syp, szm, szp, sd_lo, sd_hi, &
+                             dsvl, sedge, &
                              ilo1, ilo2, ihi1, ihi2, dx, k3d, kc)
 
     implicit none
 
     integer, intent(in) ::  s_lo(3),  s_hi(3)
-    integer, intent(in) ::  sd_lo(3),  sd_hi(3)
+    integer, intent(in) :: sd_lo(3), sd_hi(3)
     integer, intent(in) ::  f_lo(3),  f_hi(3)
     integer, intent(in) :: ilo1, ilo2, ihi1, ihi2
     integer, intent(in) :: k3d, kc
 
-    real(rt)        , intent(in) ::     s( s_lo(1): s_hi(1), s_lo(2): s_hi(2), s_lo(3): s_hi(3))
-    real(rt)        , intent(in) :: flatn( f_lo(1): f_hi(1), f_lo(2): f_hi(2), f_lo(3): f_hi(3))
-    real(rt)        , intent(inout) :: sxm( sd_lo(1): sd_hi(1), sd_lo(2): sd_hi(2), sd_lo(3): sd_hi(3))
-    real(rt)        , intent(inout) :: sxp( sd_lo(1): sd_hi(1), sd_lo(2): sd_hi(2), sd_lo(3): sd_hi(3))
-    real(rt)        , intent(inout) :: sym( sd_lo(1): sd_hi(1), sd_lo(2): sd_hi(2), sd_lo(3): sd_hi(3))
-    real(rt)        , intent(inout) :: syp( sd_lo(1): sd_hi(1), sd_lo(2): sd_hi(2), sd_lo(3): sd_hi(3))
-    real(rt)        , intent(inout) :: szm( sd_lo(1): sd_hi(1), sd_lo(2): sd_hi(2), sd_lo(3): sd_hi(3))
-    real(rt)        , intent(inout) :: szp( sd_lo(1): sd_hi(1), sd_lo(2): sd_hi(2), sd_lo(3): sd_hi(3))
-    real(rt)        , intent(in) :: dx(3)
+    real(rt), intent(in   ) ::     s( s_lo(1): s_hi(1), s_lo(2): s_hi(2), s_lo(3): s_hi(3))
+    real(rt), intent(in   ) :: flatn( f_lo(1): f_hi(1), f_lo(2): f_hi(2), f_lo(3): f_hi(3))
+    real(rt), intent(inout) :: sxm( sd_lo(1): sd_hi(1), sd_lo(2): sd_hi(2), sd_lo(3): sd_hi(3))
+    real(rt), intent(inout) :: sxp( sd_lo(1): sd_hi(1), sd_lo(2): sd_hi(2), sd_lo(3): sd_hi(3))
+    real(rt), intent(inout) :: sym( sd_lo(1): sd_hi(1), sd_lo(2): sd_hi(2), sd_lo(3): sd_hi(3))
+    real(rt), intent(inout) :: syp( sd_lo(1): sd_hi(1), sd_lo(2): sd_hi(2), sd_lo(3): sd_hi(3))
+    real(rt), intent(inout) :: szm( sd_lo(1): sd_hi(1), sd_lo(2): sd_hi(2), sd_lo(3): sd_hi(3))
+    real(rt), intent(inout) :: szp( sd_lo(1): sd_hi(1), sd_lo(2): sd_hi(2), sd_lo(3): sd_hi(3))
+    real(rt), intent(inout) :: dsvl(ilo1-2:ihi1+2,ilo2-2:ihi2+2)
+    real(rt), intent(inout) :: sedge(ilo1-1:ihi1+2,ilo2-1:ihi2+2)
+    real(rt), intent(in   ) :: dx(3)
 
     call ppm_type1(s, s_lo, s_hi, &
                    flatn, f_lo, f_hi, &
                    sxm, sxp, sym, syp, szm, szp, sd_lo, sd_hi, &
+                   dsvl, sedge, &
                    ilo1, ilo2, ihi1, ihi2, dx, k3d, kc)
 
 
@@ -54,9 +58,9 @@ contains
   subroutine ppm_type1(s, s_lo, s_hi, &
                        flatn, f_lo, f_hi, &
                        sxm, sxp, sym, syp, szm, szp, sd_lo, sd_hi, &
+                       dsvl, sedge, &
                        ilo1, ilo2, ihi1, ihi2, dx, k3d, kc)
 
-    use mempool_module, only: bl_allocate, bl_deallocate
     use amrex_fort_module, only: rt => amrex_real
 
     implicit none
@@ -67,15 +71,17 @@ contains
     integer, intent(in) :: ilo1, ilo2, ihi1, ihi2
     integer, intent(in) :: k3d, kc
 
-    real(rt)        , intent(in) ::     s( s_lo(1): s_hi(1), s_lo(2): s_hi(2), s_lo(3): s_hi(3))
-    real(rt)        , intent(in) :: flatn( f_lo(1): f_hi(1), f_lo(2): f_hi(2), f_lo(3): f_hi(3))
-    real(rt)        , intent(inout) :: sxm( sd_lo(1): sd_hi(1), sd_lo(2): sd_hi(2), sd_lo(3): sd_hi(3))
-    real(rt)        , intent(inout) :: sxp( sd_lo(1): sd_hi(1), sd_lo(2): sd_hi(2), sd_lo(3): sd_hi(3))
-    real(rt)        , intent(inout) :: sym( sd_lo(1): sd_hi(1), sd_lo(2): sd_hi(2), sd_lo(3): sd_hi(3))
-    real(rt)        , intent(inout) :: syp( sd_lo(1): sd_hi(1), sd_lo(2): sd_hi(2), sd_lo(3): sd_hi(3))
-    real(rt)        , intent(inout) :: szm( sd_lo(1): sd_hi(1), sd_lo(2): sd_hi(2), sd_lo(3): sd_hi(3))
-    real(rt)        , intent(inout) :: szp( sd_lo(1): sd_hi(1), sd_lo(2): sd_hi(2), sd_lo(3): sd_hi(3))
-    real(rt)        , intent(in) :: dx(3)
+    real(rt), intent(in) ::     s( s_lo(1): s_hi(1), s_lo(2): s_hi(2), s_lo(3): s_hi(3))
+    real(rt), intent(in) :: flatn( f_lo(1): f_hi(1), f_lo(2): f_hi(2), f_lo(3): f_hi(3))
+    real(rt), intent(inout) :: sxm( sd_lo(1): sd_hi(1), sd_lo(2): sd_hi(2), sd_lo(3): sd_hi(3))
+    real(rt), intent(inout) :: sxp( sd_lo(1): sd_hi(1), sd_lo(2): sd_hi(2), sd_lo(3): sd_hi(3))
+    real(rt), intent(inout) :: sym( sd_lo(1): sd_hi(1), sd_lo(2): sd_hi(2), sd_lo(3): sd_hi(3))
+    real(rt), intent(inout) :: syp( sd_lo(1): sd_hi(1), sd_lo(2): sd_hi(2), sd_lo(3): sd_hi(3))
+    real(rt), intent(inout) :: szm( sd_lo(1): sd_hi(1), sd_lo(2): sd_hi(2), sd_lo(3): sd_hi(3))
+    real(rt), intent(inout) :: szp( sd_lo(1): sd_hi(1), sd_lo(2): sd_hi(2), sd_lo(3): sd_hi(3))
+    real(rt), intent(inout) :: dsvl(ilo1-2:ihi1+2,ilo2-2:ihi2+2)
+    real(rt), intent(inout) :: sedge(ilo1-1:ihi1+2,ilo2-1:ihi2+2)
+    real(rt), intent(in) :: dx(3)
 
     ! local
     integer :: i,j,k
@@ -86,13 +92,7 @@ contains
     ! s_{\ib,+}, s_{\ib,-}
     real(rt) :: sm, sp
 
-    ! \delta s_{\ib}^{vL}
-    real(rt), pointer :: dsvl(:,:)
-
     real(rt) :: dsvlm, dsvl0, dsvlp
-
-    ! s_{i+\half}^{H.O.}
-    real(rt), pointer :: sedge(:,:)
 
 #ifndef CUDA
     if (s_lo(1) .gt. ilo1-3 .or. s_lo(2) .gt. ilo2-3) then
@@ -107,12 +107,6 @@ contains
          call bl_error("Need more ghost cells on array in ppm_type1")
       end if
 #endif
-
-    ! cell-centered indexing w/extra ghost cell
-    call bl_allocate(dsvl,ilo1-2,ihi1+2,ilo2-2,ihi2+2)
-
-    ! edge-centered indexing
-    call bl_allocate(sedge,ilo1-1,ihi1+2,ilo2-1,ihi2+2)
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     ! x-direction
@@ -332,9 +326,6 @@ contains
 
        end do
     end do
-
-    call bl_deallocate(dsvl)
-    call bl_deallocate(sedge)
 
   end subroutine ppm_type1
 
