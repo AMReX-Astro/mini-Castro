@@ -201,26 +201,26 @@ contains
                 ! x-edges
 
                 ! left state at i-1/2 interface
-                h%qxm(i,j,kc,n) = h%sxp(i-1,j,kc,n)
+                h%qm(i,j,kc,n,1) = h%sxp(i-1,j,kc,n)
 
                 ! right state at i-1/2 interface
-                h%qxp(i,j,kc,n) = h%sxm(i,j,kc,n)
+                h%qp(i,j,kc,n,1) = h%sxm(i,j,kc,n)
 
                 ! y-edges
 
                 ! left state at j-1/2 interface
-                h%qym(i,j,kc,n) = h%syp(i,j-1,kc,n)
+                h%qm(i,j,kc,n,2) = h%syp(i,j-1,kc,n)
 
                 ! right state at j-1/2 interface
-                h%qyp(i,j,kc,n) = h%sym(i,j,kc,n)
+                h%qp(i,j,kc,n,2) = h%sym(i,j,kc,n)
 
                 ! z-edges
 
                 ! left state at k3d-1/2 interface
-                h%qzm(i,j,kc,n) = h%szp(i,j,km,n)
+                h%qm(i,j,kc,n,3) = h%szp(i,j,km,n)
 
                 ! right state at k3d-1/2 interface
-                h%qzp(i,j,kc,n) = h%szm(i,j,kc,n)
+                h%qp(i,j,kc,n,3) = h%szm(i,j,kc,n)
 
              enddo
           enddo
@@ -231,13 +231,9 @@ contains
 
           ! Compute F^x at kc (k3d)
           if (k3d <= hi(3)) then
-             call cmpflx(h%qxm, h%qxp, It_lo, It_hi, &
-                         flux1, flux1_lo, flux1_hi, &
-                         h%qint, It_lo, It_hi, &  ! temporary
+             call cmpflx(flux1, flux1_lo, flux1_hi, &
                          qaux, qa_lo, qa_hi, &
-                         h%shk, shk_lo, shk_hi, &
-                         h%smallc, h%cavg, h%gamcm, h%gamcp, h%us1d, gd_lo, gd_hi, &
-                         1, lo(1), hi(1)+1, lo(2), hi(2), kc, k3d, k3d, domlo, domhi)
+                         h, 1, lo(1), hi(1)+1, lo(2), hi(2), kc, k3d, k3d, domlo, domhi)
 
              do j = lo(2), hi(2)
                 do i = lo(1), hi(1)+1
@@ -246,13 +242,9 @@ contains
              enddo
 
              ! Compute F^y at kc (k3d)
-             call cmpflx(h%qym, h%qyp, It_lo, It_hi, &
-                         flux2, flux2_lo, flux2_hi, &
-                         h%qint, It_lo, It_hi, &  ! temporary
+             call cmpflx(flux2, flux2_lo, flux2_hi, &
                          qaux, qa_lo, qa_hi, &
-                         h%shk, shk_lo, shk_hi, &
-                         h%smallc, h%cavg, h%gamcm, h%gamcp, h%us1d, gd_lo, gd_hi, &
-                         2, lo(1), hi(1), lo(2), hi(2)+1, kc, k3d, k3d, domlo, domhi)
+                         h, 2, lo(1), hi(1), lo(2), hi(2)+1, kc, k3d, k3d, domlo, domhi)
 
              do j = lo(2), hi(2)+1
                 do i = lo(1), hi(1)
@@ -263,13 +255,9 @@ contains
 
           ! Compute F^z at kc (k3d)
 
-          call cmpflx(h%qzm, h%qzp, It_lo, It_hi, &
-                      flux3, flux3_lo, flux3_hi, &
-                      h%qint, It_lo, It_hi, &
+          call cmpflx(flux3, flux3_lo, flux3_hi, &
                       qaux, qa_lo, qa_hi, &
-                      h%shk, shk_lo, shk_hi, &
-                      h%smallc, h%cavg, h%gamcm, h%gamcp, h%us1d, gd_lo, gd_hi, &
-                      3, lo(1), hi(1), lo(2), hi(2), kc, k3d, k3d, domlo, domhi)
+                      h, 3, lo(1), hi(1), lo(2), hi(2), kc, k3d, k3d, domlo, domhi)
 
           do j=lo(2), hi(2)
              do i=lo(1), hi(1)

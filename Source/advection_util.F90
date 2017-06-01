@@ -41,8 +41,8 @@ module advection_util_module
      real(rt), pointer :: sxm(:,:,:,:), sym(:,:,:,:), szm(:,:,:,:)
      real(rt), pointer :: sxp(:,:,:,:), syp(:,:,:,:), szp(:,:,:,:)
 
-     real(rt), pointer :: qxm(:,:,:,:), qym(:,:,:,:), qzm(:,:,:,:)
-     real(rt), pointer :: qxp(:,:,:,:), qyp(:,:,:,:), qzp(:,:,:,:)
+     real(rt), pointer :: qm(:,:,:,:,:)
+     real(rt), pointer :: qp(:,:,:,:,:)
 
   end type ht
 
@@ -715,14 +715,8 @@ contains
     call bl_allocate(h % szm, st_lo, st_hi, NQ)
     call bl_allocate(h % szp, st_lo, st_hi, NQ)
 
-    call bl_allocate (h % qxm, It_lo, It_hi, NQ)
-    call bl_allocate (h % qxp, It_lo, It_hi, NQ)
-
-    call bl_allocate (h % qym, It_lo, It_hi, NQ)
-    call bl_allocate (h % qyp, It_lo, It_hi, NQ)
-
-    call bl_allocate (h % qzm, It_lo, It_hi, NQ)
-    call bl_allocate (h % qzp, It_lo, It_hi, NQ)
+    call bl_allocate (h % qm, It_lo(1), It_hi(1), It_lo(2), It_hi(2), It_lo(3), It_hi(3), 1, NQ, 1, 3)
+    call bl_allocate (h % qp, It_lo(1), It_hi(1), It_lo(2), It_hi(2), It_lo(3), It_hi(3), 1, NQ, 1, 3)
 
     call bl_allocate(h % qint, It_lo, It_hi, NGDNV)
 
@@ -781,14 +775,8 @@ contains
     call bl_deallocate(h % szm)
     call bl_deallocate(h % szp)
 
-    call bl_deallocate(h % qxm)
-    call bl_deallocate(h % qxp)
-
-    call bl_deallocate(h % qym)
-    call bl_deallocate(h % qyp)
-
-    call bl_deallocate(h % qzm)
-    call bl_deallocate(h % qzp)
+    call bl_deallocate(h % qm)
+    call bl_deallocate(h % qp)
 
     call bl_deallocate(h % qint)
     call bl_deallocate(h % shk)

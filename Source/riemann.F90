@@ -9,6 +9,7 @@ module riemann_module
                                 QC, QCSML, QGAMC, &
                                 small_dens, small_temp, &
                                 npassive, upass_map, qpass_map
+  use advection_util_module, only: ht
 
   implicit none
 
@@ -19,13 +20,9 @@ contains
 #ifdef CUDA
   attributes(device) &
 #endif
-  subroutine cmpflx(qm, qp, qpd_lo, qpd_hi, &
-                    flx, flx_lo, flx_hi, &
-                    qint, q_lo, q_hi, &
+  subroutine cmpflx(flx, flx_lo, flx_hi, &
                     qaux, qa_lo, qa_hi, &
-                    shk, s_lo, s_hi, &
-                    smallc, cavg, gamcm, gamcp, us1d, gd_lo, gd_hi, &
-                    idir, ilo, ihi, jlo, jhi, kc, kflux, k3d, domlo, domhi)
+                    h, idir, ilo, ihi, jlo, jhi, kc, kflux, k3d, domlo, domhi)
 
     use eos_module, only: eos
     use eos_type_module, only: eos_t, eos_input_re
@@ -33,77 +30,56 @@ contains
     use amrex_fort_module, only: rt => amrex_real
     use bl_constants_module, only: ZERO, HALF, ONE
 
-    integer, intent(in) :: qpd_lo(3), qpd_hi(3)
-    integer, intent(in) :: flx_lo(3), flx_hi(3)
-    integer, intent(in) :: q_lo(3), q_hi(3)
-    integer, intent(in) :: qa_lo(3), qa_hi(3)
-    integer, intent(in) :: s_lo(3), s_hi(3)
-    integer, intent(in) :: gd_lo(2), gd_hi(2)
-    integer, intent(in) :: idir,ilo,ihi,jlo,jhi,kc,kflux,k3d
-    integer, intent(in) :: domlo(3),domhi(3)
+    integer,  intent(in   ) :: flx_lo(3), flx_hi(3)
+    integer,  intent(in   ) :: qa_lo(3), qa_hi(3)
+    integer,  intent(in   ) :: idir,ilo,ihi,jlo,jhi,kc,kflux,k3d
+    integer,  intent(in   ) :: domlo(3),domhi(3)
 
-    ! note: qm, qp, q come in as planes (all of x,y
-    ! zones but only 2 elements in the z dir) instead of being
-    ! dimensioned the same as the full box.  We index these with kc
-    ! flux either comes in as planes (like qm, qp, ... above), or
-    ! comes in dimensioned as the full box.  We index the flux with
-    ! kflux -- this will be set correctly for the different cases.
+    type(ht), intent(inout) :: h
 
-    real(rt), intent(inout) :: qm(qpd_lo(1):qpd_hi(1),qpd_lo(2):qpd_hi(2),qpd_lo(3):qpd_hi(3),NQ)
-    real(rt), intent(inout) :: qp(qpd_lo(1):qpd_hi(1),qpd_lo(2):qpd_hi(2),qpd_lo(3):qpd_hi(3),NQ)
-
-    real(rt), intent(inout) :: smallc(gd_lo(1):gd_hi(1),gd_lo(2):gd_hi(2))
-    real(rt), intent(inout) ::   cavg(gd_lo(1):gd_hi(1),gd_lo(2):gd_hi(2))
-    real(rt), intent(inout) ::  gamcm(gd_lo(1):gd_hi(1),gd_lo(2):gd_hi(2))
-    real(rt), intent(inout) ::  gamcp(gd_lo(1):gd_hi(1),gd_lo(2):gd_hi(2))
-    real(rt), intent(inout) ::   us1d(gd_lo(1):gd_hi(1))
-
-    real(rt), intent(inout) ::    flx(flx_lo(1):flx_hi(1),flx_lo(2):flx_hi(2),flx_lo(3):flx_hi(3),NVAR)
-    real(rt), intent(inout) ::   qint(q_lo(1):q_hi(1),q_lo(2):q_hi(2),q_lo(3):q_hi(3),NGDNV)
+    real(rt), intent(inout) :: flx(flx_lo(1):flx_hi(1),flx_lo(2):flx_hi(2),flx_lo(3):flx_hi(3),NVAR)
 
     ! qaux come in dimensioned as the full box, so we use k3d here to
     ! index it in z
 
     real(rt), intent(in) :: qaux(qa_lo(1):qa_hi(1),qa_lo(2):qa_hi(2),qa_lo(3):qa_hi(3),NQAUX)
 
-    real(rt), intent(in) ::  shk(s_lo(1):s_hi(1),s_lo(2):s_hi(2),s_lo(3):s_hi(3))
-
     ! local variables
 
-    integer           :: i, j
-    integer           :: is_shock
-    real(rt)          :: cl, cr
-    type (eos_t)      :: eos_state
-    real(rt)          :: rhoInv
+    integer      :: i, j
+    integer      :: is_shock
+    real(rt)     :: cl, cr
+    type (eos_t) :: eos_state
+    real(rt)     :: rhoInv
 
     if (idir == 1) then
        do j = jlo, jhi
           !dir$ ivdep
           do i = ilo, ihi
-             smallc(i,j) = max( qaux(i,j,k3d,QCSML), qaux(i-1,j,k3d,QCSML) )
-             cavg(i,j) = HALF*( qaux(i,j,k3d,QC) + qaux(i-1,j,k3d,QC) )
-             gamcm(i,j) = qaux(i-1,j,k3d,QGAMC)
-             gamcp(i,j) = qaux(i,j,k3d,QGAMC)
+             h%smallc(i,j) = max( qaux(i,j,k3d,QCSML), qaux(i-1,j,k3d,QCSML) )
+             h%cavg(i,j) = HALF*( qaux(i,j,k3d,QC) + qaux(i-1,j,k3d,QC) )
+             h%gamcm(i,j) = qaux(i-1,j,k3d,QGAMC)
+             h%gamcp(i,j) = qaux(i,j,k3d,QGAMC)
           enddo
        enddo
     elseif (idir == 2) then
        do j = jlo, jhi
           !dir$ ivdep
           do i = ilo, ihi
-             smallc(i,j) = max( qaux(i,j,k3d,QCSML), qaux(i,j-1,k3d,QCSML) )
-             cavg(i,j) = HALF*( qaux(i,j,k3d,QC) + qaux(i,j-1,k3d,QC) )
-             gamcm(i,j) = qaux(i,j-1,k3d,QGAMC)
-             gamcp(i,j) = qaux(i,j,k3d,QGAMC)
+             h%smallc(i,j) = max( qaux(i,j,k3d,QCSML), qaux(i,j-1,k3d,QCSML) )
+             h%cavg(i,j) = HALF*( qaux(i,j,k3d,QC) + qaux(i,j-1,k3d,QC) )
+             h%gamcm(i,j) = qaux(i,j-1,k3d,QGAMC)
+             h%gamcp(i,j) = qaux(i,j,k3d,QGAMC)
           enddo
        enddo
     else
        do j = jlo, jhi
           !dir$ ivdep
           do i = ilo, ihi
-             smallc(i,j) = max( qaux(i,j,k3d,QCSML), qaux(i,j,k3d-1,QCSML) )
-             cavg(i,j) = HALF*( qaux(i,j,k3d,QC) + qaux(i,j,k3d-1,QC) )
-             gamcm(i,j) = qaux(i,j,k3d-1,QGAMC)
-             gamcp(i,j) = qaux(i,j,k3d,QGAMC)
+             h%smallc(i,j) = max( qaux(i,j,k3d,QCSML), qaux(i,j,k3d-1,QCSML) )
+             h%cavg(i,j) = HALF*( qaux(i,j,k3d,QC) + qaux(i,j,k3d-1,QC) )
+             h%gamcm(i,j) = qaux(i,j,k3d-1,QGAMC)
+             h%gamcp(i,j) = qaux(i,j,k3d,QGAMC)
           enddo
        enddo
     endif
@@ -128,17 +104,17 @@ contains
           eos_state % T = 10000.0e0_rt
 
           ! minus state
-          eos_state % rho = qm(i,j,kc,QRHO)
-          eos_state % p   = qm(i,j,kc,QPRES)
-          eos_state % e   = qm(i,j,kc,QREINT)/qm(i,j,kc,QRHO)
-          eos_state % xn  = qm(i,j,kc,QFS:QFS+nspec-1)
-          eos_state % aux = qm(i,j,kc,QFX:QFX+naux-1)
+          eos_state % rho = h%qm(i,j,kc,QRHO,idir)
+          eos_state % p   = h%qm(i,j,kc,QPRES,idir)
+          eos_state % e   = h%qm(i,j,kc,QREINT,idir)/h%qm(i,j,kc,QRHO,idir)
+          eos_state % xn  = h%qm(i,j,kc,QFS:QFS+nspec-1,idir)
+          eos_state % aux = h%qm(i,j,kc,QFX:QFX+naux-1,idir)
 
           call eos(eos_input_re, eos_state)
 
-          qm(i,j,kc,QREINT) = eos_state % e * eos_state % rho
-          qm(i,j,kc,QPRES)  = eos_state % p
-          gamcm(i,j)        = eos_state % gam1
+          h%qm(i,j,kc,QREINT,idir) = eos_state % e * eos_state % rho
+          h%qm(i,j,kc,QPRES,idir)  = eos_state % p
+          h%gamcm(i,j)             = eos_state % gam1
 
        enddo
     enddo
@@ -146,29 +122,26 @@ contains
     ! plus state
     do j = jlo, jhi
        do i = ilo, ihi
-          rhoInv = ONE / qp(i,j,kc,QRHO)
+          rhoInv = ONE / h%qp(i,j,kc,QRHO,idir)
 
-          eos_state % rho = qp(i,j,kc,QRHO)
-          eos_state % p   = qp(i,j,kc,QPRES)
-          eos_state % e   = qp(i,j,kc,QREINT)/qp(i,j,kc,QRHO)
-          eos_state % xn  = qp(i,j,kc,QFS:QFS+nspec-1) * rhoInv
-          eos_state % aux = qp(i,j,kc,QFX:QFX+naux-1) * rhoInv
+          eos_state % rho = h%qp(i,j,kc,QRHO,idir)
+          eos_state % p   = h%qp(i,j,kc,QPRES,idir)
+          eos_state % e   = h%qp(i,j,kc,QREINT,idir)/h%qp(i,j,kc,QRHO,idir)
+          eos_state % xn  = h%qp(i,j,kc,QFS:QFS+nspec-1,idir) * rhoInv
+          eos_state % aux = h%qp(i,j,kc,QFX:QFX+naux-1,idir) * rhoInv
 
           call eos(eos_input_re, eos_state)
 
-          qp(i,j,kc,QREINT) = eos_state % e * eos_state % rho
-          qp(i,j,kc,QPRES)  = eos_state % p
-          gamcp(i,j)        = eos_state % gam1
+          h%qp(i,j,kc,QREINT,idir) = eos_state % e * eos_state % rho
+          h%qp(i,j,kc,QPRES,idir)  = eos_state % p
+          h%gamcp(i,j)             = eos_state % gam1
 
        enddo
     enddo
 #endif
 
-    call riemannus(qm, qp, qpd_lo, qpd_hi, &
-                   gamcm, gamcp, cavg, smallc, us1d, gd_lo, gd_hi, &
-                   flx, flx_lo, flx_hi, &
-                   qint, q_lo, q_hi, &
-                   idir, ilo, ihi, jlo, jhi, kc, kflux, k3d, domlo, domhi)
+    call riemannus(flx, flx_lo, flx_hi, &
+                   h, idir, ilo, ihi, jlo, jhi, kc, kflux, k3d, domlo, domhi)
 
   end subroutine cmpflx
 
@@ -177,11 +150,8 @@ contains
 #ifdef CUDA
   attributes(device) &
 #endif
-  subroutine riemannus(ql,qr,qpd_lo,qpd_hi, &
-                       gamcl,gamcr,cav,smallc,us1d,gd_lo,gd_hi, &
-                       uflx,uflx_lo,uflx_hi, &
-                       qint,q_lo,q_hi, &
-                       idir,ilo,ihi,jlo,jhi,kc,kflux,k3d,domlo,domhi)
+  subroutine riemannus(uflx,uflx_lo,uflx_hi, &
+                       h,idir,ilo,ihi,jlo,jhi,kc,kflux,k3d,domlo,domhi)
 
     use amrex_fort_module, only: rt => amrex_real
     use bl_constants_module, only: ZERO, HALF, ONE
@@ -190,23 +160,12 @@ contains
     real(rt), parameter :: small = 1.e-8_rt
     real(rt), parameter :: small_pres = 1.e-200_rt
 
-    integer,  intent(in   ) :: qpd_lo(3),qpd_hi(3)
-    integer,  intent(in   ) :: gd_lo(2),gd_hi(2)
     integer,  intent(in   ) :: uflx_lo(3),uflx_hi(3)
-    integer,  intent(in   ) :: q_lo(3),q_hi(3)
     integer,  intent(in   ) :: idir,ilo,ihi,jlo,jhi
     integer,  intent(in   ) :: domlo(3),domhi(3)
 
-    real(rt), intent(in   ) :: ql(qpd_lo(1):qpd_hi(1),qpd_lo(2):qpd_hi(2),qpd_lo(3):qpd_hi(3),NQ)
-    real(rt), intent(in   ) :: qr(qpd_lo(1):qpd_hi(1),qpd_lo(2):qpd_hi(2),qpd_lo(3):qpd_hi(3),NQ)
-
-    real(rt), intent(inout) ::  gamcl(gd_lo(1):gd_hi(1),gd_lo(2):gd_hi(2))
-    real(rt), intent(inout) ::  gamcr(gd_lo(1):gd_hi(1),gd_lo(2):gd_hi(2))
-    real(rt), intent(inout) ::    cav(gd_lo(1):gd_hi(1),gd_lo(2):gd_hi(2))
-    real(rt), intent(inout) :: smallc(gd_lo(1):gd_hi(1),gd_lo(2):gd_hi(2))
-    real(rt), intent(inout) :: us1d(gd_lo(1):gd_hi(1))
+    type(ht), intent(inout) :: h
     real(rt), intent(inout) :: uflx(uflx_lo(1):uflx_hi(1),uflx_lo(2):uflx_hi(2),uflx_lo(3):uflx_hi(3),NVAR)
-    real(rt), intent(inout) ::    qint(q_lo(1):q_hi(1),q_lo(2):q_hi(2),q_lo(3):q_hi(3),NGDNV)
 
     ! Note:  Here k3d is the k corresponding to the full 3d array --
     !         it should be used for print statements or tests against domlo, domhi, etc
@@ -231,8 +190,8 @@ contains
 
     integer :: iu, iv1, iv2, im1, im2, im3
     logical :: special_bnd_lo, special_bnd_hi, special_bnd_lo_x, special_bnd_hi_x
-    real(rt)         :: bnd_fac_x, bnd_fac_y, bnd_fac_z
-    real(rt)         :: wwinv, roinv, co2inv
+    real(rt) :: bnd_fac_x, bnd_fac_y, bnd_fac_z
+    real(rt) :: wwinv, roinv, co2inv
 
     if (idir .eq. 1) then
        iu = QU
@@ -295,28 +254,28 @@ contains
        !dir$ ivdep
        do i = ilo, ihi
 
-          rl = max(ql(i,j,kc,QRHO), small_dens)
+          rl = max(h%qm(i,j,kc,QRHO,idir), small_dens)
 
           ! pick left velocities based on direction
-          ul  = ql(i,j,kc,iu)
-          v1l = ql(i,j,kc,iv1)
-          v2l = ql(i,j,kc,iv2)
+          ul  = h%qm(i,j,kc,iu,idir)
+          v1l = h%qm(i,j,kc,iv1,idir)
+          v2l = h%qm(i,j,kc,iv2,idir)
 
-          pl  = max(ql(i,j,kc,QPRES ), small_pres)
-          rel =     ql(i,j,kc,QREINT)
-          rr = max(qr(i,j,kc,QRHO), small_dens)
+          pl  = max(h%qm(i,j,kc,QPRES ,idir), small_pres)
+          rel =     h%qm(i,j,kc,QREINT,idir)
+          rr = max(h%qp(i,j,kc,QRHO,idir), small_dens)
 
           ! pick right velocities based on direction
-          ur  = qr(i,j,kc,iu)
-          v1r = qr(i,j,kc,iv1)
-          v2r = qr(i,j,kc,iv2)
+          ur  = h%qp(i,j,kc,iu,idir)
+          v1r = h%qp(i,j,kc,iv1,idir)
+          v2r = h%qp(i,j,kc,iv2,idir)
 
-          pr  = max(qr(i,j,kc,QPRES), small_pres)
-          rer =     qr(i,j,kc,QREINT)
-          csmall = smallc(i,j)
+          pr  = max(h%qp(i,j,kc,QPRES,idir), small_pres)
+          rer =     h%qp(i,j,kc,QREINT,idir)
+          csmall = h%smallc(i,j)
           wsmall = small_dens*csmall
-          wl = max(wsmall,sqrt(abs(gamcl(i,j)*pl*rl)))
-          wr = max(wsmall,sqrt(abs(gamcr(i,j)*pr*rr)))
+          wl = max(wsmall,sqrt(abs(h%gamcm(i,j)*pl*rl)))
+          wr = max(wsmall,sqrt(abs(h%gamcp(i,j)*pr*rr)))
 
           wwinv = ONE/(wl + wr)
           pstar = ((wr*pl + wl*pr) + wl*wr*(ul - ur))*wwinv
@@ -334,19 +293,19 @@ contains
              uo = ul
              po = pl
              reo = rel
-             gamco = gamcl(i,j)
+             gamco = h%gamcm(i,j)
           else if (ustar < ZERO) then
              ro = rr
              uo = ur
              po = pr
              reo = rer
-             gamco = gamcr(i,j)
+             gamco = h%gamcp(i,j)
           else
              ro = HALF*(rl+rr)
              uo = HALF*(ul+ur)
              po = HALF*(pl+pr)
              reo = HALF*(rel+rer)
-             gamco = HALF*(gamcl(i,j)+gamcr(i,j))
+             gamco = HALF*(h%gamcm(i,j)+h%gamcp(i,j))
           endif
 
           ro = max(small_dens,ro)
@@ -377,7 +336,7 @@ contains
           endif
 
           if (spout-spin == ZERO) then
-             scr = small*cav(i,j)
+             scr = small*h%cavg(i,j)
           else
              scr = spout-spin
           endif
@@ -386,38 +345,38 @@ contains
           frac = max(ZERO,min(ONE,frac))
 
           if (ustar > ZERO) then
-             qint(i,j,kc,iv1) = v1l
-             qint(i,j,kc,iv2) = v2l
+             h%qint(i,j,kc,iv1) = v1l
+             h%qint(i,j,kc,iv2) = v2l
           else if (ustar < ZERO) then
-             qint(i,j,kc,iv1) = v1r
-             qint(i,j,kc,iv2) = v2r
+             h%qint(i,j,kc,iv1) = v1r
+             h%qint(i,j,kc,iv2) = v2r
           else
-             qint(i,j,kc,iv1) = HALF*(v1l+v1r)
-             qint(i,j,kc,iv2) = HALF*(v2l+v2r)
+             h%qint(i,j,kc,iv1) = HALF*(v1l+v1r)
+             h%qint(i,j,kc,iv2) = HALF*(v2l+v2r)
           endif
-          qint(i,j,kc,GDRHO) = frac*rstar + (ONE - frac)*ro
-          qint(i,j,kc,iu  ) = frac*ustar + (ONE - frac)*uo
+          h%qint(i,j,kc,GDRHO) = frac*rstar + (ONE - frac)*ro
+          h%qint(i,j,kc,iu  ) = frac*ustar + (ONE - frac)*uo
 
-          qint(i,j,kc,GDPRES) = frac*pstar + (ONE - frac)*po
+          h%qint(i,j,kc,GDPRES) = frac*pstar + (ONE - frac)*po
           regdnv = frac*estar + (ONE - frac)*reo
           if (spout < ZERO) then
-             qint(i,j,kc,GDRHO) = ro
-             qint(i,j,kc,iu  ) = uo
-             qint(i,j,kc,GDPRES) = po
+             h%qint(i,j,kc,GDRHO) = ro
+             h%qint(i,j,kc,iu  ) = uo
+             h%qint(i,j,kc,GDPRES) = po
              regdnv = reo
           endif
 
           if (spin >= ZERO) then
-             qint(i,j,kc,GDRHO) = rstar
-             qint(i,j,kc,iu  ) = ustar
-             qint(i,j,kc,GDPRES) = pstar
+             h%qint(i,j,kc,GDRHO) = rstar
+             h%qint(i,j,kc,iu  ) = ustar
+             h%qint(i,j,kc,GDPRES) = pstar
              regdnv = estar
           endif
 
 
-          qint(i,j,kc,GDGAME) = qint(i,j,kc,GDPRES)/regdnv + ONE
-          qint(i,j,kc,GDPRES) = max(qint(i,j,kc,GDPRES),small_pres)
-          u_adv = qint(i,j,kc,iu)
+          h%qint(i,j,kc,GDGAME) = h%qint(i,j,kc,GDPRES)/regdnv + ONE
+          h%qint(i,j,kc,GDPRES) = max(h%qint(i,j,kc,GDPRES),small_pres)
+          u_adv = h%qint(i,j,kc,iu)
 
           ! Enforce that fluxes through a symmetry plane or wall are hard zero.
           if ( special_bnd_lo_x .and. i.eq.domlo(1) .or. &
@@ -430,18 +389,18 @@ contains
 
 
           ! Compute fluxes, order as conserved state (not q)
-          uflx(i,j,kflux,URHO) = qint(i,j,kc,GDRHO)*u_adv
+          uflx(i,j,kflux,URHO) = h%qint(i,j,kc,GDRHO)*u_adv
 
-          uflx(i,j,kflux,im1) = uflx(i,j,kflux,URHO)*qint(i,j,kc,iu ) + qint(i,j,kc,GDPRES)
-          uflx(i,j,kflux,im2) = uflx(i,j,kflux,URHO)*qint(i,j,kc,iv1)
-          uflx(i,j,kflux,im3) = uflx(i,j,kflux,URHO)*qint(i,j,kc,iv2)
+          uflx(i,j,kflux,im1) = uflx(i,j,kflux,URHO)*h%qint(i,j,kc,iu ) + h%qint(i,j,kc,GDPRES)
+          uflx(i,j,kflux,im2) = uflx(i,j,kflux,URHO)*h%qint(i,j,kc,iv1)
+          uflx(i,j,kflux,im3) = uflx(i,j,kflux,URHO)*h%qint(i,j,kc,iv2)
 
-          rhoetot = regdnv + HALF*qint(i,j,kc,GDRHO)*(qint(i,j,kc,iu)**2 + qint(i,j,kc,iv1)**2 + qint(i,j,kc,iv2)**2)
+          rhoetot = regdnv + HALF*h%qint(i,j,kc,GDRHO)*(h%qint(i,j,kc,iu)**2 + h%qint(i,j,kc,iv1)**2 + h%qint(i,j,kc,iv2)**2)
 
-          uflx(i,j,kflux,UEDEN) = u_adv*(rhoetot + qint(i,j,kc,GDPRES))
+          uflx(i,j,kflux,UEDEN) = u_adv*(rhoetot + h%qint(i,j,kc,GDPRES))
           uflx(i,j,kflux,UEINT) = u_adv*regdnv
           ! store this for vectorization
-          us1d(i) = ustar
+          h%us1d(i) = ustar
 
        end do
 
@@ -452,14 +411,14 @@ contains
 
           !dir$ ivdep
           do i = ilo, ihi
-             if (us1d(i) > ZERO) then
-                uflx(i,j,kflux,n) = uflx(i,j,kflux,URHO)*ql(i,j,kc,nqp)
+             if (h%us1d(i) > ZERO) then
+                uflx(i,j,kflux,n) = uflx(i,j,kflux,URHO)*h%qm(i,j,kc,nqp,idir)
 
-             else if (us1d(i) < ZERO) then
-                uflx(i,j,kflux,n) = uflx(i,j,kflux,URHO)*qr(i,j,kc,nqp)
+             else if (h%us1d(i) < ZERO) then
+                uflx(i,j,kflux,n) = uflx(i,j,kflux,URHO)*h%qp(i,j,kc,nqp,idir)
 
              else
-                qavg = HALF * (ql(i,j,kc,nqp) + qr(i,j,kc,nqp))
+                qavg = HALF * (h%qm(i,j,kc,nqp,idir) + h%qp(i,j,kc,nqp,idir))
                 uflx(i,j,kflux,n) = uflx(i,j,kflux,URHO)*qavg
              endif
           enddo
