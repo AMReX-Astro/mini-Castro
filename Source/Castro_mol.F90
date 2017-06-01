@@ -190,12 +190,7 @@ contains
        kc = kt
 
        do n = 1, NQ
-          call ppm_reconstruct(q(:,:,:,n  ), q_lo, q_hi, &
-                               h%flatn, q_lo, q_hi, &
-                               h%sxm(:,:,:,n), h%sxp(:,:,:,n), h%sym(:,:,:,n), &
-                               h%syp(:,:,:,n), h%szm(:,:,:,n), h%szp(:,:,:,n), st_lo, st_hi, &
-                               h%dsvl, h%sedge, &
-                               lo(1), lo(2), hi(1), hi(2), dx, k3d, kc)
+          call ppm_reconstruct(q, q_lo, q_hi, h, lo(1), lo(2), hi(1), hi(2), dx, k3d, kc, n)
 
           ! Construct the interface states -- this is essentially just a
           ! reshuffling of interface states from zone-center indexing to
