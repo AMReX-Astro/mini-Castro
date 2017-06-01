@@ -390,7 +390,6 @@ subroutine ca_set_method_params(dm,Density,Xmom,Eden,Eint,Temp, &
   allocate(QW)
   allocate(QGAME)
   allocate(QPRES)
-  allocate(QPRES)
   allocate(QREINT)
   allocate(QTEMP)
   allocate(QFA)
