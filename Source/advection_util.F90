@@ -29,7 +29,7 @@ module advection_util_module
      real(rt), pointer :: smallc(:,:,:), cavg(:,:,:)
      real(rt), pointer :: gamcm(:,:,:), gamcp(:,:,:)
 
-     real(rt), pointer :: us1d(:)
+     real(rt), pointer :: us1d(:,:,:)
 
      ! \delta s_{\ib}^{vL}
      real(rt), pointer :: dsvl(:,:,:)
@@ -734,7 +734,7 @@ contains
     allocate(h %  gamcm(gd_lo(1):gd_hi(1),gd_lo(2):gd_hi(2),gd_lo(3):gd_hi(3)))
     allocate(h %  gamcp(gd_lo(1):gd_hi(1),gd_lo(2):gd_hi(2),gd_lo(3):gd_hi(3)))
 
-    allocate(h % us1d(gd_lo(1):gd_hi(1)))
+    allocate(h % us1d(gd_lo(1):gd_hi(1),gd_lo(2):gd_hi(2),gd_lo(3):gd_hi(3)))
 
     allocate(h % flatn(q_lo(1):q_hi(1),q_lo(2):q_hi(2),q_lo(3):q_hi(3)))
 

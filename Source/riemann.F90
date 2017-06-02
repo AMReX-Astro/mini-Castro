@@ -404,7 +404,7 @@ contains
              uflx(i,j,k,UEDEN) = u_adv*(rhoetot + h%qint(i,j,k,GDPRES))
              uflx(i,j,k,UEINT) = u_adv*regdnv
              ! store this for vectorization
-             h%us1d(i) = ustar
+             h%us1d(i,j,k) = ustar
 
           end do
 
@@ -415,10 +415,10 @@ contains
 
              !dir$ ivdep
              do i = lo(1), hi(1)
-                if (h%us1d(i) > ZERO) then
+                if (h%us1d(i,j,k) > ZERO) then
                    uflx(i,j,k,n) = uflx(i,j,k,URHO)*h%qm(i,j,k,nqp,idir)
 
-                else if (h%us1d(i) < ZERO) then
+                else if (h%us1d(i,j,k) < ZERO) then
                    uflx(i,j,k,n) = uflx(i,j,k,URHO)*h%qp(i,j,k,nqp,idir)
 
                 else
