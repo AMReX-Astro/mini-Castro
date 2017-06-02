@@ -32,10 +32,10 @@ module advection_util_module
      real(rt), pointer :: us1d(:)
 
      ! \delta s_{\ib}^{vL}
-     real(rt), pointer :: dsvl(:,:)
+     real(rt), pointer :: dsvl(:,:,:)
 
      ! s_{i+\half}^{H.O.}
-     real(rt), pointer :: sedge(:,:)
+     real(rt), pointer :: sedge(:,:,:)
 
      ! temporary interface values of the parabola
      real(rt), pointer :: sxm(:,:,:,:), sym(:,:,:,:), szm(:,:,:,:)
@@ -725,9 +725,9 @@ contains
     allocate(h % z  (g_lo(1)-1:g_hi(1)+1,g_lo(2)-1:g_hi(2)+1,g_lo(3)-1:g_hi(3)+1))
     allocate(h % chi(g_lo(1)-1:g_hi(1)+1,g_lo(2)-1:g_hi(2)+1,g_lo(3)-1:g_hi(3)+1))
 
-    allocate(h % dsvl(lo(1)-2:hi(1)+2,lo(2)-2:hi(2)+2))
+    allocate(h % dsvl(lo(1)-2:hi(1)+2,lo(2)-2:hi(2)+2,lo(3)-2:hi(3)+2))
 
-    allocate(h % sedge(lo(1)-1:hi(1)+2,lo(2)-1:hi(2)+2))
+    allocate(h % sedge(lo(1)-1:hi(1)+2,lo(2)-1:hi(2)+2,lo(3)-1:hi(3)+2))
 
     allocate(h % smallc(gd_lo(1):gd_hi(1),gd_lo(2):gd_hi(2)))
     allocate(h %   cavg(gd_lo(1):gd_hi(1),gd_lo(2):gd_hi(2)))

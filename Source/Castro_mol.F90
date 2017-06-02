@@ -164,6 +164,10 @@ contains
     kc = 1
     km = 2
 
+    do n = 1, NQ
+       call ppm_reconstruct(q, q_lo, q_hi, h, lo, hi, dx, n)
+    enddo
+
     do k3d = lo(3)-1, hi(3)+1
 
        ! Swap pointers to levels
@@ -172,7 +176,6 @@ contains
        kc = kt
 
        do n = 1, NQ
-          call ppm_reconstruct(q, q_lo, q_hi, h, lo(1), lo(2), hi(1), hi(2), dx, k3d, kc, n)
 
           ! Construct the interface states -- this is essentially just a
           ! reshuffling of interface states from zone-center indexing to
@@ -183,26 +186,26 @@ contains
                 ! x-edges
 
                 ! left state at i-1/2 interface
-                h%qm(i,j,kc,n,1) = h%sxp(i-1,j,kc,n)
+                h%qm(i,j,kc,n,1) = h%sxp(i-1,j,k3d,n)
 
                 ! right state at i-1/2 interface
-                h%qp(i,j,kc,n,1) = h%sxm(i,j,kc,n)
+                h%qp(i,j,kc,n,1) = h%sxm(i,j,k3d,n)
 
                 ! y-edges
 
                 ! left state at j-1/2 interface
-                h%qm(i,j,kc,n,2) = h%syp(i,j-1,kc,n)
+                h%qm(i,j,kc,n,2) = h%syp(i,j-1,k3d,n)
 
                 ! right state at j-1/2 interface
-                h%qp(i,j,kc,n,2) = h%sym(i,j,kc,n)
+                h%qp(i,j,kc,n,2) = h%sym(i,j,k3d,n)
 
                 ! z-edges
 
                 ! left state at k3d-1/2 interface
-                h%qm(i,j,kc,n,3) = h%szp(i,j,km,n)
+                h%qm(i,j,kc,n,3) = h%szp(i,j,k3d-1,n)
 
                 ! right state at k3d-1/2 interface
-                h%qp(i,j,kc,n,3) = h%szm(i,j,kc,n)
+                h%qp(i,j,kc,n,3) = h%szm(i,j,k3d,n)
 
              enddo
           enddo
