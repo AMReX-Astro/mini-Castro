@@ -307,10 +307,6 @@ Castro::initMFs()
     flux_crse_scale = -1.0;
     flux_fine_scale = 1.0;
 
-    // This array holds the hydrodynamics update.
-
-    hydro_source.define(grids,dmap,NUM_STATE,0);
-
 }
 
 void
