@@ -665,7 +665,7 @@ contains
     integer :: st_lo(3), st_hi(3)
     integer :: shk_lo(3), shk_hi(3)
     integer :: g_lo(3), g_hi(3)
-    integer :: gd_lo(2), gd_hi(2)
+    integer :: gd_lo(3), gd_hi(3)
 
     type(ht) :: h
 
@@ -686,14 +686,14 @@ contains
     flux3_lo = [ flux3_l1, flux3_l2, flux3_l3 ]
     flux3_hi = [ flux3_h1, flux3_h2, flux3_h3 ]
 
-    It_lo = [lo(1) - 1, lo(2) - 1, 1]
-    It_hi = [hi(1) + 1, hi(2) + 1, 2]
+    It_lo = lo - 1
+    It_hi = hi + 1
 
     st_lo = lo - 2
     st_hi = hi + 2
 
-    gd_lo = [lo(1), lo(2)]
-    gd_hi = [hi(1) + 1, hi(2) + 1]
+    gd_lo = lo
+    gd_hi = hi + 1
 
     g_lo = lo - ngf
     g_hi = hi + ngf

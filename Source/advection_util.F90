@@ -26,8 +26,8 @@ module advection_util_module
      real(rt), pointer :: dp(:,:,:), z(:,:,:), chi(:,:,:)
 
      ! Local arrays in cmpflx
-     real(rt), pointer :: smallc(:,:), cavg(:,:)
-     real(rt), pointer :: gamcm(:,:), gamcp(:,:)
+     real(rt), pointer :: smallc(:,:,:), cavg(:,:,:)
+     real(rt), pointer :: gamcm(:,:,:), gamcp(:,:,:)
 
      real(rt), pointer :: us1d(:)
 
@@ -698,7 +698,7 @@ contains
     integer, intent(in) :: st_lo(3), st_hi(3)
     integer, intent(in) :: shk_lo(3), shk_hi(3)
     integer, intent(in) :: g_lo(3), g_hi(3)
-    integer, intent(in) :: gd_lo(2), gd_hi(2)
+    integer, intent(in) :: gd_lo(3), gd_hi(3)
 
     allocate(h % div(lo(1):hi(1)+1, lo(2):hi(2)+1, lo(3):hi(3)+1))
     allocate(h % pdivu(lo(1):hi(1), lo(2):hi(2)  , lo(3):hi(3)))
@@ -729,10 +729,10 @@ contains
 
     allocate(h % sedge(lo(1)-1:hi(1)+2,lo(2)-1:hi(2)+2,lo(3)-1:hi(3)+2))
 
-    allocate(h % smallc(gd_lo(1):gd_hi(1),gd_lo(2):gd_hi(2)))
-    allocate(h %   cavg(gd_lo(1):gd_hi(1),gd_lo(2):gd_hi(2)))
-    allocate(h %  gamcm(gd_lo(1):gd_hi(1),gd_lo(2):gd_hi(2)))
-    allocate(h %  gamcp(gd_lo(1):gd_hi(1),gd_lo(2):gd_hi(2)))
+    allocate(h % smallc(gd_lo(1):gd_hi(1),gd_lo(2):gd_hi(2),gd_lo(3):gd_hi(3)))
+    allocate(h %   cavg(gd_lo(1):gd_hi(1),gd_lo(2):gd_hi(2),gd_lo(3):gd_hi(3)))
+    allocate(h %  gamcm(gd_lo(1):gd_hi(1),gd_lo(2):gd_hi(2),gd_lo(3):gd_hi(3)))
+    allocate(h %  gamcp(gd_lo(1):gd_hi(1),gd_lo(2):gd_hi(2),gd_lo(3):gd_hi(3)))
 
     allocate(h % us1d(gd_lo(1):gd_hi(1)))
 

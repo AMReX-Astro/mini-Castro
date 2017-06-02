@@ -147,114 +147,87 @@ contains
 
     call uflaten(g_lo, g_hi, q, q_lo, q_hi, h)
 
-    ! We come into this routine with a 3-d box of data, but we operate
-    ! on it locally by considering 2 planes that encompass all of the
-    ! x, y indices of the original box, but each plane corresponds to
-    ! a single z index.
-    !
-    ! In the notation below, k3d will always been the index into the
-    ! original 3-d box.  kc will be the z-index in the local "planar"
-    ! data and km will be the previously used index in the local
-    ! planar data.
-    !
-    ! With each loop in the k direction, we will overwrite the old
-    ! data in the planar arrays.
-
-    ! Initialize kc (current k-level) and km (previous k-level)
-    kc = 1
-    km = 2
-
     do n = 1, NQ
+
        call ppm_reconstruct(q, q_lo, q_hi, h, lo, hi, dx, n)
-    enddo
 
-    do k3d = lo(3)-1, hi(3)+1
-
-       ! Swap pointers to levels
-       kt = km
-       km = kc
-       kc = kt
-
-       do n = 1, NQ
-
-          ! Construct the interface states -- this is essentially just a
-          ! reshuffling of interface states from zone-center indexing to
-          ! edge-centered indexing
+       ! Construct the interface states -- this is essentially just a
+       ! reshuffling of interface states from zone-center indexing to
+       ! edge-centered indexing
+       do k = lo(3)-1, hi(3)+1
           do j = lo(2)-1, hi(2)+1
              do i = lo(1)-1, hi(1)+1
 
                 ! x-edges
 
                 ! left state at i-1/2 interface
-                h%qm(i,j,kc,n,1) = h%sxp(i-1,j,k3d,n)
+                h%qm(i,j,k,n,1) = h%sxp(i-1,j,k,n)
 
                 ! right state at i-1/2 interface
-                h%qp(i,j,kc,n,1) = h%sxm(i,j,k3d,n)
+                h%qp(i,j,k,n,1) = h%sxm(i,j,k,n)
 
                 ! y-edges
 
                 ! left state at j-1/2 interface
-                h%qm(i,j,kc,n,2) = h%syp(i,j-1,k3d,n)
+                h%qm(i,j,k,n,2) = h%syp(i,j-1,k,n)
 
                 ! right state at j-1/2 interface
-                h%qp(i,j,kc,n,2) = h%sym(i,j,k3d,n)
+                h%qp(i,j,k,n,2) = h%sym(i,j,k,n)
 
                 ! z-edges
 
                 ! left state at k3d-1/2 interface
-                h%qm(i,j,kc,n,3) = h%szp(i,j,k3d-1,n)
+                h%qm(i,j,k,n,3) = h%szp(i,j,k-1,n)
 
                 ! right state at k3d-1/2 interface
-                h%qp(i,j,kc,n,3) = h%szm(i,j,k3d,n)
+                h%qp(i,j,k,n,3) = h%szm(i,j,k,n)
 
-             enddo
-          enddo
+             end do
+          end do
+       end do
 
-       enddo
+    end do
 
-       if (k3d >= lo(3)) then
+    ! Compute F^x at kc (k3d)
+    call cmpflx(flux1, flux1_lo, flux1_hi, &
+                qaux, qa_lo, qa_hi, &
+                h, 1, lo, [hi(1)+1, hi(2), hi(3)], domlo, domhi)
 
-          ! Compute F^x at kc (k3d)
-          if (k3d <= hi(3)) then
-             call cmpflx(flux1, flux1_lo, flux1_hi, &
-                         qaux, qa_lo, qa_hi, &
-                         h, 1, lo(1), hi(1)+1, lo(2), hi(2), kc, k3d, k3d, domlo, domhi)
+    do k = lo(3), hi(3)
+       do j = lo(2), hi(2)
+          do i = lo(1), hi(1)+1
+             h%q1(i,j,k,:) = h%qint(i,j,k,:)
+          end do
+       end do
+    end do
 
-             do j = lo(2), hi(2)
-                do i = lo(1), hi(1)+1
-                   h%q1(i,j,k3d,:) = h%qint(i,j,kc,:)
-                enddo
-             enddo
+    ! Compute F^y at kc (k3d)
+    call cmpflx(flux2, flux2_lo, flux2_hi, &
+                qaux, qa_lo, qa_hi, &
+                h, 2, lo, [hi(1), hi(2)+1, hi(3)], domlo, domhi)
 
-             ! Compute F^y at kc (k3d)
-             call cmpflx(flux2, flux2_lo, flux2_hi, &
-                         qaux, qa_lo, qa_hi, &
-                         h, 2, lo(1), hi(1), lo(2), hi(2)+1, kc, k3d, k3d, domlo, domhi)
+    do k = lo(3), hi(3)
+       do j = lo(2), hi(2)+1
+          do i = lo(1), hi(1)
+             h%q2(i,j,k,:) = h%qint(i,j,k,:)
+          end do
+       end do
+    end do
 
-             do j = lo(2), hi(2)+1
-                do i = lo(1), hi(1)
-                   h%q2(i,j,k3d,:) = h%qint(i,j,kc,:)
-                enddo
-             enddo
-          endif  ! hi(3) check
+    ! Compute F^z at kc (k3d)
 
-          ! Compute F^z at kc (k3d)
+    call cmpflx(flux3, flux3_lo, flux3_hi, &
+                qaux, qa_lo, qa_hi, &
+                h, 3, lo, [hi(1), hi(2), hi(3)+1], domlo, domhi)
 
-          call cmpflx(flux3, flux3_lo, flux3_hi, &
-                      qaux, qa_lo, qa_hi, &
-                      h, 3, lo(1), hi(1), lo(2), hi(2), kc, k3d, k3d, domlo, domhi)
+    do k = lo(3), hi(3)+1
+       do j = lo(2), hi(2)
+          do i = lo(1), hi(1)
+             h%q3(i,j,k,:) = h%qint(i,j,k,:)
+          end do
+       end do
+    end do
 
-          do j=lo(2), hi(2)
-             do i=lo(1), hi(1)
-                h%q3(i,j,k3d,:) = h%qint(i,j,kc,:)
-             enddo
-          enddo
-
-       endif
-
-
-    enddo
-   
     ! Compute divergence of velocity field (on surroundingNodes(lo,hi))
     edge_lo = lo
     edge_hi = hi + 1
