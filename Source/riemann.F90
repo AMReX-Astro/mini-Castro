@@ -20,7 +20,7 @@ contains
 #ifdef CUDA
   attributes(device) &
 #endif
-  subroutine cmpflx(flx, flx_lo, flx_hi, &
+  subroutine cmpflx(flx, qint, flx_lo, flx_hi, &
                     qaux, qa_lo, qa_hi, &
                     h, idir, lo, hi, domlo, domhi)
 
@@ -38,6 +38,7 @@ contains
     type(ht), intent(inout) :: h
 
     real(rt), intent(inout) :: flx(flx_lo(1):flx_hi(1),flx_lo(2):flx_hi(2),flx_lo(3):flx_hi(3),NVAR)
+    real(rt), intent(inout) :: qint(flx_lo(1):flx_hi(1),flx_lo(2):flx_hi(2),flx_lo(3):flx_hi(3),NGDNV)
 
     ! qaux come in dimensioned as the full box, so we use k3d here to
     ! index it in z
@@ -145,7 +146,7 @@ contains
        end do
     end do
 
-    call riemannus(flx, flx_lo, flx_hi, h, idir, lo, hi, domlo, domhi)
+    call riemannus(flx, flx_lo, flx_hi, qint, h, idir, lo, hi, domlo, domhi)
 
   end subroutine cmpflx
 
@@ -154,7 +155,7 @@ contains
 #ifdef CUDA
   attributes(device) &
 #endif
-  subroutine riemannus(uflx,uflx_lo,uflx_hi,h,idir,lo,hi,domlo,domhi)
+  subroutine riemannus(uflx,uflx_lo,uflx_hi,qint,h,idir,lo,hi,domlo,domhi)
 
     use amrex_fort_module, only: rt => amrex_real
     use bl_constants_module, only: ZERO, HALF, ONE
@@ -169,6 +170,7 @@ contains
 
     type(ht), intent(inout) :: h
     real(rt), intent(inout) :: uflx(uflx_lo(1):uflx_hi(1),uflx_lo(2):uflx_hi(2),uflx_lo(3):uflx_hi(3),NVAR)
+    real(rt), intent(inout) :: qint(uflx_lo(1):uflx_hi(1),uflx_lo(2):uflx_hi(2),uflx_lo(3):uflx_hi(3),NGDNV)
 
     integer :: i, j, k
     integer :: n, nqp, ipassive
@@ -343,38 +345,38 @@ contains
              frac = max(ZERO,min(ONE,frac))
 
              if (ustar > ZERO) then
-                h%qint(i,j,k,iv1) = v1l
-                h%qint(i,j,k,iv2) = v2l
+                qint(i,j,k,iv1) = v1l
+                qint(i,j,k,iv2) = v2l
              else if (ustar < ZERO) then
-                h%qint(i,j,k,iv1) = v1r
-                h%qint(i,j,k,iv2) = v2r
+                qint(i,j,k,iv1) = v1r
+                qint(i,j,k,iv2) = v2r
              else
-                h%qint(i,j,k,iv1) = HALF*(v1l+v1r)
-                h%qint(i,j,k,iv2) = HALF*(v2l+v2r)
+                qint(i,j,k,iv1) = HALF*(v1l+v1r)
+                qint(i,j,k,iv2) = HALF*(v2l+v2r)
              endif
-             h%qint(i,j,k,GDRHO) = frac*rstar + (ONE - frac)*ro
-             h%qint(i,j,k,iu  ) = frac*ustar + (ONE - frac)*uo
+             qint(i,j,k,GDRHO) = frac*rstar + (ONE - frac)*ro
+             qint(i,j,k,iu  ) = frac*ustar + (ONE - frac)*uo
 
-             h%qint(i,j,k,GDPRES) = frac*pstar + (ONE - frac)*po
+             qint(i,j,k,GDPRES) = frac*pstar + (ONE - frac)*po
              regdnv = frac*estar + (ONE - frac)*reo
              if (spout < ZERO) then
-                h%qint(i,j,k,GDRHO) = ro
-                h%qint(i,j,k,iu  ) = uo
-                h%qint(i,j,k,GDPRES) = po
+                qint(i,j,k,GDRHO) = ro
+                qint(i,j,k,iu  ) = uo
+                qint(i,j,k,GDPRES) = po
                 regdnv = reo
              endif
 
              if (spin >= ZERO) then
-                h%qint(i,j,k,GDRHO) = rstar
-                h%qint(i,j,k,iu  ) = ustar
-                h%qint(i,j,k,GDPRES) = pstar
+                qint(i,j,k,GDRHO) = rstar
+                qint(i,j,k,iu  ) = ustar
+                qint(i,j,k,GDPRES) = pstar
                 regdnv = estar
              endif
 
 
-             h%qint(i,j,k,GDGAME) = h%qint(i,j,k,GDPRES)/regdnv + ONE
-             h%qint(i,j,k,GDPRES) = max(h%qint(i,j,k,GDPRES),small_pres)
-             u_adv = h%qint(i,j,k,iu)
+             qint(i,j,k,GDGAME) = qint(i,j,k,GDPRES)/regdnv + ONE
+             qint(i,j,k,GDPRES) = max(qint(i,j,k,GDPRES),small_pres)
+             u_adv = qint(i,j,k,iu)
 
              ! Enforce that fluxes through a symmetry plane or wall are hard zero.
              if ( special_bnd_lo_x .and. i.eq.domlo(1) .or. &
@@ -387,15 +389,15 @@ contains
 
 
              ! Compute fluxes, order as conserved state (not q)
-             uflx(i,j,k,URHO) = h%qint(i,j,k,GDRHO)*u_adv
+             uflx(i,j,k,URHO) = qint(i,j,k,GDRHO)*u_adv
 
-             uflx(i,j,k,im1) = uflx(i,j,k,URHO)*h%qint(i,j,k,iu ) + h%qint(i,j,k,GDPRES)
-             uflx(i,j,k,im2) = uflx(i,j,k,URHO)*h%qint(i,j,k,iv1)
-             uflx(i,j,k,im3) = uflx(i,j,k,URHO)*h%qint(i,j,k,iv2)
+             uflx(i,j,k,im1) = uflx(i,j,k,URHO)*qint(i,j,k,iu ) + qint(i,j,k,GDPRES)
+             uflx(i,j,k,im2) = uflx(i,j,k,URHO)*qint(i,j,k,iv1)
+             uflx(i,j,k,im3) = uflx(i,j,k,URHO)*qint(i,j,k,iv2)
 
-             rhoetot = regdnv + HALF*h%qint(i,j,k,GDRHO)*(h%qint(i,j,k,iu)**2 + h%qint(i,j,k,iv1)**2 + h%qint(i,j,k,iv2)**2)
+             rhoetot = regdnv + HALF*qint(i,j,k,GDRHO)*(qint(i,j,k,iu)**2 + qint(i,j,k,iv1)**2 + qint(i,j,k,iv2)**2)
 
-             uflx(i,j,k,UEDEN) = u_adv*(rhoetot + h%qint(i,j,k,GDPRES))
+             uflx(i,j,k,UEDEN) = u_adv*(rhoetot + qint(i,j,k,GDPRES))
              uflx(i,j,k,UEINT) = u_adv*regdnv
              ! store this for vectorization
              h%us1d(i,j,k) = ustar

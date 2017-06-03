@@ -100,45 +100,20 @@ contains
 
     call ppm_int_profile(h, lo, hi)
 
-    ! Compute F^x at kc (k3d)
-    call cmpflx(flux1, flux1_lo, flux1_hi, &
+    ! Compute F^x
+    call cmpflx(flux1, h%q1, flux1_lo, flux1_hi, &
                 qaux, qa_lo, qa_hi, &
                 h, 1, lo, [hi(1)+1, hi(2), hi(3)], domlo, domhi)
 
-    do k = lo(3), hi(3)
-       do j = lo(2), hi(2)
-          do i = lo(1), hi(1)+1
-             h%q1(i,j,k,:) = h%qint(i,j,k,:)
-          end do
-       end do
-    end do
-
-    ! Compute F^y at kc (k3d)
-    call cmpflx(flux2, flux2_lo, flux2_hi, &
+    ! Compute F^y
+    call cmpflx(flux2, h%q2, flux2_lo, flux2_hi, &
                 qaux, qa_lo, qa_hi, &
                 h, 2, lo, [hi(1), hi(2)+1, hi(3)], domlo, domhi)
 
-    do k = lo(3), hi(3)
-       do j = lo(2), hi(2)+1
-          do i = lo(1), hi(1)
-             h%q2(i,j,k,:) = h%qint(i,j,k,:)
-          end do
-       end do
-    end do
-
-    ! Compute F^z at kc (k3d)
-
-    call cmpflx(flux3, flux3_lo, flux3_hi, &
+    ! Compute F^z
+    call cmpflx(flux3, h%q3, flux3_lo, flux3_hi, &
                 qaux, qa_lo, qa_hi, &
                 h, 3, lo, [hi(1), hi(2), hi(3)+1], domlo, domhi)
-
-    do k = lo(3), hi(3)+1
-       do j = lo(2), hi(2)
-          do i = lo(1), hi(1)
-             h%q3(i,j,k,:) = h%qint(i,j,k,:)
-          end do
-       end do
-    end do
 
     ! Compute divergence of velocity field (on surroundingNodes(lo,hi))
     edge_lo = lo
