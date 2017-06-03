@@ -27,7 +27,7 @@ contains
                               courno, verbose)
 
     use advection_util_module, only: compute_cfl, divu, normalize_species_fluxes, &
-                                     ht, pdivu, apply_av
+                                     ht, pdivu, apply_av, construct_hydro_update
     use bl_constants_module, only: ZERO, HALF, ONE, FOURTH
     use flatten_module, only: uflaten
     use riemann_module, only: cmpflx
@@ -92,11 +92,12 @@ contains
                      lo, hi, dt, dx, courno)
 
     ! Compute flattening coefficient for slope calculations.
-
     call uflaten(g_lo, g_hi, q, q_lo, q_hi, h)
 
+    ! Create polynomial interpolation of fluid state.
     call ppm_reconstruct(q, q_lo, q_hi, h, lo, hi)
 
+    ! Integrate under the reconstructed polynomial to get the edge state.
     call ppm_int_profile(h, lo, hi)
 
     ! Compute F^x
@@ -133,28 +134,16 @@ contains
                                   flux3,flux3_lo,flux3_hi, &
                                   lo,hi)
 
-    ! For hydro, we will create an update source term that is
-    ! essentially the flux divergence.  This can be added with dt to
-    ! get the update
-    do n = 1, NVAR
-       do k = lo(3), hi(3)
-          do j = lo(2), hi(2)
-             do i = lo(1), hi(1)
-
-                update(i,j,k,n) = update(i,j,k,n) + &
-                     (flux1(i,j,k,n) * area1(i,j,k) - flux1(i+1,j,k,n) * area1(i+1,j,k) + &
-                      flux2(i,j,k,n) * area2(i,j,k) - flux2(i,j+1,k,n) * area2(i,j+1,k) + &
-                      flux3(i,j,k,n) * area3(i,j,k) - flux3(i,j,k+1,n) * area3(i,j,k+1) ) / vol(i,j,k)
-
-                ! Add the p div(u) source term to (rho e).
-                if (n .eq. UEINT) then
-                   update(i,j,k,n) = update(i,j,k,n) - h%pdivu(i,j,k)
-                endif
-
-             enddo
-          enddo
-       enddo
-    enddo
+    ! Create an update source term based on the flux divergence.
+    call construct_hydro_update(lo, hi, h, &
+                                flux1, flux1_lo, flux1_hi, &
+                                flux2, flux2_lo, flux2_hi, &
+                                flux3, flux3_lo, flux3_hi, &
+                                area1, area1_lo, area1_hi, &
+                                area2, area2_lo, area2_hi, &
+                                area3, area3_lo, area3_hi, &
+                                vol, vol_lo, vol_hi, &
+                                update, updt_lo, updt_hi)
 
     ! Scale the fluxes for the form we expect later in refluxing.
 

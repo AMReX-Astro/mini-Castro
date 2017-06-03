@@ -787,6 +787,64 @@ contains
   end subroutine apply_av
 
 
+  subroutine construct_hydro_update(lo, hi, h, &
+                                    f1, f1_lo, f1_hi, &
+                                    f2, f2_lo, f2_hi, &
+                                    f3, f3_lo, f3_hi, &
+                                    a1, a1_lo, a1_hi, &
+                                    a2, a2_lo, a2_hi, &
+                                    a3, a3_lo, a3_hi, &
+                                    vol, vol_lo, vol_hi, &
+                                    update, u_lo, u_hi)
+
+    use meth_params_module, only: NVAR, UEINT
+
+    implicit none
+
+    integer,  intent(in   ) :: lo(3), hi(3)
+    integer,  intent(in   ) :: f1_lo(3), f1_hi(3)
+    integer,  intent(in   ) :: f2_lo(3), f2_hi(3)
+    integer,  intent(in   ) :: f3_lo(3), f3_hi(3)
+    integer,  intent(in   ) :: a1_lo(3), a1_hi(3)
+    integer,  intent(in   ) :: a2_lo(3), a2_hi(3)
+    integer,  intent(in   ) :: a3_lo(3), a3_hi(3)
+    integer,  intent(in   ) :: vol_lo(3), vol_hi(3)
+    integer,  intent(in   ) :: u_lo(3), u_hi(3)
+    type(ht), intent(in   ) :: h
+
+    real(rt), intent(in   ) :: f1(f1_lo(1):f1_hi(1),f1_lo(2):f1_hi(2),f1_lo(3):f1_hi(3),NVAR)
+    real(rt), intent(in   ) :: f2(f2_lo(1):f2_hi(1),f2_lo(2):f2_hi(2),f2_lo(3):f2_hi(3),NVAR)
+    real(rt), intent(in   ) :: f3(f3_lo(1):f3_hi(1),f3_lo(2):f3_hi(2),f3_lo(3):f3_hi(3),NVAR)
+    real(rt), intent(in   ) :: a1(a1_lo(1):a1_hi(1),a1_lo(2):a1_hi(2),a1_lo(3):a1_hi(3))
+    real(rt), intent(in   ) :: a2(a2_lo(1):a2_hi(1),a2_lo(2):a2_hi(2),a2_lo(3):a2_hi(3))
+    real(rt), intent(in   ) :: a3(a3_lo(1):a3_hi(1),a3_lo(2):a3_hi(2),a3_lo(3):a3_hi(3))
+    real(rt), intent(in   ) :: vol(vol_lo(1):vol_hi(1),vol_lo(2):vol_hi(2),vol_lo(3):vol_hi(3))
+    real(rt), intent(inout) :: update(u_lo(1):u_hi(1),u_lo(2):u_hi(2),u_lo(3):u_hi(3),NVAR)
+
+    integer :: i, j, k, n
+
+    do n = 1, NVAR
+       do k = lo(3), hi(3)
+          do j = lo(2), hi(2)
+             do i = lo(1), hi(1)
+
+                update(i,j,k,n) = update(i,j,k,n) + (f1(i,j,k,n) * a1(i,j,k) - f1(i+1,j,k,n) * a1(i+1,j,k) + &
+                                                     f2(i,j,k,n) * a2(i,j,k) - f2(i,j+1,k,n) * a2(i,j+1,k) + &
+                                                     f3(i,j,k,n) * a3(i,j,k) - f3(i,j,k+1,n) * a3(i,j,k+1) ) / vol(i,j,k)
+
+                ! Add the p div(u) source term to (rho e).
+                if (n .eq. UEINT) then
+                   update(i,j,k,n) = update(i,j,k,n) - h%pdivu(i,j,k)
+                endif
+
+             enddo
+          enddo
+       enddo
+    enddo
+
+  end subroutine construct_hydro_update
+
+
 
   ! Allocate the components of a hydro temporary.
 
