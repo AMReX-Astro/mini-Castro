@@ -82,36 +82,36 @@ contains
     edge_hi = hi + 1
 
     ! Check if we have violated the CFL criterion.
-    call compute_cfl(q, q_lo, q_hi, &
-                     qaux, qa_lo, qa_hi, &
-                     g_lo, g_hi, dt, dx, courno)
+    call compute_cfl(g_lo, g_hi, dt, dx, courno, &
+                     q, q_lo, q_hi, &
+                     qaux, qa_lo, qa_hi)
 
     ! Compute divergence of velocity field
-    call divu(g_lo, g_hi, q, q_lo, q_hi, dx, h%div)
+    call divu(g_lo, g_hi, dx, q, q_lo, q_hi, h%div)
 
     ! Compute flattening coefficient for slope calculations.
     call uflaten(g_lo, g_hi, q, q_lo, q_hi, h)
 
     ! Create polynomial interpolation of fluid state.
-    call ppm_reconstruct(q, q_lo, q_hi, h, g_lo, g_hi)
+    call ppm_reconstruct(g_lo, g_hi, q, q_lo, q_hi, h)
 
     ! Integrate under the reconstructed polynomial to get the edge state.
-    call ppm_int_profile(h, g_lo, g_hi)
+    call ppm_int_profile(g_lo, g_hi, h)
 
     ! Compute F^x
-    call cmpflx(flux1, h%q1, f1_lo, f1_hi, &
-                qaux, qa_lo, qa_hi, &
-                h, 1, f1_lo, f1_hi, domlo, domhi)
+    call cmpflx(f1_lo, f1_hi, domlo, domhi, h, 1, &
+                flux1, h%q1, f1_lo, f1_hi, &
+                qaux, qa_lo, qa_hi)
 
     ! Compute F^y
-    call cmpflx(flux2, h%q2, f2_lo, f2_hi, &
-                qaux, qa_lo, qa_hi, &
-                h, 2, f2_lo, f2_hi, domlo, domhi)
+    call cmpflx(f2_lo, f2_hi, domlo, domhi, h, 2, &
+                flux2, h%q2, f2_lo, f2_hi, &
+                qaux, qa_lo, qa_hi)
 
     ! Compute F^z
-    call cmpflx(flux3, h%q3, f3_lo, f3_hi, &
-                qaux, qa_lo, qa_hi, &
-                h, 3, f3_lo, f3_hi, domlo, domhi)
+    call cmpflx(f3_lo, f3_hi, domlo, domhi, h, 3, &
+                flux3, h%q3, f3_lo, f3_hi, &
+                qaux, qa_lo, qa_hi)
 
     ! Apply artificial viscosity
     call apply_av(f1_lo, f1_hi, 1, dx, h, uin, uin_lo, uin_hi, flux1, f1_lo, f1_hi)

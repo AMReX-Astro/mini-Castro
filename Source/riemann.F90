@@ -20,9 +20,9 @@ contains
 #ifdef CUDA
   attributes(device) &
 #endif
-  subroutine cmpflx(flx, qint, flx_lo, flx_hi, &
-                    qaux, qa_lo, qa_hi, &
-                    h, idir, lo, hi, domlo, domhi)
+  subroutine cmpflx(lo, hi, domlo, domhi, h, idir, &
+                    flx, qint, flx_lo, flx_hi, &
+                    qaux, qa_lo, qa_hi)
 
     use eos_module, only: eos
     use eos_type_module, only: eos_t, eos_input_re

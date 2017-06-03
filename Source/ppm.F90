@@ -15,7 +15,7 @@ contains
 #ifdef CUDA
   attributes(device) &
 #endif
-  subroutine ppm_reconstruct(s, s_lo, s_hi, h, lo, hi)
+  subroutine ppm_reconstruct(lo, hi, s, s_lo, s_hi, h)
 
     implicit none
 
@@ -343,7 +343,7 @@ contains
 
 
 
-  subroutine ppm_int_profile(h, lo, hi)
+  subroutine ppm_int_profile(lo, hi, h)
 
     implicit none
 

@@ -290,9 +290,9 @@ contains
 #ifdef CUDA
   attributes(device) &
 #endif
-  subroutine compute_cfl(q, q_lo, q_hi, &
-                         qaux, qa_lo, qa_hi, &
-                         lo, hi, dt, dx, courno) &
+  subroutine compute_cfl(lo, hi, dt, dx, courno, &
+                         q, q_lo, q_hi, &
+                         qaux, qa_lo, qa_hi) &
                          bind(C, name = "compute_cfl")
 
     use bl_constants_module, only: ZERO, ONE
@@ -574,7 +574,7 @@ contains
 #ifdef CUDA
   attributes(device) &
 #endif
-  subroutine divu(lo, hi, q, q_lo, q_hi, dx, div)
+  subroutine divu(lo, hi, dx, q, q_lo, q_hi, div)
 
     use bl_constants_module, only: FOURTH, ONE
     use amrex_fort_module, only: rt => amrex_real
