@@ -10,30 +10,24 @@ module advection_util_module
   type :: ht
 
      ! Arrays for workspace
-     real(rt), pointer :: flatn(:,:,:)
-     real(rt), pointer :: div(:,:,:)
+     real(rt), allocatable :: flatn(:,:,:)
+     real(rt), allocatable :: div(:,:,:)
 
      ! Edge-centered primitive variables (Riemann state)
-     real(rt), pointer :: q1(:,:,:,:)
-     real(rt), pointer :: q2(:,:,:,:)
-     real(rt), pointer :: q3(:,:,:,:)
-     real(rt), pointer :: qint(:,:,:,:)
-
-     ! Local arrays for flattening
-     real(rt), pointer :: dp(:,:,:), z(:,:,:), chi(:,:,:)
+     real(rt), allocatable :: q1(:,:,:,:)
+     real(rt), allocatable :: q2(:,:,:,:)
+     real(rt), allocatable :: q3(:,:,:,:)
 
      ! Local arrays in cmpflx
-     real(rt), pointer :: smallc(:,:,:), cavg(:,:,:)
-     real(rt), pointer :: gamcm(:,:,:), gamcp(:,:,:)
-
-     real(rt), pointer :: us1d(:,:,:)
+     real(rt), allocatable :: smallc(:,:,:), cavg(:,:,:)
+     real(rt), allocatable :: gamcm(:,:,:), gamcp(:,:,:)
 
      ! temporary interface values of the parabola
-     real(rt), pointer :: sxm(:,:,:,:), sym(:,:,:,:), szm(:,:,:,:)
-     real(rt), pointer :: sxp(:,:,:,:), syp(:,:,:,:), szp(:,:,:,:)
+     real(rt), allocatable :: sxm(:,:,:,:), sym(:,:,:,:), szm(:,:,:,:)
+     real(rt), allocatable :: sxp(:,:,:,:), syp(:,:,:,:), szp(:,:,:,:)
 
-     real(rt), pointer :: qm(:,:,:,:,:)
-     real(rt), pointer :: qp(:,:,:,:,:)
+     real(rt), allocatable :: qm(:,:,:,:,:)
+     real(rt), allocatable :: qp(:,:,:,:,:)
 
   end type ht
 
@@ -574,7 +568,7 @@ contains
 #ifdef CUDA
   attributes(device) &
 #endif
-  subroutine divu(lo, hi, dx, q, q_lo, q_hi, div)
+  subroutine divu(lo, hi, dx, q, q_lo, q_hi, h)
 
     use bl_constants_module, only: FOURTH, ONE
     use amrex_fort_module, only: rt => amrex_real
@@ -585,8 +579,8 @@ contains
     integer,  intent(in   ) :: lo(3), hi(3)
     integer,  intent(in   ) :: q_lo(3), q_hi(3)
     real(rt), intent(in   ) :: dx(3)
-    real(rt), intent(inout) :: div(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3))
     real(rt), intent(in   ) :: q(q_lo(1):q_hi(1),q_lo(2):q_hi(2),q_lo(3):q_hi(3),QVAR)
+    type(ht), intent(inout) :: h
 
     integer  :: i, j, k
     real(rt) :: ux, vy, wz, dxinv, dyinv, dzinv
@@ -617,7 +611,7 @@ contains
                     + q(i-1,j  ,k  ,QW) - q(i-1,j  ,k-1,QW) &
                     + q(i-1,j-1,k  ,QW) - q(i-1,j-1,k-1,QW) ) * dzinv
 
-             div(i,j,k) = ux + vy + wz
+             h%div(i,j,k) = ux + vy + wz
 
           enddo
        enddo
@@ -627,6 +621,9 @@ contains
 
 
 
+#ifdef CUDA
+  attributes(device) &
+#endif
   subroutine apply_av(lo, hi, idir, dx, h, &
                       uin, uin_lo, uin_hi, &
                       flux, f_lo, f_hi)
@@ -700,6 +697,9 @@ contains
 
 
 
+#ifdef CUDA
+  attributes(device) &
+#endif
   subroutine construct_hydro_update(lo, hi, dx, dt, h, &
                                     f1, f1_lo, f1_hi, &
                                     f2, f2_lo, f2_hi, &
@@ -776,6 +776,9 @@ contains
 
 
 
+#ifdef CUDA
+  attributes(device) &
+#endif
   subroutine scale_flux(lo, hi, flux, f_lo, f_hi, area, a_lo, a_hi, dt)
 
     use meth_params_module, only: NVAR
@@ -828,6 +831,10 @@ contains
     integer, intent(in) :: g_lo(3), g_hi(3)
     integer, intent(in) :: gd_lo(3), gd_hi(3)
 
+#ifdef CUDA
+    attributes(device) :: h
+#endif
+
     allocate(h % div(lo(1)-1:hi(1)+1, lo(2)-1:hi(2)+1, lo(3)-1:hi(3)+1))
 
     allocate(h % q1(flux1_lo(1):flux1_hi(1),flux1_lo(2):flux1_hi(2),flux1_lo(3):flux1_hi(3),NGDNV))
@@ -844,18 +851,10 @@ contains
     allocate(h % qm(It_lo(1):It_hi(1), It_lo(2):It_hi(2), It_lo(3):It_hi(3), NQ, 3))
     allocate(h % qp(It_lo(1):It_hi(1), It_lo(2):It_hi(2), It_lo(3):It_hi(3), NQ, 3))
 
-    allocate(h % qint(It_lo(1):It_hi(1),It_lo(2):It_hi(2),It_lo(3):It_hi(3),NGDNV))
-
-    allocate(h % dp (g_lo(1)-1:g_hi(1)+1,g_lo(2)-1:g_hi(2)+1,g_lo(3)-1:g_hi(3)+1))
-    allocate(h % z  (g_lo(1)-1:g_hi(1)+1,g_lo(2)-1:g_hi(2)+1,g_lo(3)-1:g_hi(3)+1))
-    allocate(h % chi(g_lo(1)-1:g_hi(1)+1,g_lo(2)-1:g_hi(2)+1,g_lo(3)-1:g_hi(3)+1))
-
     allocate(h % smallc(gd_lo(1):gd_hi(1),gd_lo(2):gd_hi(2),gd_lo(3):gd_hi(3)))
     allocate(h %   cavg(gd_lo(1):gd_hi(1),gd_lo(2):gd_hi(2),gd_lo(3):gd_hi(3)))
     allocate(h %  gamcm(gd_lo(1):gd_hi(1),gd_lo(2):gd_hi(2),gd_lo(3):gd_hi(3)))
     allocate(h %  gamcp(gd_lo(1):gd_hi(1),gd_lo(2):gd_hi(2),gd_lo(3):gd_hi(3)))
-
-    allocate(h % us1d(gd_lo(1):gd_hi(1),gd_lo(2):gd_hi(2),gd_lo(3):gd_hi(3)))
 
     allocate(h % flatn(q_lo(1):q_hi(1),q_lo(2):q_hi(2),q_lo(3):q_hi(3)))
 
@@ -870,16 +869,10 @@ contains
 
     type(ht), intent(inout) :: h
 
-    deallocate(h % dp )
-    deallocate(h % z  )
-    deallocate(h % chi)
-
     deallocate(h % smallc)
     deallocate(h %  cavg)
     deallocate(h % gamcm)
     deallocate(h % gamcp)
-
-    deallocate(h % us1d)
 
     deallocate(h % flatn)
 
@@ -892,8 +885,6 @@ contains
 
     deallocate(h % qm)
     deallocate(h % qp)
-
-    deallocate(h % qint)
 
     deallocate(h % div)
 

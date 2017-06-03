@@ -620,7 +620,7 @@ contains
     use mol_module, only: prepare_for_fluxes, construct_flux
     use advection_util_module, only: ht, allocate_ht, deallocate_ht, construct_hydro_update
 #ifdef CUDA
-    use cuda_interfaces_module, only: cuda_mol_single_stage
+    use cuda_interfaces_module, only: cuda_prepare_for_fluxes, cuda_construct_flux, cuda_construct_hydro_update
 #endif
 
     implicit none
@@ -665,6 +665,36 @@ contains
 
     type(ht) :: h
 
+#ifdef CUDA
+    attributes(device) :: uin, uout, q, qaux, update, flux1, flux2, flux3, area1, area2, area3, vol, h
+
+    integer                   :: cuda_result
+    integer(cuda_stream_kind) :: stream
+    type(dim3)                :: numThreads, numBlocks
+
+    real(rt), device :: time_d
+    integer,  device :: lo_d(3), hi_d(3), domlo_d(3), domhi_d(3)
+    integer,  device :: uin_lo_d(3), uin_hi_d(3)
+    integer,  device :: uout_lo_d(3), uout_hi_d(3)
+    integer,  device :: q_lo_d(3), q_hi_d(3)
+    integer,  device :: qa_lo_d(3), qa_hi_d(3)
+    integer,  device :: updt_lo_d(3), updt_hi_d(3)
+    real(rt), device :: dx_d(3), dt_d
+    integer,  device :: f1_lo_d(3), f1_hi_d(3)
+    integer,  device :: f2_lo_d(3), f2_hi_d(3)
+    integer,  device :: f3_lo_d(3), f3_hi_d(3)
+    integer,  device :: a1_lo_d(3), a1_hi_d(3)
+    integer,  device :: a2_lo_d(3), a2_hi_d(3)
+    integer,  device :: a3_lo_d(3), a3_hi_d(3)
+    integer,  device :: vol_lo_d(3), vol_hi_d(3)
+    integer,  device :: k_lo_d(3), k_hi_d(3)
+    real(rt), device :: courno_d
+    integer,  device :: verbose_d
+    integer,  device :: idir_d
+
+    real(rt) :: courno_loc
+#endif
+
     ngf = 1
 
     It_lo = lo - 1
@@ -685,33 +715,6 @@ contains
                      g_lo, g_hi, gd_lo, gd_hi, q_lo, q_hi)
 
 #ifdef CUDA
-
-    attributes(device) :: uin, uout, q, qaux, update, flux1, flux2, flux3, area1, area2, area3, vol
-
-    integer                   :: cuda_result
-    integer(cuda_stream_kind) :: stream
-    type(dim3)                :: numThreads, numBlocks
-
-    real(rt), device :: time_d
-    integer,  device :: lo_d(3), hi_d(3), domlo_d(3), domhi_d(3)
-    integer,  device :: uin_lo_d(3), uin_hi_d(3)
-    integer,  device :: uout_lo_d(3), uin_hi_d(3)
-    integer,  device :: q_lo_d(3), q_hi_d(3)
-    integer,  device :: qa_lo_d(3), qa_hi_d(3)
-    integer,  device :: updt_lo_d(3), updt_hi_d(3)
-    real(rt), device :: dx_d(3), dt_d
-    integer,  device :: f1_lo_d(3), f1_hi_d(3)
-    integer,  device :: f2_lo_d(3), f2_hi_d(3)
-    integer,  device :: f3_lo_d(3), f3_hi_d(3)
-    integer,  device :: a1_lo_d(3), a1_hi_d(3)
-    integer,  device :: a2_lo_d(3), a2_hi_d(3)
-    integer,  device :: a3_lo_d(3), a3_hi_d(3)
-    integer,  device :: vol_lo_d(3), vol_hi_d(3)
-    real(rt), device :: courno_d
-    integer,  device :: verbose_d
-
-    real(rt) :: courno_loc
-
     stream = cuda_streams(mod(idx, max_cuda_streams) + 1)
 
     cuda_result = cudaMemcpyAsync(time_d, time, 1, cudaMemcpyHostToDevice, stream)
@@ -758,26 +761,101 @@ contains
 
     cuda_result = cudaMemcpyAsync(verbose_d, verbose, 1, cudaMemcpyHostToDevice, stream)
 
-    call threads_and_blocks(lo, hi, numBlocks, numThreads)
+    ! Construct edge states as inputs to flux construction
 
-    call cuda_mol_single_stage<<<numBlocks, numThreads, 0, stream>>>(time_d, &
-                                                                     lo_d, hi_d, domlo_d, domhi_d, &
-                                                                     uin, uin_lo_d, uin_hi_d, &
-                                                                     uout, uout_lo_d, uout_hi_d, &
-                                                                     q, q_lo_d, q_hi_d, &
-                                                                     qaux, qa_lo_d, qa_hi_d, &
-                                                                     update, updt_lo_d, updt_hi_d, &
-                                                                     dx_d, dt_d, h, &
-                                                                     flux1, f1_lo_d, f1_hi_d, &
-                                                                     flux2, f2_lo_d, f2_hi_d, &
-                                                                     flux3, f3_lo_d, f3_hi_d, &
-                                                                     area1, a1_lo_d, a1_hi_d, &
-                                                                     area2, a2_lo_d, a2_hi_d, &
-                                                                     area3, a3_lo_d, a3_hi_d, &
-                                                                     vol, vol_lo_d, vol_hi_d, &
-                                                                     courno_d, verbose_d)
+    k_lo = g_lo
+    k_hi = g_hi
+
+    cuda_result = cudaMemcpyAsync(k_lo_d, k_lo, 3, cudaMemcpyHostToDevice, stream)
+    cuda_result = cudaMemcpyAsync(k_hi_d, k_hi, 3, cudaMemcpyHostToDevice, stream)
+
+    call threads_and_blocks(k_lo, k_hi, numBlocks, numThreads)
+
+    call cuda_prepare_for_fluxes<<<numBlocks, numThreads, 0, stream>>>(k_lo_d, k_hi_d, dt_d, dx_d, courno_d, h, &
+                                                                       q, q_lo_d, q_hi_d, &
+                                                                       qaux, qa_lo_d, qa_hi_d)
 
     cuda_result = cudaMemcpyAsync(courno_loc, courno_d, 1, cudaMemcpyDeviceToHost, stream)
+
+    ! Compute F^x
+
+    idir = 1
+
+    cuda_result = cudaMemcpyAsync(idir_d, idir, 1, cudaMemcpyHostToDevice, stream)
+
+    k_lo = f1_lo
+    k_hi = f1_hi
+
+    cuda_result = cudaMemcpyAsync(k_lo_d, k_lo, 3, cudaMemcpyHostToDevice, stream)
+    cuda_result = cudaMemcpyAsync(k_hi_d, k_hi, 3, cudaMemcpyHostToDevice, stream)
+
+    call threads_and_blocks(k_lo, k_hi, numBlocks, numThreads)
+
+    call cuda_construct_flux<<<numBlocks, numThreads, 0, stream>>>(k_lo_d, k_hi_d, domlo_d, domhi_d, h, dx_d, dt_d, idir_d, &
+                                                                   uin, uin_lo_d, uin_hi_d, &
+                                                                   flux1, h%q1, f1_lo_d, f1_hi_d, &
+                                                                   area1, a1_lo_d, a1_hi_d, &
+                                                                   qaux, qa_lo_d, qa_hi_d)
+
+    ! Compute F^y
+
+    idir = 2
+
+    cuda_result = cudaMemcpyAsync(idir_d, idir, 1, cudaMemcpyHostToDevice, stream)
+
+    k_lo = f2_lo
+    k_hi = f2_hi
+
+    cuda_result = cudaMemcpyAsync(k_lo_d, k_lo, 3, cudaMemcpyHostToDevice, stream)
+    cuda_result = cudaMemcpyAsync(k_hi_d, k_hi, 3, cudaMemcpyHostToDevice, stream)
+
+    call threads_and_blocks(k_lo, k_hi, numBlocks, numThreads)
+
+    call cuda_construct_flux<<<numBlocks, numThreads, 0, stream>>>(k_lo_d, k_hi_d, domlo_d, domhi_d, h, dx_d, dt_d, idir_d, &
+                                                                   uin, uin_lo_d, uin_hi_d, &
+                                                                   flux2, h%q2, f2_lo_d, f2_hi_d, &
+                                                                   area2, a2_lo_d, a2_hi_d, &
+                                                                   qaux, qa_lo_d, qa_hi_d)
+
+    ! Compute F^z
+
+    idir = 3
+
+    cuda_result = cudaMemcpyAsync(idir_d, idir, 1, cudaMemcpyHostToDevice, stream)
+
+    k_lo = f3_lo
+    k_hi = f3_hi
+
+    cuda_result = cudaMemcpyAsync(k_lo_d, k_lo, 3, cudaMemcpyHostToDevice, stream)
+    cuda_result = cudaMemcpyAsync(k_hi_d, k_hi, 3, cudaMemcpyHostToDevice, stream)
+
+    call threads_and_blocks(k_lo, k_hi, numBlocks, numThreads)
+
+    call cuda_construct_flux<<<numBlocks, numThreads, 0, stream>>>(k_lo_d, k_hi_d, domlo_d, domhi_d, h, dx_d, dt_d, idir_d, &
+                                                                   uin, uin_lo_d, uin_hi_d, &
+                                                                   flux3, h%q3, f3_lo_d, f3_hi_d, &
+                                                                   area3, a3_lo_d, a3_hi_d, &
+                                                                   qaux, qa_lo_d, qa_hi_d)
+
+    ! Create an update source term based on the flux divergence.
+
+    k_lo = lo
+    k_hi = hi
+
+    cuda_result = cudaMemcpyAsync(k_lo_d, k_lo, 3, cudaMemcpyHostToDevice, stream)
+    cuda_result = cudaMemcpyAsync(k_hi_d, k_hi, 3, cudaMemcpyHostToDevice, stream)
+
+    call threads_and_blocks(k_lo, k_hi, numBlocks, numThreads)
+
+    call cuda_construct_hydro_update<<<numBlocks, numThreads, 0, stream>>>(k_lo_d, k_hi_d, dx_d, dt_d, h, &
+                                                                           flux1, f1_lo_d, f1_hi_d, &
+                                                                           flux2, f2_lo_d, f2_hi_d, &
+                                                                           flux3, f3_lo_d, f3_hi_d, &
+                                                                           area1, a1_lo_d, a1_hi_d, &
+                                                                           area2, a2_lo_d, a2_hi_d, &
+                                                                           area3, a3_lo_d, a3_hi_d, &
+                                                                           vol, vol_lo_d, vol_hi_d, &
+                                                                           update, updt_lo_d, updt_hi_d)
 
     cuda_result = cudaStreamSynchronize()
 

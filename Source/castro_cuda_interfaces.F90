@@ -306,60 +306,29 @@ contains
   end subroutine cuda_estdt
 
 
+
   attributes(global) &
-  subroutine cuda_mol_single_stage(time, &
-                                   lo, hi, domlo, domhi, &
-                                   uin, uin_lo, uin_hi, &
-                                   uout, uout_lo, uout_hi, &
-                                   q, q_lo, q_hi, &
-                                   qaux, qa_lo, qa_hi, &
-                                   update, updt_lo, updt_hi, &
-                                   dx, dt, h, &
-                                   flux1, flux1_lo, flux1_hi, &
-                                   flux2, flux2_lo, flux2_hi, &
-                                   flux3, flux3_lo, flux3_hi, &
-                                   area1, area1_lo, area1_hi, &
-                                   area2, area2_lo, area2_hi, &
-                                   area3, area3_lo, area3_hi, &
-                                   vol, vol_lo, vol_hi, &
-                                   courno, verbose)
+  subroutine cuda_prepare_for_fluxes(lo, hi, dt, dx, courno, h, &
+                                     q, q_lo, q_hi, &
+                                     qaux, qa_lo, qa_hi)
 
     use amrex_fort_module, only: rt => amrex_real
-    use meth_params_module, only: NQ, NQAUX, NVAR
-    use mol_module, only: mol_single_stage
+    use meth_params_module, only: NQ, NQAUX
     use advection_util_module, only: ht
+    use mol_module, only: prepare_for_fluxes
 
     implicit none
 
-    integer,  intent(in   ) :: lo(3), hi(3), verbose
-    integer,  intent(in   ) :: domlo(3), domhi(3)
-    integer,  intent(in   ) :: uin_lo(3), uin_hi(3)
-    integer,  intent(in   ) :: uout_lo(3), uout_hi(3)
+    integer,  intent(in   ) :: lo(3), hi(3)
     integer,  intent(in   ) :: q_lo(3), q_hi(3)
     integer,  intent(in   ) :: qa_lo(3), qa_hi(3)
-    integer,  intent(in   ) :: updt_lo(3), updt_hi(3)
-    integer,  intent(in   ) :: flux1_lo(3), flux1_hi(3)
-    integer,  intent(in   ) :: flux2_lo(3), flux2_hi(3)
-    integer,  intent(in   ) :: flux3_lo(3), flux3_hi(3)
-    integer,  intent(in   ) :: area1_lo(3), area1_hi(3)
-    integer,  intent(in   ) :: area2_lo(3), area2_hi(3)
-    integer,  intent(in   ) :: area3_lo(3), area3_hi(3)
-    integer,  intent(in   ) :: vol_lo(3), vol_hi(3)
 
-    real(rt), intent(in   ) :: uin(uin_lo(1):uin_hi(1), uin_lo(2):uin_hi(2), uin_lo(3):uin_hi(3), NVAR)
-    real(rt), intent(inout) :: uout(uout_lo(1):uout_hi(1), uout_lo(2):uout_hi(2), uout_lo(3):uout_hi(3), NVAR)
     real(rt), intent(inout) :: q(q_lo(1):q_hi(1), q_lo(2):q_hi(2), q_lo(3):q_hi(3), NQ)
     real(rt), intent(inout) :: qaux(qa_lo(1):qa_hi(1), qa_lo(2):qa_hi(2), qa_lo(3):qa_hi(3), NQAUX)
-    real(rt), intent(inout) :: update(updt_lo(1):updt_hi(1), updt_lo(2):updt_hi(2), updt_lo(3):updt_hi(3), NVAR)
-    real(rt), intent(inout) :: flux1(flux1_lo(1):flux1_hi(1), flux1_lo(2):flux1_hi(2), flux1_lo(3):flux1_hi(3), NVAR)
-    real(rt), intent(inout) :: flux2(flux2_lo(1):flux2_hi(1), flux2_lo(2):flux2_hi(2), flux2_lo(3):flux2_hi(3), NVAR)
-    real(rt), intent(inout) :: flux3(flux3_lo(1):flux3_hi(1), flux3_lo(2):flux3_hi(2), flux3_lo(3):flux3_hi(3), NVAR)
-    real(rt), intent(in   ) :: area1(area1_lo(1):area1_hi(1), area1_lo(2):area1_hi(2), area1_lo(3):area1_hi(3))
-    real(rt), intent(in   ) :: area2(area2_lo(1):area2_hi(1), area2_lo(2):area2_hi(2), area2_lo(3):area2_hi(3))
-    real(rt), intent(in   ) :: area3(area3_lo(1):area3_hi(1), area3_lo(2):area3_hi(2), area3_lo(3):area3_hi(3))
-    real(rt), intent(in   ) :: vol(vol_lo(1):vol_hi(1), vol_lo(2):vol_hi(2), vol_lo(3):vol_hi(3))
-    real(rt), intent(in   ) :: dx(3), dt, time
+    real(rt), intent(in   ) :: dx(3), dt
     real(rt), intent(inout) :: courno
+
+    type(ht), intent(inout) :: h
 
     integer :: idx(3)
 
@@ -371,23 +340,122 @@ contains
 
     if (idx(1) .gt. hi(1) .or. idx(2) .gt. hi(2) .or. idx(3) .gt. hi(3)) return
 
-    call mol_single_stage(time, &
-                          idx, idx, domlo, domhi, &
-                          uin, uin_lo, uin_hi, &
-                          uout, uout_lo, uout_hi, &
-                          q, q_lo, q_hi, &
-                          qaux, qa_lo, qa_hi, &
-                          update, updt_lo, updt_hi, &
-                          dx, dt, h, &
-                          flux1, flux1_lo, flux1_hi, &
-                          flux2, flux2_lo, flux2_hi, &
-                          flux3, flux3_lo, flux3_hi, &
-                          area1, area1_lo, area1_hi, &
-                          area2, area2_lo, area2_hi, &
-                          area3, area3_lo, area3_hi, &
-                          vol, vol_lo, vol_hi, &
-                          courno, verbose)
-    
-  end subroutine cuda_mol_single_stage
+    call prepare_for_fluxes(lo, hi, dt, dx, courno, h, &
+                            q, q_lo, q_hi, &
+                            qaux, qa_lo, qa_hi)
+
+  end subroutine cuda_prepare_for_fluxes
+
+
+
+  attributes(global) &
+  subroutine cuda_construct_flux(lo, hi, domlo, domhi, h, dx, dt, idir, &
+                                 uin, uin_lo, uin_hi, &
+                                 flux, qint, f_lo, f_hi, &
+                                 area, a_lo, a_hi, &
+                                 qaux, qa_lo, qa_hi)
+
+    use amrex_fort_module, only: rt => amrex_real
+    use meth_params_module, only: NVAR, NGDNV, NQAUX
+    use advection_util_module, only: ht
+    use mol_module, only: construct_flux
+
+    implicit none
+
+    integer,  intent(in   ) :: lo(3), hi(3), idir
+    integer,  intent(in   ) :: domlo(3), domhi(3)
+    integer,  intent(in   ) :: uin_lo(3), uin_hi(3)
+    integer,  intent(in   ) :: qa_lo(3), qa_hi(3)
+    integer,  intent(in   ) :: f_lo(3), f_hi(3)
+    integer,  intent(in   ) :: a_lo(3), a_hi(3)
+
+    real(rt), intent(in   ) :: uin(uin_lo(1):uin_hi(1), uin_lo(2):uin_hi(2), uin_lo(3):uin_hi(3), NVAR)
+    real(rt), intent(inout) :: qint(f_lo(1):f_hi(1), f_lo(2):f_hi(2), f_lo(3):f_hi(3), NGDNV)
+    real(rt), intent(inout) :: flux(f_lo(1):f_hi(1), f_lo(2):f_hi(2), f_lo(3):f_hi(3), NVAR)
+    real(rt), intent(in   ) :: area(a_lo(1):a_hi(1), a_lo(2):a_hi(2), a_lo(3):a_hi(3))
+    real(rt), intent(inout) :: qaux(qa_lo(1):qa_hi(1), qa_lo(2):qa_hi(2), qa_lo(3):qa_hi(3), NQAUX)
+    real(rt), intent(in   ) :: dx(3), dt
+
+    type(ht), intent(inout) :: h
+
+    integer :: idx(3)
+
+    ! Get our spatial index based on the CUDA thread index
+
+    idx(1) = lo(1) + (threadIdx%x - 1) + blockDim%x * (blockIdx%x - 1)
+    idx(2) = lo(2) + (threadIdx%y - 1) + blockDim%y * (blockIdx%y - 1)
+    idx(3) = lo(3) + (threadIdx%z - 1) + blockDim%z * (blockIdx%z - 1)
+
+    if (idx(1) .gt. hi(1) .or. idx(2) .gt. hi(2) .or. idx(3) .gt. hi(3)) return
+
+    call construct_flux(lo, hi, domlo, domhi, h, dx, dt, idir, &
+                        uin, uin_lo, uin_hi, &
+                        flux, qint, f_lo, f_hi, &
+                        area, a_lo, a_hi, &
+                        qaux, qa_lo, qa_hi)
+
+  end subroutine cuda_construct_flux
+
+
+
+  attributes(global) &
+  subroutine cuda_construct_hydro_update(lo, hi, dx, dt, h, &
+                                         f1, f1_lo, f1_hi, &
+                                         f2, f2_lo, f2_hi, &
+                                         f3, f3_lo, f3_hi, &
+                                         a1, a1_lo, a1_hi, &
+                                         a2, a2_lo, a2_hi, &
+                                         a3, a3_lo, a3_hi, &
+                                         vol, vol_lo, vol_hi, &
+                                         update, u_lo, u_hi)
+
+    use amrex_fort_module, only: rt => amrex_real
+    use meth_params_module, only: NVAR
+    use advection_util_module, only: ht, construct_hydro_update
+
+    implicit none
+
+    integer,  intent(in   ) :: lo(3), hi(3)
+    integer,  intent(in   ) :: f1_lo(3), f1_hi(3)
+    integer,  intent(in   ) :: f2_lo(3), f2_hi(3)
+    integer,  intent(in   ) :: f3_lo(3), f3_hi(3)
+    integer,  intent(in   ) :: a1_lo(3), a1_hi(3)
+    integer,  intent(in   ) :: a2_lo(3), a2_hi(3)
+    integer,  intent(in   ) :: a3_lo(3), a3_hi(3)
+    integer,  intent(in   ) :: vol_lo(3), vol_hi(3)
+    integer,  intent(in   ) :: u_lo(3), u_hi(3)
+    real(rt), intent(in   ) :: dx(3), dt
+    type(ht), intent(in   ) :: h
+
+    real(rt), intent(in   ) :: f1(f1_lo(1):f1_hi(1),f1_lo(2):f1_hi(2),f1_lo(3):f1_hi(3),NVAR)
+    real(rt), intent(in   ) :: f2(f2_lo(1):f2_hi(1),f2_lo(2):f2_hi(2),f2_lo(3):f2_hi(3),NVAR)
+    real(rt), intent(in   ) :: f3(f3_lo(1):f3_hi(1),f3_lo(2):f3_hi(2),f3_lo(3):f3_hi(3),NVAR)
+    real(rt), intent(in   ) :: a1(a1_lo(1):a1_hi(1),a1_lo(2):a1_hi(2),a1_lo(3):a1_hi(3))
+    real(rt), intent(in   ) :: a2(a2_lo(1):a2_hi(1),a2_lo(2):a2_hi(2),a2_lo(3):a2_hi(3))
+    real(rt), intent(in   ) :: a3(a3_lo(1):a3_hi(1),a3_lo(2):a3_hi(2),a3_lo(3):a3_hi(3))
+    real(rt), intent(in   ) :: vol(vol_lo(1):vol_hi(1),vol_lo(2):vol_hi(2),vol_lo(3):vol_hi(3))
+    real(rt), intent(inout) :: update(u_lo(1):u_hi(1),u_lo(2):u_hi(2),u_lo(3):u_hi(3),NVAR)
+
+    integer :: idx(3)
+
+    ! Get our spatial index based on the CUDA thread index
+
+    idx(1) = lo(1) + (threadIdx%x - 1) + blockDim%x * (blockIdx%x - 1)
+    idx(2) = lo(2) + (threadIdx%y - 1) + blockDim%y * (blockIdx%y - 1)
+    idx(3) = lo(3) + (threadIdx%z - 1) + blockDim%z * (blockIdx%z - 1)
+
+    if (idx(1) .gt. hi(1) .or. idx(2) .gt. hi(2) .or. idx(3) .gt. hi(3)) return
+
+    call construct_hydro_update(lo, hi, dx, dt, h, &
+                                f1, f1_lo, f1_hi, &
+                                f2, f2_lo, f2_hi, &
+                                f3, f3_lo, f3_hi, &
+                                a1, a1_lo, a1_hi, &
+                                a2, a2_lo, a2_hi, &
+                                a3, a3_lo, a3_hi, &
+                                vol, vol_lo, vol_hi, &
+                                update, u_lo, u_hi)
+
+  end subroutine cuda_construct_hydro_update
 
 end module cuda_interfaces_module

@@ -191,6 +191,8 @@ contains
     real(rt) :: bnd_fac_x, bnd_fac_y, bnd_fac_z
     real(rt) :: wwinv, roinv, co2inv
 
+    real(rt) :: us1d
+
     if (idir .eq. 1) then
        iu = QU
        iv1 = QV
@@ -399,8 +401,8 @@ contains
 
              uflx(i,j,k,UEDEN) = u_adv*(rhoetot + qint(i,j,k,GDPRES))
              uflx(i,j,k,UEINT) = u_adv*regdnv
-             ! store this for vectorization
-             h%us1d(i,j,k) = ustar
+
+             us1d = ustar
 
           end do
 
@@ -411,10 +413,10 @@ contains
 
              !dir$ ivdep
              do i = lo(1), hi(1)
-                if (h%us1d(i,j,k) > ZERO) then
+                if (us1d > ZERO) then
                    uflx(i,j,k,n) = uflx(i,j,k,URHO)*h%qm(i,j,k,nqp,idir)
 
-                else if (h%us1d(i,j,k) < ZERO) then
+                else if (us1d < ZERO) then
                    uflx(i,j,k,n) = uflx(i,j,k,URHO)*h%qp(i,j,k,nqp,idir)
 
                 else

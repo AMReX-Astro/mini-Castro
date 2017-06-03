@@ -6,6 +6,9 @@ module mol_module
 
 contains
 
+#ifdef CUDA
+  attributes(device) &
+#endif
   subroutine prepare_for_fluxes(lo, hi, dt, dx, courno, h, &
                                 q, q_lo, q_hi, &
                                 qaux, qa_lo, qa_hi)
@@ -35,7 +38,7 @@ contains
                      qaux, qa_lo, qa_hi)
 
     ! Compute divergence of velocity field.
-    call divu(lo, hi, dx, q, q_lo, q_hi, h%div)
+    call divu(lo, hi, dx, q, q_lo, q_hi, h)
 
     ! Compute flattening coefficient for slope calculations.
     call uflaten(lo, hi, q, q_lo, q_hi, h)
@@ -50,6 +53,9 @@ contains
 
 
 
+#ifdef CUDA
+  attributes(device) &
+#endif
   subroutine construct_flux(lo, hi, domlo, domhi, h, dx, dt, idir, &
                             uin, uin_lo, uin_hi, &
                             flux, qint, f_lo, f_hi, &

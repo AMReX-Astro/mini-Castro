@@ -343,6 +343,9 @@ contains
 
 
 
+#ifdef CUDA
+  attributes(device) &
+#endif
   subroutine ppm_int_profile(lo, hi, h)
 
     implicit none
