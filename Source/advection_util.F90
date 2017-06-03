@@ -669,6 +669,38 @@ contains
 
 
 
+  subroutine pdivu(lo, hi, h, dx)
+
+    use bl_constants_module, only: HALF
+    use meth_params_module, only: GDPRES, GDU, GDV, GDW
+
+    implicit none
+
+    integer,  intent(in   ) :: lo(3), hi(3)
+    real(rt), intent(in   ) :: dx(3)
+    type(ht), intent(inout) :: h
+
+    integer :: i, j, k
+
+    do k = lo(3), hi(3)
+       do j = lo(2), hi(2)
+          do i = lo(1), hi(1)
+
+             h%pdivu(i,j,k) = HALF * (h%q1(i+1,j,k,GDPRES) + h%q1(i,j,k,GDPRES)) * &
+                                     (h%q1(i+1,j,k,GDU) - h%q1(i,j,k,GDU)) / dx(1) + &
+                              HALF * (h%q2(i,j+1,k,GDPRES) + h%q2(i,j,k,GDPRES)) * &
+                                     (h%q2(i,j+1,k,GDV) - h%q2(i,j,k,GDV)) / dx(2) + &
+                              HALF * (h%q3(i,j,k+1,GDPRES) + h%q3(i,j,k,GDPRES)) * &
+                                     (h%q3(i,j,k+1,GDW) - h%q3(i,j,k,GDW)) / dx(3)
+
+          end do
+       end do
+    end do
+
+  end subroutine pdivu
+
+
+
   ! Allocate the components of a hydro temporary.
 
   subroutine allocate_ht(h, lo, hi, flux1_lo, flux1_hi, flux2_lo, flux2_hi, &

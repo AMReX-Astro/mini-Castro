@@ -27,7 +27,7 @@ contains
                               courno, verbose)
 
     use advection_util_module, only: compute_cfl, divu, normalize_species_fluxes, &
-                                     ht
+                                     ht, pdivu
     use bl_constants_module, only: ZERO, HALF, ONE, FOURTH
     use flatten_module, only: uflaten
     use riemann_module, only: cmpflx
@@ -87,6 +87,9 @@ contains
     g_lo = lo - ngf
     g_hi = hi + ngf
 
+    edge_lo = lo
+    edge_hi = hi + 1
+
     ! Check if we have violated the CFL criterion.
     call compute_cfl(q, q_lo, q_hi, &
                      qaux, qa_lo, qa_hi, &
@@ -116,23 +119,10 @@ contains
                 h, 3, lo, [hi(1), hi(2), hi(3)+1], domlo, domhi)
 
     ! Compute divergence of velocity field (on surroundingNodes(lo,hi))
-    edge_lo = lo
-    edge_hi = hi + 1
     call divu(lo,hi,q,q_lo,q_hi,dx,h%div,edge_lo,edge_hi)
 
-    do k = lo(3), hi(3)
-       do j = lo(2), hi(2)
-          do i = lo(1), hi(1)
-             h%pdivu(i,j,k) = &
-                  HALF*(h%q1(i+1,j,k,GDPRES) + h%q1(i,j,k,GDPRES)) * &
-                       (h%q1(i+1,j,k,GDU) - h%q1(i,j,k,GDU))/dx(1) + &
-                  HALF*(h%q2(i,j+1,k,GDPRES) + h%q2(i,j,k,GDPRES)) * &
-                       (h%q2(i,j+1,k,GDV) - h%q2(i,j,k,GDV))/dx(2) + &
-                  HALF*(h%q3(i,j,k+1,GDPRES) + h%q3(i,j,k,GDPRES)) * &
-                       (h%q3(i,j,k+1,GDW) - h%q3(i,j,k,GDW))/dx(3)
-          enddo
-       enddo
-    enddo
+    ! Compute p x div(u)
+    call pdivu(lo, hi, h, dx)
 
     do n = 1, NVAR
 
