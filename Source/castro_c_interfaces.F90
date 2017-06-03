@@ -602,19 +602,19 @@ contains
 
   subroutine ca_mol_single_stage(time, &
                                  lo, hi, domlo, domhi, &
-                                 uin, uin_l1, uin_l2, uin_l3, uin_h1, uin_h2, uin_h3, &
-                                 uout, uout_l1, uout_l2, uout_l3, uout_h1, uout_h2, uout_h3, &
-                                 q, q_l1, q_l2, q_l3, q_h1, q_h2, q_h3, &
-                                 qaux, qa_l1, qa_l2, qa_l3, qa_h1, qa_h2, qa_h3, &
-                                 update, updt_l1, updt_l2, updt_l3, updt_h1, updt_h2, updt_h3, &
+                                 uin, uin_lo, uin_hi, &
+                                 uout, uout_lo, uout_hi, &
+                                 q, q_lo, q_hi, &
+                                 qaux, qa_lo, qa_hi, &
+                                 update, updt_lo, updt_hi, &
                                  dx, dt, &
-                                 flux1, flux1_l1, flux1_l2, flux1_l3, flux1_h1, flux1_h2, flux1_h3, &
-                                 flux2, flux2_l1, flux2_l2, flux2_l3, flux2_h1, flux2_h2, flux2_h3, &
-                                 flux3, flux3_l1, flux3_l2, flux3_l3, flux3_h1, flux3_h2, flux3_h3, &
-                                 area1, area1_l1, area1_l2, area1_l3, area1_h1, area1_h2, area1_h3, &
-                                 area2, area2_l1, area2_l2, area2_l3, area2_h1, area2_h2, area2_h3, &
-                                 area3, area3_l1, area3_l2, area3_l3, area3_h1, area3_h2, area3_h3, &
-                                 vol, vol_l1, vol_l2, vol_l3, vol_h1, vol_h2, vol_h3, &
+                                 flux1, flux1_lo, flux1_hi, &
+                                 flux2, flux2_lo, flux2_hi, &
+                                 flux3, flux3_lo, flux3_hi, &
+                                 area1, area1_lo, area1_hi, &
+                                 area2, area2_lo, area2_hi, &
+                                 area3, area3_lo, area3_hi, &
+                                 vol, vol_lo, vol_hi, &
                                  courno, verbose, idx) bind(C, name="ca_mol_single_stage")
 
     use mol_module, only: mol_single_stage
@@ -627,41 +627,36 @@ contains
 
     integer,  intent(in   ) :: lo(3), hi(3), verbose, idx
     integer,  intent(in   ) :: domlo(3), domhi(3)
-    integer,  intent(in   ) :: uin_l1, uin_l2, uin_l3, uin_h1, uin_h2, uin_h3
-    integer,  intent(in   ) :: uout_l1, uout_l2, uout_l3, uout_h1, uout_h2, uout_h3
-    integer,  intent(in   ) :: q_l1, q_l2, q_l3, q_h1, q_h2, q_h3
-    integer,  intent(in   ) :: qa_l1, qa_l2, qa_l3, qa_h1, qa_h2, qa_h3
-    integer,  intent(in   ) :: updt_l1, updt_l2, updt_l3, updt_h1, updt_h2, updt_h3
-    integer,  intent(in   ) :: flux1_l1, flux1_l2, flux1_l3, flux1_h1, flux1_h2, flux1_h3
-    integer,  intent(in   ) :: flux2_l1, flux2_l2, flux2_l3, flux2_h1, flux2_h2, flux2_h3
-    integer,  intent(in   ) :: flux3_l1, flux3_l2, flux3_l3, flux3_h1, flux3_h2, flux3_h3
-    integer,  intent(in   ) :: area1_l1, area1_l2, area1_l3, area1_h1, area1_h2, area1_h3
-    integer,  intent(in   ) :: area2_l1, area2_l2, area2_l3, area2_h1, area2_h2, area2_h3
-    integer,  intent(in   ) :: area3_l1, area3_l2, area3_l3, area3_h1, area3_h2, area3_h3
-    integer,  intent(in   ) :: vol_l1, vol_l2, vol_l3, vol_h1, vol_h2, vol_h3
+    integer,  intent(in   ) :: uin_lo(3), uin_hi(3)
+    integer,  intent(in   ) :: uout_lo(3), uout_hi(3)
+    integer,  intent(in   ) :: q_lo(3), q_hi(3)
+    integer,  intent(in   ) :: qa_lo(3), qa_hi(3)
+    integer,  intent(in   ) :: updt_lo(3), updt_hi(3)
+    integer,  intent(in   ) :: flux1_lo(3), flux1_hi(3)
+    integer,  intent(in   ) :: flux2_lo(3), flux2_hi(3)
+    integer,  intent(in   ) :: flux3_lo(3), flux3_hi(3)
+    integer,  intent(in   ) :: area1_lo(3), area1_hi(3)
+    integer,  intent(in   ) :: area2_lo(3), area2_hi(3)
+    integer,  intent(in   ) :: area3_lo(3), area3_hi(3)
+    integer,  intent(in   ) :: vol_lo(3), vol_hi(3)
 
-    real(rt), intent(in   ) :: uin(uin_l1:uin_h1, uin_l2:uin_h2, uin_l3:uin_h3, NVAR)
-    real(rt), intent(inout) :: uout(uout_l1:uout_h1, uout_l2:uout_h2, uout_l3:uout_h3, NVAR)
-    real(rt), intent(inout) :: q(q_l1:q_h1, q_l2:q_h2, q_l3:q_h3, NQ)
-    real(rt), intent(inout) :: qaux(qa_l1:qa_h1, qa_l2:qa_h2, qa_l3:qa_h3, NQAUX)
-    real(rt), intent(inout) :: update(updt_l1:updt_h1, updt_l2:updt_h2, updt_l3:updt_h3, NVAR)
-    real(rt), intent(inout) :: flux1(flux1_l1:flux1_h1, flux1_l2:flux1_h2, flux1_l3:flux1_h3, NVAR)
-    real(rt), intent(inout) :: flux2(flux2_l1:flux2_h1, flux2_l2:flux2_h2, flux2_l3:flux2_h3, NVAR)
-    real(rt), intent(inout) :: flux3(flux3_l1:flux3_h1, flux3_l2:flux3_h2, flux3_l3:flux3_h3, NVAR)
-    real(rt), intent(in   ) :: area1(area1_l1:area1_h1, area1_l2:area1_h2, area1_l3:area1_h3)
-    real(rt), intent(in   ) :: area2(area2_l1:area2_h1, area2_l2:area2_h2, area2_l3:area2_h3)
-    real(rt), intent(in   ) :: area3(area3_l1:area3_h1, area3_l2:area3_h2, area3_l3:area3_h3)
-    real(rt), intent(in   ) :: vol(vol_l1:vol_h1, vol_l2:vol_h2, vol_l3:vol_h3)
+    real(rt), intent(in   ) :: uin(uin_lo(1):uin_hi(1), uin_lo(2):uin_hi(2), uin_lo(3):uin_hi(3), NVAR)
+    real(rt), intent(inout) :: uout(uout_lo(1):uout_hi(1), uout_lo(2):uout_hi(2), uout_lo(3):uout_hi(3), NVAR)
+    real(rt), intent(inout) :: q(q_lo(1):q_hi(1), q_lo(2):q_hi(2), q_lo(3):q_hi(3), NQ)
+    real(rt), intent(inout) :: qaux(qa_lo(1):qa_hi(1), qa_lo(2):qa_hi(2), qa_lo(3):qa_hi(3), NQAUX)
+    real(rt), intent(inout) :: update(updt_lo(1):updt_hi(1), updt_lo(2):updt_hi(2), updt_lo(3):updt_hi(3), NVAR)
+    real(rt), intent(inout) :: flux1(flux1_lo(1):flux1_hi(1), flux1_lo(2):flux1_hi(2), flux1_lo(3):flux1_hi(3), NVAR)
+    real(rt), intent(inout) :: flux2(flux2_lo(1):flux2_hi(1), flux2_lo(2):flux2_hi(2), flux2_lo(3):flux2_hi(3), NVAR)
+    real(rt), intent(inout) :: flux3(flux3_lo(1):flux3_hi(1), flux3_lo(2):flux3_hi(2), flux3_lo(3):flux3_hi(3), NVAR)
+    real(rt), intent(in   ) :: area1(area1_lo(1):area1_hi(1), area1_lo(2):area1_hi(2), area1_lo(3):area1_hi(3))
+    real(rt), intent(in   ) :: area2(area2_lo(1):area2_hi(1), area2_lo(2):area2_hi(2), area2_lo(3):area2_hi(3))
+    real(rt), intent(in   ) :: area3(area3_lo(1):area3_hi(1), area3_lo(2):area3_hi(2), area3_lo(3):area3_hi(3))
+    real(rt), intent(in   ) :: vol(vol_lo(1):vol_hi(1), vol_lo(2):vol_hi(2), vol_lo(3):vol_hi(3))
     real(rt), intent(in   ) :: dx(3), dt, time
     real(rt), intent(inout) :: courno
 
     integer :: ngf
-    integer :: q_lo(3), q_hi(3)
-    integer :: qa_lo(3), qa_hi(3)
     integer :: It_lo(3), It_hi(3)
-    integer :: flux1_lo(3), flux1_hi(3)
-    integer :: flux2_lo(3), flux2_hi(3)
-    integer :: flux3_lo(3), flux3_hi(3)
     integer :: st_lo(3), st_hi(3)
     integer :: shk_lo(3), shk_hi(3)
     integer :: g_lo(3), g_hi(3)
@@ -670,21 +665,6 @@ contains
     type(ht) :: h
 
     ngf = 1
-
-    q_lo = [ q_l1, q_l2, q_l3 ]
-    q_hi = [ q_h1, q_h2, q_h3 ]
-
-    qa_lo = [ qa_l1, qa_l2, qa_l3 ]
-    qa_hi = [ qa_h1, qa_h2, qa_h3 ]
-
-    flux1_lo = [ flux1_l1, flux1_l2, flux1_l3 ]
-    flux1_hi = [ flux1_h1, flux1_h2, flux1_h3 ]
-
-    flux2_lo = [ flux2_l1, flux2_l2, flux2_l3 ]
-    flux2_hi = [ flux2_h1, flux2_h2, flux2_h3 ]
-
-    flux3_lo = [ flux3_l1, flux3_l2, flux3_l3 ]
-    flux3_hi = [ flux3_h1, flux3_h2, flux3_h3 ]
 
     It_lo = lo - 1
     It_hi = hi + 1
@@ -716,19 +696,19 @@ contains
 
     real(rt), device :: time_d
     integer,  device :: lo_d(3), hi_d(3), domlo_d(3), domhi_d(3)
-    integer,  device :: uin_l1_d, uin_l2_d, uin_l3_d, uin_h1_d, uin_h2_d, uin_h3_d
-    integer,  device :: uout_l1_d, uout_l2_d, uout_l3_d, uout_h1_d, uout_h2_d, uout_h3_d
-    integer,  device :: q_l1_d, q_l2_d, q_l3_d, q_h1_d, q_h2_d, q_h3_d
-    integer,  device :: qa_l1_d, qa_l2_d, qa_l3_d, qa_h1_d, qa_h2_d, qa_h3_d
-    integer,  device :: updt_l1_d, updt_l2_d, updt_l3_d, updt_h1_d, updt_h2_d, updt_h3_d
+    integer,  device :: uin_lo_d(3), uin_hi_d(3)
+    integer,  device :: uout_lo_d(3), uin_hi_d(3)
+    integer,  device :: q_lo_d(3), q_hi_d(3)
+    integer,  device :: qa_lo_d(3), qa_hi_d(3)
+    integer,  device :: updt_lo_d(3), updt_hi_d(3)
     real(rt), device :: dx_d(3), dt_d
-    integer,  device :: flux1_l1_d, flux1_l2_d, flux1_l3_d, flux1_h1_d, flux1_h2_d, flux1_h3_d
-    integer,  device :: flux2_l1_d, flux2_l2_d, flux2_l3_d, flux2_h1_d, flux2_h2_d, flux2_h3_d
-    integer,  device :: flux3_l1_d, flux3_l2_d, flux3_l3_d, flux3_h1_d, flux3_h2_d, flux3_h3_d
-    integer,  device :: area1_l1_d, area1_l2_d, area1_l3_d, area1_h1_d, area1_h2_d, area1_h3_d
-    integer,  device :: area2_l1_d, area2_l2_d, area2_l3_d, area2_h1_d, area2_h2_d, area2_h3_d
-    integer,  device :: area3_l1_d, area3_l2_d, area3_l3_d, area3_h1_d, area3_h2_d, area3_h3_d
-    integer,  device :: vol_l1_d, vol_l2_d, vol_l3_d, vol_h1_d, vol_h2_d, vol_h3_d
+    integer,  device :: flux1_lo_d(3), flux1_hi_d(3)
+    integer,  device :: flux2_lo_d(3), flux2_hi_d(3)
+    integer,  device :: flux3_lo_d(3), flux3_hi_d(3)
+    integer,  device :: area1_lo_d(3), area1_hi_d(3)
+    integer,  device :: area2_lo_d(3), area2_hi_d(3)
+    integer,  device :: area3_lo_d(3), area3_hi_d(3)
+    integer,  device :: vol_lo_d(3), vol_hi_d(3)
     real(rt), device :: courno_d
     integer,  device :: verbose_d
 
@@ -744,88 +724,35 @@ contains
     cuda_result = cudaMemcpyAsync(domlo_d, domlo, 3, cudaMemcpyHostToDevice, stream)
     cuda_result = cudaMemcpyAsync(domhi_d, domhi, 3, cudaMemcpyHostToDevice, stream)
 
-    cuda_result = cudaMemcpyAsync(uin_l1_d, uin_l1, 1, cudaMemcpyHostToDevice, stream)
-    cuda_result = cudaMemcpyAsync(uin_l2_d, uin_l2, 1, cudaMemcpyHostToDevice, stream)
-    cuda_result = cudaMemcpyAsync(uin_l3_d, uin_l3, 1, cudaMemcpyHostToDevice, stream)
-    cuda_result = cudaMemcpyAsync(uin_h1_d, uin_h1, 1, cudaMemcpyHostToDevice, stream)
-    cuda_result = cudaMemcpyAsync(uin_h2_d, uin_h2, 1, cudaMemcpyHostToDevice, stream)
-    cuda_result = cudaMemcpyAsync(uin_h3_d, uin_h3, 1, cudaMemcpyHostToDevice, stream)
+    cuda_result = cudaMemcpyAsync(uin_lo_d, uin_lo, 3, cudaMemcpyHostToDevice, stream)
 
-    cuda_result = cudaMemcpyAsync(uout_l1_d, uout_l1, 1, cudaMemcpyHostToDevice, stream)
-    cuda_result = cudaMemcpyAsync(uout_l2_d, uout_l2, 1, cudaMemcpyHostToDevice, stream)
-    cuda_result = cudaMemcpyAsync(uout_l3_d, uout_l3, 1, cudaMemcpyHostToDevice, stream)
-    cuda_result = cudaMemcpyAsync(uout_h1_d, uout_h1, 1, cudaMemcpyHostToDevice, stream)
-    cuda_result = cudaMemcpyAsync(uout_h2_d, uout_h2, 1, cudaMemcpyHostToDevice, stream)
-    cuda_result = cudaMemcpyAsync(uout_h3_d, uout_h3, 1, cudaMemcpyHostToDevice, stream)
+    cuda_result = cudaMemcpyAsync(uout_lo_d, uout_lo, 3, cudaMemcpyHostToDevice, stream)
 
-    cuda_result = cudaMemcpyAsync(q_l1_d, q_l1, 1, cudaMemcpyHostToDevice, stream)
-    cuda_result = cudaMemcpyAsync(q_l2_d, q_l2, 1, cudaMemcpyHostToDevice, stream)
-    cuda_result = cudaMemcpyAsync(q_l3_d, q_l3, 1, cudaMemcpyHostToDevice, stream)
-    cuda_result = cudaMemcpyAsync(q_h1_d, q_h1, 1, cudaMemcpyHostToDevice, stream)
-    cuda_result = cudaMemcpyAsync(q_h2_d, q_h2, 1, cudaMemcpyHostToDevice, stream)
-    cuda_result = cudaMemcpyAsync(q_h3_d, q_h3, 1, cudaMemcpyHostToDevice, stream)
+    cuda_result = cudaMemcpyAsync(q_lo_d, q_lo, 3, cudaMemcpyHostToDevice, stream)
 
-    cuda_result = cudaMemcpyAsync(qa_l1_d, qa_l1, 1, cudaMemcpyHostToDevice, stream)
-    cuda_result = cudaMemcpyAsync(qa_l2_d, qa_l2, 1, cudaMemcpyHostToDevice, stream)
-    cuda_result = cudaMemcpyAsync(qa_l3_d, qa_l3, 1, cudaMemcpyHostToDevice, stream)
-    cuda_result = cudaMemcpyAsync(qa_h1_d, qa_h1, 1, cudaMemcpyHostToDevice, stream)
-    cuda_result = cudaMemcpyAsync(qa_h2_d, qa_h2, 1, cudaMemcpyHostToDevice, stream)
-    cuda_result = cudaMemcpyAsync(qa_h3_d, qa_h3, 1, cudaMemcpyHostToDevice, stream)
+    cuda_result = cudaMemcpyAsync(qa_lo_d, qa_lo, 3, cudaMemcpyHostToDevice, stream)
 
-    cuda_result = cudaMemcpyAsync(updt_l1_d, updt_l1, 1, cudaMemcpyHostToDevice, stream)
-    cuda_result = cudaMemcpyAsync(updt_l2_d, updt_l2, 1, cudaMemcpyHostToDevice, stream)
-    cuda_result = cudaMemcpyAsync(updt_l3_d, updt_l3, 1, cudaMemcpyHostToDevice, stream)
-    cuda_result = cudaMemcpyAsync(updt_h1_d, updt_h1, 1, cudaMemcpyHostToDevice, stream)
-    cuda_result = cudaMemcpyAsync(updt_h2_d, updt_h2, 1, cudaMemcpyHostToDevice, stream)
-    cuda_result = cudaMemcpyAsync(updt_h3_d, updt_h3, 1, cudaMemcpyHostToDevice, stream)
+    cuda_result = cudaMemcpyAsync(updt_lo_d, updt_lo, 3, cudaMemcpyHostToDevice, stream)
 
     cuda_result = cudaMemcpyAsync(dx_d, dx, 3, cudaMemcpyHostToDevice, stream)
     cuda_result = cudaMemcpyAsync(dt_d, dt, 1, cudaMemcpyHostToDevice, stream)
 
-    cuda_result = cudaMemcpyAsync(flux1_l1_d, flux1_l1, 1, cudaMemcpyHostToDevice, stream)
-    cuda_result = cudaMemcpyAsync(flux1_l2_d, flux1_l2, 1, cudaMemcpyHostToDevice, stream)
-    cuda_result = cudaMemcpyAsync(flux1_l3_d, flux1_l3, 1, cudaMemcpyHostToDevice, stream)
-    cuda_result = cudaMemcpyAsync(flux1_h1_d, flux1_h1, 1, cudaMemcpyHostToDevice, stream)
-    cuda_result = cudaMemcpyAsync(flux1_h2_d, flux1_h2, 1, cudaMemcpyHostToDevice, stream)
-    cuda_result = cudaMemcpyAsync(flux1_h3_d, flux1_h3, 1, cudaMemcpyHostToDevice, stream)
-    cuda_result = cudaMemcpyAsync(flux2_l1_d, flux2_l1, 1, cudaMemcpyHostToDevice, stream)
-    cuda_result = cudaMemcpyAsync(flux2_l2_d, flux2_l2, 1, cudaMemcpyHostToDevice, stream)
-    cuda_result = cudaMemcpyAsync(flux2_l3_d, flux2_l3, 1, cudaMemcpyHostToDevice, stream)
-    cuda_result = cudaMemcpyAsync(flux2_h1_d, flux2_h1, 1, cudaMemcpyHostToDevice, stream)
-    cuda_result = cudaMemcpyAsync(flux2_h2_d, flux2_h2, 1, cudaMemcpyHostToDevice, stream)
-    cuda_result = cudaMemcpyAsync(flux2_h3_d, flux2_h3, 1, cudaMemcpyHostToDevice, stream)
-    cuda_result = cudaMemcpyAsync(flux3_l1_d, flux3_l1, 1, cudaMemcpyHostToDevice, stream)
-    cuda_result = cudaMemcpyAsync(flux3_l2_d, flux3_l2, 1, cudaMemcpyHostToDevice, stream)
-    cuda_result = cudaMemcpyAsync(flux3_l3_d, flux3_l3, 1, cudaMemcpyHostToDevice, stream)
-    cuda_result = cudaMemcpyAsync(flux3_h1_d, flux3_h1, 1, cudaMemcpyHostToDevice, stream)
-    cuda_result = cudaMemcpyAsync(flux3_h2_d, flux3_h2, 1, cudaMemcpyHostToDevice, stream)
-    cuda_result = cudaMemcpyAsync(flux3_h3_d, flux3_h3, 1, cudaMemcpyHostToDevice, stream)
+    cuda_result = cudaMemcpyAsync(flux1_lo_d, flux1_lo, 3, cudaMemcpyHostToDevice, stream)
+    cuda_result = cudaMemcpyAsync(flux1_hi_d, flux1_hi, 3, cudaMemcpyHostToDevice, stream)
+    cuda_result = cudaMemcpyAsync(flux2_lo_d, flux2_lo, 3, cudaMemcpyHostToDevice, stream)
+    cuda_result = cudaMemcpyAsync(flux2_hi_d, flux2_hi, 3, cudaMemcpyHostToDevice, stream)
+    cuda_result = cudaMemcpyAsync(flux3_lo_d, flux3_lo, 3, cudaMemcpyHostToDevice, stream)
+    cuda_result = cudaMemcpyAsync(flux3_hi_d, flux3_hi, 3, cudaMemcpyHostToDevice, stream)
 
-    cuda_result = cudaMemcpyAsync(area1_l1_d, area1_l1, 1, cudaMemcpyHostToDevice, stream)
-    cuda_result = cudaMemcpyAsync(area1_l2_d, area1_l2, 1, cudaMemcpyHostToDevice, stream)
-    cuda_result = cudaMemcpyAsync(area1_l3_d, area1_l3, 1, cudaMemcpyHostToDevice, stream)
-    cuda_result = cudaMemcpyAsync(area1_h1_d, area1_h1, 1, cudaMemcpyHostToDevice, stream)
-    cuda_result = cudaMemcpyAsync(area1_h2_d, area1_h2, 1, cudaMemcpyHostToDevice, stream)
-    cuda_result = cudaMemcpyAsync(area1_h3_d, area1_h3, 1, cudaMemcpyHostToDevice, stream)
-    cuda_result = cudaMemcpyAsync(area2_l1_d, area2_l1, 1, cudaMemcpyHostToDevice, stream)
-    cuda_result = cudaMemcpyAsync(area2_l2_d, area2_l2, 1, cudaMemcpyHostToDevice, stream)
-    cuda_result = cudaMemcpyAsync(area2_l3_d, area2_l3, 1, cudaMemcpyHostToDevice, stream)
-    cuda_result = cudaMemcpyAsync(area2_h1_d, area2_h1, 1, cudaMemcpyHostToDevice, stream)
-    cuda_result = cudaMemcpyAsync(area2_h2_d, area2_h2, 1, cudaMemcpyHostToDevice, stream)
-    cuda_result = cudaMemcpyAsync(area2_h3_d, area2_h3, 1, cudaMemcpyHostToDevice, stream)
-    cuda_result = cudaMemcpyAsync(area3_l1_d, area3_l1, 1, cudaMemcpyHostToDevice, stream)
-    cuda_result = cudaMemcpyAsync(area3_l2_d, area3_l2, 1, cudaMemcpyHostToDevice, stream)
-    cuda_result = cudaMemcpyAsync(area3_l3_d, area3_l3, 1, cudaMemcpyHostToDevice, stream)
-    cuda_result = cudaMemcpyAsync(area3_h1_d, area3_h1, 1, cudaMemcpyHostToDevice, stream)
-    cuda_result = cudaMemcpyAsync(area3_h2_d, area3_h2, 1, cudaMemcpyHostToDevice, stream)
-    cuda_result = cudaMemcpyAsync(area3_h3_d, area3_h3, 1, cudaMemcpyHostToDevice, stream)
+    cuda_result = cudaMemcpyAsync(area1_lo_d, area1_lo, 3, cudaMemcpyHostToDevice, stream)
+    cuda_result = cudaMemcpyAsync(area1_hi_d, area1_hi, 3, cudaMemcpyHostToDevice, stream)
+    cuda_result = cudaMemcpyAsync(area2_lo_d, area2_lo, 3, cudaMemcpyHostToDevice, stream)
+    cuda_result = cudaMemcpyAsync(area2_hi_d, area2_hi, 3, cudaMemcpyHostToDevice, stream)
+    cuda_result = cudaMemcpyAsync(area3_lo_d, area3_lo, 3, cudaMemcpyHostToDevice, stream)
+    cuda_result = cudaMemcpyAsync(area3_hi_d, area3_hi, 3, cudaMemcpyHostToDevice, stream)
 
-    cuda_result = cudaMemcpyAsync(vol_l1_d, vol_l1, 1, cudaMemcpyHostToDevice, stream)
-    cuda_result = cudaMemcpyAsync(vol_l2_d, vol_l2, 1, cudaMemcpyHostToDevice, stream)
-    cuda_result = cudaMemcpyAsync(vol_l3_d, vol_l3, 1, cudaMemcpyHostToDevice, stream)
-    cuda_result = cudaMemcpyAsync(vol_h1_d, vol_h1, 1, cudaMemcpyHostToDevice, stream)
-    cuda_result = cudaMemcpyAsync(vol_h2_d, vol_h2, 1, cudaMemcpyHostToDevice, stream)
-    cuda_result = cudaMemcpyAsync(vol_h3_d, vol_h3, 1, cudaMemcpyHostToDevice, stream)
+    cuda_result = cudaMemcpyAsync(vol_lo_d, vol_lo, 3, cudaMemcpyHostToDevice, stream)
+    cuda_result = cudaMemcpyAsync(vol_hi_d, vol_hi, 3, cudaMemcpyHostToDevice, stream)
 
     courno_loc = courno
 
@@ -837,19 +764,19 @@ contains
 
     call cuda_mol_single_stage<<<numBlocks, numThreads, 0, stream>>>(time_d, &
                                                                      lo_d, hi_d, domlo_d, domhi_d, &
-                                                                     uin, uin_l1_d, uin_l2_d, uin_l3_d, uin_h1_d, uin_h2_d, uin_h3_d, &
-                                                                     uout, uout_l1_d, uout_l2_d, uout_l3_d, uout_h1_d, uout_h2_d, uout_h3_d, &
-                                                                     q, q_l1_d, q_l2_d, q_l3_d, q_h1_d, q_h2_d, q_h3_d, &
-                                                                     qaux, qa_l1_d, qa_l2_d, qa_l3_d, qa_h1_d, qa_h2_d, qa_h3_d, &
-                                                                     update, updt_l1_d, updt_l2_d, updt_l3_d, updt_h1_d, updt_h2_d, updt_h3_d, &
+                                                                     uin, uin_lo_d, uin_hi_d, &
+                                                                     uout, uout_lo_d, uout_hi_d, &
+                                                                     q, q_lo_d, q_hi_d, &
+                                                                     qaux, qa_lo_d, qa_hi_d, &
+                                                                     update, updt_lo_d, updt_hi_d, &
                                                                      dx_d, dt_d, h, &
-                                                                     flux1, flux1_l1_d, flux1_l2_d, flux1_l3_d, flux1_h1_d, flux1_h2_d, flux1_h3_d, &
-                                                                     flux2, flux2_l1_d, flux2_l2_d, flux2_l3_d, flux2_h1_d, flux2_h2_d, flux2_h3_d, &
-                                                                     flux3, flux3_l1_d, flux3_l2_d, flux3_l3_d, flux3_h1_d, flux3_h2_d, flux3_h3_d, &
-                                                                     area1, area1_l1_d, area1_l2_d, area1_l3_d, area1_h1_d, area1_h2_d, area1_h3_d, &
-                                                                     area2, area2_l1_d, area2_l2_d, area2_l3_d, area2_h1_d, area2_h2_d, area2_h3_d, &
-                                                                     area3, area3_l1_d, area3_l2_d, area3_l3_d, area3_h1_d, area3_h2_d, area3_h3_d, &
-                                                                     vol, vol_l1_d, vol_l2_d, vol_l3_d, vol_h1_d, vol_h2_d, vol_h3_d, &
+                                                                     flux1, flux1_lo_d, flux1_hi_d, &
+                                                                     flux2, flux2_lo_d, flux2_hi_d, &
+                                                                     flux3, flux3_lo_d, flux3_hi_d, &
+                                                                     area1, area1_lo_d, area1_hi_d, &
+                                                                     area2, area2_lo_d, area2_hi_d, &
+                                                                     area3, area3_lo_d, area3_hi_d, &
+                                                                     vol, vol_lo_d, vol_hi_d, &
                                                                      courno_d, verbose_d)
 
     cuda_result = cudaMemcpyAsync(courno_loc, courno_d, 1, cudaMemcpyDeviceToHost, stream)
@@ -862,19 +789,19 @@ contains
 
     call mol_single_stage(time, &
                           lo, hi, domlo, domhi, &
-                          uin, uin_l1, uin_l2, uin_l3, uin_h1, uin_h2, uin_h3, &
-                          uout, uout_l1, uout_l2, uout_l3, uout_h1, uout_h2, uout_h3, &
-                          q, q_l1, q_l2, q_l3, q_h1, q_h2, q_h3, &
-                          qaux, qa_l1, qa_l2, qa_l3, qa_h1, qa_h2, qa_h3, &
-                          update, updt_l1, updt_l2, updt_l3, updt_h1, updt_h2, updt_h3, &
+                          uin, uin_lo, uin_hi, &
+                          uout, uout_lo, uout_hi, &
+                          q, q_lo, q_hi, &
+                          qaux, qa_lo, qa_hi, &
+                          update, updt_lo, updt_hi, &
                           dx, dt, h, &
-                          flux1, flux1_l1, flux1_l2, flux1_l3, flux1_h1, flux1_h2, flux1_h3, &
-                          flux2, flux2_l1, flux2_l2, flux2_l3, flux2_h1, flux2_h2, flux2_h3, &
-                          flux3, flux3_l1, flux3_l2, flux3_l3, flux3_h1, flux3_h2, flux3_h3, &
-                          area1, area1_l1, area1_l2, area1_l3, area1_h1, area1_h2, area1_h3, &
-                          area2, area2_l1, area2_l2, area2_l3, area2_h1, area2_h2, area2_h3, &
-                          area3, area3_l1, area3_l2, area3_l3, area3_h1, area3_h2, area3_h3, &
-                          vol, vol_l1, vol_l2, vol_l3, vol_h1, vol_h2, vol_h3, &
+                          flux1, flux1_lo, flux1_hi, &
+                          flux2, flux2_lo, flux2_hi, &
+                          flux3, flux3_lo, flux3_hi, &
+                          area1, area1_lo, area1_hi, &
+                          area2, area2_lo, area2_hi, &
+                          area3, area3_lo, area3_hi, &
+                          vol, vol_lo, vol_hi, &
                           courno, verbose)
 
 #endif
