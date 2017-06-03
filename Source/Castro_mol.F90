@@ -84,7 +84,7 @@ contains
     ! Check if we have violated the CFL criterion.
     call compute_cfl(q, q_lo, q_hi, &
                      qaux, qa_lo, qa_hi, &
-                     lo, hi, dt, dx, courno)
+                     g_lo, g_hi, dt, dx, courno)
 
     ! Compute divergence of velocity field
     call divu(g_lo, g_hi, q, q_lo, q_hi, dx, h%div)
