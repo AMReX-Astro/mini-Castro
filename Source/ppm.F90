@@ -15,19 +15,17 @@ contains
 #ifdef CUDA
   attributes(device) &
 #endif
-  subroutine ppm_reconstruct(s, s_lo, s_hi, h, lo, hi, dx, n)
+  subroutine ppm_reconstruct(s, s_lo, s_hi, h, lo, hi)
 
     implicit none
 
     integer,  intent(in) :: s_lo(3), s_hi(3)
     integer,  intent(in) :: lo(3), hi(3)
-    integer,  intent(in) :: n
 
     type(ht), intent(inout) :: h
     real(rt), intent(in   ) :: s(s_lo(1):s_hi(1), s_lo(2):s_hi(2), s_lo(3):s_hi(3), NQ)
-    real(rt), intent(in   ) :: dx(3)
 
-    call ppm_type1(s, s_lo, s_hi, h, lo, hi, dx, n)
+    call ppm_type1(s, s_lo, s_hi, h, lo, hi)
 
   end subroutine ppm_reconstruct
 
@@ -38,7 +36,7 @@ contains
 #ifdef CUDA
   attributes(device) &
 #endif
-  subroutine ppm_type1(s, s_lo, s_hi, h, lo, hi, dx, n)
+  subroutine ppm_type1(s, s_lo, s_hi, h, lo, hi)
 
     use amrex_fort_module, only: rt => amrex_real
 
@@ -46,14 +44,12 @@ contains
 
     integer, intent(in) :: s_lo(3), s_hi(3)
     integer, intent(in) :: lo(3), hi(3)
-    integer, intent(in) :: n
 
     type(ht), intent(inout) :: h
     real(rt), intent(in   ) :: s(s_lo(1):s_hi(1), s_lo(2):s_hi(2), s_lo(3):s_hi(3), NQ)
-    real(rt), intent(in   ) :: dx(3)
 
     ! local
-    integer :: i, j, k
+    integer :: i, j, k, n
 
     real(rt) :: dsl, dsr, dsc
     real(rt) :: dsvl_l, dsvl_r
@@ -80,92 +76,94 @@ contains
     ! x-direction
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-    do k = lo(3)-1, hi(3)+1
-       do j = lo(2)-1, hi(2)+1
-          do i = lo(1)-1, hi(1)+1
+    do n = 1, NQ
+       do k = lo(3)-1, hi(3)+1
+          do j = lo(2)-1, hi(2)+1
+             do i = lo(1)-1, hi(1)+1
 
-             ! Compute van Leer slopes
+                ! Compute van Leer slopes
 
-             dsc = HALF * (s(i  ,j,k,n) - s(i-2,j,k,n))
-             dsl = TWO  * (s(i-1,j,k,n) - s(i-2,j,k,n))
-             dsr = TWO  * (s(i  ,j,k,n) - s(i-1,j,k,n))
-             if (dsl*dsr .gt. ZERO) then
-                dsvl_l = sign(ONE,dsc)*min(abs(dsc),abs(dsl),abs(dsr))
-             else
-                dsvl_l = ZERO
-             end if
+                dsc = HALF * (s(i  ,j,k,n) - s(i-2,j,k,n))
+                dsl = TWO  * (s(i-1,j,k,n) - s(i-2,j,k,n))
+                dsr = TWO  * (s(i  ,j,k,n) - s(i-1,j,k,n))
+                if (dsl*dsr .gt. ZERO) then
+                   dsvl_l = sign(ONE,dsc)*min(abs(dsc),abs(dsl),abs(dsr))
+                else
+                   dsvl_l = ZERO
+                end if
 
-             dsc = HALF * (s(i+1,j,k,n) - s(i-1,j,k,n))
-             dsl = TWO  * (s(i  ,j,k,n) - s(i-1,j,k,n))
-             dsr = TWO  * (s(i+1,j,k,n) - s(i  ,j,k,n))
-             if (dsl*dsr .gt. ZERO) then
-                dsvl_r = sign(ONE,dsc)*min(abs(dsc),abs(dsl),abs(dsr))
-             else
-                dsvl_r = ZERO
-             end if
+                dsc = HALF * (s(i+1,j,k,n) - s(i-1,j,k,n))
+                dsl = TWO  * (s(i  ,j,k,n) - s(i-1,j,k,n))
+                dsr = TWO  * (s(i+1,j,k,n) - s(i  ,j,k,n))
+                if (dsl*dsr .gt. ZERO) then
+                   dsvl_r = sign(ONE,dsc)*min(abs(dsc),abs(dsl),abs(dsr))
+                else
+                   dsvl_r = ZERO
+                end if
 
-             ! Interpolate s to x-edges
+                ! Interpolate s to x-edges
 
-             sm = HALF*(s(i,j,k,n)+s(i-1,j,k,n)) - SIXTH*(dsvl_r - dsvl_l)
+                sm = HALF*(s(i,j,k,n)+s(i-1,j,k,n)) - SIXTH*(dsvl_r - dsvl_l)
 
-             ! Make sure sedge lies in between adjacent cell-centered values
+                ! Make sure sedge lies in between adjacent cell-centered values
 
-             sm = max(sm, min(s(i,j,k,n),s(i-1,j,k,n)))
-             sm = min(sm, max(s(i,j,k,n),s(i-1,j,k,n)))
+                sm = max(sm, min(s(i,j,k,n),s(i-1,j,k,n)))
+                sm = min(sm, max(s(i,j,k,n),s(i-1,j,k,n)))
 
-             ! Compute van Leer slopes
+                ! Compute van Leer slopes
 
-             dsc = HALF * (s(i+1,j,k,n) - s(i-1,j,k,n))
-             dsl = TWO  * (s(i  ,j,k,n) - s(i-1,j,k,n))
-             dsr = TWO  * (s(i+1,j,k,n) - s(i  ,j,k,n))
-             if (dsl*dsr .gt. ZERO) then
-                dsvl_l = sign(ONE,dsc)*min(abs(dsc),abs(dsl),abs(dsr))
-             else
-                dsvl_l = ZERO
-             end if
+                dsc = HALF * (s(i+1,j,k,n) - s(i-1,j,k,n))
+                dsl = TWO  * (s(i  ,j,k,n) - s(i-1,j,k,n))
+                dsr = TWO  * (s(i+1,j,k,n) - s(i  ,j,k,n))
+                if (dsl*dsr .gt. ZERO) then
+                   dsvl_l = sign(ONE,dsc)*min(abs(dsc),abs(dsl),abs(dsr))
+                else
+                   dsvl_l = ZERO
+                end if
 
-             dsc = HALF * (s(i+2,j,k,n) - s(i  ,j,k,n))
-             dsl = TWO  * (s(i+1,j,k,n) - s(i  ,j,k,n))
-             dsr = TWO  * (s(i+2,j,k,n) - s(i+1,j,k,n))
-             if (dsl*dsr .gt. ZERO) then
-                dsvl_r = sign(ONE,dsc)*min(abs(dsc),abs(dsl),abs(dsr))
-             else
-                dsvl_r = ZERO
-             end if
+                dsc = HALF * (s(i+2,j,k,n) - s(i  ,j,k,n))
+                dsl = TWO  * (s(i+1,j,k,n) - s(i  ,j,k,n))
+                dsr = TWO  * (s(i+2,j,k,n) - s(i+1,j,k,n))
+                if (dsl*dsr .gt. ZERO) then
+                   dsvl_r = sign(ONE,dsc)*min(abs(dsc),abs(dsl),abs(dsr))
+                else
+                   dsvl_r = ZERO
+                end if
 
-             ! Interpolate s to x-edges
+                ! Interpolate s to x-edges
 
-             sp = HALF*(s(i+1,j,k,n)+s(i,j,k,n)) - SIXTH*(dsvl_r - dsvl_l)
+                sp = HALF*(s(i+1,j,k,n)+s(i,j,k,n)) - SIXTH*(dsvl_r - dsvl_l)
 
-             ! Make sure sedge lies in between adjacent cell-centered values
+                ! Make sure sedge lies in between adjacent cell-centered values
 
-             sp = max(sp, min(s(i+1,j,k,n),s(i,j,k,n)))
-             sp = min(sp, max(s(i+1,j,k,n),s(i,j,k,n)))
+                sp = max(sp, min(s(i+1,j,k,n),s(i,j,k,n)))
+                sp = min(sp, max(s(i+1,j,k,n),s(i,j,k,n)))
 
-             ! Flatten the parabola
-             sm = h%flatn(i,j,k)*sm + (ONE-h%flatn(i,j,k))*s(i,j,k,n)
-             sp = h%flatn(i,j,k)*sp + (ONE-h%flatn(i,j,k))*s(i,j,k,n)
+                ! Flatten the parabola
+                sm = h%flatn(i,j,k)*sm + (ONE-h%flatn(i,j,k))*s(i,j,k,n)
+                sp = h%flatn(i,j,k)*sp + (ONE-h%flatn(i,j,k))*s(i,j,k,n)
 
-             ! Modify using quadratic limiters -- note this version of the limiting comes
-             ! from Colella and Sekora (2008), not the original PPM paper.
-             if ((sp-s(i,j,k,n))*(s(i,j,k,n)-sm) .le. ZERO) then
+                ! Modify using quadratic limiters -- note this version of the limiting comes
+                ! from Colella and Sekora (2008), not the original PPM paper.
+                if ((sp-s(i,j,k,n))*(s(i,j,k,n)-sm) .le. ZERO) then
 
-                sp = s(i,j,k,n)
-                sm = s(i,j,k,n)
+                   sp = s(i,j,k,n)
+                   sm = s(i,j,k,n)
 
-             else if (abs(sp-s(i,j,k,n)) .ge. TWO*abs(sm-s(i,j,k,n))) then
+                else if (abs(sp-s(i,j,k,n)) .ge. TWO*abs(sm-s(i,j,k,n))) then
 
-                sp = THREE*s(i,j,k,n) - TWO*sm
+                   sp = THREE*s(i,j,k,n) - TWO*sm
 
-             else if (abs(sm-s(i,j,k,n)) .ge. TWO*abs(sp-s(i,j,k,n))) then
+                else if (abs(sm-s(i,j,k,n)) .ge. TWO*abs(sp-s(i,j,k,n))) then
 
-                sm = THREE*s(i,j,k,n) - TWO*sp
+                   sm = THREE*s(i,j,k,n) - TWO*sp
 
-             end if
+                end if
 
-             h%sxp(i,j,k,n) = sp
-             h%sxm(i,j,k,n) = sm
+                h%sxp(i,j,k,n) = sp
+                h%sxm(i,j,k,n) = sm
 
+             end do
           end do
        end do
     end do
@@ -174,93 +172,95 @@ contains
     ! y-direction
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-    do k = lo(3)-1, hi(3)+1
-       do j = lo(2)-1, hi(2)+1
-          do i = lo(1)-1, hi(1)+1
+    do n = 1, NQ
+       do k = lo(3)-1, hi(3)+1
+          do j = lo(2)-1, hi(2)+1
+             do i = lo(1)-1, hi(1)+1
 
-             ! Compute van Leer slopes
+                ! Compute van Leer slopes
 
-             dsc = HALF * (s(i,j  ,k,n) - s(i,j-2,k,n))
-             dsl = TWO  * (s(i,j-1,k,n) - s(i,j-2,k,n))
-             dsr = TWO  * (s(i,j  ,k,n) - s(i,j-1,k,n))
-             if (dsl*dsr .gt. ZERO) then
-                dsvl_l = sign(ONE,dsc)*min(abs(dsc),abs(dsl),abs(dsr))
-             else
-                dsvl_l = ZERO
-             end if
+                dsc = HALF * (s(i,j  ,k,n) - s(i,j-2,k,n))
+                dsl = TWO  * (s(i,j-1,k,n) - s(i,j-2,k,n))
+                dsr = TWO  * (s(i,j  ,k,n) - s(i,j-1,k,n))
+                if (dsl*dsr .gt. ZERO) then
+                   dsvl_l = sign(ONE,dsc)*min(abs(dsc),abs(dsl),abs(dsr))
+                else
+                   dsvl_l = ZERO
+                end if
 
-             dsc = HALF * (s(i,j+1,k,n) - s(i,j-1,k,n))
-             dsl = TWO  * (s(i,j  ,k,n) - s(i,j-1,k,n))
-             dsr = TWO  * (s(i,j+1,k,n) - s(i,j  ,k,n))
-             if (dsl*dsr .gt. ZERO) then
-                dsvl_r = sign(ONE,dsc)*min(abs(dsc),abs(dsl),abs(dsr))
-             else
-                dsvl_r = ZERO
-             end if
+                dsc = HALF * (s(i,j+1,k,n) - s(i,j-1,k,n))
+                dsl = TWO  * (s(i,j  ,k,n) - s(i,j-1,k,n))
+                dsr = TWO  * (s(i,j+1,k,n) - s(i,j  ,k,n))
+                if (dsl*dsr .gt. ZERO) then
+                   dsvl_r = sign(ONE,dsc)*min(abs(dsc),abs(dsl),abs(dsr))
+                else
+                   dsvl_r = ZERO
+                end if
 
-             ! Interpolate s to y-edges
+                ! Interpolate s to y-edges
 
-             sm = HALF*(s(i,j,k,n)+s(i,j-1,k,n)) - SIXTH*(dsvl_r - dsvl_l)
+                sm = HALF*(s(i,j,k,n)+s(i,j-1,k,n)) - SIXTH*(dsvl_r - dsvl_l)
 
-             ! Make sure sedge lies in between adjacent cell-centered values
+                ! Make sure sedge lies in between adjacent cell-centered values
 
-             sm = max(sm, min(s(i,j,k,n),s(i,j-1,k,n)))
-             sm = min(sm, max(s(i,j,k,n),s(i,j-1,k,n)))
+                sm = max(sm, min(s(i,j,k,n),s(i,j-1,k,n)))
+                sm = min(sm, max(s(i,j,k,n),s(i,j-1,k,n)))
 
-             ! Compute van Leer slopes
+                ! Compute van Leer slopes
 
-             dsc = HALF * (s(i,j+1,k,n) - s(i,j-1,k,n))
-             dsl = TWO  * (s(i,j  ,k,n) - s(i,j-1,k,n))
-             dsr = TWO  * (s(i,j+1,k,n) - s(i,j  ,k,n))
-             if (dsl*dsr .gt. ZERO) then
-                dsvl_l = sign(ONE,dsc)*min(abs(dsc),abs(dsl),abs(dsr))
-             else
-                dsvl_l = ZERO
-             end if
+                dsc = HALF * (s(i,j+1,k,n) - s(i,j-1,k,n))
+                dsl = TWO  * (s(i,j  ,k,n) - s(i,j-1,k,n))
+                dsr = TWO  * (s(i,j+1,k,n) - s(i,j  ,k,n))
+                if (dsl*dsr .gt. ZERO) then
+                   dsvl_l = sign(ONE,dsc)*min(abs(dsc),abs(dsl),abs(dsr))
+                else
+                   dsvl_l = ZERO
+                end if
 
-             dsc = HALF * (s(i,j+2,k,n) - s(i,j  ,k,n))
-             dsl = TWO  * (s(i,j+1,k,n) - s(i,j  ,k,n))
-             dsr = TWO  * (s(i,j+2,k,n) - s(i,j+1,k,n))
-             if (dsl*dsr .gt. ZERO) then
-                dsvl_r = sign(ONE,dsc)*min(abs(dsc),abs(dsl),abs(dsr))
-             else
-                dsvl_r = ZERO
-             end if
+                dsc = HALF * (s(i,j+2,k,n) - s(i,j  ,k,n))
+                dsl = TWO  * (s(i,j+1,k,n) - s(i,j  ,k,n))
+                dsr = TWO  * (s(i,j+2,k,n) - s(i,j+1,k,n))
+                if (dsl*dsr .gt. ZERO) then
+                   dsvl_r = sign(ONE,dsc)*min(abs(dsc),abs(dsl),abs(dsr))
+                else
+                   dsvl_r = ZERO
+                end if
 
-             ! Interpolate s to y-edges
+                ! Interpolate s to y-edges
 
-             sp = HALF*(s(i,j+1,k,n)+s(i,j,k,n)) - SIXTH*(dsvl_r - dsvl_l)
+                sp = HALF*(s(i,j+1,k,n)+s(i,j,k,n)) - SIXTH*(dsvl_r - dsvl_l)
 
-             ! Make sure sedge lies in between adjacent cell-centered values
+                ! Make sure sedge lies in between adjacent cell-centered values
 
-             sp = max(sp, min(s(i,j+1,k,n),s(i,j,k,n)))
-             sp = min(sp, max(s(i,j+1,k,n),s(i,j,k,n)))
+                sp = max(sp, min(s(i,j+1,k,n),s(i,j,k,n)))
+                sp = min(sp, max(s(i,j+1,k,n),s(i,j,k,n)))
 
-             ! Flatten the parabola
+                ! Flatten the parabola
 
-             sm = h%flatn(i,j,k)*sm + (ONE-h%flatn(i,j,k))*s(i,j,k,n)
-             sp = h%flatn(i,j,k)*sp + (ONE-h%flatn(i,j,k))*s(i,j,k,n)
+                sm = h%flatn(i,j,k)*sm + (ONE-h%flatn(i,j,k))*s(i,j,k,n)
+                sp = h%flatn(i,j,k)*sp + (ONE-h%flatn(i,j,k))*s(i,j,k,n)
 
-             ! Modify using quadratic limiters
+                ! Modify using quadratic limiters
 
-             if ((sp-s(i,j,k,n))*(s(i,j,k,n)-sm) .le. ZERO) then
+                if ((sp-s(i,j,k,n))*(s(i,j,k,n)-sm) .le. ZERO) then
 
-                sp = s(i,j,k,n)
-                sm = s(i,j,k,n)
+                   sp = s(i,j,k,n)
+                   sm = s(i,j,k,n)
 
-             else if (abs(sp-s(i,j,k,n)) .ge. TWO*abs(sm-s(i,j,k,n))) then
+                else if (abs(sp-s(i,j,k,n)) .ge. TWO*abs(sm-s(i,j,k,n))) then
 
-                sp = THREE*s(i,j,k,n) - TWO*sm
+                   sp = THREE*s(i,j,k,n) - TWO*sm
 
-             else if (abs(sm-s(i,j,k,n)) .ge. TWO*abs(sp-s(i,j,k,n))) then
+                else if (abs(sm-s(i,j,k,n)) .ge. TWO*abs(sp-s(i,j,k,n))) then
 
-                sm = THREE*s(i,j,k,n) - TWO*sp
+                   sm = THREE*s(i,j,k,n) - TWO*sp
 
-             end if
+                end if
 
-             h%syp(i,j,k,n) = sp
-             h%sym(i,j,k,n) = sm
+                h%syp(i,j,k,n) = sp
+                h%sym(i,j,k,n) = sm
 
+             end do
           end do
        end do
     end do
@@ -269,93 +269,95 @@ contains
     ! z-direction
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-    do k = lo(3)-1, hi(3)+1
-       do j = lo(2)-1, hi(2)+1
-          do i = lo(1)-1, hi(1)+1
+    do n = 1, NQ
+       do k = lo(3)-1, hi(3)+1
+          do j = lo(2)-1, hi(2)+1
+             do i = lo(1)-1, hi(1)+1
 
-             ! Compute van Leer slopes
+                ! Compute van Leer slopes
 
-             dsc = HALF * (s(i,j,k  ,n) - s(i,j,k-2,n))
-             dsl = TWO  * (s(i,j,k-1,n) - s(i,j,k-2,n))
-             dsr = TWO  * (s(i,j,k  ,n) - s(i,j,k-1,n))
-             if (dsl*dsr .gt. ZERO) then
-                dsvl_l = sign(ONE,dsc)*min(abs(dsc),abs(dsl),abs(dsr))
-             else
-                dsvl_l = ZERO
-             end if
+                dsc = HALF * (s(i,j,k  ,n) - s(i,j,k-2,n))
+                dsl = TWO  * (s(i,j,k-1,n) - s(i,j,k-2,n))
+                dsr = TWO  * (s(i,j,k  ,n) - s(i,j,k-1,n))
+                if (dsl*dsr .gt. ZERO) then
+                   dsvl_l = sign(ONE,dsc)*min(abs(dsc),abs(dsl),abs(dsr))
+                else
+                   dsvl_l = ZERO
+                end if
 
-             dsc = HALF * (s(i,j,k+1,n) - s(i,j,k-1,n))
-             dsl = TWO  * (s(i,j,k  ,n) - s(i,j,k-1,n))
-             dsr = TWO  * (s(i,j,k+1,n) - s(i,j,k  ,n))
-             if (dsl*dsr .gt. ZERO) then
-                dsvl_r = sign(ONE,dsc)*min(abs(dsc),abs(dsl),abs(dsr))
-             else
-                dsvl_r = ZERO
-             end if
+                dsc = HALF * (s(i,j,k+1,n) - s(i,j,k-1,n))
+                dsl = TWO  * (s(i,j,k  ,n) - s(i,j,k-1,n))
+                dsr = TWO  * (s(i,j,k+1,n) - s(i,j,k  ,n))
+                if (dsl*dsr .gt. ZERO) then
+                   dsvl_r = sign(ONE,dsc)*min(abs(dsc),abs(dsl),abs(dsr))
+                else
+                   dsvl_r = ZERO
+                end if
 
-             ! Interpolate s to z-edges
+                ! Interpolate s to z-edges
 
-             sm = HALF*(s(i,j,k,n)+s(i,j,k-1,n)) - SIXTH*(dsvl_r - dsvl_l)
+                sm = HALF*(s(i,j,k,n)+s(i,j,k-1,n)) - SIXTH*(dsvl_r - dsvl_l)
 
-             ! Make sure sedge lies in between adjacent cell-centered values
+                ! Make sure sedge lies in between adjacent cell-centered values
 
-             sm = max(sm, min(s(i,j,k,n),s(i,j,k-1,n)))
-             sm = min(sm, max(s(i,j,k,n),s(i,j,k-1,n)))
+                sm = max(sm, min(s(i,j,k,n),s(i,j,k-1,n)))
+                sm = min(sm, max(s(i,j,k,n),s(i,j,k-1,n)))
 
-             ! Compute van Leer slopes
+                ! Compute van Leer slopes
 
-             dsc = HALF * (s(i,j,k+1,n) - s(i,j,k-1,n))
-             dsl = TWO  * (s(i,j,k  ,n) - s(i,j,k-1,n))
-             dsr = TWO  * (s(i,j,k+1,n) - s(i,j,k  ,n))
-             if (dsl*dsr .gt. ZERO) then
-                dsvl_l = sign(ONE,dsc)*min(abs(dsc),abs(dsl),abs(dsr))
-             else
-                dsvl_l = ZERO
-             end if
+                dsc = HALF * (s(i,j,k+1,n) - s(i,j,k-1,n))
+                dsl = TWO  * (s(i,j,k  ,n) - s(i,j,k-1,n))
+                dsr = TWO  * (s(i,j,k+1,n) - s(i,j,k  ,n))
+                if (dsl*dsr .gt. ZERO) then
+                   dsvl_l = sign(ONE,dsc)*min(abs(dsc),abs(dsl),abs(dsr))
+                else
+                   dsvl_l = ZERO
+                end if
 
-             dsc = HALF * (s(i,j,k+2,n) - s(i,j,k  ,n))
-             dsl = TWO  * (s(i,j,k+1,n) - s(i,j,k  ,n))
-             dsr = TWO  * (s(i,j,k+2,n) - s(i,j,k+1,n))
-             if (dsl*dsr .gt. ZERO) then
-                dsvl_r = sign(ONE,dsc)*min(abs(dsc),abs(dsl),abs(dsr))
-             else
-                dsvl_r = ZERO
-             end if
+                dsc = HALF * (s(i,j,k+2,n) - s(i,j,k  ,n))
+                dsl = TWO  * (s(i,j,k+1,n) - s(i,j,k  ,n))
+                dsr = TWO  * (s(i,j,k+2,n) - s(i,j,k+1,n))
+                if (dsl*dsr .gt. ZERO) then
+                   dsvl_r = sign(ONE,dsc)*min(abs(dsc),abs(dsl),abs(dsr))
+                else
+                   dsvl_r = ZERO
+                end if
 
-             ! Interpolate s to z-edges
+                ! Interpolate s to z-edges
 
-             sp = HALF*(s(i,j,k+1,n)+s(i,j,k,n)) - SIXTH*(dsvl_r - dsvl_l)
+                sp = HALF*(s(i,j,k+1,n)+s(i,j,k,n)) - SIXTH*(dsvl_r - dsvl_l)
 
-             ! Make sure sedge lies in between adjacent cell-centered values
+                ! Make sure sedge lies in between adjacent cell-centered values
 
-             sp = max(sp, min(s(i,j,k+1,n),s(i,j,k,n)))
-             sp = min(sp, max(s(i,j,k+1,n),s(i,j,k,n)))
+                sp = max(sp, min(s(i,j,k+1,n),s(i,j,k,n)))
+                sp = min(sp, max(s(i,j,k+1,n),s(i,j,k,n)))
 
-             ! Flatten the parabola
+                ! Flatten the parabola
 
-             sm = h%flatn(i,j,k)*sm + (ONE-h%flatn(i,j,k))*s(i,j,k,n)
-             sp = h%flatn(i,j,k)*sp + (ONE-h%flatn(i,j,k))*s(i,j,k,n)
+                sm = h%flatn(i,j,k)*sm + (ONE-h%flatn(i,j,k))*s(i,j,k,n)
+                sp = h%flatn(i,j,k)*sp + (ONE-h%flatn(i,j,k))*s(i,j,k,n)
 
-             ! Modify using quadratic limiters
+                ! Modify using quadratic limiters
 
-             if ((sp-s(i,j,k,n))*(s(i,j,k,n)-sm) .le. ZERO) then
+                if ((sp-s(i,j,k,n))*(s(i,j,k,n)-sm) .le. ZERO) then
 
-                sp = s(i,j,k,n)
-                sm = s(i,j,k,n)
+                   sp = s(i,j,k,n)
+                   sm = s(i,j,k,n)
 
-             else if (abs(sp-s(i,j,k,n)) .ge. TWO*abs(sm-s(i,j,k,n))) then
+                else if (abs(sp-s(i,j,k,n)) .ge. TWO*abs(sm-s(i,j,k,n))) then
 
-                sp = THREE*s(i,j,k,n) - TWO*sm
+                   sp = THREE*s(i,j,k,n) - TWO*sm
 
-             else if (abs(sm-s(i,j,k,n)) .ge. TWO*abs(sp-s(i,j,k,n))) then
+                else if (abs(sm-s(i,j,k,n)) .ge. TWO*abs(sp-s(i,j,k,n))) then
 
-                sm = THREE*s(i,j,k,n) - TWO*sp
+                   sm = THREE*s(i,j,k,n) - TWO*sp
 
-             end if
+                end if
 
-             h%szp(i,j,k,n) = sp
-             h%szm(i,j,k,n) = sm
+                h%szp(i,j,k,n) = sp
+                h%szm(i,j,k,n) = sm
 
+             end do
           end do
        end do
     end do

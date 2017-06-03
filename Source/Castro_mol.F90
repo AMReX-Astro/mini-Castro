@@ -96,9 +96,9 @@ contains
 
     call uflaten(g_lo, g_hi, q, q_lo, q_hi, h)
 
-    do n = 1, NQ
+    call ppm_reconstruct(q, q_lo, q_hi, h, lo, hi)
 
-       call ppm_reconstruct(q, q_lo, q_hi, h, lo, hi, dx, n)
+    do n = 1, NQ
 
        ! Construct the interface states -- this is essentially just a
        ! reshuffling of interface states from zone-center indexing to
