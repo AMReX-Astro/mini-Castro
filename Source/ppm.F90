@@ -54,9 +54,9 @@ contains
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     do n = 1, NQ
-       do k = lo(3)-1, hi(3)+1
-          do j = lo(2)-1, hi(2)+1
-             do i = lo(1)-1, hi(1)+1
+       do k = lo(3), hi(3)
+          do j = lo(2), hi(2)
+             do i = lo(1), hi(1)
 
                 ! Compute van Leer slopes
 
@@ -150,9 +150,9 @@ contains
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     do n = 1, NQ
-       do k = lo(3)-1, hi(3)+1
-          do j = lo(2)-1, hi(2)+1
-             do i = lo(1)-1, hi(1)+1
+       do k = lo(3), hi(3)
+          do j = lo(2), hi(2)
+             do i = lo(1), hi(1)
 
                 ! Compute van Leer slopes
 
@@ -247,9 +247,9 @@ contains
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     do n = 1, NQ
-       do k = lo(3)-1, hi(3)+1
-          do j = lo(2)-1, hi(2)+1
-             do i = lo(1)-1, hi(1)+1
+       do k = lo(3), hi(3)
+          do j = lo(2), hi(2)
+             do i = lo(1), hi(1)
 
                 ! Compute van Leer slopes
 
@@ -357,9 +357,9 @@ contains
     ! edge-centered indexing
 
     do n = 1, NQ
-       do k = lo(3)-1, hi(3)+1
-          do j = lo(2)-1, hi(2)+1
-             do i = lo(1)-1, hi(1)+1
+       do k = lo(3), hi(3)
+          do j = lo(2), hi(2)
+             do i = lo(1), hi(1)
 
                 ! x-edges
 

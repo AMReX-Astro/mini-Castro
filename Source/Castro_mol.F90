@@ -90,10 +90,10 @@ contains
     call uflaten(g_lo, g_hi, q, q_lo, q_hi, h)
 
     ! Create polynomial interpolation of fluid state.
-    call ppm_reconstruct(q, q_lo, q_hi, h, lo, hi)
+    call ppm_reconstruct(q, q_lo, q_hi, h, g_lo, g_hi)
 
     ! Integrate under the reconstructed polynomial to get the edge state.
-    call ppm_int_profile(h, lo, hi)
+    call ppm_int_profile(h, g_lo, g_hi)
 
     ! Compute F^x
     call cmpflx(flux1, h%q1, flux1_lo, flux1_hi, &
