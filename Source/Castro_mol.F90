@@ -102,30 +102,24 @@ contains
     call cmpflx(f1_lo, f1_hi, domlo, domhi, h, 1, &
                 flux1, h%q1, f1_lo, f1_hi, &
                 qaux, qa_lo, qa_hi)
+    call apply_av(f1_lo, f1_hi, 1, dx, h, uin, uin_lo, uin_hi, flux1, f1_lo, f1_hi)
+    call normalize_species_fluxes(f1_lo, f1_hi, flux1, f1_lo, f1_hi)
+    call scale_flux(f1_lo, f1_hi, flux1, f1_lo, f1_hi, area1, a1_lo, a1_hi, dt)
 
     ! Compute F^y
     call cmpflx(f2_lo, f2_hi, domlo, domhi, h, 2, &
                 flux2, h%q2, f2_lo, f2_hi, &
                 qaux, qa_lo, qa_hi)
+    call apply_av(f2_lo, f2_hi, 2, dx, h, uin, uin_lo, uin_hi, flux2, f2_lo, f2_hi)
+    call normalize_species_fluxes(f2_lo, f2_hi, flux2, f2_lo, f2_hi)
+    call scale_flux(f2_lo, f2_hi, flux2, f2_lo, f2_hi, area2, a2_lo, a2_hi, dt)
 
     ! Compute F^z
     call cmpflx(f3_lo, f3_hi, domlo, domhi, h, 3, &
                 flux3, h%q3, f3_lo, f3_hi, &
                 qaux, qa_lo, qa_hi)
-
-    ! Apply artificial viscosity
-    call apply_av(f1_lo, f1_hi, 1, dx, h, uin, uin_lo, uin_hi, flux1, f1_lo, f1_hi)
-    call apply_av(f2_lo, f2_hi, 2, dx, h, uin, uin_lo, uin_hi, flux2, f2_lo, f2_hi)
     call apply_av(f3_lo, f3_hi, 3, dx, h, uin, uin_lo, uin_hi, flux3, f3_lo, f3_hi)
-
-    ! Normalize species fluxes
-    call normalize_species_fluxes(f1_lo, f1_hi, flux1, f1_lo, f1_hi)
-    call normalize_species_fluxes(f2_lo, f2_hi, flux2, f2_lo, f2_hi)
     call normalize_species_fluxes(f3_lo, f3_hi, flux3, f3_lo, f3_hi)
-
-    ! Scale the fluxes for the form we expect later in refluxing.
-    call scale_flux(f1_lo, f1_hi, flux1, f1_lo, f1_hi, area1, a1_lo, a1_hi, dt)
-    call scale_flux(f2_lo, f2_hi, flux2, f2_lo, f2_hi, area2, a2_lo, a2_hi, dt)
     call scale_flux(f3_lo, f3_hi, flux3, f3_lo, f3_hi, area3, a3_lo, a3_hi, dt)
 
     ! Create an update source term based on the flux divergence.
