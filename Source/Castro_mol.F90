@@ -116,12 +116,10 @@ contains
     ! Compute p x div(u)
     call pdivu(lo, hi, h, dx)
 
-    ! Apply artificial viscostiry
-    call apply_av(lo, hi, dx, h, &
-                  uin, uin_lo, uin_hi, &
-                  flux1, flux1_lo, flux1_hi, &
-                  flux2, flux2_lo, flux2_hi, &
-                  flux3, flux3_lo, flux3_hi)
+    ! Apply artificial viscosity
+    call apply_av(flux1_lo, flux1_hi, 1, dx, h, uin, uin_lo, uin_hi, flux1, flux1_lo, flux1_hi)
+    call apply_av(flux2_lo, flux2_hi, 2, dx, h, uin, uin_lo, uin_hi, flux2, flux2_lo, flux2_hi)
+    call apply_av(flux3_lo, flux3_hi, 3, dx, h, uin, uin_lo, uin_hi, flux3, flux3_lo, flux3_hi)
 
     ! Normalize species fluxes
     call normalize_species_fluxes(flux1,flux1_lo,flux1_hi, &

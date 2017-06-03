@@ -701,28 +701,22 @@ contains
 
 
 
-  subroutine apply_av(lo, hi, dx, h, &
+  subroutine apply_av(lo, hi, idir, dx, h, &
                       uin, uin_lo, uin_hi, &
-                      flux1, f1_lo, f1_hi, &
-                      flux2, f2_lo, f2_hi, &
-                      flux3, f3_lo, f3_hi)
+                      flux, f_lo, f_hi)
 
     use bl_constants_module, only: ZERO, FOURTH
     use meth_params_module, only: NVAR, UTEMP
 
     implicit none
 
-    integer,  intent(in   ) :: lo(3), hi(3)
+    integer,  intent(in   ) :: lo(3), hi(3), idir
     integer,  intent(in   ) :: uin_lo(3), uin_hi(3)
-    integer,  intent(in   ) :: f1_lo(3), f1_hi(3)
-    integer,  intent(in   ) :: f2_lo(3), f2_hi(3)
-    integer,  intent(in   ) :: f3_lo(3), f3_hi(3)
+    integer,  intent(in   ) :: f_lo(3), f_hi(3)
     real(rt), intent(in   ) :: dx(3)
 
     real(rt), intent(in   ) :: uin(uin_lo(1):uin_hi(1),uin_lo(2):uin_hi(2),uin_lo(3):uin_hi(3),NVAR)
-    real(rt), intent(inout) :: flux1(f1_lo(1):f1_hi(1),f1_lo(2):f1_hi(2),f1_lo(3):f1_hi(3),NVAR)
-    real(rt), intent(inout) :: flux2(f2_lo(1):f2_hi(1),f2_lo(2):f2_hi(2),f2_lo(3):f2_hi(3),NVAR)
-    real(rt), intent(inout) :: flux3(f3_lo(1):f3_hi(1),f3_lo(2):f3_hi(2),f3_lo(3):f3_hi(3),NVAR)
+    real(rt), intent(inout) :: flux(f_lo(1):f_hi(1),f_lo(2):f_hi(2),f_lo(3):f_hi(3),NVAR)
     type(ht), intent(in   ) :: h
 
     integer :: i, j, k, n
@@ -735,56 +729,49 @@ contains
 
        if ( n == UTEMP ) then
 
-          flux1(lo(1):hi(1)+1,lo(2):hi(2),lo(3):hi(3),n) = ZERO
-          flux2(lo(1):hi(1),lo(2):hi(2)+1,lo(3):hi(3),n) = ZERO
-          flux3(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)+1,n) = ZERO
+          flux(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),n) = ZERO
 
        else
 
           do k = lo(3), hi(3)
              do j = lo(2), hi(2)
-                do i = lo(1), hi(1)+1
-                   div1 = FOURTH*(h%div(i,j,k) + h%div(i,j+1,k) + &
-                                  h%div(i,j,k+1) + h%div(i,j+1,k+1))
-                   div1 = difmag*min(ZERO,div1)
-
-                   flux1(i,j,k,n) = flux1(i,j,k,n) + &
-                                    dx(1) * div1 * (uin(i,j,k,n)-uin(i-1,j,k,n))
-                end do
-             end do
-          end do
-
-          do k = lo(3), hi(3)
-             do j = lo(2), hi(2)+1
                 do i = lo(1), hi(1)
-                   div1 = FOURTH*(h%div(i,j,k) + h%div(i+1,j,k) + &
-                                  h%div(i,j,k+1) + h%div(i+1,j,k+1))
-                   div1 = difmag*min(ZERO,div1)
 
-                   flux2(i,j,k,n) = flux2(i,j,k,n) + &
-                                    dx(2) * div1 * (uin(i,j,k,n)-uin(i,j-1,k,n))
+                   if (idir .eq. 1) then
+
+                      div1 = FOURTH * (h%div(i,j,k  ) + h%div(i,j+1,k  ) + &
+                                       h%div(i,j,k+1) + h%div(i,j+1,k+1))
+                      div1 = difmag * min(ZERO, div1)
+                      div1 = div1 * (uin(i,j,k,n) - uin(i-1,j,k,n))
+
+                   else if (idir .eq. 2) then
+
+                      div1 = FOURTH * (h%div(i,j,k  ) + h%div(i+1,j,k  ) + &
+                                       h%div(i,j,k+1) + h%div(i+1,j,k+1))
+                      div1 = difmag * min(ZERO, div1)
+                      div1 = div1 * (uin(i,j,k,n) - uin(i,j-1,k,n))
+
+                   else
+
+                      div1 = FOURTH * (h%div(i,j  ,k) + h%div(i+1,j,k  ) + &
+                                       h%div(i,j+1,k) + h%div(i+1,j+1,k))
+                      div1 = difmag * min(ZERO, div1)
+                      div1 = div1 * (uin(i,j,k,n)-uin(i,j,k-1,n))
+
+                   end if
+
+                   flux(i,j,k,n) = flux(i,j,k,n) + dx(idir) * div1
+
                 end do
              end do
           end do
 
-          do k = lo(3), hi(3)+1
-             do j = lo(2), hi(2)
-                do i = lo(1), hi(1)
-                   div1 = FOURTH*(h%div(i,j,k) + h%div(i+1,j,k) + &
-                                  h%div(i,j+1,k) + h%div(i+1,j+1,k))
-                   div1 = difmag*min(ZERO,div1)
+       end if
 
-                   flux3(i,j,k,n) = flux3(i,j,k,n) + &
-                                    dx(3) * div1 * (uin(i,j,k,n)-uin(i,j,k-1,n))
-                end do
-             end do
-          end do
-
-       endif
-
-    enddo
+    end do
 
   end subroutine apply_av
+
 
 
   subroutine construct_hydro_update(lo, hi, h, &
