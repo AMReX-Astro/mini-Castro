@@ -4,29 +4,6 @@ module advection_util_module
 
   implicit none
 
-  ! This derived type stores all of the temporary arrays needed
-  ! during a hydro update.
-
-  type :: ht
-
-     ! Arrays for workspace
-     real(rt), allocatable :: flatn(:,:,:)
-     real(rt), allocatable :: div(:,:,:)
-
-     ! Edge-centered primitive variables (Riemann state)
-     real(rt), allocatable :: q1(:,:,:,:)
-     real(rt), allocatable :: q2(:,:,:,:)
-     real(rt), allocatable :: q3(:,:,:,:)
-
-     ! temporary interface values of the parabola
-     real(rt), allocatable :: sxm(:,:,:,:), sym(:,:,:,:), szm(:,:,:,:)
-     real(rt), allocatable :: sxp(:,:,:,:), syp(:,:,:,:), szp(:,:,:,:)
-
-     real(rt), allocatable :: qm(:,:,:,:,:)
-     real(rt), allocatable :: qp(:,:,:,:,:)
-
-  end type ht
-
 contains
 
 #ifdef CUDA
@@ -292,16 +269,18 @@ contains
 
     implicit none
 
-    integer :: lo(3), hi(3)
-    integer :: q_lo(3), q_hi(3), qa_lo(3), qa_hi(3)
+    integer,  intent(in   ) :: lo(3), hi(3)
+    integer,  intent(in   ) :: q_lo(3), q_hi(3)
+    integer,  intent(in   ) :: qa_lo(3), qa_hi(3)
 
-    real(rt)         :: q(q_lo(1):q_hi(1),q_lo(2):q_hi(2),q_lo(3):q_hi(3),NQ)
-    real(rt)         :: qaux(qa_lo(1):qa_hi(1),qa_lo(2):qa_hi(2),qa_lo(3):qa_hi(3),NQAUX)
-    real(rt)         :: dt, dx(3), courno
+    real(rt), intent(in   ) :: q(q_lo(1):q_hi(1),q_lo(2):q_hi(2),q_lo(3):q_hi(3),NQ)
+    real(rt), intent(in   ) :: qaux(qa_lo(1):qa_hi(1),qa_lo(2):qa_hi(2),qa_lo(3):qa_hi(3),NQAUX)
+    real(rt), intent(in   ) :: dt, dx(3)
+    real(rt), intent(inout) :: courno
 
-    real(rt)         :: courx, coury, courz, courmx, courmy, courmz, courtmp
-    real(rt)         :: dtdx, dtdy, dtdz
-    integer          :: i, j, k
+    real(rt) :: courx, coury, courz, courmx, courmy, courmz, courtmp
+    real(rt) :: dtdx, dtdy, dtdz
+    integer  :: i, j, k
 
     ! Compute running max of Courant number over grids
 
@@ -323,9 +302,9 @@ contains
        dtdz = ZERO
     endif
 
-    do k = lo(3),hi(3)
-       do j = lo(2),hi(2)
-          do i = lo(1),hi(1)
+    do k = lo(3), hi(3)
+       do j = lo(2), hi(2)
+          do i = lo(1), hi(1)
 
              courx = ( qaux(i,j,k,QC) + abs(q(i,j,k,QU)) ) * dtdx
              coury = ( qaux(i,j,k,QC) + abs(q(i,j,k,QV)) ) * dtdy
@@ -564,7 +543,7 @@ contains
 #ifdef CUDA
   attributes(device) &
 #endif
-  subroutine divu(lo, hi, dx, q, q_lo, q_hi, h)
+  subroutine divu(lo, hi, dx, q, q_lo, q_hi, div, g_lo, g_hi)
 
     use bl_constants_module, only: FOURTH, ONE
     use amrex_fort_module, only: rt => amrex_real
@@ -574,9 +553,10 @@ contains
 
     integer,  intent(in   ) :: lo(3), hi(3)
     integer,  intent(in   ) :: q_lo(3), q_hi(3)
+    integer,  intent(in   ) :: g_lo(3), g_hi(3)
     real(rt), intent(in   ) :: dx(3)
     real(rt), intent(in   ) :: q(q_lo(1):q_hi(1),q_lo(2):q_hi(2),q_lo(3):q_hi(3),QVAR)
-    type(ht), intent(inout) :: h
+    real(rt), intent(inout) :: div(g_lo(1):g_hi(1),g_lo(2):g_hi(2),g_lo(3):g_hi(3))
 
     integer  :: i, j, k
     real(rt) :: ux, vy, wz, dxinv, dyinv, dzinv
@@ -607,7 +587,7 @@ contains
                     + q(i-1,j  ,k  ,QW) - q(i-1,j  ,k-1,QW) &
                     + q(i-1,j-1,k  ,QW) - q(i-1,j-1,k-1,QW) ) * dzinv
 
-             h%div(i,j,k) = ux + vy + wz
+             div(i,j,k) = ux + vy + wz
 
           enddo
        enddo
@@ -620,9 +600,10 @@ contains
 #ifdef CUDA
   attributes(device) &
 #endif
-  subroutine apply_av(lo, hi, idir, dx, h, &
-                      uin, uin_lo, uin_hi, &
-                      flux, f_lo, f_hi)
+    subroutine apply_av(lo, hi, idir, dx, &
+                        div, g_lo, g_hi, &
+                        uin, uin_lo, uin_hi, &
+                        flux, f_lo, f_hi)
 
     use bl_constants_module, only: ZERO, FOURTH
     use meth_params_module, only: NVAR, UTEMP
@@ -630,13 +611,14 @@ contains
     implicit none
 
     integer,  intent(in   ) :: lo(3), hi(3), idir
+    integer,  intent(in   ) :: g_lo(3), g_hi(3)
     integer,  intent(in   ) :: uin_lo(3), uin_hi(3)
     integer,  intent(in   ) :: f_lo(3), f_hi(3)
     real(rt), intent(in   ) :: dx(3)
 
+    real(rt), intent(in   ) :: div(g_lo(1):g_hi(1),g_lo(2):g_hi(2),g_lo(3):g_hi(3))
     real(rt), intent(in   ) :: uin(uin_lo(1):uin_hi(1),uin_lo(2):uin_hi(2),uin_lo(3):uin_hi(3),NVAR)
     real(rt), intent(inout) :: flux(f_lo(1):f_hi(1),f_lo(2):f_hi(2),f_lo(3):f_hi(3),NVAR)
-    type(ht), intent(in   ) :: h
 
     integer :: i, j, k, n
 
@@ -658,22 +640,22 @@ contains
 
                    if (idir .eq. 1) then
 
-                      div1 = FOURTH * (h%div(i,j,k  ) + h%div(i,j+1,k  ) + &
-                                       h%div(i,j,k+1) + h%div(i,j+1,k+1))
+                      div1 = FOURTH * (div(i,j,k  ) + div(i,j+1,k  ) + &
+                                       div(i,j,k+1) + div(i,j+1,k+1))
                       div1 = difmag * min(ZERO, div1)
                       div1 = div1 * (uin(i,j,k,n) - uin(i-1,j,k,n))
 
                    else if (idir .eq. 2) then
 
-                      div1 = FOURTH * (h%div(i,j,k  ) + h%div(i+1,j,k  ) + &
-                                       h%div(i,j,k+1) + h%div(i+1,j,k+1))
+                      div1 = FOURTH * (div(i,j,k  ) + div(i+1,j,k  ) + &
+                                       div(i,j,k+1) + div(i+1,j,k+1))
                       div1 = difmag * min(ZERO, div1)
                       div1 = div1 * (uin(i,j,k,n) - uin(i,j-1,k,n))
 
                    else
 
-                      div1 = FOURTH * (h%div(i,j  ,k) + h%div(i+1,j,k  ) + &
-                                       h%div(i,j+1,k) + h%div(i+1,j+1,k))
+                      div1 = FOURTH * (div(i,j  ,k) + div(i+1,j,k  ) + &
+                                       div(i,j+1,k) + div(i+1,j+1,k))
                       div1 = difmag * min(ZERO, div1)
                       div1 = div1 * (uin(i,j,k,n)-uin(i,j,k-1,n))
 
@@ -696,10 +678,10 @@ contains
 #ifdef CUDA
   attributes(device) &
 #endif
-  subroutine construct_hydro_update(lo, hi, dx, dt, h, &
-                                    f1, f1_lo, f1_hi, &
-                                    f2, f2_lo, f2_hi, &
-                                    f3, f3_lo, f3_hi, &
+  subroutine construct_hydro_update(lo, hi, dx, dt, &
+                                    f1, q1, f1_lo, f1_hi, &
+                                    f2, q2, f2_lo, f2_hi, &
+                                    f3, q3, f3_lo, f3_hi, &
                                     a1, a1_lo, a1_hi, &
                                     a2, a2_lo, a2_hi, &
                                     a3, a3_lo, a3_hi, &
@@ -707,7 +689,7 @@ contains
                                     update, u_lo, u_hi)
 
     use bl_constants_module, only: HALF, ONE
-    use meth_params_module, only: NVAR, UEINT, GDPRES, GDU, GDV, GDW
+    use meth_params_module, only: NVAR, UEINT, NGDNV, GDPRES, GDU, GDV, GDW
 
     implicit none
 
@@ -721,8 +703,10 @@ contains
     integer,  intent(in   ) :: vol_lo(3), vol_hi(3)
     integer,  intent(in   ) :: u_lo(3), u_hi(3)
     real(rt), intent(in   ) :: dx(3), dt
-    type(ht), intent(in   ) :: h
 
+    real(rt), intent(in   ) :: q1(f1_lo(1):f1_hi(1),f1_lo(2):f1_hi(2),f1_lo(3):f1_hi(3),NGDNV)
+    real(rt), intent(in   ) :: q2(f2_lo(1):f2_hi(1),f2_lo(2):f2_hi(2),f2_lo(3):f2_hi(3),NGDNV)
+    real(rt), intent(in   ) :: q3(f3_lo(1):f3_hi(1),f3_lo(2):f3_hi(2),f3_lo(3):f3_hi(3),NGDNV)
     real(rt), intent(in   ) :: f1(f1_lo(1):f1_hi(1),f1_lo(2):f1_hi(2),f1_lo(3):f1_hi(3),NVAR)
     real(rt), intent(in   ) :: f2(f2_lo(1):f2_hi(1),f2_lo(2):f2_hi(2),f2_lo(3):f2_hi(3),NVAR)
     real(rt), intent(in   ) :: f3(f3_lo(1):f3_hi(1),f3_lo(2):f3_hi(2),f3_lo(3):f3_hi(3),NVAR)
@@ -752,12 +736,12 @@ contains
                 ! Add the p div(u) source term to (rho e).
                 if (n .eq. UEINT) then
 
-                   pdivu = HALF * (h%q1(i+1,j,k,GDPRES) + h%q1(i,j,k,GDPRES)) * &
-                                  (h%q1(i+1,j,k,GDU) - h%q1(i,j,k,GDU)) * dxinv(1) + &
-                           HALF * (h%q2(i,j+1,k,GDPRES) + h%q2(i,j,k,GDPRES)) * &
-                                  (h%q2(i,j+1,k,GDV) - h%q2(i,j,k,GDV)) * dxinv(2) + &
-                           HALF * (h%q3(i,j,k+1,GDPRES) + h%q3(i,j,k,GDPRES)) * &
-                                  (h%q3(i,j,k+1,GDW) - h%q3(i,j,k,GDW)) * dxinv(3)
+                   pdivu = HALF * (q1(i+1,j,k,GDPRES) + q1(i,j,k,GDPRES)) * &
+                                  (q1(i+1,j,k,GDU) - q1(i,j,k,GDU)) * dxinv(1) + &
+                           HALF * (q2(i,j+1,k,GDPRES) + q2(i,j,k,GDPRES)) * &
+                                  (q2(i,j+1,k,GDV) - q2(i,j,k,GDV)) * dxinv(2) + &
+                           HALF * (q3(i,j,k+1,GDPRES) + q3(i,j,k,GDPRES)) * &
+                                  (q3(i,j,k+1,GDW) - q3(i,j,k,GDW)) * dxinv(3)
 
                    update(i,j,k,n) = update(i,j,k,n) - pdivu
 
@@ -802,82 +786,5 @@ contains
     enddo
 
   end subroutine scale_flux
-
-
-
-  ! Allocate the components of a hydro temporary.
-
-  subroutine allocate_ht(h, lo, hi, flux1_lo, flux1_hi, flux2_lo, flux2_hi, &
-                         flux3_lo, flux3_hi, st_lo, st_hi, It_lo, It_hi, &
-                         g_lo, g_hi, gd_lo, gd_hi, q_lo, q_hi)
-
-    use meth_params_module, only: NGDNV, NQ
-
-    implicit none
-
-    type(ht), intent(inout) :: h
-
-    integer, intent(in) :: lo(3), hi(3)
-    integer, intent(in) :: flux1_lo(3), flux1_hi(3)
-    integer, intent(in) :: flux2_lo(3), flux2_hi(3)
-    integer, intent(in) :: flux3_lo(3), flux3_hi(3)
-    integer, intent(in) :: q_lo(3), q_hi(3)
-    integer, intent(in) :: It_lo(3), It_hi(3)
-    integer, intent(in) :: st_lo(3), st_hi(3)
-    integer, intent(in) :: g_lo(3), g_hi(3)
-    integer, intent(in) :: gd_lo(3), gd_hi(3)
-
-#ifdef CUDA
-    attributes(device) :: h
-#endif
-
-    allocate(h % div(lo(1)-1:hi(1)+1, lo(2)-1:hi(2)+1, lo(3)-1:hi(3)+1))
-
-    allocate(h % q1(flux1_lo(1):flux1_hi(1),flux1_lo(2):flux1_hi(2),flux1_lo(3):flux1_hi(3),NGDNV))
-    allocate(h % q2(flux2_lo(1):flux2_hi(1),flux2_lo(2):flux2_hi(2),flux2_lo(3):flux2_hi(3),NGDNV))
-    allocate(h % q3(flux3_lo(1):flux3_hi(1),flux3_lo(2):flux3_hi(2),flux3_lo(3):flux3_hi(3),NGDNV))
-
-    allocate(h % sxm(st_lo(1):st_hi(1),st_lo(2):st_hi(2),st_lo(3):st_hi(3),NQ))
-    allocate(h % sxp(st_lo(1):st_hi(1),st_lo(2):st_hi(2),st_lo(3):st_hi(3),NQ))
-    allocate(h % sym(st_lo(1):st_hi(1),st_lo(2):st_hi(2),st_lo(3):st_hi(3),NQ))
-    allocate(h % syp(st_lo(1):st_hi(1),st_lo(2):st_hi(2),st_lo(3):st_hi(3),NQ))
-    allocate(h % szm(st_lo(1):st_hi(1),st_lo(2):st_hi(2),st_lo(3):st_hi(3),NQ))
-    allocate(h % szp(st_lo(1):st_hi(1),st_lo(2):st_hi(2),st_lo(3):st_hi(3),NQ))
-
-    allocate(h % qm(It_lo(1):It_hi(1), It_lo(2):It_hi(2), It_lo(3):It_hi(3), NQ, 3))
-    allocate(h % qp(It_lo(1):It_hi(1), It_lo(2):It_hi(2), It_lo(3):It_hi(3), NQ, 3))
-
-    allocate(h % flatn(q_lo(1):q_hi(1),q_lo(2):q_hi(2),q_lo(3):q_hi(3)))
-
-  end subroutine allocate_ht
-
-
-
-
-  subroutine deallocate_ht(h)
-
-    implicit none
-
-    type(ht), intent(inout) :: h
-
-    deallocate(h % flatn)
-
-    deallocate(h % sxm)
-    deallocate(h % sxp)
-    deallocate(h % sym)
-    deallocate(h % syp)
-    deallocate(h % szm)
-    deallocate(h % szp)
-
-    deallocate(h % qm)
-    deallocate(h % qp)
-
-    deallocate(h % div)
-
-    deallocate(h % q1)
-    deallocate(h % q2)
-    deallocate(h % q3)
-
-  end subroutine deallocate_ht
 
 end module advection_util_module

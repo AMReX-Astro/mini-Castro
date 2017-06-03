@@ -5,7 +5,6 @@ module ppm_module
 
   use bl_constants_module, only: ZERO, SIXTH, HALF, ONE, TWO, THREE
   use amrex_fort_module, only: rt => amrex_real
-  use advection_util_module, only: ht
   use meth_params_module, only: NQ
 
   implicit none
@@ -15,15 +14,23 @@ contains
 #ifdef CUDA
   attributes(device) &
 #endif
-  subroutine ppm_reconstruct(lo, hi, s, s_lo, s_hi, h)
+  subroutine ppm_reconstruct(lo, hi, s, flatn, s_lo, s_hi, &
+                             sxm, sxp, sym, syp, szm, szp, st_lo, st_hi)
 
     implicit none
 
-    integer,  intent(in) :: s_lo(3), s_hi(3)
-    integer,  intent(in) :: lo(3), hi(3)
+    integer,  intent(in   ) :: s_lo(3), s_hi(3)
+    integer,  intent(in   ) :: lo(3), hi(3)
+    integer,  intent(in   ) :: st_lo(3), st_hi(3)
 
-    type(ht), intent(inout) :: h
     real(rt), intent(in   ) :: s(s_lo(1):s_hi(1), s_lo(2):s_hi(2), s_lo(3):s_hi(3), NQ)
+    real(rt), intent(in   ) :: flatn(s_lo(1):s_hi(1), s_lo(2):s_hi(2), s_lo(3):s_hi(3))
+    real(rt), intent(inout) :: sxm(st_lo(1):st_hi(1),st_lo(2):st_hi(2),st_lo(3):st_hi(3),NQ)
+    real(rt), intent(inout) :: sxp(st_lo(1):st_hi(1),st_lo(2):st_hi(2),st_lo(3):st_hi(3),NQ)
+    real(rt), intent(inout) :: sym(st_lo(1):st_hi(1),st_lo(2):st_hi(2),st_lo(3):st_hi(3),NQ)
+    real(rt), intent(inout) :: syp(st_lo(1):st_hi(1),st_lo(2):st_hi(2),st_lo(3):st_hi(3),NQ)
+    real(rt), intent(inout) :: szm(st_lo(1):st_hi(1),st_lo(2):st_hi(2),st_lo(3):st_hi(3),NQ)
+    real(rt), intent(inout) :: szp(st_lo(1):st_hi(1),st_lo(2):st_hi(2),st_lo(3):st_hi(3),NQ)
 
     ! local
     integer :: i, j, k, n
@@ -117,8 +124,8 @@ contains
                 sp = min(sp, max(s(i+1,j,k,n),s(i,j,k,n)))
 
                 ! Flatten the parabola
-                sm = h%flatn(i,j,k)*sm + (ONE-h%flatn(i,j,k))*s(i,j,k,n)
-                sp = h%flatn(i,j,k)*sp + (ONE-h%flatn(i,j,k))*s(i,j,k,n)
+                sm = flatn(i,j,k)*sm + (ONE-flatn(i,j,k))*s(i,j,k,n)
+                sp = flatn(i,j,k)*sp + (ONE-flatn(i,j,k))*s(i,j,k,n)
 
                 ! Modify using quadratic limiters -- note this version of the limiting comes
                 ! from Colella and Sekora (2008), not the original PPM paper.
@@ -137,8 +144,8 @@ contains
 
                 end if
 
-                h%sxp(i,j,k,n) = sp
-                h%sxm(i,j,k,n) = sm
+                sxp(i,j,k,n) = sp
+                sxm(i,j,k,n) = sm
 
              end do
           end do
@@ -214,8 +221,8 @@ contains
 
                 ! Flatten the parabola
 
-                sm = h%flatn(i,j,k)*sm + (ONE-h%flatn(i,j,k))*s(i,j,k,n)
-                sp = h%flatn(i,j,k)*sp + (ONE-h%flatn(i,j,k))*s(i,j,k,n)
+                sm = flatn(i,j,k)*sm + (ONE-flatn(i,j,k))*s(i,j,k,n)
+                sp = flatn(i,j,k)*sp + (ONE-flatn(i,j,k))*s(i,j,k,n)
 
                 ! Modify using quadratic limiters
 
@@ -234,8 +241,8 @@ contains
 
                 end if
 
-                h%syp(i,j,k,n) = sp
-                h%sym(i,j,k,n) = sm
+                syp(i,j,k,n) = sp
+                sym(i,j,k,n) = sm
 
              end do
           end do
@@ -311,8 +318,8 @@ contains
 
                 ! Flatten the parabola
 
-                sm = h%flatn(i,j,k)*sm + (ONE-h%flatn(i,j,k))*s(i,j,k,n)
-                sp = h%flatn(i,j,k)*sp + (ONE-h%flatn(i,j,k))*s(i,j,k,n)
+                sm = flatn(i,j,k)*sm + (ONE-flatn(i,j,k))*s(i,j,k,n)
+                sp = flatn(i,j,k)*sp + (ONE-flatn(i,j,k))*s(i,j,k,n)
 
                 ! Modify using quadratic limiters
 
@@ -331,8 +338,8 @@ contains
 
                 end if
 
-                h%szp(i,j,k,n) = sp
-                h%szm(i,j,k,n) = sm
+                szp(i,j,k,n) = sp
+                szm(i,j,k,n) = sm
 
              end do
           end do
@@ -346,12 +353,21 @@ contains
 #ifdef CUDA
   attributes(device) &
 #endif
-  subroutine ppm_int_profile(lo, hi, h)
+  subroutine ppm_int_profile(lo, hi, sxm, sxp, sym, syp, szm, szp, st_lo, st_hi, qm, qp, It_lo, It_hi)
 
     implicit none
 
     integer,  intent(in   ) :: lo(3), hi(3)
-    type(ht), intent(inout) :: h
+    integer,  intent(in   ) :: st_lo(3), st_hi(3)
+    integer,  intent(in   ) :: It_lo(3), It_hi(3)
+    real(rt), intent(in   ) :: sxm(st_lo(1):st_hi(1),st_lo(2):st_hi(2),st_lo(3):st_hi(3),NQ)
+    real(rt), intent(in   ) :: sxp(st_lo(1):st_hi(1),st_lo(2):st_hi(2),st_lo(3):st_hi(3),NQ)
+    real(rt), intent(in   ) :: sym(st_lo(1):st_hi(1),st_lo(2):st_hi(2),st_lo(3):st_hi(3),NQ)
+    real(rt), intent(in   ) :: syp(st_lo(1):st_hi(1),st_lo(2):st_hi(2),st_lo(3):st_hi(3),NQ)
+    real(rt), intent(in   ) :: szm(st_lo(1):st_hi(1),st_lo(2):st_hi(2),st_lo(3):st_hi(3),NQ)
+    real(rt), intent(in   ) :: szp(st_lo(1):st_hi(1),st_lo(2):st_hi(2),st_lo(3):st_hi(3),NQ)
+    real(rt), intent(inout) :: qm(It_lo(1):It_hi(1),It_lo(2):It_hi(2),It_lo(3):It_hi(3),NQ,3)
+    real(rt), intent(inout) :: qp(It_lo(1):It_hi(1),It_lo(2):It_hi(2),It_lo(3):It_hi(3),NQ,3)
 
     integer :: i, j, k, n
 
@@ -367,26 +383,26 @@ contains
                 ! x-edges
 
                 ! left state at i-1/2 interface
-                h%qm(i,j,k,n,1) = h%sxp(i-1,j,k,n)
+                qm(i,j,k,n,1) = sxp(i-1,j,k,n)
 
                 ! right state at i-1/2 interface
-                h%qp(i,j,k,n,1) = h%sxm(i,j,k,n)
+                qp(i,j,k,n,1) = sxm(i,j,k,n)
 
                 ! y-edges
 
                 ! left state at j-1/2 interface
-                h%qm(i,j,k,n,2) = h%syp(i,j-1,k,n)
+                qm(i,j,k,n,2) = syp(i,j-1,k,n)
 
                 ! right state at j-1/2 interface
-                h%qp(i,j,k,n,2) = h%sym(i,j,k,n)
+                qp(i,j,k,n,2) = sym(i,j,k,n)
 
                 ! z-edges
 
                 ! left state at k3d-1/2 interface
-                h%qm(i,j,k,n,3) = h%szp(i,j,k-1,n)
+                qm(i,j,k,n,3) = szp(i,j,k-1,n)
 
                 ! right state at k3d-1/2 interface
-                h%qp(i,j,k,n,3) = h%szm(i,j,k,n)
+                qp(i,j,k,n,3) = szm(i,j,k,n)
 
              end do
           end do

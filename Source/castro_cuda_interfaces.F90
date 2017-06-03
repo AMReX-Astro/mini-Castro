@@ -308,27 +308,40 @@ contains
 
 
   attributes(global) &
-  subroutine cuda_prepare_for_fluxes(lo, hi, dt, dx, courno, h, &
-                                     q, q_lo, q_hi, &
-                                     qaux, qa_lo, qa_hi)
+  subroutine cuda_prepare_for_fluxes(lo, hi, dt, dx, courno, &
+                                     q, flatn, q_lo, q_hi, &
+                                     div, g_lo, g_hi, &
+                                     qaux, qa_lo, qa_hi, &
+                                     sxm, sxp, sym, syp, szm, szp, st_lo, st_hi, &
+                                     qm, qp, It_lo, It_hi)
 
     use amrex_fort_module, only: rt => amrex_real
     use meth_params_module, only: NQ, NQAUX
-    use advection_util_module, only: ht
     use mol_module, only: prepare_for_fluxes
 
     implicit none
 
     integer,  intent(in   ) :: lo(3), hi(3)
     integer,  intent(in   ) :: q_lo(3), q_hi(3)
+    integer,  intent(in   ) :: g_lo(3), g_hi(3)
     integer,  intent(in   ) :: qa_lo(3), qa_hi(3)
+    integer,  intent(in   ) :: st_lo(3), st_hi(3)
+    integer,  intent(in   ) :: It_lo(3), It_hi(3)
 
     real(rt), intent(inout) :: q(q_lo(1):q_hi(1), q_lo(2):q_hi(2), q_lo(3):q_hi(3), NQ)
+    real(rt), intent(inout) :: flatn(q_lo(1):q_hi(1), q_lo(2):q_hi(2), q_lo(3):q_hi(3))
+    real(rt), intent(inout) :: div(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3))
     real(rt), intent(inout) :: qaux(qa_lo(1):qa_hi(1), qa_lo(2):qa_hi(2), qa_lo(3):qa_hi(3), NQAUX)
+    real(rt), intent(inout) :: sxm(st_lo(1):st_hi(1),st_lo(2):st_hi(2),st_lo(3):st_hi(3),NQ)
+    real(rt), intent(inout) :: sxp(st_lo(1):st_hi(1),st_lo(2):st_hi(2),st_lo(3):st_hi(3),NQ)
+    real(rt), intent(inout) :: sym(st_lo(1):st_hi(1),st_lo(2):st_hi(2),st_lo(3):st_hi(3),NQ)
+    real(rt), intent(inout) :: syp(st_lo(1):st_hi(1),st_lo(2):st_hi(2),st_lo(3):st_hi(3),NQ)
+    real(rt), intent(inout) :: szm(st_lo(1):st_hi(1),st_lo(2):st_hi(2),st_lo(3):st_hi(3),NQ)
+    real(rt), intent(inout) :: szp(st_lo(1):st_hi(1),st_lo(2):st_hi(2),st_lo(3):st_hi(3),NQ)
+    real(rt), intent(inout) :: qm(It_lo(1):It_hi(1),It_lo(2):It_hi(2),It_lo(3):It_hi(3),NQ,3)
+    real(rt), intent(inout) :: qp(It_lo(1):It_hi(1),It_lo(2):It_hi(2),It_lo(3):It_hi(3),NQ,3)
     real(rt), intent(in   ) :: dx(3), dt
     real(rt), intent(inout) :: courno
-
-    type(ht), intent(inout) :: h
 
     integer :: idx(3)
 
@@ -340,24 +353,28 @@ contains
 
     if (idx(1) .gt. hi(1) .or. idx(2) .gt. hi(2) .or. idx(3) .gt. hi(3)) return
 
-    call prepare_for_fluxes(lo, hi, dt, dx, courno, h, &
-                            q, q_lo, q_hi, &
-                            qaux, qa_lo, qa_hi)
+    call prepare_for_fluxes(idx, idx, dt, dx, courno, &
+                            q, flatn, q_lo, q_hi, &
+                            div, g_lo, g_hi, &
+                            qaux, qa_lo, qa_hi, &
+                            sxm, sxp, sym, syp, szm, szp, st_lo, st_hi, &
+                            qm, qp, It_lo, It_hi)
 
   end subroutine cuda_prepare_for_fluxes
 
 
 
   attributes(global) &
-  subroutine cuda_construct_flux(lo, hi, domlo, domhi, h, dx, dt, idir, &
+  subroutine cuda_construct_flux(lo, hi, domlo, domhi, dx, dt, idir, &
+                                 div, g_lo, g_hi, &
                                  uin, uin_lo, uin_hi, &
+                                 qm, qp, It_lo, It_hi, &
                                  flux, qint, f_lo, f_hi, &
                                  area, a_lo, a_hi, &
                                  qaux, qa_lo, qa_hi)
 
     use amrex_fort_module, only: rt => amrex_real
-    use meth_params_module, only: NVAR, NGDNV, NQAUX
-    use advection_util_module, only: ht
+    use meth_params_module, only: NVAR, NGDNV, NQAUX, NQ
     use mol_module, only: construct_flux
 
     implicit none
@@ -368,15 +385,18 @@ contains
     integer,  intent(in   ) :: qa_lo(3), qa_hi(3)
     integer,  intent(in   ) :: f_lo(3), f_hi(3)
     integer,  intent(in   ) :: a_lo(3), a_hi(3)
+    integer,  intent(in   ) :: g_lo(3), g_hi(3)
+    integer,  intent(in   ) :: It_lo(3), It_hi(3)
 
+    real(rt), intent(in   ) :: div(g_lo(1):g_hi(1), g_lo(2):g_hi(2), g_lo(3):g_hi(3))
     real(rt), intent(in   ) :: uin(uin_lo(1):uin_hi(1), uin_lo(2):uin_hi(2), uin_lo(3):uin_hi(3), NVAR)
+    real(rt), intent(inout) :: qm(It_lo(1):It_hi(1),It_lo(2):It_hi(2),It_lo(3):It_hi(3),NQ,3)
+    real(rt), intent(inout) :: qp(It_lo(1):It_hi(1),It_lo(2):It_hi(2),It_lo(3):It_hi(3),NQ,3)
     real(rt), intent(inout) :: qint(f_lo(1):f_hi(1), f_lo(2):f_hi(2), f_lo(3):f_hi(3), NGDNV)
     real(rt), intent(inout) :: flux(f_lo(1):f_hi(1), f_lo(2):f_hi(2), f_lo(3):f_hi(3), NVAR)
     real(rt), intent(in   ) :: area(a_lo(1):a_hi(1), a_lo(2):a_hi(2), a_lo(3):a_hi(3))
     real(rt), intent(inout) :: qaux(qa_lo(1):qa_hi(1), qa_lo(2):qa_hi(2), qa_lo(3):qa_hi(3), NQAUX)
     real(rt), intent(in   ) :: dx(3), dt
-
-    type(ht), intent(inout) :: h
 
     integer :: idx(3)
 
@@ -388,8 +408,10 @@ contains
 
     if (idx(1) .gt. hi(1) .or. idx(2) .gt. hi(2) .or. idx(3) .gt. hi(3)) return
 
-    call construct_flux(lo, hi, domlo, domhi, h, dx, dt, idir, &
+    call construct_flux(idx, idx, domlo, domhi, dx, dt, idir, &
+                        div, g_lo, g_hi, &
                         uin, uin_lo, uin_hi, &
+                        qm, qp, It_lo, It_hi, &
                         flux, qint, f_lo, f_hi, &
                         area, a_lo, a_hi, &
                         qaux, qa_lo, qa_hi)
@@ -399,10 +421,10 @@ contains
 
 
   attributes(global) &
-  subroutine cuda_construct_hydro_update(lo, hi, dx, dt, h, &
-                                         f1, f1_lo, f1_hi, &
-                                         f2, f2_lo, f2_hi, &
-                                         f3, f3_lo, f3_hi, &
+  subroutine cuda_construct_hydro_update(lo, hi, dx, dt, &
+                                         f1, q1, f1_lo, f1_hi, &
+                                         f2, q2, f2_lo, f2_hi, &
+                                         f3, q3, f3_lo, f3_hi, &
                                          a1, a1_lo, a1_hi, &
                                          a2, a2_lo, a2_hi, &
                                          a3, a3_lo, a3_hi, &
@@ -410,8 +432,8 @@ contains
                                          update, u_lo, u_hi)
 
     use amrex_fort_module, only: rt => amrex_real
-    use meth_params_module, only: NVAR
-    use advection_util_module, only: ht, construct_hydro_update
+    use meth_params_module, only: NVAR, NQ
+    use advection_util_module, only: construct_hydro_update
 
     implicit none
 
@@ -425,8 +447,10 @@ contains
     integer,  intent(in   ) :: vol_lo(3), vol_hi(3)
     integer,  intent(in   ) :: u_lo(3), u_hi(3)
     real(rt), intent(in   ) :: dx(3), dt
-    type(ht), intent(in   ) :: h
 
+    real(rt), intent(in   ) :: q1(f1_lo(1):f1_hi(1),f1_lo(2):f1_hi(2),f1_lo(3):f1_hi(3),NQ)
+    real(rt), intent(in   ) :: q2(f2_lo(1):f2_hi(1),f2_lo(2):f2_hi(2),f2_lo(3):f2_hi(3),NQ)
+    real(rt), intent(in   ) :: q3(f3_lo(1):f3_hi(1),f3_lo(2):f3_hi(2),f3_lo(3):f3_hi(3),NQ)
     real(rt), intent(in   ) :: f1(f1_lo(1):f1_hi(1),f1_lo(2):f1_hi(2),f1_lo(3):f1_hi(3),NVAR)
     real(rt), intent(in   ) :: f2(f2_lo(1):f2_hi(1),f2_lo(2):f2_hi(2),f2_lo(3):f2_hi(3),NVAR)
     real(rt), intent(in   ) :: f3(f3_lo(1):f3_hi(1),f3_lo(2):f3_hi(2),f3_lo(3):f3_hi(3),NVAR)
@@ -446,10 +470,10 @@ contains
 
     if (idx(1) .gt. hi(1) .or. idx(2) .gt. hi(2) .or. idx(3) .gt. hi(3)) return
 
-    call construct_hydro_update(lo, hi, dx, dt, h, &
-                                f1, f1_lo, f1_hi, &
-                                f2, f2_lo, f2_hi, &
-                                f3, f3_lo, f3_hi, &
+    call construct_hydro_update(idx, idx, dx, dt, &
+                                f1, q1, f1_lo, f1_hi, &
+                                f2, q2, f2_lo, f2_hi, &
+                                f3, q3, f3_lo, f3_hi, &
                                 a1, a1_lo, a1_hi, &
                                 a2, a2_lo, a2_hi, &
                                 a3, a3_lo, a3_hi, &

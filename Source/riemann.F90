@@ -20,7 +20,8 @@ contains
 #ifdef CUDA
   attributes(device) &
 #endif
-  subroutine cmpflx(lo, hi, domlo, domhi, h, idir, &
+  subroutine cmpflx(lo, hi, domlo, domhi, idir, &
+                    qm, qp, It_lo, It_hi, &
                     flx, qint, flx_lo, flx_hi, &
                     qaux, qa_lo, qa_hi)
 
@@ -31,13 +32,14 @@ contains
     use bl_constants_module, only: ZERO, HALF, ONE
     use prob_params_module, only: physbc_lo, physbc_hi, Symmetry, SlipWall, NoSlipWall
 
+    integer,  intent(in   ) :: It_lo(3), It_hi(3)
     integer,  intent(in   ) :: flx_lo(3), flx_hi(3)
     integer,  intent(in   ) :: qa_lo(3), qa_hi(3)
     integer,  intent(in   ) :: lo(3), hi(3), idir
     integer,  intent(in   ) :: domlo(3), domhi(3)
 
-    type(ht), intent(inout) :: h
-
+    real(rt), intent(inout) :: qm(It_lo(1):It_hi(1),It_lo(2):It_hi(2),It_lo(3):It_hi(3),NQ,3)
+    real(rt), intent(inout) :: qp(It_lo(1):It_hi(1),It_lo(2):It_hi(2),It_lo(3):It_hi(3),NQ,3)
     real(rt), intent(inout) :: flx(flx_lo(1):flx_hi(1),flx_lo(2):flx_hi(2),flx_lo(3):flx_hi(3),NVAR)
     real(rt), intent(inout) :: qint(flx_lo(1):flx_hi(1),flx_lo(2):flx_hi(2),flx_lo(3):flx_hi(3),NGDNV)
 
@@ -166,51 +168,51 @@ contains
              eos_state % T = 10000.0e0_rt
 
              ! minus state
-             rhoInv = ONE / h%qm(i,j,k,QRHO,idir)
-             eos_state % rho = h%qm(i,j,k,QRHO,idir)
-             eos_state % p   = h%qm(i,j,k,QPRES,idir)
-             eos_state % e   = h%qm(i,j,k,QREINT,idir) * rhoInv
-             eos_state % xn  = h%qm(i,j,k,QFS:QFS+nspec-1,idir)
-             eos_state % aux = h%qm(i,j,k,QFX:QFX+naux-1,idir)
+             rhoInv = ONE / qm(i,j,k,QRHO,idir)
+             eos_state % rho = qm(i,j,k,QRHO,idir)
+             eos_state % p   = qm(i,j,k,QPRES,idir)
+             eos_state % e   = qm(i,j,k,QREINT,idir) * rhoInv
+             eos_state % xn  = qm(i,j,k,QFS:QFS+nspec-1,idir)
+             eos_state % aux = qm(i,j,k,QFX:QFX+naux-1,idir)
 
              call eos(eos_input_re, eos_state)
 
-             h%qm(i,j,k,QREINT,idir) = eos_state % e * eos_state % rho
-             h%qm(i,j,k,QPRES,idir)  = eos_state % p
+             qm(i,j,k,QREINT,idir) = eos_state % e * eos_state % rho
+             qm(i,j,k,QPRES,idir)  = eos_state % p
              gamcm          = eos_state % gam1
 
-             rhoInv = ONE / h%qp(i,j,k,QRHO,idir)
+             rhoInv = ONE / qp(i,j,k,QRHO,idir)
 
-             eos_state % rho = h%qp(i,j,k,QRHO,idir)
-             eos_state % p   = h%qp(i,j,k,QPRES,idir)
-             eos_state % e   = h%qp(i,j,k,QREINT,idir) * rhoInv
-             eos_state % xn  = h%qp(i,j,k,QFS:QFS+nspec-1,idir)
-             eos_state % aux = h%qp(i,j,k,QFX:QFX+naux-1,idir)
+             eos_state % rho = qp(i,j,k,QRHO,idir)
+             eos_state % p   = qp(i,j,k,QPRES,idir)
+             eos_state % e   = qp(i,j,k,QREINT,idir) * rhoInv
+             eos_state % xn  = qp(i,j,k,QFS:QFS+nspec-1,idir)
+             eos_state % aux = qp(i,j,k,QFX:QFX+naux-1,idir)
 
              call eos(eos_input_re, eos_state)
 
-             h%qp(i,j,k,QREINT,idir) = eos_state % e * eos_state % rho
-             h%qp(i,j,k,QPRES,idir)  = eos_state % p
+             qp(i,j,k,QREINT,idir) = eos_state % e * eos_state % rho
+             qp(i,j,k,QPRES,idir)  = eos_state % p
              gamcp                   = eos_state % gam1
 
-             rl = max(h%qm(i,j,k,QRHO,idir), small_dens)
+             rl = max(qm(i,j,k,QRHO,idir), small_dens)
 
              ! pick left velocities based on direction
-             ul  = h%qm(i,j,k,iu,idir)
-             v1l = h%qm(i,j,k,iv1,idir)
-             v2l = h%qm(i,j,k,iv2,idir)
+             ul  = qm(i,j,k,iu,idir)
+             v1l = qm(i,j,k,iv1,idir)
+             v2l = qm(i,j,k,iv2,idir)
 
-             pl  = max(h%qm(i,j,k,QPRES ,idir), small_pres)
-             rel =     h%qm(i,j,k,QREINT,idir)
-             rr  = max(h%qp(i,j,k,QRHO,idir), small_dens)
+             pl  = max(qm(i,j,k,QPRES ,idir), small_pres)
+             rel =     qm(i,j,k,QREINT,idir)
+             rr  = max(qp(i,j,k,QRHO,idir), small_dens)
 
              ! pick right velocities based on direction
-             ur  = h%qp(i,j,k,iu,idir)
-             v1r = h%qp(i,j,k,iv1,idir)
-             v2r = h%qp(i,j,k,iv2,idir)
+             ur  = qp(i,j,k,iu,idir)
+             v1r = qp(i,j,k,iv1,idir)
+             v2r = qp(i,j,k,iv2,idir)
 
-             pr  = max(h%qp(i,j,k,QPRES,idir), small_pres)
-             rer =     h%qp(i,j,k,QREINT,idir)
+             pr  = max(qp(i,j,k,QPRES,idir), small_pres)
+             rer =     qp(i,j,k,QREINT,idir)
              csmall = smallc
              wsmall = small_dens*csmall
              wl = max(wsmall,sqrt(abs(gamcm*pl*rl)))
@@ -346,13 +348,13 @@ contains
                 nqp = qpass_map(ipassive)
 
                 if (ustar > ZERO) then
-                   flx(i,j,k,n) = flx(i,j,k,URHO)*h%qm(i,j,k,nqp,idir)
+                   flx(i,j,k,n) = flx(i,j,k,URHO)*qm(i,j,k,nqp,idir)
 
                 else if (ustar < ZERO) then
-                   flx(i,j,k,n) = flx(i,j,k,URHO)*h%qp(i,j,k,nqp,idir)
+                   flx(i,j,k,n) = flx(i,j,k,URHO)*qp(i,j,k,nqp,idir)
 
                 else
-                   qavg = HALF * (h%qm(i,j,k,nqp,idir) + h%qp(i,j,k,nqp,idir))
+                   qavg = HALF * (qm(i,j,k,nqp,idir) + qp(i,j,k,nqp,idir))
                    flx(i,j,k,n) = flx(i,j,k,URHO)*qavg
                 endif
 

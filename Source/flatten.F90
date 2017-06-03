@@ -7,12 +7,11 @@ contains
 #ifdef CUDA
   attributes(device) &
 #endif
-  subroutine uflaten(lo, hi, q, q_lo, q_hi, h)
+  subroutine uflaten(lo, hi, q, flatn, q_lo, q_hi)
 
     use bl_constants_module, only: ZERO, ONE
     use amrex_fort_module, only: rt => amrex_real
     use prob_params_module, only: dg
-    use advection_util_module, only: ht
     use meth_params_module, only: NQ, QU, QV, QW, QPRES
 
     implicit none
@@ -20,7 +19,7 @@ contains
     integer,  intent(in   ) :: lo(3), hi(3)
     integer,  intent(in   ) :: q_lo(3), q_hi(3)
     real(rt), intent(in   ) :: q(q_lo(1):q_hi(1),q_lo(2):q_hi(2),q_lo(3):q_hi(3),NQ)
-    type(ht), intent(inout) :: h
+    real(rt), intent(inout) :: flatn(q_lo(1):q_hi(1),q_lo(2):q_hi(2),q_lo(3):q_hi(3))
 
     integer :: i, j, k, ishft
 
@@ -83,7 +82,7 @@ contains
                 chi2 = ZERO
              endif
 
-             h%flatn(i,j,k) = ONE - max(chi2 * z2, chi * z)
+             flatn(i,j,k) = ONE - max(chi2 * z2, chi * z)
 
           end do
        end do
@@ -139,7 +138,7 @@ contains
              endif
 
              ftmp = ONE - max(chi2 * z2, chi * z)
-             h%flatn(i,j,k) = min(h%flatn(i,j,k), ftmp)
+             flatn(i,j,k) = min(flatn(i,j,k), ftmp)
 
           end do
        end do
@@ -195,7 +194,7 @@ contains
              endif
 
              ftmp = ONE - max(chi2 * z2, chi * z)
-             h%flatn(i,j,k) = min(h%flatn(i,j,k), ftmp)
+             flatn(i,j,k) = min(flatn(i,j,k), ftmp)
           enddo
        enddo
     enddo

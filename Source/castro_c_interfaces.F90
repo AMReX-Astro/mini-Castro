@@ -1,6 +1,6 @@
 module c_interface_modules
 
-  use meth_params_module, only: NVAR, NQAUX, NQ, QVAR
+  use meth_params_module, only: NVAR, NQAUX, NQ, QVAR, NGDNV
   use amrex_fort_module, only: rt => amrex_real
 
 #ifdef CUDA
@@ -295,10 +295,10 @@ contains
 
     implicit none
 
-    integer, intent(in) :: lo(3), hi(3)
-    integer, intent(in) :: state_lo(3), state_hi(3)
+    integer,  intent(in) :: lo(3), hi(3)
+    integer,  intent(in) :: state_lo(3), state_hi(3)
     real(rt), intent(in) :: state(state_lo(1):state_hi(1),state_lo(2):state_hi(2),state_lo(3):state_hi(3),NVAR)
-    integer, intent(in)     :: idx
+    integer,  intent(in) :: idx
 
     call check_initial_species(lo, hi, state, state_lo, state_hi)
 
@@ -618,7 +618,7 @@ contains
                                  courno, verbose, idx) bind(C, name="ca_mol_single_stage")
 
     use mol_module, only: prepare_for_fluxes, construct_flux
-    use advection_util_module, only: ht, allocate_ht, deallocate_ht, construct_hydro_update
+    use advection_util_module, only: construct_hydro_update
 #ifdef CUDA
     use cuda_interfaces_module, only: cuda_prepare_for_fluxes, cuda_construct_flux, cuda_construct_hydro_update
 #endif
@@ -663,10 +663,22 @@ contains
     integer :: k_lo(3), k_hi(3)
     integer :: idir
 
-    type(ht) :: h
+    real(rt), allocatable :: q1(:,:,:,:)
+    real(rt), allocatable :: q2(:,:,:,:)
+    real(rt), allocatable :: q3(:,:,:,:)
+
+    real(rt), allocatable :: flatn(:,:,:)
+    real(rt), allocatable :: div(:,:,:)
+
+    real(rt), allocatable :: qm(:,:,:,:,:)
+    real(rt), allocatable :: qp(:,:,:,:,:)
+
+    real(rt), allocatable :: sxm(:,:,:,:), sym(:,:,:,:), szm(:,:,:,:)
+    real(rt), allocatable :: sxp(:,:,:,:), syp(:,:,:,:), szp(:,:,:,:)
 
 #ifdef CUDA
-    attributes(device) :: uin, uout, q, qaux, update, flux1, flux2, flux3, area1, area2, area3, vol, h
+    attributes(device) :: uin, uout, q, qaux, update, flux1, flux2, flux3, area1, area2, area3, vol
+    attributes(device) :: q1, q2, q3, flatn, div, sxm, sxp, sym, syp, szm, szp, qm, qp
 
     integer                   :: cuda_result
     integer(cuda_stream_kind) :: stream
@@ -688,6 +700,9 @@ contains
     integer,  device :: a3_lo_d(3), a3_hi_d(3)
     integer,  device :: vol_lo_d(3), vol_hi_d(3)
     integer,  device :: k_lo_d(3), k_hi_d(3)
+    integer,  device :: st_lo_d(3), st_hi_d(3)
+    integer,  device :: It_lo_d(3), It_hi_d(3)
+    integer,  device :: g_lo_d(3), g_hi_d(3)
     real(rt), device :: courno_d
     integer,  device :: verbose_d
     integer,  device :: idir_d
@@ -709,10 +724,23 @@ contains
     g_lo = lo - ngf
     g_hi = hi + ngf
 
-    ! Allocate all the temporaries we will need.
-    call allocate_ht(h, lo, hi, f1_lo, f1_hi, f2_lo, f2_hi, &
-                     f3_lo, f3_hi, st_lo, st_hi, It_lo, It_hi, &
-                     g_lo, g_hi, gd_lo, gd_hi, q_lo, q_hi)
+    allocate(q1(f1_lo(1):f1_hi(1),f1_lo(2):f1_hi(2),f1_lo(3):f1_hi(3),NGDNV))
+    allocate(q2(f2_lo(1):f2_hi(1),f2_lo(2):f2_hi(2),f2_lo(3):f2_hi(3),NGDNV))
+    allocate(q3(f3_lo(1):f3_hi(1),f3_lo(2):f3_hi(2),f3_lo(3):f3_hi(3),NGDNV))
+
+    allocate(flatn(q_lo(1):q_hi(1),q_lo(2):q_hi(2),q_lo(3):q_hi(3)))
+
+    allocate(div(g_lo(1):g_hi(1),g_lo(2):g_hi(2),g_lo(3):g_hi(3)))
+
+    allocate(qm(It_lo(1):It_hi(1), It_lo(2):It_hi(2), It_lo(3):It_hi(3), NQ, 3))
+    allocate(qp(It_lo(1):It_hi(1), It_lo(2):It_hi(2), It_lo(3):It_hi(3), NQ, 3))
+
+    allocate(sxm(st_lo(1):st_hi(1),st_lo(2):st_hi(2),st_lo(3):st_hi(3),NQ))
+    allocate(sxp(st_lo(1):st_hi(1),st_lo(2):st_hi(2),st_lo(3):st_hi(3),NQ))
+    allocate(sym(st_lo(1):st_hi(1),st_lo(2):st_hi(2),st_lo(3):st_hi(3),NQ))
+    allocate(syp(st_lo(1):st_hi(1),st_lo(2):st_hi(2),st_lo(3):st_hi(3),NQ))
+    allocate(szm(st_lo(1):st_hi(1),st_lo(2):st_hi(2),st_lo(3):st_hi(3),NQ))
+    allocate(szp(st_lo(1):st_hi(1),st_lo(2):st_hi(2),st_lo(3):st_hi(3),NQ))
 
 #ifdef CUDA
     stream = cuda_streams(mod(idx, max_cuda_streams) + 1)
@@ -726,14 +754,19 @@ contains
     cuda_result = cudaMemcpyAsync(domhi_d, domhi, 3, cudaMemcpyHostToDevice, stream)
 
     cuda_result = cudaMemcpyAsync(uin_lo_d, uin_lo, 3, cudaMemcpyHostToDevice, stream)
+    cuda_result = cudaMemcpyAsync(uin_hi_d, uin_hi, 3, cudaMemcpyHostToDevice, stream)
 
     cuda_result = cudaMemcpyAsync(uout_lo_d, uout_lo, 3, cudaMemcpyHostToDevice, stream)
+    cuda_result = cudaMemcpyAsync(uout_hi_d, uout_hi, 3, cudaMemcpyHostToDevice, stream)
 
     cuda_result = cudaMemcpyAsync(q_lo_d, q_lo, 3, cudaMemcpyHostToDevice, stream)
+    cuda_result = cudaMemcpyAsync(q_hi_d, q_hi, 3, cudaMemcpyHostToDevice, stream)
 
     cuda_result = cudaMemcpyAsync(qa_lo_d, qa_lo, 3, cudaMemcpyHostToDevice, stream)
+    cuda_result = cudaMemcpyAsync(qa_hi_d, qa_hi, 3, cudaMemcpyHostToDevice, stream)
 
     cuda_result = cudaMemcpyAsync(updt_lo_d, updt_lo, 3, cudaMemcpyHostToDevice, stream)
+    cuda_result = cudaMemcpyAsync(updt_hi_d, updt_hi, 3, cudaMemcpyHostToDevice, stream)
 
     cuda_result = cudaMemcpyAsync(dx_d, dx, 3, cudaMemcpyHostToDevice, stream)
     cuda_result = cudaMemcpyAsync(dt_d, dt, 1, cudaMemcpyHostToDevice, stream)
@@ -755,6 +788,15 @@ contains
     cuda_result = cudaMemcpyAsync(vol_lo_d, vol_lo, 3, cudaMemcpyHostToDevice, stream)
     cuda_result = cudaMemcpyAsync(vol_hi_d, vol_hi, 3, cudaMemcpyHostToDevice, stream)
 
+    cuda_result = cudaMemcpyAsync(st_lo_d, st_lo, 3, cudaMemcpyHostToDevice, stream)
+    cuda_result = cudaMemcpyAsync(st_hi_d, st_hi, 3, cudaMemcpyHostToDevice, stream)
+
+    cuda_result = cudaMemcpyAsync(It_lo_d, It_lo, 3, cudaMemcpyHostToDevice, stream)
+    cuda_result = cudaMemcpyAsync(It_hi_d, It_hi, 3, cudaMemcpyHostToDevice, stream)
+
+    cuda_result = cudaMemcpyAsync(g_lo_d, g_lo, 3, cudaMemcpyHostToDevice, stream)
+    cuda_result = cudaMemcpyAsync(g_hi_d, g_hi, 3, cudaMemcpyHostToDevice, stream)
+
     courno_loc = courno
 
     cuda_result = cudaMemcpyAsync(courno_d, courno_loc, 1, cudaMemcpyHostToDevice, stream)
@@ -771,9 +813,12 @@ contains
 
     call threads_and_blocks(k_lo, k_hi, numBlocks, numThreads)
 
-    call cuda_prepare_for_fluxes<<<numBlocks, numThreads, 0, stream>>>(k_lo_d, k_hi_d, dt_d, dx_d, courno_d, h, &
-                                                                       q, q_lo_d, q_hi_d, &
-                                                                       qaux, qa_lo_d, qa_hi_d)
+    call cuda_prepare_for_fluxes<<<numBlocks, numThreads, 0, stream>>>(k_lo_d, k_hi_d, dt_d, dx_d, courno_d, &
+                                                                       q, flatn, q_lo_d, q_hi_d, &
+                                                                       div, g_lo_d, g_hi_d, &
+                                                                       qaux, qa_lo_d, qa_hi_d, &
+                                                                       sxm, sxp, sym, syp, szm, szp, st_lo_d, st_hi_d, &
+                                                                       qm, qp, It_lo_d, It_hi_d)
 
     cuda_result = cudaMemcpyAsync(courno_loc, courno_d, 1, cudaMemcpyDeviceToHost, stream)
 
@@ -791,9 +836,11 @@ contains
 
     call threads_and_blocks(k_lo, k_hi, numBlocks, numThreads)
 
-    call cuda_construct_flux<<<numBlocks, numThreads, 0, stream>>>(k_lo_d, k_hi_d, domlo_d, domhi_d, h, dx_d, dt_d, idir_d, &
+    call cuda_construct_flux<<<numBlocks, numThreads, 0, stream>>>(k_lo_d, k_hi_d, domlo_d, domhi_d, dx_d, dt_d, idir_d, &
+                                                                   div, g_lo_d, g_hi_d, &
                                                                    uin, uin_lo_d, uin_hi_d, &
-                                                                   flux1, h%q1, f1_lo_d, f1_hi_d, &
+                                                                   qm, qp, It_lo_d, It_hi_d, &
+                                                                   flux1, q1, f1_lo_d, f1_hi_d, &
                                                                    area1, a1_lo_d, a1_hi_d, &
                                                                    qaux, qa_lo_d, qa_hi_d)
 
@@ -811,9 +858,11 @@ contains
 
     call threads_and_blocks(k_lo, k_hi, numBlocks, numThreads)
 
-    call cuda_construct_flux<<<numBlocks, numThreads, 0, stream>>>(k_lo_d, k_hi_d, domlo_d, domhi_d, h, dx_d, dt_d, idir_d, &
+    call cuda_construct_flux<<<numBlocks, numThreads, 0, stream>>>(k_lo_d, k_hi_d, domlo_d, domhi_d, dx_d, dt_d, idir_d, &
+                                                                   div, g_lo_d, g_hi_d, &
                                                                    uin, uin_lo_d, uin_hi_d, &
-                                                                   flux2, h%q2, f2_lo_d, f2_hi_d, &
+                                                                   qm, qp, It_lo_d, It_hi_d, &
+                                                                   flux2, q2, f2_lo_d, f2_hi_d, &
                                                                    area2, a2_lo_d, a2_hi_d, &
                                                                    qaux, qa_lo_d, qa_hi_d)
 
@@ -831,9 +880,11 @@ contains
 
     call threads_and_blocks(k_lo, k_hi, numBlocks, numThreads)
 
-    call cuda_construct_flux<<<numBlocks, numThreads, 0, stream>>>(k_lo_d, k_hi_d, domlo_d, domhi_d, h, dx_d, dt_d, idir_d, &
+    call cuda_construct_flux<<<numBlocks, numThreads, 0, stream>>>(k_lo_d, k_hi_d, domlo_d, domhi_d, dx_d, dt_d, idir_d, &
+                                                                   div, g_lo_d, g_hi_d, &
                                                                    uin, uin_lo_d, uin_hi_d, &
-                                                                   flux3, h%q3, f3_lo_d, f3_hi_d, &
+                                                                   qm, qp, It_lo_d, It_hi_d, &
+                                                                   flux3, q3, f3_lo_d, f3_hi_d, &
                                                                    area3, a3_lo_d, a3_hi_d, &
                                                                    qaux, qa_lo_d, qa_hi_d)
 
@@ -847,10 +898,10 @@ contains
 
     call threads_and_blocks(k_lo, k_hi, numBlocks, numThreads)
 
-    call cuda_construct_hydro_update<<<numBlocks, numThreads, 0, stream>>>(k_lo_d, k_hi_d, dx_d, dt_d, h, &
-                                                                           flux1, f1_lo_d, f1_hi_d, &
-                                                                           flux2, f2_lo_d, f2_hi_d, &
-                                                                           flux3, f3_lo_d, f3_hi_d, &
+    call cuda_construct_hydro_update<<<numBlocks, numThreads, 0, stream>>>(k_lo_d, k_hi_d, dx_d, dt_d, &
+                                                                           flux1, q1, f1_lo_d, f1_hi_d, &
+                                                                           flux2, q2, f2_lo_d, f2_hi_d, &
+                                                                           flux3, q3, f3_lo_d, f3_hi_d, &
                                                                            area1, a1_lo_d, a1_hi_d, &
                                                                            area2, a2_lo_d, a2_hi_d, &
                                                                            area3, a3_lo_d, a3_hi_d, &
@@ -867,18 +918,23 @@ contains
 
     k_lo = g_lo
     k_hi = g_hi
-    call prepare_for_fluxes(k_lo, k_hi, dt, dx, courno, h, &
-                            q, q_lo, q_hi, &
-                            qaux, qa_lo, qa_hi)
+    call prepare_for_fluxes(k_lo, k_hi, dt, dx, courno, &
+                            q, flatn, q_lo, q_hi, &
+                            div, g_lo, g_hi, &
+                            qaux, qa_lo, qa_hi, &
+                            sxm, sxp, sym, syp, szm, szp, st_lo, st_hi, &
+                            qm, qp, It_lo, It_hi)
 
     ! Compute F^x
 
     idir = 1
     k_lo = f1_lo
     k_hi = f1_hi
-    call construct_flux(k_lo, k_hi, domlo, domhi, h, dx, dt, idir, &
+    call construct_flux(k_lo, k_hi, domlo, domhi, dx, dt, idir, &
+                        div, g_lo, g_hi, &
                         uin, uin_lo, uin_hi, &
-                        flux1, h%q1, f1_lo, f1_hi, &
+                        qm, qp, It_lo, It_hi, &
+                        flux1, q1, f1_lo, f1_hi, &
                         area1, a1_lo, a1_hi, &
                         qaux, qa_lo, qa_hi)
 
@@ -887,9 +943,11 @@ contains
     idir = 2
     k_lo = f2_lo
     k_hi = f2_hi
-    call construct_flux(k_lo, k_hi, domlo, domhi, h, dx, dt, idir, &
+    call construct_flux(k_lo, k_hi, domlo, domhi, dx, dt, idir, &
+                        div, g_lo, g_hi, &
                         uin, uin_lo, uin_hi, &
-                        flux2, h%q2, f2_lo, f2_hi, &
+                        qm, qp, It_lo, It_hi, &
+                        flux2, q2, f2_lo, f2_hi, &
                         area2, a2_lo, a2_hi, &
                         qaux, qa_lo, qa_hi)
 
@@ -898,9 +956,11 @@ contains
     idir = 3
     k_lo = f3_lo
     k_hi = f3_hi
-    call construct_flux(k_lo, k_hi, domlo, domhi, h, dx, dt, idir, &
+    call construct_flux(k_lo, k_hi, domlo, domhi, dx, dt, idir, &
+                        div, g_lo, g_hi, &
                         uin, uin_lo, uin_hi, &
-                        flux3, h%q3, f3_lo, f3_hi, &
+                        qm, qp, It_lo, It_hi, &
+                        flux3, q3, f3_lo, f3_hi, &
                         area3, a3_lo, a3_hi, &
                         qaux, qa_lo, qa_hi)
 
@@ -908,10 +968,10 @@ contains
 
     k_lo = lo
     k_hi = hi
-    call construct_hydro_update(k_lo, k_hi, dx, dt, h, &
-                                flux1, f1_lo, f1_hi, &
-                                flux2, f2_lo, f2_hi, &
-                                flux3, f3_lo, f3_hi, &
+    call construct_hydro_update(k_lo, k_hi, dx, dt, &
+                                flux1, q1, f1_lo, f1_hi, &
+                                flux2, q2, f2_lo, f2_hi, &
+                                flux3, q3, f3_lo, f3_hi, &
                                 area1, a1_lo, a1_hi, &
                                 area2, a2_lo, a2_hi, &
                                 area3, a3_lo, a3_hi, &
@@ -920,7 +980,22 @@ contains
 
 #endif
 
-    call deallocate_ht(h)
+    deallocate(q1)
+    deallocate(q2)
+    deallocate(q3)
+
+    deallocate(flatn)
+    deallocate(div)
+
+    deallocate(qm)
+    deallocate(qp)
+
+    deallocate(sxm)
+    deallocate(sxp)
+    deallocate(sym)
+    deallocate(syp)
+    deallocate(szm)
+    deallocate(szp)
 
   end subroutine ca_mol_single_stage
 
