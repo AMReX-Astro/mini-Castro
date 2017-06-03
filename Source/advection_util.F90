@@ -12,7 +12,6 @@ module advection_util_module
      ! Arrays for workspace
      real(rt), pointer :: flatn(:,:,:)
      real(rt), pointer :: div(:,:,:)
-     real(rt), pointer :: pdivu(:,:,:)
 
      ! Edge-centered primitive variables (Riemann state)
      real(rt), pointer :: q1(:,:,:,:)
@@ -628,38 +627,6 @@ contains
 
 
 
-  subroutine pdivu(lo, hi, h, dx)
-
-    use bl_constants_module, only: HALF
-    use meth_params_module, only: GDPRES, GDU, GDV, GDW
-
-    implicit none
-
-    integer,  intent(in   ) :: lo(3), hi(3)
-    real(rt), intent(in   ) :: dx(3)
-    type(ht), intent(inout) :: h
-
-    integer :: i, j, k
-
-    do k = lo(3), hi(3)
-       do j = lo(2), hi(2)
-          do i = lo(1), hi(1)
-
-             h%pdivu(i,j,k) = HALF * (h%q1(i+1,j,k,GDPRES) + h%q1(i,j,k,GDPRES)) * &
-                                     (h%q1(i+1,j,k,GDU) - h%q1(i,j,k,GDU)) / dx(1) + &
-                              HALF * (h%q2(i,j+1,k,GDPRES) + h%q2(i,j,k,GDPRES)) * &
-                                     (h%q2(i,j+1,k,GDV) - h%q2(i,j,k,GDV)) / dx(2) + &
-                              HALF * (h%q3(i,j,k+1,GDPRES) + h%q3(i,j,k,GDPRES)) * &
-                                     (h%q3(i,j,k+1,GDW) - h%q3(i,j,k,GDW)) / dx(3)
-
-          end do
-       end do
-    end do
-
-  end subroutine pdivu
-
-
-
   subroutine apply_av(lo, hi, idir, dx, h, &
                       uin, uin_lo, uin_hi, &
                       flux, f_lo, f_hi)
@@ -733,7 +700,7 @@ contains
 
 
 
-  subroutine construct_hydro_update(lo, hi, h, &
+  subroutine construct_hydro_update(lo, hi, dx, h, &
                                     f1, f1_lo, f1_hi, &
                                     f2, f2_lo, f2_hi, &
                                     f3, f3_lo, f3_hi, &
@@ -743,7 +710,8 @@ contains
                                     vol, vol_lo, vol_hi, &
                                     update, u_lo, u_hi)
 
-    use meth_params_module, only: NVAR, UEINT
+    use bl_constants_module, only: HALF, ONE
+    use meth_params_module, only: NVAR, UEINT, GDPRES, GDU, GDV, GDW
 
     implicit none
 
@@ -756,6 +724,7 @@ contains
     integer,  intent(in   ) :: a3_lo(3), a3_hi(3)
     integer,  intent(in   ) :: vol_lo(3), vol_hi(3)
     integer,  intent(in   ) :: u_lo(3), u_hi(3)
+    real(rt), intent(in   ) :: dx(3)
     type(ht), intent(in   ) :: h
 
     real(rt), intent(in   ) :: f1(f1_lo(1):f1_hi(1),f1_lo(2):f1_hi(2),f1_lo(3):f1_hi(3),NVAR)
@@ -767,7 +736,10 @@ contains
     real(rt), intent(in   ) :: vol(vol_lo(1):vol_hi(1),vol_lo(2):vol_hi(2),vol_lo(3):vol_hi(3))
     real(rt), intent(inout) :: update(u_lo(1):u_hi(1),u_lo(2):u_hi(2),u_lo(3):u_hi(3),NVAR)
 
-    integer :: i, j, k, n
+    integer  :: i, j, k, n
+    real(rt) :: pdivu, dxinv(3)
+
+    dxinv = ONE / dx
 
     do n = 1, NVAR
        do k = lo(3), hi(3)
@@ -780,7 +752,16 @@ contains
 
                 ! Add the p div(u) source term to (rho e).
                 if (n .eq. UEINT) then
-                   update(i,j,k,n) = update(i,j,k,n) - h%pdivu(i,j,k)
+
+                   pdivu = HALF * (h%q1(i+1,j,k,GDPRES) + h%q1(i,j,k,GDPRES)) * &
+                                  (h%q1(i+1,j,k,GDU) - h%q1(i,j,k,GDU)) * dxinv(1) + &
+                           HALF * (h%q2(i,j+1,k,GDPRES) + h%q2(i,j,k,GDPRES)) * &
+                                  (h%q2(i,j+1,k,GDV) - h%q2(i,j,k,GDV)) * dxinv(2) + &
+                           HALF * (h%q3(i,j,k+1,GDPRES) + h%q3(i,j,k,GDPRES)) * &
+                                  (h%q3(i,j,k+1,GDW) - h%q3(i,j,k,GDW)) * dxinv(3)
+
+                   update(i,j,k,n) = update(i,j,k,n) - pdivu
+
                 endif
 
              enddo
@@ -845,7 +826,6 @@ contains
     integer, intent(in) :: gd_lo(3), gd_hi(3)
 
     allocate(h % div(lo(1)-1:hi(1)+1, lo(2)-1:hi(2)+1, lo(3)-1:hi(3)+1))
-    allocate(h % pdivu(lo(1):hi(1), lo(2):hi(2)  , lo(3):hi(3)))
 
     allocate(h % q1(flux1_lo(1):flux1_hi(1),flux1_lo(2):flux1_hi(2),flux1_lo(3):flux1_hi(3),NGDNV))
     allocate(h % q2(flux2_lo(1):flux2_hi(1),flux2_lo(2):flux2_hi(2),flux2_lo(3):flux2_hi(3),NGDNV))
@@ -913,7 +893,6 @@ contains
     deallocate(h % qint)
 
     deallocate(h % div)
-    deallocate(h % pdivu)
 
     deallocate(h % q1)
     deallocate(h % q2)

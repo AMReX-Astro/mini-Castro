@@ -27,7 +27,7 @@ contains
                               courno, verbose)
 
     use advection_util_module, only: compute_cfl, divu, normalize_species_fluxes, &
-                                     ht, pdivu, apply_av, construct_hydro_update, scale_flux
+                                     ht, apply_av, construct_hydro_update, scale_flux
     use flatten_module, only: uflaten
     use riemann_module, only: cmpflx
     use ppm_module, only: ppm_reconstruct, ppm_int_profile
@@ -113,9 +113,6 @@ contains
                 qaux, qa_lo, qa_hi, &
                 h, 3, f3_lo, f3_hi, domlo, domhi)
 
-    ! Compute p x div(u)
-    call pdivu(lo, hi, h, dx)
-
     ! Apply artificial viscosity
     call apply_av(f1_lo, f1_hi, 1, dx, h, uin, uin_lo, uin_hi, flux1, f1_lo, f1_hi)
     call apply_av(f2_lo, f2_hi, 2, dx, h, uin, uin_lo, uin_hi, flux2, f2_lo, f2_hi)
@@ -127,7 +124,7 @@ contains
     call normalize_species_fluxes(f3_lo, f3_hi, flux3, f3_lo, f3_hi)
 
     ! Create an update source term based on the flux divergence.
-    call construct_hydro_update(lo, hi, h, &
+    call construct_hydro_update(lo, hi, dx, h, &
                                 flux1, f1_lo, f1_hi, &
                                 flux2, f2_lo, f2_hi, &
                                 flux3, f3_lo, f3_hi, &
