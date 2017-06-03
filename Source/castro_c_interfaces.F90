@@ -608,17 +608,17 @@ contains
                                  qaux, qa_lo, qa_hi, &
                                  update, updt_lo, updt_hi, &
                                  dx, dt, &
-                                 flux1, flux1_lo, flux1_hi, &
-                                 flux2, flux2_lo, flux2_hi, &
-                                 flux3, flux3_lo, flux3_hi, &
-                                 area1, area1_lo, area1_hi, &
-                                 area2, area2_lo, area2_hi, &
-                                 area3, area3_lo, area3_hi, &
+                                 flux1, f1_lo, f1_hi, &
+                                 flux2, f2_lo, f2_hi, &
+                                 flux3, f3_lo, f3_hi, &
+                                 area1, a1_lo, a1_hi, &
+                                 area2, a2_lo, a2_hi, &
+                                 area3, a3_lo, a3_hi, &
                                  vol, vol_lo, vol_hi, &
                                  courno, verbose, idx) bind(C, name="ca_mol_single_stage")
 
-    use mol_module, only: mol_single_stage
-    use advection_util_module, only: ht, allocate_ht, deallocate_ht
+    use mol_module, only: prepare_for_fluxes, construct_flux
+    use advection_util_module, only: ht, allocate_ht, deallocate_ht, construct_hydro_update
 #ifdef CUDA
     use cuda_interfaces_module, only: cuda_mol_single_stage
 #endif
@@ -632,12 +632,12 @@ contains
     integer,  intent(in   ) :: q_lo(3), q_hi(3)
     integer,  intent(in   ) :: qa_lo(3), qa_hi(3)
     integer,  intent(in   ) :: updt_lo(3), updt_hi(3)
-    integer,  intent(in   ) :: flux1_lo(3), flux1_hi(3)
-    integer,  intent(in   ) :: flux2_lo(3), flux2_hi(3)
-    integer,  intent(in   ) :: flux3_lo(3), flux3_hi(3)
-    integer,  intent(in   ) :: area1_lo(3), area1_hi(3)
-    integer,  intent(in   ) :: area2_lo(3), area2_hi(3)
-    integer,  intent(in   ) :: area3_lo(3), area3_hi(3)
+    integer,  intent(in   ) :: f1_lo(3), f1_hi(3)
+    integer,  intent(in   ) :: f2_lo(3), f2_hi(3)
+    integer,  intent(in   ) :: f3_lo(3), f3_hi(3)
+    integer,  intent(in   ) :: a1_lo(3), a1_hi(3)
+    integer,  intent(in   ) :: a2_lo(3), a2_hi(3)
+    integer,  intent(in   ) :: a3_lo(3), a3_hi(3)
     integer,  intent(in   ) :: vol_lo(3), vol_hi(3)
 
     real(rt), intent(in   ) :: uin(uin_lo(1):uin_hi(1), uin_lo(2):uin_hi(2), uin_lo(3):uin_hi(3), NVAR)
@@ -645,12 +645,12 @@ contains
     real(rt), intent(inout) :: q(q_lo(1):q_hi(1), q_lo(2):q_hi(2), q_lo(3):q_hi(3), NQ)
     real(rt), intent(inout) :: qaux(qa_lo(1):qa_hi(1), qa_lo(2):qa_hi(2), qa_lo(3):qa_hi(3), NQAUX)
     real(rt), intent(inout) :: update(updt_lo(1):updt_hi(1), updt_lo(2):updt_hi(2), updt_lo(3):updt_hi(3), NVAR)
-    real(rt), intent(inout) :: flux1(flux1_lo(1):flux1_hi(1), flux1_lo(2):flux1_hi(2), flux1_lo(3):flux1_hi(3), NVAR)
-    real(rt), intent(inout) :: flux2(flux2_lo(1):flux2_hi(1), flux2_lo(2):flux2_hi(2), flux2_lo(3):flux2_hi(3), NVAR)
-    real(rt), intent(inout) :: flux3(flux3_lo(1):flux3_hi(1), flux3_lo(2):flux3_hi(2), flux3_lo(3):flux3_hi(3), NVAR)
-    real(rt), intent(in   ) :: area1(area1_lo(1):area1_hi(1), area1_lo(2):area1_hi(2), area1_lo(3):area1_hi(3))
-    real(rt), intent(in   ) :: area2(area2_lo(1):area2_hi(1), area2_lo(2):area2_hi(2), area2_lo(3):area2_hi(3))
-    real(rt), intent(in   ) :: area3(area3_lo(1):area3_hi(1), area3_lo(2):area3_hi(2), area3_lo(3):area3_hi(3))
+    real(rt), intent(inout) :: flux1(f1_lo(1):f1_hi(1), f1_lo(2):f1_hi(2), f1_lo(3):f1_hi(3), NVAR)
+    real(rt), intent(inout) :: flux2(f2_lo(1):f2_hi(1), f2_lo(2):f2_hi(2), f2_lo(3):f2_hi(3), NVAR)
+    real(rt), intent(inout) :: flux3(f3_lo(1):f3_hi(1), f3_lo(2):f3_hi(2), f3_lo(3):f3_hi(3), NVAR)
+    real(rt), intent(in   ) :: area1(a1_lo(1):a1_hi(1), a1_lo(2):a1_hi(2), a1_lo(3):a1_hi(3))
+    real(rt), intent(in   ) :: area2(a2_lo(1):a2_hi(1), a2_lo(2):a2_hi(2), a2_lo(3):a2_hi(3))
+    real(rt), intent(in   ) :: area3(a3_lo(1):a3_hi(1), a3_lo(2):a3_hi(2), a3_lo(3):a3_hi(3))
     real(rt), intent(in   ) :: vol(vol_lo(1):vol_hi(1), vol_lo(2):vol_hi(2), vol_lo(3):vol_hi(3))
     real(rt), intent(in   ) :: dx(3), dt, time
     real(rt), intent(inout) :: courno
@@ -660,6 +660,8 @@ contains
     integer :: st_lo(3), st_hi(3)
     integer :: g_lo(3), g_hi(3)
     integer :: gd_lo(3), gd_hi(3)
+    integer :: k_lo(3), k_hi(3)
+    integer :: idir
 
     type(ht) :: h
 
@@ -678,8 +680,8 @@ contains
     g_hi = hi + ngf
 
     ! Allocate all the temporaries we will need.
-    call allocate_ht(h, lo, hi, flux1_lo, flux1_hi, flux2_lo, flux2_hi, &
-                     flux3_lo, flux3_hi, st_lo, st_hi, It_lo, It_hi, &
+    call allocate_ht(h, lo, hi, f1_lo, f1_hi, f2_lo, f2_hi, &
+                     f3_lo, f3_hi, st_lo, st_hi, It_lo, It_hi, &
                      g_lo, g_hi, gd_lo, gd_hi, q_lo, q_hi)
 
 #ifdef CUDA
@@ -698,12 +700,12 @@ contains
     integer,  device :: qa_lo_d(3), qa_hi_d(3)
     integer,  device :: updt_lo_d(3), updt_hi_d(3)
     real(rt), device :: dx_d(3), dt_d
-    integer,  device :: flux1_lo_d(3), flux1_hi_d(3)
-    integer,  device :: flux2_lo_d(3), flux2_hi_d(3)
-    integer,  device :: flux3_lo_d(3), flux3_hi_d(3)
-    integer,  device :: area1_lo_d(3), area1_hi_d(3)
-    integer,  device :: area2_lo_d(3), area2_hi_d(3)
-    integer,  device :: area3_lo_d(3), area3_hi_d(3)
+    integer,  device :: f1_lo_d(3), f1_hi_d(3)
+    integer,  device :: f2_lo_d(3), f2_hi_d(3)
+    integer,  device :: f3_lo_d(3), f3_hi_d(3)
+    integer,  device :: a1_lo_d(3), a1_hi_d(3)
+    integer,  device :: a2_lo_d(3), a2_hi_d(3)
+    integer,  device :: a3_lo_d(3), a3_hi_d(3)
     integer,  device :: vol_lo_d(3), vol_hi_d(3)
     real(rt), device :: courno_d
     integer,  device :: verbose_d
@@ -733,19 +735,19 @@ contains
     cuda_result = cudaMemcpyAsync(dx_d, dx, 3, cudaMemcpyHostToDevice, stream)
     cuda_result = cudaMemcpyAsync(dt_d, dt, 1, cudaMemcpyHostToDevice, stream)
 
-    cuda_result = cudaMemcpyAsync(flux1_lo_d, flux1_lo, 3, cudaMemcpyHostToDevice, stream)
-    cuda_result = cudaMemcpyAsync(flux1_hi_d, flux1_hi, 3, cudaMemcpyHostToDevice, stream)
-    cuda_result = cudaMemcpyAsync(flux2_lo_d, flux2_lo, 3, cudaMemcpyHostToDevice, stream)
-    cuda_result = cudaMemcpyAsync(flux2_hi_d, flux2_hi, 3, cudaMemcpyHostToDevice, stream)
-    cuda_result = cudaMemcpyAsync(flux3_lo_d, flux3_lo, 3, cudaMemcpyHostToDevice, stream)
-    cuda_result = cudaMemcpyAsync(flux3_hi_d, flux3_hi, 3, cudaMemcpyHostToDevice, stream)
+    cuda_result = cudaMemcpyAsync(f1_lo_d, f1_lo, 3, cudaMemcpyHostToDevice, stream)
+    cuda_result = cudaMemcpyAsync(f1_hi_d, f1_hi, 3, cudaMemcpyHostToDevice, stream)
+    cuda_result = cudaMemcpyAsync(f2_lo_d, f2_lo, 3, cudaMemcpyHostToDevice, stream)
+    cuda_result = cudaMemcpyAsync(f2_hi_d, f2_hi, 3, cudaMemcpyHostToDevice, stream)
+    cuda_result = cudaMemcpyAsync(f3_lo_d, f3_lo, 3, cudaMemcpyHostToDevice, stream)
+    cuda_result = cudaMemcpyAsync(f3_hi_d, f3_hi, 3, cudaMemcpyHostToDevice, stream)
 
-    cuda_result = cudaMemcpyAsync(area1_lo_d, area1_lo, 3, cudaMemcpyHostToDevice, stream)
-    cuda_result = cudaMemcpyAsync(area1_hi_d, area1_hi, 3, cudaMemcpyHostToDevice, stream)
-    cuda_result = cudaMemcpyAsync(area2_lo_d, area2_lo, 3, cudaMemcpyHostToDevice, stream)
-    cuda_result = cudaMemcpyAsync(area2_hi_d, area2_hi, 3, cudaMemcpyHostToDevice, stream)
-    cuda_result = cudaMemcpyAsync(area3_lo_d, area3_lo, 3, cudaMemcpyHostToDevice, stream)
-    cuda_result = cudaMemcpyAsync(area3_hi_d, area3_hi, 3, cudaMemcpyHostToDevice, stream)
+    cuda_result = cudaMemcpyAsync(a1_lo_d, a1_lo, 3, cudaMemcpyHostToDevice, stream)
+    cuda_result = cudaMemcpyAsync(a1_hi_d, a1_hi, 3, cudaMemcpyHostToDevice, stream)
+    cuda_result = cudaMemcpyAsync(a2_lo_d, a2_lo, 3, cudaMemcpyHostToDevice, stream)
+    cuda_result = cudaMemcpyAsync(a2_hi_d, a2_hi, 3, cudaMemcpyHostToDevice, stream)
+    cuda_result = cudaMemcpyAsync(a3_lo_d, a3_lo, 3, cudaMemcpyHostToDevice, stream)
+    cuda_result = cudaMemcpyAsync(a3_hi_d, a3_hi, 3, cudaMemcpyHostToDevice, stream)
 
     cuda_result = cudaMemcpyAsync(vol_lo_d, vol_lo, 3, cudaMemcpyHostToDevice, stream)
     cuda_result = cudaMemcpyAsync(vol_hi_d, vol_hi, 3, cudaMemcpyHostToDevice, stream)
@@ -766,12 +768,12 @@ contains
                                                                      qaux, qa_lo_d, qa_hi_d, &
                                                                      update, updt_lo_d, updt_hi_d, &
                                                                      dx_d, dt_d, h, &
-                                                                     flux1, flux1_lo_d, flux1_hi_d, &
-                                                                     flux2, flux2_lo_d, flux2_hi_d, &
-                                                                     flux3, flux3_lo_d, flux3_hi_d, &
-                                                                     area1, area1_lo_d, area1_hi_d, &
-                                                                     area2, area2_lo_d, area2_hi_d, &
-                                                                     area3, area3_lo_d, area3_hi_d, &
+                                                                     flux1, f1_lo_d, f1_hi_d, &
+                                                                     flux2, f2_lo_d, f2_hi_d, &
+                                                                     flux3, f3_lo_d, f3_hi_d, &
+                                                                     area1, a1_lo_d, a1_hi_d, &
+                                                                     area2, a2_lo_d, a2_hi_d, &
+                                                                     area3, a3_lo_d, a3_hi_d, &
                                                                      vol, vol_lo_d, vol_hi_d, &
                                                                      courno_d, verbose_d)
 
@@ -783,22 +785,60 @@ contains
 
 #else
 
-    call mol_single_stage(time, &
-                          lo, hi, domlo, domhi, &
-                          uin, uin_lo, uin_hi, &
-                          uout, uout_lo, uout_hi, &
-                          q, q_lo, q_hi, &
-                          qaux, qa_lo, qa_hi, &
-                          update, updt_lo, updt_hi, &
-                          dx, dt, h, &
-                          flux1, flux1_lo, flux1_hi, &
-                          flux2, flux2_lo, flux2_hi, &
-                          flux3, flux3_lo, flux3_hi, &
-                          area1, area1_lo, area1_hi, &
-                          area2, area2_lo, area2_hi, &
-                          area3, area3_lo, area3_hi, &
-                          vol, vol_lo, vol_hi, &
-                          courno, verbose)
+    ! Construct edge states as inputs to flux construction
+
+    k_lo = g_lo
+    k_hi = g_hi
+    call prepare_for_fluxes(k_lo, k_hi, dt, dx, courno, h, &
+                            q, q_lo, q_hi, &
+                            qaux, qa_lo, qa_hi)
+
+    ! Compute F^x
+
+    idir = 1
+    k_lo = f1_lo
+    k_hi = f1_hi
+    call construct_flux(k_lo, k_hi, domlo, domhi, h, dx, dt, idir, &
+                        uin, uin_lo, uin_hi, &
+                        flux1, h%q1, f1_lo, f1_hi, &
+                        area1, a1_lo, a1_hi, &
+                        qaux, qa_lo, qa_hi)
+
+    ! Compute F^y
+
+    idir = 2
+    k_lo = f2_lo
+    k_hi = f2_hi
+    call construct_flux(k_lo, k_hi, domlo, domhi, h, dx, dt, idir, &
+                        uin, uin_lo, uin_hi, &
+                        flux2, h%q2, f2_lo, f2_hi, &
+                        area2, a2_lo, a2_hi, &
+                        qaux, qa_lo, qa_hi)
+
+    ! Compute F^z
+
+    idir = 3
+    k_lo = f3_lo
+    k_hi = f3_hi
+    call construct_flux(k_lo, k_hi, domlo, domhi, h, dx, dt, idir, &
+                        uin, uin_lo, uin_hi, &
+                        flux3, h%q3, f3_lo, f3_hi, &
+                        area3, a3_lo, a3_hi, &
+                        qaux, qa_lo, qa_hi)
+
+    ! Create an update source term based on the flux divergence.
+
+    k_lo = lo
+    k_hi = hi
+    call construct_hydro_update(k_lo, k_hi, dx, dt, h, &
+                                flux1, f1_lo, f1_hi, &
+                                flux2, f2_lo, f2_hi, &
+                                flux3, f3_lo, f3_hi, &
+                                area1, a1_lo, a1_hi, &
+                                area2, a2_lo, a2_hi, &
+                                area3, a3_lo, a3_hi, &
+                                vol, vol_lo, vol_hi, &
+                                update, updt_lo, updt_hi)
 
 #endif
 
