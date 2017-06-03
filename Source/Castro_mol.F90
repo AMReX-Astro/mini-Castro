@@ -27,7 +27,7 @@ contains
                               courno, verbose)
 
     use advection_util_module, only: compute_cfl, divu, normalize_species_fluxes, &
-                                     ht, pdivu
+                                     ht, pdivu, apply_av
     use bl_constants_module, only: ZERO, HALF, ONE, FOURTH
     use flatten_module, only: uflaten
     use riemann_module, only: cmpflx
@@ -76,11 +76,7 @@ contains
     integer :: edge_lo(3), edge_hi(3)
     integer :: g_lo(3), g_hi(3)
 
-    real(rt), parameter :: difmag = 0.1d0
-
-    real(rt) :: div1
     integer :: i, j, k, n
-    integer :: kc, km, kt, k3d
 
     ngf = 1
 
@@ -124,57 +120,14 @@ contains
     ! Compute p x div(u)
     call pdivu(lo, hi, h, dx)
 
-    do n = 1, NVAR
+    ! Apply artificial viscostiry
+    call apply_av(lo, hi, dx, h, &
+                  uin, uin_lo, uin_hi, &
+                  flux1, flux1_lo, flux1_hi, &
+                  flux2, flux2_lo, flux2_hi, &
+                  flux3, flux3_lo, flux3_hi)
 
-       if ( n == UTEMP ) then
-          flux1(lo(1):hi(1)+1,lo(2):hi(2),lo(3):hi(3),n) = ZERO
-          flux2(lo(1):hi(1),lo(2):hi(2)+1,lo(3):hi(3),n) = ZERO
-          flux3(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)+1,n) = ZERO
-
-       else
-          do k = lo(3), hi(3)
-             do j = lo(2), hi(2)
-                do i = lo(1), hi(1)+1
-                   div1 = FOURTH*(h%div(i,j,k) + h%div(i,j+1,k) + &
-                                  h%div(i,j,k+1) + h%div(i,j+1,k+1))
-                   div1 = difmag*min(ZERO,div1)
-
-                   flux1(i,j,k,n) = flux1(i,j,k,n) + &
-                        dx(1) * div1 * (uin(i,j,k,n)-uin(i-1,j,k,n))
-                enddo
-             enddo
-          enddo
-
-          do k = lo(3), hi(3)
-             do j = lo(2), hi(2)+1
-                do i = lo(1), hi(1)
-                   div1 = FOURTH*(h%div(i,j,k) + h%div(i+1,j,k) + &
-                                  h%div(i,j,k+1) + h%div(i+1,j,k+1))
-                   div1 = difmag*min(ZERO,div1)
-
-                   flux2(i,j,k,n) = flux2(i,j,k,n) + &
-                        dx(2) * div1 * (uin(i,j,k,n)-uin(i,j-1,k,n))
-                enddo
-             enddo
-          enddo
-
-          do k = lo(3), hi(3)+1
-             do j = lo(2), hi(2)
-                do i = lo(1), hi(1)
-                   div1 = FOURTH*(h%div(i,j,k) + h%div(i+1,j,k) + &
-                                  h%div(i,j+1,k) + h%div(i+1,j+1,k))
-                   div1 = difmag*min(ZERO,div1)
-
-                   flux3(i,j,k,n) = flux3(i,j,k,n) + &
-                        dx(3) * div1 * (uin(i,j,k,n)-uin(i,j,k-1,n))
-                enddo
-             enddo
-          enddo
-
-       endif
-
-    enddo
-
+    ! Normalize species fluxes
     call normalize_species_fluxes(flux1,flux1_lo,flux1_hi, &
                                   flux2,flux2_lo,flux2_hi, &
                                   flux3,flux3_lo,flux3_hi, &

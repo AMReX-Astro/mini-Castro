@@ -701,6 +701,93 @@ contains
 
 
 
+  subroutine apply_av(lo, hi, dx, h, &
+                      uin, uin_lo, uin_hi, &
+                      flux1, f1_lo, f1_hi, &
+                      flux2, f2_lo, f2_hi, &
+                      flux3, f3_lo, f3_hi)
+
+    use bl_constants_module, only: ZERO, FOURTH
+    use meth_params_module, only: NVAR, UTEMP
+
+    implicit none
+
+    integer,  intent(in   ) :: lo(3), hi(3)
+    integer,  intent(in   ) :: uin_lo(3), uin_hi(3)
+    integer,  intent(in   ) :: f1_lo(3), f1_hi(3)
+    integer,  intent(in   ) :: f2_lo(3), f2_hi(3)
+    integer,  intent(in   ) :: f3_lo(3), f3_hi(3)
+    real(rt), intent(in   ) :: dx(3)
+
+    real(rt), intent(in   ) :: uin(uin_lo(1):uin_hi(1),uin_lo(2):uin_hi(2),uin_lo(3):uin_hi(3),NVAR)
+    real(rt), intent(inout) :: flux1(f1_lo(1):f1_hi(1),f1_lo(2):f1_hi(2),f1_lo(3):f1_hi(3),NVAR)
+    real(rt), intent(inout) :: flux2(f2_lo(1):f2_hi(1),f2_lo(2):f2_hi(2),f2_lo(3):f2_hi(3),NVAR)
+    real(rt), intent(inout) :: flux3(f3_lo(1):f3_hi(1),f3_lo(2):f3_hi(2),f3_lo(3):f3_hi(3),NVAR)
+    type(ht), intent(in   ) :: h
+
+    integer :: i, j, k, n
+
+    real(rt) :: div1
+
+    real(rt), parameter :: difmag = 0.1d0
+
+    do n = 1, NVAR
+
+       if ( n == UTEMP ) then
+
+          flux1(lo(1):hi(1)+1,lo(2):hi(2),lo(3):hi(3),n) = ZERO
+          flux2(lo(1):hi(1),lo(2):hi(2)+1,lo(3):hi(3),n) = ZERO
+          flux3(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)+1,n) = ZERO
+
+       else
+
+          do k = lo(3), hi(3)
+             do j = lo(2), hi(2)
+                do i = lo(1), hi(1)+1
+                   div1 = FOURTH*(h%div(i,j,k) + h%div(i,j+1,k) + &
+                                  h%div(i,j,k+1) + h%div(i,j+1,k+1))
+                   div1 = difmag*min(ZERO,div1)
+
+                   flux1(i,j,k,n) = flux1(i,j,k,n) + &
+                                    dx(1) * div1 * (uin(i,j,k,n)-uin(i-1,j,k,n))
+                end do
+             end do
+          end do
+
+          do k = lo(3), hi(3)
+             do j = lo(2), hi(2)+1
+                do i = lo(1), hi(1)
+                   div1 = FOURTH*(h%div(i,j,k) + h%div(i+1,j,k) + &
+                                  h%div(i,j,k+1) + h%div(i+1,j,k+1))
+                   div1 = difmag*min(ZERO,div1)
+
+                   flux2(i,j,k,n) = flux2(i,j,k,n) + &
+                                    dx(2) * div1 * (uin(i,j,k,n)-uin(i,j-1,k,n))
+                end do
+             end do
+          end do
+
+          do k = lo(3), hi(3)+1
+             do j = lo(2), hi(2)
+                do i = lo(1), hi(1)
+                   div1 = FOURTH*(h%div(i,j,k) + h%div(i+1,j,k) + &
+                                  h%div(i,j+1,k) + h%div(i+1,j+1,k))
+                   div1 = difmag*min(ZERO,div1)
+
+                   flux3(i,j,k,n) = flux3(i,j,k,n) + &
+                                    dx(3) * div1 * (uin(i,j,k,n)-uin(i,j,k-1,n))
+                end do
+             end do
+          end do
+
+       endif
+
+    enddo
+
+  end subroutine apply_av
+
+
+
   ! Allocate the components of a hydro temporary.
 
   subroutine allocate_ht(h, lo, hi, flux1_lo, flux1_hi, flux2_lo, flux2_hi, &
