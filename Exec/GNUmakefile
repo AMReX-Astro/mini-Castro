@@ -34,7 +34,14 @@ include $(AMREX_HOME)/Tools/GNUMake/Make.defs
 # Castro uses a coarse grained OMP approach
 DEFINES += -DCRSEGRNDOMP
 
-# The default is to include the sponge functionality
+# Limit the maximum number of registers available
+ifeq ($(lowercase_comp),pgi)
+  ifeq ($(USE_CUDA),TRUE)
+    FFLAGS += -Mcuda=maxregcount:128
+    F90FLAGS += -Mcuda=maxregcount:128
+  endif
+endif
+
 ifeq ($(USE_ACC), TRUE)
    DEFINES += -DACC
 endif
