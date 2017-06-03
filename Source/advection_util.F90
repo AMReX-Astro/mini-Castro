@@ -846,6 +846,36 @@ contains
 
 
 
+  subroutine scale_flux(lo, hi, flux, f_lo, f_hi, area, a_lo, a_hi, dt)
+
+    use meth_params_module, only: NVAR
+
+    implicit none
+
+    integer,  intent(in   ) :: lo(3), hi(3)
+    integer,  intent(in   ) :: f_lo(3), f_hi(3)
+    integer,  intent(in   ) :: a_lo(3), a_hi(3)
+    real(rt), intent(in   ) :: dt
+
+    real(rt), intent(inout) :: flux(f_lo(1):f_hi(1),f_lo(2):f_hi(2),f_lo(3):f_hi(3),NVAR)
+    real(rt), intent(in   ) :: area(a_lo(1):a_hi(1),a_lo(2):a_hi(2),a_lo(3):a_hi(3))
+
+    integer :: i, j, k, n
+
+    do n = 1, NVAR
+       do k = lo(3), hi(3)
+          do j = lo(2), hi(2)
+             do i = lo(1), hi(1)
+                flux(i,j,k,n) = dt * flux(i,j,k,n) * area(i,j,k)
+             enddo
+          enddo
+       enddo
+    enddo
+
+  end subroutine scale_flux
+
+
+
   ! Allocate the components of a hydro temporary.
 
   subroutine allocate_ht(h, lo, hi, flux1_lo, flux1_hi, flux2_lo, flux2_hi, &

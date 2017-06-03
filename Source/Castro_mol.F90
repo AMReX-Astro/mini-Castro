@@ -27,15 +27,12 @@ contains
                               courno, verbose)
 
     use advection_util_module, only: compute_cfl, divu, normalize_species_fluxes, &
-                                     ht, pdivu, apply_av, construct_hydro_update
-    use bl_constants_module, only: ZERO, HALF, ONE, FOURTH
+                                     ht, pdivu, apply_av, construct_hydro_update, scale_flux
     use flatten_module, only: uflaten
     use riemann_module, only: cmpflx
     use ppm_module, only: ppm_reconstruct, ppm_int_profile
     use amrex_fort_module, only: rt => amrex_real
-    use meth_params_module, only: NQ, QVAR, NVAR, NGDNV, GDPRES, &
-                                   UTEMP, UEINT, UMX, GDU, GDV, GDW, &
-                                   QU, QV, QW, QPRES, NQAUX
+    use meth_params_module, only: NQ, QVAR, NVAR, NQAUX
 
     implicit none
 
@@ -76,8 +73,6 @@ contains
     integer :: edge_lo(3), edge_hi(3)
     integer :: g_lo(3), g_hi(3)
 
-    integer :: i, j, k, n
-
     ngf = 1
 
     g_lo = lo - ngf
@@ -103,17 +98,17 @@ contains
     ! Compute F^x
     call cmpflx(flux1, h%q1, flux1_lo, flux1_hi, &
                 qaux, qa_lo, qa_hi, &
-                h, 1, lo, [hi(1)+1, hi(2), hi(3)], domlo, domhi)
+                h, 1, flux1_lo, flux1_hi, domlo, domhi)
 
     ! Compute F^y
     call cmpflx(flux2, h%q2, flux2_lo, flux2_hi, &
                 qaux, qa_lo, qa_hi, &
-                h, 2, lo, [hi(1), hi(2)+1, hi(3)], domlo, domhi)
+                h, 2, flux2_lo, flux2_hi, domlo, domhi)
 
     ! Compute F^z
     call cmpflx(flux3, h%q3, flux3_lo, flux3_hi, &
                 qaux, qa_lo, qa_hi, &
-                h, 3, lo, [hi(1), hi(2), hi(3)+1], domlo, domhi)
+                h, 3, flux3_lo, flux3_hi, domlo, domhi)
 
     ! Compute divergence of velocity field (on surroundingNodes(lo,hi))
     call divu(lo,hi,q,q_lo,q_hi,dx,h%div,edge_lo,edge_hi)
@@ -146,36 +141,9 @@ contains
                                 update, updt_lo, updt_hi)
 
     ! Scale the fluxes for the form we expect later in refluxing.
-
-    do n = 1, NVAR
-       do k = lo(3), hi(3)
-          do j = lo(2), hi(2)
-             do i = lo(1), hi(1) + 1
-                flux1(i,j,k,n) = dt * flux1(i,j,k,n) * area1(i,j,k)
-             enddo
-          enddo
-       enddo
-    enddo
-
-    do n = 1, NVAR
-       do k = lo(3), hi(3)
-          do j = lo(2), hi(2) + 1
-             do i = lo(1), hi(1)
-                flux2(i,j,k,n) = dt * flux2(i,j,k,n) * area2(i,j,k)
-             enddo
-          enddo
-       enddo
-    enddo
-
-    do n = 1, NVAR
-       do k = lo(3), hi(3) + 1
-          do j = lo(2), hi(2)
-             do i = lo(1), hi(1)
-                flux3(i,j,k,n) = dt * flux3(i,j,k,n) * area3(i,j,k)
-             enddo
-          enddo
-       enddo
-    enddo
+    call scale_flux(flux1_lo, flux1_hi, flux1, flux1_lo, flux1_hi, area1, area1_lo, area1_hi, dt)
+    call scale_flux(flux2_lo, flux2_hi, flux2, flux2_lo, flux2_hi, area2, area2_lo, area2_hi, dt)
+    call scale_flux(flux3_lo, flux3_hi, flux3, flux3_lo, flux3_hi, area3, area3_lo, area3_hi, dt)
 
   end subroutine mol_single_stage
 
