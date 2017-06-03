@@ -20,8 +20,6 @@ module advection_util_module
      real(rt), pointer :: q3(:,:,:,:)
      real(rt), pointer :: qint(:,:,:,:)
 
-     real(rt), pointer :: shk(:,:,:)
-
      ! Local arrays for flattening
      real(rt), pointer :: dp(:,:,:), z(:,:,:), chi(:,:,:)
 
@@ -675,7 +673,7 @@ contains
 
   subroutine allocate_ht(h, lo, hi, flux1_lo, flux1_hi, flux2_lo, flux2_hi, &
                          flux3_lo, flux3_hi, st_lo, st_hi, It_lo, It_hi, &
-                         shk_lo, shk_hi, g_lo, g_hi, gd_lo, gd_hi, q_lo, q_hi)
+                         g_lo, g_hi, gd_lo, gd_hi, q_lo, q_hi)
 
     use meth_params_module, only: NGDNV, NQ
 
@@ -690,7 +688,6 @@ contains
     integer, intent(in) :: q_lo(3), q_hi(3)
     integer, intent(in) :: It_lo(3), It_hi(3)
     integer, intent(in) :: st_lo(3), st_hi(3)
-    integer, intent(in) :: shk_lo(3), shk_hi(3)
     integer, intent(in) :: g_lo(3), g_hi(3)
     integer, intent(in) :: gd_lo(3), gd_hi(3)
 
@@ -712,8 +709,6 @@ contains
     allocate(h % qp(It_lo(1):It_hi(1), It_lo(2):It_hi(2), It_lo(3):It_hi(3), NQ, 3))
 
     allocate(h % qint(It_lo(1):It_hi(1),It_lo(2):It_hi(2),It_lo(3):It_hi(3),NGDNV))
-
-    allocate(h % shk(shk_lo(1):shk_hi(1),shk_lo(2):shk_hi(2),shk_lo(3):shk_hi(3)))
 
     allocate(h % dp (g_lo(1)-1:g_hi(1)+1,g_lo(2)-1:g_hi(2)+1,g_lo(3)-1:g_hi(3)+1))
     allocate(h % z  (g_lo(1)-1:g_hi(1)+1,g_lo(2)-1:g_hi(2)+1,g_lo(3)-1:g_hi(3)+1))
@@ -763,7 +758,6 @@ contains
     deallocate(h % qp)
 
     deallocate(h % qint)
-    deallocate(h % shk)
 
     deallocate(h % div)
     deallocate(h % pdivu)

@@ -87,14 +87,6 @@ contains
     g_lo = lo - ngf
     g_hi = hi + ngf
 
-    do k = lo(3), hi(3)
-       do j = lo(2), hi(2)
-          do i = lo(1), hi(1)
-             h%shk(i,j,k) = ZERO
-          enddo
-       enddo
-    enddo
-
     ! Check if we have violated the CFL criterion.
     call compute_cfl(q, q_lo, q_hi, &
                      qaux, qa_lo, qa_hi, &
