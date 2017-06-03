@@ -25,29 +25,6 @@ contains
     type(ht), intent(inout) :: h
     real(rt), intent(in   ) :: s(s_lo(1):s_hi(1), s_lo(2):s_hi(2), s_lo(3):s_hi(3), NQ)
 
-    call ppm_type1(s, s_lo, s_hi, h, lo, hi)
-
-  end subroutine ppm_reconstruct
-
-  ! :::
-  ! ::: ----------------------------------------------------------------
-  ! :::
-
-#ifdef CUDA
-  attributes(device) &
-#endif
-  subroutine ppm_type1(s, s_lo, s_hi, h, lo, hi)
-
-    use amrex_fort_module, only: rt => amrex_real
-
-    implicit none
-
-    integer, intent(in) :: s_lo(3), s_hi(3)
-    integer, intent(in) :: lo(3), hi(3)
-
-    type(ht), intent(inout) :: h
-    real(rt), intent(in   ) :: s(s_lo(1):s_hi(1), s_lo(2):s_hi(2), s_lo(3):s_hi(3), NQ)
-
     ! local
     integer :: i, j, k, n
 
@@ -362,7 +339,7 @@ contains
        end do
     end do
 
-  end subroutine ppm_type1
+  end subroutine ppm_reconstruct
 
 
 
