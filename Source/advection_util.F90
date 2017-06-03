@@ -575,7 +575,7 @@ contains
 #ifdef CUDA
   attributes(device) &
 #endif
-  subroutine divu(lo,hi,q,q_lo,q_hi,dx,div,div_lo,div_hi)
+  subroutine divu(lo, hi, q, q_lo, q_hi, dx, div)
 
     use bl_constants_module, only: FOURTH, ONE
     use amrex_fort_module, only: rt => amrex_real
@@ -585,9 +585,8 @@ contains
 
     integer,  intent(in   ) :: lo(3), hi(3)
     integer,  intent(in   ) :: q_lo(3), q_hi(3)
-    integer,  intent(in   ) :: div_lo(3), div_hi(3)
     real(rt), intent(in   ) :: dx(3)
-    real(rt), intent(inout) :: div(div_lo(1):div_hi(1),div_lo(2):div_hi(2),div_lo(3):div_hi(3))
+    real(rt), intent(inout) :: div(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3))
     real(rt), intent(in   ) :: q(q_lo(1):q_hi(1),q_lo(2):q_hi(2),q_lo(3):q_hi(3),QVAR)
 
     integer  :: i, j, k
@@ -597,9 +596,9 @@ contains
     dyinv = ONE/dx(2)
     dzinv = ONE/dx(3)
 
-    do k=lo(3),hi(3)+1
-       do j=lo(2),hi(2)+1
-          do i=lo(1),hi(1)+1
+    do k = lo(3), hi(3)
+       do j = lo(2), hi(2)
+          do i = lo(1), hi(1)
 
              ux = FOURTH*( &
                     + q(i  ,j  ,k  ,QU) - q(i-1,j  ,k  ,QU) &
@@ -845,7 +844,7 @@ contains
     integer, intent(in) :: g_lo(3), g_hi(3)
     integer, intent(in) :: gd_lo(3), gd_hi(3)
 
-    allocate(h % div(lo(1):hi(1)+1, lo(2):hi(2)+1, lo(3):hi(3)+1))
+    allocate(h % div(lo(1)-1:hi(1)+1, lo(2)-1:hi(2)+1, lo(3)-1:hi(3)+1))
     allocate(h % pdivu(lo(1):hi(1), lo(2):hi(2)  , lo(3):hi(3)))
 
     allocate(h % q1(flux1_lo(1):flux1_hi(1),flux1_lo(2):flux1_hi(2),flux1_lo(3):flux1_hi(3),NGDNV))

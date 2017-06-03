@@ -86,6 +86,9 @@ contains
                      qaux, qa_lo, qa_hi, &
                      lo, hi, dt, dx, courno)
 
+    ! Compute divergence of velocity field
+    call divu(g_lo, g_hi, q, q_lo, q_hi, dx, h%div)
+
     ! Compute flattening coefficient for slope calculations.
     call uflaten(g_lo, g_hi, q, q_lo, q_hi, h)
 
@@ -109,9 +112,6 @@ contains
     call cmpflx(flux3, h%q3, f3_lo, f3_hi, &
                 qaux, qa_lo, qa_hi, &
                 h, 3, f3_lo, f3_hi, domlo, domhi)
-
-    ! Compute divergence of velocity field (on surroundingNodes(lo,hi))
-    call divu(lo,hi,q,q_lo,q_hi,dx,h%div,edge_lo,edge_hi)
 
     ! Compute p x div(u)
     call pdivu(lo, hi, h, dx)
