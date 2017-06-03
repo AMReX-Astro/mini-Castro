@@ -39,32 +39,11 @@ contains
     real(rt) :: old_state(NVAR), new_state(NVAR), unew(NVAR)
     integer  :: num_positive_zones
 
-    real(rt) :: initial_mass, final_mass
-    real(rt) :: initial_eint, final_eint
-    real(rt) :: initial_eden, final_eden
-
-    logical :: have_reset
-
-    initial_mass = ZERO
-    final_mass   = ZERO
-
-    initial_eint = ZERO
-    final_eint   = ZERO
-
-    initial_eden = ZERO
-    final_eden   = ZERO
-
     max_dens = ZERO
 
-    have_reset = .false.
-
-    do k = lo(3),hi(3)
-       do j = lo(2),hi(2)
-          do i = lo(1),hi(1)
-
-             initial_mass = initial_mass + uout(i,j,k,URHO ) * vol(i,j,k)
-             initial_eint = initial_eint + uout(i,j,k,UEINT) * vol(i,j,k)
-             initial_eden = initial_eden + uout(i,j,k,UEDEN) * vol(i,j,k)
+    do k = lo(3), hi(3)
+       do j = lo(2), hi(2)
+          do i = lo(1), hi(1)
 
              if (uout(i,j,k,URHO) .eq. ZERO) then
 
@@ -73,16 +52,13 @@ contains
                 print *,'  in grid ',lo(1),lo(2),lo(3),hi(1),hi(2),hi(3)
                 call bl_error("Error:: advection_util_nd.F90 :: ca_enforce_minimum_density")
 #endif
-
              else if (uout(i,j,k,URHO) < small_dens) then
-
-                have_reset = .true.
 
                 old_state = uin(i,j,k,:)
 
                 ! Store the maximum (negative) fractional change in the density
 
-                if ( uout(i,j,k,URHO) < ZERO ) then
+                if (uout(i,j,k,URHO) < ZERO) then
 
                    f_c = (uout(i,j,k,URHO) - uin(i,j,k,URHO)) / uin(i,j,k,URHO)
 
@@ -133,10 +109,6 @@ contains
                 uout(i,j,k,:) = new_state
 
              endif
-
-             final_mass = final_mass + uout(i,j,k,URHO ) * vol(i,j,k)
-             final_eint = final_eint + uout(i,j,k,UEINT) * vol(i,j,k)
-             final_eden = final_eden + uout(i,j,k,UEDEN) * vol(i,j,k)
 
           enddo
        enddo
