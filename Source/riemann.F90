@@ -90,11 +90,6 @@ contains
        end do
     endif
 
-    ! The following section is temporarily disabled when CUDA
-    ! is used. It will be turned on later, once the hydro update
-    ! is device-ready.
-
-#ifndef CUDA
     ! recompute the thermodynamics on the interface to make it
     ! all consistent
 
@@ -149,7 +144,6 @@ contains
           end do
        end do
     end do
-#endif
 
     call riemannus(flx, flx_lo, flx_hi, h, idir, lo, hi, domlo, domhi)
 
