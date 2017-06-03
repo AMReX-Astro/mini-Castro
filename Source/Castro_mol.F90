@@ -123,8 +123,13 @@ contains
     call normalize_species_fluxes(f2_lo, f2_hi, flux2, f2_lo, f2_hi)
     call normalize_species_fluxes(f3_lo, f3_hi, flux3, f3_lo, f3_hi)
 
+    ! Scale the fluxes for the form we expect later in refluxing.
+    call scale_flux(f1_lo, f1_hi, flux1, f1_lo, f1_hi, area1, a1_lo, a1_hi, dt)
+    call scale_flux(f2_lo, f2_hi, flux2, f2_lo, f2_hi, area2, a2_lo, a2_hi, dt)
+    call scale_flux(f3_lo, f3_hi, flux3, f3_lo, f3_hi, area3, a3_lo, a3_hi, dt)
+
     ! Create an update source term based on the flux divergence.
-    call construct_hydro_update(lo, hi, dx, h, &
+    call construct_hydro_update(lo, hi, dx, dt, h, &
                                 flux1, f1_lo, f1_hi, &
                                 flux2, f2_lo, f2_hi, &
                                 flux3, f3_lo, f3_hi, &
@@ -133,11 +138,6 @@ contains
                                 area3, a3_lo, a3_hi, &
                                 vol, vol_lo, vol_hi, &
                                 update, updt_lo, updt_hi)
-
-    ! Scale the fluxes for the form we expect later in refluxing.
-    call scale_flux(f1_lo, f1_hi, flux1, f1_lo, f1_hi, area1, a1_lo, a1_hi, dt)
-    call scale_flux(f2_lo, f2_hi, flux2, f2_lo, f2_hi, area2, a2_lo, a2_hi, dt)
-    call scale_flux(f3_lo, f3_hi, flux3, f3_lo, f3_hi, area3, a3_lo, a3_hi, dt)
 
   end subroutine mol_single_stage
 

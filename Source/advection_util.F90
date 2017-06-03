@@ -700,7 +700,7 @@ contains
 
 
 
-  subroutine construct_hydro_update(lo, hi, dx, h, &
+  subroutine construct_hydro_update(lo, hi, dx, dt, h, &
                                     f1, f1_lo, f1_hi, &
                                     f2, f2_lo, f2_hi, &
                                     f3, f3_lo, f3_hi, &
@@ -724,7 +724,7 @@ contains
     integer,  intent(in   ) :: a3_lo(3), a3_hi(3)
     integer,  intent(in   ) :: vol_lo(3), vol_hi(3)
     integer,  intent(in   ) :: u_lo(3), u_hi(3)
-    real(rt), intent(in   ) :: dx(3)
+    real(rt), intent(in   ) :: dx(3), dt
     type(ht), intent(in   ) :: h
 
     real(rt), intent(in   ) :: f1(f1_lo(1):f1_hi(1),f1_lo(2):f1_hi(2),f1_lo(3):f1_hi(3),NVAR)
@@ -737,8 +737,9 @@ contains
     real(rt), intent(inout) :: update(u_lo(1):u_hi(1),u_lo(2):u_hi(2),u_lo(3):u_hi(3),NVAR)
 
     integer  :: i, j, k, n
-    real(rt) :: pdivu, dxinv(3)
+    real(rt) :: pdivu, dxinv(3), dtinv
 
+    dtinv = ONE / dt
     dxinv = ONE / dx
 
     do n = 1, NVAR
@@ -746,9 +747,11 @@ contains
           do j = lo(2), hi(2)
              do i = lo(1), hi(1)
 
-                update(i,j,k,n) = update(i,j,k,n) + (f1(i,j,k,n) * a1(i,j,k) - f1(i+1,j,k,n) * a1(i+1,j,k) + &
-                                                     f2(i,j,k,n) * a2(i,j,k) - f2(i,j+1,k,n) * a2(i,j+1,k) + &
-                                                     f3(i,j,k,n) * a3(i,j,k) - f3(i,j,k+1,n) * a3(i,j,k+1) ) / vol(i,j,k)
+                ! Note that the fluxes have already been scaled by dt * dA.
+
+                update(i,j,k,n) = update(i,j,k,n) + dtinv * (f1(i,j,k,n) - f1(i+1,j,k,n) + &
+                                                             f2(i,j,k,n) - f2(i,j+1,k,n) + &
+                                                             f3(i,j,k,n) - f3(i,j,k+1,n) ) / vol(i,j,k)
 
                 ! Add the p div(u) source term to (rho e).
                 if (n .eq. UEINT) then
