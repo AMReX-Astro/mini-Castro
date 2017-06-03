@@ -17,12 +17,12 @@ contains
                               qaux, qa_lo, qa_hi, &
                               update, updt_lo, updt_hi, &
                               dx, dt, h, &
-                              flux1, flux1_lo, flux1_hi, &
-                              flux2, flux2_lo, flux2_hi, &
-                              flux3, flux3_lo, flux3_hi, &
-                              area1, area1_lo, area1_hi, &
-                              area2, area2_lo, area2_hi, &
-                              area3, area3_lo, area3_hi, &
+                              flux1, f1_lo, f1_hi, &
+                              flux2, f2_lo, f2_hi, &
+                              flux3, f3_lo, f3_hi, &
+                              area1, a1_lo, a1_hi, &
+                              area2, a2_lo, a2_hi, &
+                              area3, a3_lo, a3_hi, &
                               vol, vol_lo, vol_hi, &
                               courno, verbose)
 
@@ -43,12 +43,12 @@ contains
     integer,  intent(in   ) :: q_lo(3), q_hi(3)
     integer,  intent(in   ) :: qa_lo(3), qa_hi(3)
     integer,  intent(in   ) :: updt_lo(3), updt_hi(3)
-    integer,  intent(in   ) :: flux1_lo(3), flux1_hi(3)
-    integer,  intent(in   ) :: flux2_lo(3), flux2_hi(3)
-    integer,  intent(in   ) :: flux3_lo(3), flux3_hi(3)
-    integer,  intent(in   ) :: area1_lo(3), area1_hi(3)
-    integer,  intent(in   ) :: area2_lo(3), area2_hi(3)
-    integer,  intent(in   ) :: area3_lo(3), area3_hi(3)
+    integer,  intent(in   ) :: f1_lo(3), f1_hi(3)
+    integer,  intent(in   ) :: f2_lo(3), f2_hi(3)
+    integer,  intent(in   ) :: f3_lo(3), f3_hi(3)
+    integer,  intent(in   ) :: a1_lo(3), a1_hi(3)
+    integer,  intent(in   ) :: a2_lo(3), a2_hi(3)
+    integer,  intent(in   ) :: a3_lo(3), a3_hi(3)
     integer,  intent(in   ) :: vol_lo(3), vol_hi(3)
 
     real(rt), intent(in   ) :: uin(uin_lo(1):uin_hi(1), uin_lo(2):uin_hi(2), uin_lo(3):uin_hi(3), NVAR)
@@ -56,12 +56,12 @@ contains
     real(rt), intent(inout) :: q(q_lo(1):q_hi(1), q_lo(2):q_hi(2), q_lo(3):q_hi(3), NQ)
     real(rt), intent(inout) :: qaux(qa_lo(1):qa_hi(1), qa_lo(2):qa_hi(2), qa_lo(3):qa_hi(3), NQAUX)
     real(rt), intent(inout) :: update(updt_lo(1):updt_hi(1), updt_lo(2):updt_hi(2), updt_lo(3):updt_hi(3), NVAR)
-    real(rt), intent(inout) :: flux1(flux1_lo(1):flux1_hi(1), flux1_lo(2):flux1_hi(2), flux1_lo(3):flux1_hi(3), NVAR)
-    real(rt), intent(inout) :: flux2(flux2_lo(1):flux2_hi(1), flux2_lo(2):flux2_hi(2), flux2_lo(3):flux2_hi(3), NVAR)
-    real(rt), intent(inout) :: flux3(flux3_lo(1):flux3_hi(1), flux3_lo(2):flux3_hi(2), flux3_lo(3):flux3_hi(3), NVAR)
-    real(rt), intent(in   ) :: area1(area1_lo(1):area1_hi(1), area1_lo(2):area1_hi(2), area1_lo(3):area1_hi(3))
-    real(rt), intent(in   ) :: area2(area2_lo(1):area2_hi(1), area2_lo(2):area2_hi(2), area2_lo(3):area2_hi(3))
-    real(rt), intent(in   ) :: area3(area3_lo(1):area3_hi(1), area3_lo(2):area3_hi(2), area3_lo(3):area3_hi(3))
+    real(rt), intent(inout) :: flux1(f1_lo(1):f1_hi(1), f1_lo(2):f1_hi(2), f1_lo(3):f1_hi(3), NVAR)
+    real(rt), intent(inout) :: flux2(f2_lo(1):f2_hi(1), f2_lo(2):f2_hi(2), f2_lo(3):f2_hi(3), NVAR)
+    real(rt), intent(inout) :: flux3(f3_lo(1):f3_hi(1), f3_lo(2):f3_hi(2), f3_lo(3):f3_hi(3), NVAR)
+    real(rt), intent(in   ) :: area1(a1_lo(1):a1_hi(1), a1_lo(2):a1_hi(2), a1_lo(3):a1_hi(3))
+    real(rt), intent(in   ) :: area2(a2_lo(1):a2_hi(1), a2_lo(2):a2_hi(2), a2_lo(3):a2_hi(3))
+    real(rt), intent(in   ) :: area3(a3_lo(1):a3_hi(1), a3_lo(2):a3_hi(2), a3_lo(3):a3_hi(3))
     real(rt), intent(in   ) :: vol(vol_lo(1):vol_hi(1), vol_lo(2):vol_hi(2), vol_lo(3):vol_hi(3))
     real(rt), intent(in   ) :: dx(3), dt, time
     real(rt), intent(inout) :: courno
@@ -96,19 +96,19 @@ contains
     call ppm_int_profile(h, g_lo, g_hi)
 
     ! Compute F^x
-    call cmpflx(flux1, h%q1, flux1_lo, flux1_hi, &
+    call cmpflx(flux1, h%q1, f1_lo, f1_hi, &
                 qaux, qa_lo, qa_hi, &
-                h, 1, flux1_lo, flux1_hi, domlo, domhi)
+                h, 1, f1_lo, f1_hi, domlo, domhi)
 
     ! Compute F^y
-    call cmpflx(flux2, h%q2, flux2_lo, flux2_hi, &
+    call cmpflx(flux2, h%q2, f2_lo, f2_hi, &
                 qaux, qa_lo, qa_hi, &
-                h, 2, flux2_lo, flux2_hi, domlo, domhi)
+                h, 2, f2_lo, f2_hi, domlo, domhi)
 
     ! Compute F^z
-    call cmpflx(flux3, h%q3, flux3_lo, flux3_hi, &
+    call cmpflx(flux3, h%q3, f3_lo, f3_hi, &
                 qaux, qa_lo, qa_hi, &
-                h, 3, flux3_lo, flux3_hi, domlo, domhi)
+                h, 3, f3_lo, f3_hi, domlo, domhi)
 
     ! Compute divergence of velocity field (on surroundingNodes(lo,hi))
     call divu(lo,hi,q,q_lo,q_hi,dx,h%div,edge_lo,edge_hi)
@@ -117,30 +117,30 @@ contains
     call pdivu(lo, hi, h, dx)
 
     ! Apply artificial viscosity
-    call apply_av(flux1_lo, flux1_hi, 1, dx, h, uin, uin_lo, uin_hi, flux1, flux1_lo, flux1_hi)
-    call apply_av(flux2_lo, flux2_hi, 2, dx, h, uin, uin_lo, uin_hi, flux2, flux2_lo, flux2_hi)
-    call apply_av(flux3_lo, flux3_hi, 3, dx, h, uin, uin_lo, uin_hi, flux3, flux3_lo, flux3_hi)
+    call apply_av(f1_lo, f1_hi, 1, dx, h, uin, uin_lo, uin_hi, flux1, f1_lo, f1_hi)
+    call apply_av(f2_lo, f2_hi, 2, dx, h, uin, uin_lo, uin_hi, flux2, f2_lo, f2_hi)
+    call apply_av(f3_lo, f3_hi, 3, dx, h, uin, uin_lo, uin_hi, flux3, f3_lo, f3_hi)
 
     ! Normalize species fluxes
-    call normalize_species_fluxes(flux1_lo, flux1_hi, flux1, flux1_lo, flux1_hi)
-    call normalize_species_fluxes(flux2_lo, flux2_hi, flux2, flux2_lo, flux2_hi)
-    call normalize_species_fluxes(flux3_lo, flux3_hi, flux3, flux3_lo, flux3_hi)
+    call normalize_species_fluxes(f1_lo, f1_hi, flux1, f1_lo, f1_hi)
+    call normalize_species_fluxes(f2_lo, f2_hi, flux2, f2_lo, f2_hi)
+    call normalize_species_fluxes(f3_lo, f3_hi, flux3, f3_lo, f3_hi)
 
     ! Create an update source term based on the flux divergence.
     call construct_hydro_update(lo, hi, h, &
-                                flux1, flux1_lo, flux1_hi, &
-                                flux2, flux2_lo, flux2_hi, &
-                                flux3, flux3_lo, flux3_hi, &
-                                area1, area1_lo, area1_hi, &
-                                area2, area2_lo, area2_hi, &
-                                area3, area3_lo, area3_hi, &
+                                flux1, f1_lo, f1_hi, &
+                                flux2, f2_lo, f2_hi, &
+                                flux3, f3_lo, f3_hi, &
+                                area1, a1_lo, a1_hi, &
+                                area2, a2_lo, a2_hi, &
+                                area3, a3_lo, a3_hi, &
                                 vol, vol_lo, vol_hi, &
                                 update, updt_lo, updt_hi)
 
     ! Scale the fluxes for the form we expect later in refluxing.
-    call scale_flux(flux1_lo, flux1_hi, flux1, flux1_lo, flux1_hi, area1, area1_lo, area1_hi, dt)
-    call scale_flux(flux2_lo, flux2_hi, flux2, flux2_lo, flux2_hi, area2, area2_lo, area2_hi, dt)
-    call scale_flux(flux3_lo, flux3_hi, flux3, flux3_lo, flux3_hi, area3, area3_lo, area3_hi, dt)
+    call scale_flux(f1_lo, f1_hi, flux1, f1_lo, f1_hi, area1, a1_lo, a1_hi, dt)
+    call scale_flux(f2_lo, f2_hi, flux2, f2_lo, f2_hi, area2, a2_lo, a2_hi, dt)
+    call scale_flux(f3_lo, f3_hi, flux3, f3_lo, f3_hi, area3, a3_lo, a3_hi, dt)
 
   end subroutine mol_single_stage
 
