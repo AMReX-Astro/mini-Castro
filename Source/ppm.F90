@@ -364,4 +364,55 @@ contains
 
   end subroutine ppm_type1
 
+
+
+  subroutine ppm_int_profile(h, lo, hi)
+
+    implicit none
+
+    integer,  intent(in   ) :: lo(3), hi(3)
+    type(ht), intent(inout) :: h
+
+    integer :: i, j, k, n
+
+    ! Construct the interface states -- this is essentially just a
+    ! reshuffling of interface states from zone-center indexing to
+    ! edge-centered indexing
+
+    do n = 1, NQ
+       do k = lo(3)-1, hi(3)+1
+          do j = lo(2)-1, hi(2)+1
+             do i = lo(1)-1, hi(1)+1
+
+                ! x-edges
+
+                ! left state at i-1/2 interface
+                h%qm(i,j,k,n,1) = h%sxp(i-1,j,k,n)
+
+                ! right state at i-1/2 interface
+                h%qp(i,j,k,n,1) = h%sxm(i,j,k,n)
+
+                ! y-edges
+
+                ! left state at j-1/2 interface
+                h%qm(i,j,k,n,2) = h%syp(i,j-1,k,n)
+
+                ! right state at j-1/2 interface
+                h%qp(i,j,k,n,2) = h%sym(i,j,k,n)
+
+                ! z-edges
+
+                ! left state at k3d-1/2 interface
+                h%qm(i,j,k,n,3) = h%szp(i,j,k-1,n)
+
+                ! right state at k3d-1/2 interface
+                h%qp(i,j,k,n,3) = h%szm(i,j,k,n)
+
+             end do
+          end do
+       end do
+    end do
+
+  end subroutine ppm_int_profile
+
 end module ppm_module

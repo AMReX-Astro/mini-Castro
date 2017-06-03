@@ -31,7 +31,7 @@ contains
     use bl_constants_module, only: ZERO, HALF, ONE, FOURTH
     use flatten_module, only: uflaten
     use riemann_module, only: cmpflx
-    use ppm_module, only: ppm_reconstruct
+    use ppm_module, only: ppm_reconstruct, ppm_int_profile
     use amrex_fort_module, only: rt => amrex_real
     use meth_params_module, only: NQ, QVAR, NVAR, NGDNV, GDPRES, &
                                    UTEMP, UEINT, UMX, GDU, GDV, GDW, &
@@ -98,44 +98,7 @@ contains
 
     call ppm_reconstruct(q, q_lo, q_hi, h, lo, hi)
 
-    do n = 1, NQ
-
-       ! Construct the interface states -- this is essentially just a
-       ! reshuffling of interface states from zone-center indexing to
-       ! edge-centered indexing
-       do k = lo(3)-1, hi(3)+1
-          do j = lo(2)-1, hi(2)+1
-             do i = lo(1)-1, hi(1)+1
-
-                ! x-edges
-
-                ! left state at i-1/2 interface
-                h%qm(i,j,k,n,1) = h%sxp(i-1,j,k,n)
-
-                ! right state at i-1/2 interface
-                h%qp(i,j,k,n,1) = h%sxm(i,j,k,n)
-
-                ! y-edges
-
-                ! left state at j-1/2 interface
-                h%qm(i,j,k,n,2) = h%syp(i,j-1,k,n)
-
-                ! right state at j-1/2 interface
-                h%qp(i,j,k,n,2) = h%sym(i,j,k,n)
-
-                ! z-edges
-
-                ! left state at k3d-1/2 interface
-                h%qm(i,j,k,n,3) = h%szp(i,j,k-1,n)
-
-                ! right state at k3d-1/2 interface
-                h%qp(i,j,k,n,3) = h%szm(i,j,k,n)
-
-             end do
-          end do
-       end do
-
-    end do
+    call ppm_int_profile(h, lo, hi)
 
     ! Compute F^x at kc (k3d)
     call cmpflx(flux1, flux1_lo, flux1_hi, &
