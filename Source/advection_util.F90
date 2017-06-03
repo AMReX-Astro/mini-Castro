@@ -18,10 +18,6 @@ module advection_util_module
      real(rt), allocatable :: q2(:,:,:,:)
      real(rt), allocatable :: q3(:,:,:,:)
 
-     ! Local arrays in cmpflx
-     real(rt), allocatable :: smallc(:,:,:), cavg(:,:,:)
-     real(rt), allocatable :: gamcm(:,:,:), gamcp(:,:,:)
-
      ! temporary interface values of the parabola
      real(rt), allocatable :: sxm(:,:,:,:), sym(:,:,:,:), szm(:,:,:,:)
      real(rt), allocatable :: sxp(:,:,:,:), syp(:,:,:,:), szp(:,:,:,:)
@@ -851,11 +847,6 @@ contains
     allocate(h % qm(It_lo(1):It_hi(1), It_lo(2):It_hi(2), It_lo(3):It_hi(3), NQ, 3))
     allocate(h % qp(It_lo(1):It_hi(1), It_lo(2):It_hi(2), It_lo(3):It_hi(3), NQ, 3))
 
-    allocate(h % smallc(gd_lo(1):gd_hi(1),gd_lo(2):gd_hi(2),gd_lo(3):gd_hi(3)))
-    allocate(h %   cavg(gd_lo(1):gd_hi(1),gd_lo(2):gd_hi(2),gd_lo(3):gd_hi(3)))
-    allocate(h %  gamcm(gd_lo(1):gd_hi(1),gd_lo(2):gd_hi(2),gd_lo(3):gd_hi(3)))
-    allocate(h %  gamcp(gd_lo(1):gd_hi(1),gd_lo(2):gd_hi(2),gd_lo(3):gd_hi(3)))
-
     allocate(h % flatn(q_lo(1):q_hi(1),q_lo(2):q_hi(2),q_lo(3):q_hi(3)))
 
   end subroutine allocate_ht
@@ -868,11 +859,6 @@ contains
     implicit none
 
     type(ht), intent(inout) :: h
-
-    deallocate(h % smallc)
-    deallocate(h %  cavg)
-    deallocate(h % gamcm)
-    deallocate(h % gamcp)
 
     deallocate(h % flatn)
 

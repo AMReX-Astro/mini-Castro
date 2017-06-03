@@ -29,11 +29,12 @@ contains
     use network, only: nspec, naux
     use amrex_fort_module, only: rt => amrex_real
     use bl_constants_module, only: ZERO, HALF, ONE
+    use prob_params_module, only: physbc_lo, physbc_hi, Symmetry, SlipWall, NoSlipWall
 
     integer,  intent(in   ) :: flx_lo(3), flx_hi(3)
     integer,  intent(in   ) :: qa_lo(3), qa_hi(3)
     integer,  intent(in   ) :: lo(3), hi(3), idir
-    integer,  intent(in   ) :: domlo(3),domhi(3)
+    integer,  intent(in   ) :: domlo(3), domhi(3)
 
     type(ht), intent(inout) :: h
 
@@ -53,126 +54,6 @@ contains
     type (eos_t) :: eos_state
     real(rt)     :: rhoInv
 
-    if (idir == 1) then
-       do k = lo(3), hi(3)
-          do j = lo(2), hi(2)
-             !dir$ ivdep
-             do i = lo(1), hi(1)
-                h%smallc(i,j,k) = max( qaux(i,j,k,QCSML), qaux(i-1,j,k,QCSML) )
-                h%cavg(i,j,k)   = HALF*( qaux(i,j,k,QC) + qaux(i-1,j,k,QC) )
-                h%gamcm(i,j,k)  = qaux(i-1,j,k,QGAMC)
-                h%gamcp(i,j,k)  = qaux(i,j,k,QGAMC)
-             end do
-          end do
-       end do
-    elseif (idir == 2) then
-       do k = lo(3), hi(3)
-          do j = lo(2), hi(2)
-             !dir$ ivdep
-             do i = lo(1), hi(1)
-                h%smallc(i,j,k) = max( qaux(i,j,k,QCSML), qaux(i,j-1,k,QCSML) )
-                h%cavg(i,j,k)   = HALF*( qaux(i,j,k,QC) + qaux(i,j-1,k,QC) )
-                h%gamcm(i,j,k)  = qaux(i,j-1,k,QGAMC)
-                h%gamcp(i,j,k)  = qaux(i,j,k,QGAMC)
-             end do
-          end do
-       end do
-    else
-       do k = lo(3), hi(3)
-          do j = lo(2), hi(2)
-             !dir$ ivdep
-             do i = lo(1), hi(1)
-                h%smallc(i,j,k) = max( qaux(i,j,k,QCSML), qaux(i,j,k-1,QCSML) )
-                h%cavg(i,j,k)   = HALF*( qaux(i,j,k,QC) + qaux(i,j,k-1,QC) )
-                h%gamcm(i,j,k)  = qaux(i,j,k-1,QGAMC)
-                h%gamcp(i,j,k)  = qaux(i,j,k,QGAMC)
-             end do
-          end do
-       end do
-    endif
-
-    ! recompute the thermodynamics on the interface to make it
-    ! all consistent
-
-    ! we want to take the edge states of rho, p, and X, and get
-    ! new values for gamc and (rho e) on the edges that are
-    ! thermodynamically consistent.
-
-    do k = lo(3), hi(3)
-       do j = lo(2), hi(2)
-          do i = lo(1), hi(1)
-
-             ! this is an initial guess for iterations, since we
-             ! can't be certain that temp is on interfaces
-             eos_state % T = 10000.0e0_rt
-
-             ! minus state
-             eos_state % rho = h%qm(i,j,k,QRHO,idir)
-             eos_state % p   = h%qm(i,j,k,QPRES,idir)
-             eos_state % e   = h%qm(i,j,k,QREINT,idir)/h%qm(i,j,k,QRHO,idir)
-             eos_state % xn  = h%qm(i,j,k,QFS:QFS+nspec-1,idir)
-             eos_state % aux = h%qm(i,j,k,QFX:QFX+naux-1,idir)
-
-             call eos(eos_input_re, eos_state)
-
-             h%qm(i,j,k,QREINT,idir) = eos_state % e * eos_state % rho
-             h%qm(i,j,k,QPRES,idir)  = eos_state % p
-             h%gamcm(i,j,k)          = eos_state % gam1
-
-          end do
-       end do
-    end do
-
-    ! plus state
-    do k = lo(3), hi(3)
-       do j = lo(2), hi(2)
-          do i = lo(1), hi(1)
-
-             rhoInv = ONE / h%qp(i,j,k,QRHO,idir)
-
-             eos_state % rho = h%qp(i,j,k,QRHO,idir)
-             eos_state % p   = h%qp(i,j,k,QPRES,idir)
-             eos_state % e   = h%qp(i,j,k,QREINT,idir)/h%qp(i,j,k,QRHO,idir)
-             eos_state % xn  = h%qp(i,j,k,QFS:QFS+nspec-1,idir) * rhoInv
-             eos_state % aux = h%qp(i,j,k,QFX:QFX+naux-1,idir) * rhoInv
-
-             call eos(eos_input_re, eos_state)
-
-             h%qp(i,j,k,QREINT,idir) = eos_state % e * eos_state % rho
-             h%qp(i,j,k,QPRES,idir)  = eos_state % p
-             h%gamcp(i,j,k)          = eos_state % gam1
-
-          end do
-       end do
-    end do
-
-    call riemannus(flx, flx_lo, flx_hi, qint, h, idir, lo, hi, domlo, domhi)
-
-  end subroutine cmpflx
-
-
-
-#ifdef CUDA
-  attributes(device) &
-#endif
-  subroutine riemannus(uflx,uflx_lo,uflx_hi,qint,h,idir,lo,hi,domlo,domhi)
-
-    use amrex_fort_module, only: rt => amrex_real
-    use bl_constants_module, only: ZERO, HALF, ONE
-    use prob_params_module, only: physbc_lo, physbc_hi, Symmetry, SlipWall, NoSlipWall
-
-    real(rt), parameter :: small = 1.e-8_rt
-    real(rt), parameter :: small_pres = 1.e-200_rt
-
-    integer,  intent(in   ) :: uflx_lo(3),uflx_hi(3)
-    integer,  intent(in   ) :: lo(3),hi(3),idir
-    integer,  intent(in   ) :: domlo(3),domhi(3)
-
-    type(ht), intent(inout) :: h
-    real(rt), intent(inout) :: uflx(uflx_lo(1):uflx_hi(1),uflx_lo(2):uflx_hi(2),uflx_lo(3):uflx_hi(3),NVAR)
-    real(rt), intent(inout) :: qint(uflx_lo(1):uflx_hi(1),uflx_lo(2):uflx_hi(2),uflx_lo(3):uflx_hi(3),NGDNV)
-
-    integer :: i, j, k
     integer :: n, nqp, ipassive
 
     real(rt) :: regdnv
@@ -182,7 +63,7 @@ contains
     real(rt) :: rstar, cstar, estar, pstar, ustar
     real(rt) :: ro, uo, po, reo, co, gamco, entho, drho
     real(rt) :: sgnm, spin, spout, ushock, frac
-    real(rt) :: wsmall, csmall,qavg
+    real(rt) :: wsmall, csmall, smallc, gamcm, gamcp, cavg, qavg
 
     real(rt) :: u_adv
 
@@ -191,7 +72,8 @@ contains
     real(rt) :: bnd_fac_x, bnd_fac_y, bnd_fac_z
     real(rt) :: wwinv, roinv, co2inv
 
-    real(rt) :: us1d
+    real(rt), parameter :: small = 1.e-8_rt
+    real(rt), parameter :: small_pres = 1.e-200_rt
 
     if (idir .eq. 1) then
        iu = QU
@@ -253,8 +135,63 @@ contains
              end if
           end if
 
-          !dir$ ivdep
           do i = lo(1), hi(1)
+
+             if (idir == 1) then
+                smallc = max( qaux(i,j,k,QCSML), qaux(i-1,j,k,QCSML) )
+                cavg   = HALF*( qaux(i,j,k,QC) + qaux(i-1,j,k,QC) )
+                gamcm  = qaux(i-1,j,k,QGAMC)
+                gamcp  = qaux(i,j,k,QGAMC)
+             elseif (idir == 2) then
+                smallc = max( qaux(i,j,k,QCSML), qaux(i,j-1,k,QCSML) )
+                cavg   = HALF*( qaux(i,j,k,QC) + qaux(i,j-1,k,QC) )
+                gamcm  = qaux(i,j-1,k,QGAMC)
+                gamcp  = qaux(i,j,k,QGAMC)
+             else
+                smallc = max( qaux(i,j,k,QCSML), qaux(i,j,k-1,QCSML) )
+                cavg   = HALF*( qaux(i,j,k,QC) + qaux(i,j,k-1,QC) )
+                gamcm  = qaux(i,j,k-1,QGAMC)
+                gamcp  = qaux(i,j,k,QGAMC)
+             endif
+
+             ! recompute the thermodynamics on the interface to make it
+             ! all consistent
+
+             ! we want to take the edge states of rho, p, and X, and get
+             ! new values for gamc and (rho e) on the edges that are
+             ! thermodynamically consistent.
+
+             ! this is an initial guess for iterations, since we
+             ! can't be certain that temp is on interfaces
+             eos_state % T = 10000.0e0_rt
+
+             ! minus state
+             rhoInv = ONE / h%qm(i,j,k,QRHO,idir)
+             eos_state % rho = h%qm(i,j,k,QRHO,idir)
+             eos_state % p   = h%qm(i,j,k,QPRES,idir)
+             eos_state % e   = h%qm(i,j,k,QREINT,idir) * rhoInv
+             eos_state % xn  = h%qm(i,j,k,QFS:QFS+nspec-1,idir)
+             eos_state % aux = h%qm(i,j,k,QFX:QFX+naux-1,idir)
+
+             call eos(eos_input_re, eos_state)
+
+             h%qm(i,j,k,QREINT,idir) = eos_state % e * eos_state % rho
+             h%qm(i,j,k,QPRES,idir)  = eos_state % p
+             gamcm          = eos_state % gam1
+
+             rhoInv = ONE / h%qp(i,j,k,QRHO,idir)
+
+             eos_state % rho = h%qp(i,j,k,QRHO,idir)
+             eos_state % p   = h%qp(i,j,k,QPRES,idir)
+             eos_state % e   = h%qp(i,j,k,QREINT,idir) * rhoInv
+             eos_state % xn  = h%qp(i,j,k,QFS:QFS+nspec-1,idir)
+             eos_state % aux = h%qp(i,j,k,QFX:QFX+naux-1,idir)
+
+             call eos(eos_input_re, eos_state)
+
+             h%qp(i,j,k,QREINT,idir) = eos_state % e * eos_state % rho
+             h%qp(i,j,k,QPRES,idir)  = eos_state % p
+             gamcp                   = eos_state % gam1
 
              rl = max(h%qm(i,j,k,QRHO,idir), small_dens)
 
@@ -274,10 +211,10 @@ contains
 
              pr  = max(h%qp(i,j,k,QPRES,idir), small_pres)
              rer =     h%qp(i,j,k,QREINT,idir)
-             csmall = h%smallc(i,j,k)
+             csmall = smallc
              wsmall = small_dens*csmall
-             wl = max(wsmall,sqrt(abs(h%gamcm(i,j,k)*pl*rl)))
-             wr = max(wsmall,sqrt(abs(h%gamcp(i,j,k)*pr*rr)))
+             wl = max(wsmall,sqrt(abs(gamcm*pl*rl)))
+             wr = max(wsmall,sqrt(abs(gamcp*pr*rr)))
 
              wwinv = ONE/(wl + wr)
              pstar = ((wr*pl + wl*pr) + wl*wr*(ul - ur))*wwinv
@@ -295,19 +232,19 @@ contains
                 uo = ul
                 po = pl
                 reo = rel
-                gamco = h%gamcm(i,j,k)
+                gamco = gamcm
              else if (ustar < ZERO) then
                 ro = rr
                 uo = ur
                 po = pr
                 reo = rer
-                gamco = h%gamcp(i,j,k)
+                gamco = gamcp
              else
                 ro = HALF*(rl+rr)
                 uo = HALF*(ul+ur)
                 po = HALF*(pl+pr)
                 reo = HALF*(rel+rer)
-                gamco = HALF*(h%gamcm(i,j,k)+h%gamcp(i,j,k))
+                gamco = HALF*(gamcm+gamcp)
              endif
 
              ro = max(small_dens,ro)
@@ -338,7 +275,7 @@ contains
              endif
 
              if (spout-spin == ZERO) then
-                scr = small*h%cavg(i,j,k)
+                scr = small*cavg
              else
                 scr = spout-spin
              endif
@@ -391,45 +328,40 @@ contains
 
 
              ! Compute fluxes, order as conserved state (not q)
-             uflx(i,j,k,URHO) = qint(i,j,k,GDRHO)*u_adv
+             flx(i,j,k,URHO) = qint(i,j,k,GDRHO)*u_adv
 
-             uflx(i,j,k,im1) = uflx(i,j,k,URHO)*qint(i,j,k,iu ) + qint(i,j,k,GDPRES)
-             uflx(i,j,k,im2) = uflx(i,j,k,URHO)*qint(i,j,k,iv1)
-             uflx(i,j,k,im3) = uflx(i,j,k,URHO)*qint(i,j,k,iv2)
+             flx(i,j,k,im1) = flx(i,j,k,URHO)*qint(i,j,k,iu ) + qint(i,j,k,GDPRES)
+             flx(i,j,k,im2) = flx(i,j,k,URHO)*qint(i,j,k,iv1)
+             flx(i,j,k,im3) = flx(i,j,k,URHO)*qint(i,j,k,iv2)
 
              rhoetot = regdnv + HALF*qint(i,j,k,GDRHO)*(qint(i,j,k,iu)**2 + qint(i,j,k,iv1)**2 + qint(i,j,k,iv2)**2)
 
-             uflx(i,j,k,UEDEN) = u_adv*(rhoetot + qint(i,j,k,GDPRES))
-             uflx(i,j,k,UEINT) = u_adv*regdnv
+             flx(i,j,k,UEDEN) = u_adv*(rhoetot + qint(i,j,k,GDPRES))
+             flx(i,j,k,UEINT) = u_adv*regdnv
 
-             us1d = ustar
+             ! passively advected quantities
+             do ipassive = 1, npassive
 
-          end do
+                n  = upass_map(ipassive)
+                nqp = qpass_map(ipassive)
 
-          ! passively advected quantities
-          do ipassive = 1, npassive
-             n  = upass_map(ipassive)
-             nqp = qpass_map(ipassive)
+                if (ustar > ZERO) then
+                   flx(i,j,k,n) = flx(i,j,k,URHO)*h%qm(i,j,k,nqp,idir)
 
-             !dir$ ivdep
-             do i = lo(1), hi(1)
-                if (us1d > ZERO) then
-                   uflx(i,j,k,n) = uflx(i,j,k,URHO)*h%qm(i,j,k,nqp,idir)
-
-                else if (us1d < ZERO) then
-                   uflx(i,j,k,n) = uflx(i,j,k,URHO)*h%qp(i,j,k,nqp,idir)
+                else if (ustar < ZERO) then
+                   flx(i,j,k,n) = flx(i,j,k,URHO)*h%qp(i,j,k,nqp,idir)
 
                 else
                    qavg = HALF * (h%qm(i,j,k,nqp,idir) + h%qp(i,j,k,nqp,idir))
-                   uflx(i,j,k,n) = uflx(i,j,k,URHO)*qavg
+                   flx(i,j,k,n) = flx(i,j,k,URHO)*qavg
                 endif
-             enddo
+
+             end do
 
           end do
-
        end do
     end do
 
-  end subroutine riemannus
+  end subroutine cmpflx
 
 end module riemann_module
