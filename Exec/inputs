@@ -1,6 +1,6 @@
 # ------------------  INPUTS TO MAIN PROGRAM  -------------------
-max_step = 5000
-stop_time = 0.01
+max_step = 100
+stop_time = 0.1
 
 # PROBLEM SIZE & GEOMETRY
 geometry.is_periodic =  0    0    0
@@ -26,16 +26,20 @@ castro.v              = 1       # verbosity in Castro.cpp
 amr.v                 = 1       # verbosity in Amr.cpp
 
 # REFINEMENT / REGRIDDING
-amr.max_level       = 3       # maximum level number allowed
+amr.max_level       = 0       # maximum level number allowed
 amr.ref_ratio       = 2 2 2 2 # refinement ratio
 amr.regrid_int      = 2       # how often to regrid
 amr.blocking_factor = 4       # block factor in grid generation
 amr.max_grid_size   = 32
 
 # PLOTFILES
-amr.plot_file       = sedov_3d_plt
-amr.plot_int        = 200
-amr.derive_plot_vars=ALL
+amr.plot_file        = plt
+amr.plot_int         = -1
+amr.derive_plot_vars = ALL
+
+# FARRAYBOX
+fab.do_initval = 1
+fab.initval = 0.0e0
 
 # PROBIN FILENAME
-amr.probin_file = probin.3d.sph.testsuite
+amr.probin_file = probin
