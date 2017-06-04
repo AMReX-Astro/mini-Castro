@@ -132,6 +132,10 @@ Castro::initialize_do_advance(Real time, Real dt, int amr_iteration, int amr_ncy
 			      int sub_iteration, int sub_ncycle)
 {
 
+#ifdef CUDA
+    nvtxRangeId_t id = nvtxRangeStartA("initialize_do_advance");
+#endif
+
     // Reset the change from density resets
 
     frac_change = 1.e0;
@@ -178,6 +182,9 @@ Castro::initialize_do_advance(Real time, Real dt, int amr_iteration, int amr_ncy
 	expand_state(Sborder, new_time, NUM_GROW);
 
     }
+#ifdef CUDA
+    nvtxRangeEnd(id);
+#endif
 }
 
 
@@ -185,8 +192,15 @@ Castro::initialize_do_advance(Real time, Real dt, int amr_iteration, int amr_ncy
 void
 Castro::finalize_do_advance(Real time, Real dt, int amr_iteration, int amr_ncycle, int sub_iteration, int sub_ncycle)
 {
+#ifdef CUDA
+    nvtxRangeId_t id = nvtxRangeStartA("finalize_do_advance");
+#endif
 
     Sborder.clear();
+
+#ifdef CUDA
+    nvtxRangeEnd(id);
+#endif
 
 }
 
@@ -195,6 +209,10 @@ Castro::finalize_do_advance(Real time, Real dt, int amr_iteration, int amr_ncycl
 void
 Castro::initialize_advance(Real time, Real dt, int amr_iteration, int amr_ncycle)
 {
+
+#ifdef CUDA
+    nvtxRangeId_t id = nvtxRangeStartA("initialize_advance");
+#endif
 
     // Save the current iteration.
 
@@ -248,6 +266,9 @@ Castro::initialize_advance(Real time, Real dt, int amr_iteration, int amr_ncycle
     for (int dir = 0; dir < 3; ++dir)
 	fluxes[dir]->setVal(0.0);
 
+#ifdef CUDA
+    nvtxRangeEnd(id);
+#endif
 }
 
 
@@ -255,6 +276,10 @@ Castro::initialize_advance(Real time, Real dt, int amr_iteration, int amr_ncycle
 void
 Castro::finalize_advance(Real time, Real dt, int amr_iteration, int amr_ncycle)
 {
+
+#ifdef CUDA
+    nvtxRangeId_t id = nvtxRangeStartA("finalize_advance");
+#endif
 
     FluxRegCrseInit();
     FluxRegFineAdd();
@@ -269,5 +294,9 @@ Castro::finalize_advance(Real time, Real dt, int amr_iteration, int amr_ncycle)
     // Record how many zones we have advanced.
 
     num_zones_advanced += grids.numPts();
+
+#ifdef CUDA
+    nvtxRangeEnd(id);
+#endif
 
 }

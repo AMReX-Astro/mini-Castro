@@ -22,6 +22,10 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
 
   BL_PROFILE_VAR("Castro::advance_hydro_ca_umdrv()", CA_UMDRV);
 
+#ifdef CUDA
+  nvtxRangeId_t hydro_id = nvtxRangeStartA("construct_hydro_source");
+#endif
+
 #ifdef _OPENMP
 #pragma omp parallel
 #endif
@@ -106,6 +110,10 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
       courno = std::max(courno,cflLoc);
     }
   }  // end of omp parallel region
+
+#ifdef CUDA
+  nvtxRangeEnd(hydro_id);
+#endif
 
   BL_PROFILE_VAR_STOP(CA_UMDRV);
 
