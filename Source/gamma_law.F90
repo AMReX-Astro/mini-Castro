@@ -28,8 +28,15 @@ contains
 
     use extern_probin_module, only: eos_gamma, eos_assume_neutral
     use bl_constants_module, only: ZERO
+#ifdef CUDA
+    use cudafor, only: cudaMemAdvise, cudaMemAdviseSetReadMostly, cudaCpuDeviceId
+#endif
 
     implicit none
+
+#ifdef CUDA
+    integer :: cuda_result
+#endif
 
     allocate(gamma_const)
     allocate(assume_neutral)
@@ -42,6 +49,11 @@ contains
     end if
 
     assume_neutral = eos_assume_neutral
+
+#ifdef CUDA
+    cuda_result = cudaMemAdvise(gamma_const, 1, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
+    cuda_result = cudaMemAdvise(assume_neutral, 1, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
+#endif
 
   end subroutine actual_eos_init
 

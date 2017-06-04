@@ -44,8 +44,15 @@ contains
 
     use bl_error_module, only: bl_error
     use bl_constants_module, only: ONE
+#ifdef CUDA
+    use cudafor, only: cudaMemAdvise, cudaMemAdviseSetReadMostly, cudaCpuDeviceId
+#endif
 
     implicit none
+
+#ifdef CUDA
+    integer :: cuda_result
+#endif
 
     allocate(aion_inv(nspec))
 
@@ -70,6 +77,12 @@ contains
     aion_inv(:) = ONE/aion(:)
 
     !$acc update device(aion_inv)
+
+#ifdef CUDA
+    cuda_result = cudaMemAdvise(aion_inv, nspec, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
+    cuda_result = cudaMemAdvise(aion, nspec, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
+    cuda_result = cudaMemAdvise(zion, nspec, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
+#endif
 
     network_initialized = .true.
 

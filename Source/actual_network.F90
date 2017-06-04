@@ -27,6 +27,8 @@ contains
   
   subroutine actual_network_init
 
+    implicit none
+
     spec_names(1) = "X"
 
     short_spec_names(1) = "X"

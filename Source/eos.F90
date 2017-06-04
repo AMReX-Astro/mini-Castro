@@ -19,8 +19,15 @@ contains
     use eos_type_module, only: mintemp, maxtemp, mindens, maxdens, minx, maxx, &
                                minye, maxye, mine, maxe, minp, maxp, minh, maxh, mins, maxs
     use actual_eos_module, only: actual_eos_init
+#ifdef CUDA
+    use cudafor, only: cudaMemAdvise, cudaMemAdviseSetReadMostly, cudaCpuDeviceId
+#endif
 
     implicit none
+
+#ifdef CUDA
+    integer :: cuda_result
+#endif
 
     real(rt), optional :: small_temp
     real(rt), optional :: small_dens
@@ -101,6 +108,25 @@ contains
     !$acc update &
     !$acc device(mintemp, maxtemp, mindens, maxdens, minx, maxx, minye, maxye) &
     !$acc device(mine, maxe, minp, maxp, mins, maxs, minh, maxh)
+
+#ifdef CUDA
+    cuda_result = cudaMemAdvise(mintemp, 1, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
+    cuda_result = cudaMemAdvise(maxtemp, 1, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
+    cuda_result = cudaMemAdvise(mindens, 1, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
+    cuda_result = cudaMemAdvise(maxdens, 1, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
+    cuda_result = cudaMemAdvise(minx, 1, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
+    cuda_result = cudaMemAdvise(maxx, 1, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
+    cuda_result = cudaMemAdvise(minye, 1, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
+    cuda_result = cudaMemAdvise(maxye, 1, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
+    cuda_result = cudaMemAdvise(mine, 1, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
+    cuda_result = cudaMemAdvise(maxe, 1, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
+    cuda_result = cudaMemAdvise(minp, 1, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
+    cuda_result = cudaMemAdvise(maxp, 1, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
+    cuda_result = cudaMemAdvise(mins, 1, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
+    cuda_result = cudaMemAdvise(maxs, 1, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
+    cuda_result = cudaMemAdvise(minh, 1, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
+    cuda_result = cudaMemAdvise(maxh, 1, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
+#endif
 
   end subroutine eos_init
 

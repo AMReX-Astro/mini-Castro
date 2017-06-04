@@ -29,7 +29,15 @@ subroutine runtime_init(name,namlen)
 
   use extern_probin_module
 
+#ifdef CUDA
+  use cudafor, only: cudaMemAdvise, cudaMemAdviseSetReadMostly, cudaCpuDeviceId
+#endif
+
   implicit none
+
+#ifdef CUDA
+  integer :: cuda_result
+#endif
 
   integer :: namlen
   integer :: name(namlen)
@@ -82,6 +90,12 @@ subroutine runtime_init(name,namlen)
 
   !$acc update &
   !$acc device(eos_gamma, eos_assume_neutral, small_x)
+
+#ifdef CUDA
+!  cuda_result = cudaMemAdvise(eos_gamma, 1, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
+!  cuda_result = cudaMemAdvise(eos_assume_neutral, 1, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
+!  cuda_result = cudaMemAdvise(small_x, 1, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
+#endif
 
 end subroutine runtime_init
 
