@@ -1221,7 +1221,7 @@ contains
 
 
 #ifdef CUDA
-attributes(device) &
+  attributes(device) &
 #endif
   subroutine derpres(p,p_lo,p_hi,ncomp_p, &
                      u,u_lo,u_hi,ncomp_u,lo,hi,domlo, &

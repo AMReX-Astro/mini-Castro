@@ -439,11 +439,11 @@ contains
 
     call threads_and_blocks(lo, hi, numBlocks, numThreads)
 
-    call dervel<<<numBlocks, numThreads, 0, stream>>>(vel,v_lo_d,v_hi_d,nv_d, &
-                                                      dat,d_lo_d,d_hi_d,nc_d, &
-                                                      lo_d,hi_d,domlo_d,domhi_d, &
-                                                      delta_d,xlo_d,time_d,dt_d, &
-                                                      bc_d,level_d,grid_no_d)
+    call cuda_dervel<<<numBlocks, numThreads, 0, stream>>>(vel,v_lo_d,v_hi_d,nv_d, &
+                                                           dat,d_lo_d,d_hi_d,nc_d, &
+                                                           lo_d,hi_d,domlo_d,domhi_d, &
+                                                           delta_d,xlo_d,time_d,dt_d, &
+                                                           bc_d,level_d,grid_no_d)
 
 #else
 
@@ -519,11 +519,11 @@ contains
 
     call threads_and_blocks(lo, hi, numBlocks, numThreads)
 
-    call derpres<<<numBlocks, numThreads, 0, stream>>>(p,p_lo_d,p_hi_d,np_d, &
-                                                       u,u_lo_d,u_hi_d,nc_d, &
-                                                       lo_d,hi_d,domlo_d,domhi_d, &
-                                                       dx_d,xlo_d,time_d,dt_d, &
-                                                       bc_d,level_d,grid_no_d)
+    call cuda_derpres<<<numBlocks, numThreads, 0, stream>>>(p,p_lo_d,p_hi_d,np_d, &
+                                                            u,u_lo_d,u_hi_d,nc_d, &
+                                                            lo_d,hi_d,domlo_d,domhi_d, &
+                                                            dx_d,xlo_d,time_d,dt_d, &
+                                                            bc_d,level_d,grid_no_d)
 
 #else
 
