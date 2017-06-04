@@ -929,37 +929,6 @@ subroutine ca_get_tagging_params(name, namlen) &
 end subroutine ca_get_tagging_params
 
 
-subroutine ca_summass(lo,hi,rho,r_lo,r_hi,dx,&
-                      vol,v_lo,v_hi,mass) bind(C, name="ca_summass")
-
-  use bl_constants_module, only: ZERO
-  use amrex_fort_module, only: rt => amrex_real
-
-  implicit none
-
-  integer          :: lo(3), hi(3)
-  integer          :: r_lo(3), r_hi(3)
-  integer          :: v_lo(3), v_hi(3)
-  real(rt)         :: mass, dx(3)
-  real(rt)         :: rho(r_lo(1):r_hi(1),r_lo(2):r_hi(2),r_lo(3):r_hi(3))
-  real(rt)         :: vol(v_lo(1):v_hi(1),v_lo(2):v_hi(2),v_lo(3):v_hi(3))
-
-  integer          :: i, j, k
-
-  mass = ZERO
-
-  do k = lo(3), hi(3)
-     do j = lo(2), hi(2)
-        do i = lo(1), hi(1)
-           mass = mass + rho(i,j,k) * vol(i,j,k)
-        enddo
-     enddo
-  enddo
-
-end subroutine ca_summass
-
-
-
 
 
 
@@ -1352,5 +1321,43 @@ contains
     enddo
 
   end subroutine derpres
+
+
+
+#ifdef CUDA
+  attributes(device) &
+#endif
+  subroutine summass(lo,hi,rho,r_lo,r_hi,dx, &
+                     vol,v_lo,v_hi,mass)
+
+    use amrex_fort_module, only: rt => amrex_real
+
+    implicit none
+
+    integer,  intent(in   ) :: lo(3), hi(3)
+    integer,  intent(in   ) :: r_lo(3), r_hi(3)
+    integer,  intent(in   ) :: v_lo(3), v_hi(3)
+    real(rt), intent(in   ) :: dx(3)
+    real(rt), intent(in   ) :: rho(r_lo(1):r_hi(1),r_lo(2):r_hi(2),r_lo(3):r_hi(3))
+    real(rt), intent(in   ) :: vol(v_lo(1):v_hi(1),v_lo(2):v_hi(2),v_lo(3):v_hi(3))
+    real(rt), intent(inout) :: mass
+
+    integer  :: i, j, k
+    real(rt) :: dm
+
+    do k = lo(3), hi(3)
+       do j = lo(2), hi(2)
+          do i = lo(1), hi(1)
+             dm = rho(i,j,k) * vol(i,j,k)
+#ifdef CUDA
+             dm = atomicAdd(mass, dm)
+#else
+             mass = mass + dm
+#endif
+          enddo
+       enddo
+    enddo
+
+  end subroutine summass
 
 end module castro_util_module

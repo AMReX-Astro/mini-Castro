@@ -134,6 +134,7 @@ Castro::volWgtSum (const std::string& name,
         const Box& box  = mfi.tilebox();
         const int* lo   = box.loVect();
         const int* hi   = box.hiVect();
+	const int  idx  = mfi.tileIndex();
 
         //
         // Note that this routine will do a volume weighted sum of
@@ -141,7 +142,7 @@ Castro::volWgtSum (const std::string& name,
         //
 
 	ca_summass(ARLIM_3D(lo),ARLIM_3D(hi),BL_TO_FORTRAN_3D(fab),
-		   ZFILL(dx),BL_TO_FORTRAN_3D(volume[mfi]),&s);
+		   ZFILL(dx),BL_TO_FORTRAN_3D(volume[mfi]),&s,&idx);
 
         sum += s;
     }

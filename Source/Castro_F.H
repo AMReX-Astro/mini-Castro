@@ -155,7 +155,7 @@ extern "C"
 
   void ca_summass
     (const int* lo, const int* hi, const BL_FORT_FAB_ARG_3D(rho),
-     const amrex::Real* dx, BL_FORT_FAB_ARG_3D(vol), amrex::Real* mass);
+     const amrex::Real* dx, BL_FORT_FAB_ARG_3D(vol), amrex::Real* mass, const int* idx);
 
   void ca_derpres
     (BL_FORT_FAB_ARG_3D(der),const int* nvar,

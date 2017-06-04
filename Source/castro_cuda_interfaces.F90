@@ -482,4 +482,39 @@ contains
 
   end subroutine cuda_construct_hydro_update
 
+
+
+#ifdef CUDA
+  attributes(global) &
+#endif
+  subroutine cuda_summass(lo,hi,rho,r_lo,r_hi,dx, &
+                          vol,v_lo,v_hi,mass)
+
+    use amrex_fort_module, only: rt => amrex_real
+    use castro_util_module, only: summass
+
+    implicit none
+
+    integer,  intent(in   ) :: lo(3), hi(3)
+    integer,  intent(in   ) :: r_lo(3), r_hi(3)
+    integer,  intent(in   ) :: v_lo(3), v_hi(3)
+    real(rt), intent(in   ) :: dx(3)
+    real(rt), intent(in   ) :: rho(r_lo(1):r_hi(1),r_lo(2):r_hi(2),r_lo(3):r_hi(3))
+    real(rt), intent(in   ) :: vol(v_lo(1):v_hi(1),v_lo(2):v_hi(2),v_lo(3):v_hi(3))
+    real(rt), intent(inout) :: mass
+
+    integer :: idx(3)
+
+    ! Get our spatial index based on the CUDA thread index
+
+    idx(1) = lo(1) + (threadIdx%x - 1) + blockDim%x * (blockIdx%x - 1)
+    idx(2) = lo(2) + (threadIdx%y - 1) + blockDim%y * (blockIdx%y - 1)
+    idx(3) = lo(3) + (threadIdx%z - 1) + blockDim%z * (blockIdx%z - 1)
+
+    if (idx(1) .gt. hi(1) .or. idx(2) .gt. hi(2) .or. idx(3) .gt. hi(3)) return
+
+    call summass(idx,idx,rho,r_lo,r_hi,dx,vol,v_lo,v_hi,mass)
+
+  end subroutine cuda_summass
+
 end module cuda_interfaces_module

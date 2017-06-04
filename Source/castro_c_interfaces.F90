@@ -908,7 +908,7 @@ contains
                                                                            vol, vol_lo_d, vol_hi_d, &
                                                                            update, updt_lo_d, updt_hi_d)
 
-    cuda_result = cudaStreamSynchronize()
+    cuda_result = cudaStreamSynchronize(stream)
 
     courno = max(courno, courno_loc)
 
@@ -998,5 +998,81 @@ contains
     deallocate(szp)
 
   end subroutine ca_mol_single_stage
+
+
+
+  subroutine ca_summass(lo,hi,rho,r_lo,r_hi,dx, &
+                        vol,v_lo,v_hi,mass,idx) bind(c, name='ca_summass')
+
+    use bl_constants_module, only: ZERO
+    use amrex_fort_module, only: rt => amrex_real
+    use castro_util_module, only: summass
+#ifdef CUDA
+    use cuda_interfaces_module, only: cuda_summass
+#endif
+
+    implicit none
+
+    integer,  intent(in   ) :: lo(3), hi(3), idx
+    integer,  intent(in   ) :: r_lo(3), r_hi(3)
+    integer,  intent(in   ) :: v_lo(3), v_hi(3)
+    real(rt), intent(in   ) :: dx(3)
+    real(rt), intent(in   ) :: rho(r_lo(1):r_hi(1),r_lo(2):r_hi(2),r_lo(3):r_hi(3))
+    real(rt), intent(in   ) :: vol(v_lo(1):v_hi(1),v_lo(2):v_hi(2),v_lo(3):v_hi(3))
+    real(rt), intent(inout) :: mass
+
+#ifdef CUDA
+
+    attributes(device) :: rho, vol
+
+    integer                   :: cuda_result
+    integer(cuda_stream_kind) :: stream
+    type(dim3)                :: numThreads, numBlocks
+
+    real(rt)         :: mass_loc
+    real(rt), device :: mass_d
+    integer,  device :: lo_d(3), hi_d(3)
+    integer,  device :: r_lo_d(3), r_hi_d(3)
+    integer,  device :: v_lo_d(3), v_hi_d(3)
+    real(rt), device :: dx_d(3)
+
+    stream = cuda_streams(mod(idx, max_cuda_streams) + 1)
+
+    mass_loc = ZERO
+
+    cuda_result = cudaMemcpyAsync(mass_d, mass_loc, 1, cudaMemcpyHostToDevice, stream)
+
+    cuda_result = cudaMemcpyAsync(lo_d, lo, 3, cudaMemcpyHostToDevice, stream)
+    cuda_result = cudaMemcpyAsync(hi_d, hi, 3, cudaMemcpyHostToDevice, stream)
+
+    cuda_result = cudaMemcpyAsync(r_lo_d, r_lo, 3, cudaMemcpyHostToDevice, stream)
+    cuda_result = cudaMemcpyAsync(r_hi_d, r_hi, 3, cudaMemcpyHostToDevice, stream)
+
+    cuda_result = cudaMemcpyAsync(v_lo_d, v_lo, 3, cudaMemcpyHostToDevice, stream)
+    cuda_result = cudaMemcpyAsync(v_hi_d, v_hi, 3, cudaMemcpyHostToDevice, stream)
+
+    cuda_result = cudaMemcpyAsync(dx_d, dx, 3, cudaMemcpyHostToDevice, stream)
+
+    call threads_and_blocks(lo, hi, numBlocks, numThreads)
+
+    call cuda_summass<<<numBlocks, numThreads, 0, stream>>>(lo_d, hi_d, rho, r_lo_d, r_hi_d, &
+                                                            dx_d, vol, v_lo_d, v_hi_d, mass_d)
+
+    cuda_result = cudaMemcpyAsync(mass_loc, mass_d, 1, cudaMemcpyDeviceToHost, stream)
+
+    cuda_result = cudaStreamSynchronize(stream)
+
+    mass = mass + mass_loc
+
+#else
+
+    mass = ZERO
+
+    call summass(lo,hi,rho,r_lo,r_hi,dx, &
+                 vol,v_lo,v_hi,mass)
+
+#endif
+
+  end subroutine ca_summass
 
 end module c_interface_modules
