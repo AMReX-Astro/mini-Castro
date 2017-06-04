@@ -132,9 +132,7 @@ Castro::initialize_do_advance(Real time, Real dt, int amr_iteration, int amr_ncy
 			      int sub_iteration, int sub_ncycle)
 {
 
-#ifdef CUDA
-    nvtxRangeId_t id = nvtxRangeStartA("initialize_do_advance");
-#endif
+    BL_PROFILE_VAR("Castro::initialize_do_advance()", CA_INIT_DO_ADV);
 
     // Reset the change from density resets
 
@@ -182,9 +180,9 @@ Castro::initialize_do_advance(Real time, Real dt, int amr_iteration, int amr_ncy
 	expand_state(Sborder, new_time, NUM_GROW);
 
     }
-#ifdef CUDA
-    nvtxRangeEnd(id);
-#endif
+
+    BL_PROFILE_VAR_STOP(CA_INIT_DO_ADV);
+
 }
 
 
@@ -192,15 +190,12 @@ Castro::initialize_do_advance(Real time, Real dt, int amr_iteration, int amr_ncy
 void
 Castro::finalize_do_advance(Real time, Real dt, int amr_iteration, int amr_ncycle, int sub_iteration, int sub_ncycle)
 {
-#ifdef CUDA
-    nvtxRangeId_t id = nvtxRangeStartA("finalize_do_advance");
-#endif
+
+    BL_PROFILE_VAR("Castro::finalize_do_advance()", CA_FIN_DO_ADV);
 
     Sborder.clear();
 
-#ifdef CUDA
-    nvtxRangeEnd(id);
-#endif
+    BL_PROFILE_VAR_STOP(CA_FIN_DO_ADV);
 
 }
 
@@ -210,9 +205,7 @@ void
 Castro::initialize_advance(Real time, Real dt, int amr_iteration, int amr_ncycle)
 {
 
-#ifdef CUDA
-    nvtxRangeId_t id = nvtxRangeStartA("initialize_advance");
-#endif
+    BL_PROFILE_VAR("Castro::initialize_advance()", CA_INIT_ADV);
 
     // Save the current iteration.
 
@@ -266,9 +259,8 @@ Castro::initialize_advance(Real time, Real dt, int amr_iteration, int amr_ncycle
     for (int dir = 0; dir < 3; ++dir)
 	fluxes[dir]->setVal(0.0);
 
-#ifdef CUDA
-    nvtxRangeEnd(id);
-#endif
+    BL_PROFILE_VAR_STOP(CA_INIT_ADV);
+
 }
 
 
@@ -277,9 +269,7 @@ void
 Castro::finalize_advance(Real time, Real dt, int amr_iteration, int amr_ncycle)
 {
 
-#ifdef CUDA
-    nvtxRangeId_t id = nvtxRangeStartA("finalize_advance");
-#endif
+    BL_PROFILE_VAR("Castro::finalize_advance()", CA_FIN_ADV);
 
     FluxRegCrseInit();
     FluxRegFineAdd();
@@ -295,8 +285,6 @@ Castro::finalize_advance(Real time, Real dt, int amr_iteration, int amr_ncycle)
 
     num_zones_advanced += grids.numPts();
 
-#ifdef CUDA
-    nvtxRangeEnd(id);
-#endif
+    BL_PROFILE_VAR_STOP(CA_FIN_ADV);
 
 }

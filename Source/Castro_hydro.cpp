@@ -20,11 +20,7 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
 
   MultiFab& k_stage = *k_mol[istage];
 
-  BL_PROFILE_VAR("Castro::advance_hydro_ca_umdrv()", CA_UMDRV);
-
-#ifdef CUDA
-  nvtxRangeId_t hydro_id = nvtxRangeStartA("construct_hydro_source");
-#endif
+  BL_PROFILE_VAR("Castro::construct_mol_hydro_source()", CA_HYDRO);
 
 #ifdef _OPENMP
 #pragma omp parallel
@@ -111,11 +107,7 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
     }
   }  // end of omp parallel region
 
-#ifdef CUDA
-  nvtxRangeEnd(hydro_id);
-#endif
-
-  BL_PROFILE_VAR_STOP(CA_UMDRV);
+  BL_PROFILE_VAR_STOP(CA_HYDRO);
 
   // Flush Fortran output
 
