@@ -60,16 +60,15 @@ implicit none
   !$acc create(QFA, QFS, QFX)
 
 #ifdef CUDA
-  attributes(managed) :: NTHERM, NVAR
+  attributes(managed) :: NTHERM, NVAR, nadv
   attributes(managed) :: URHO, UMX, UMY, UMZ, UMR, UML, UMP, UEDEN, UEINT, UTEMP, UFA, UFS, UFX
   attributes(managed) :: QTHERM, QVAR
   attributes(managed) :: QRHO, QU, QV, QW, QPRES, QREINT, QTEMP, QGAME
   attributes(managed) :: NQAUX, QGAMC, QC, QCSML, QDPDR, QDPDE
   attributes(managed) :: QFA, QFS, QFX
   attributes(managed) :: NQ
-  attributes(managed) :: npassive
   attributes(managed) :: NGDNV, GDRHO, GDU, GDV, GDW, GDPRES, GDGAME
-  attributes(managed) :: upass_map, qpass_map
+  attributes(managed) :: upass_map, qpass_map, npassive
 #endif
 
   ! Begin the declarations of the ParmParse parameters
