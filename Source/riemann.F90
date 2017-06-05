@@ -9,7 +9,6 @@ module riemann_module
                                 QC, QCSML, QGAMC, &
                                 small_dens, small_temp, &
                                 npassive, upass_map, qpass_map
-  use advection_util_module, only: ht
 
   implicit none
 
