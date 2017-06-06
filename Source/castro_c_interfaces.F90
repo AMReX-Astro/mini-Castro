@@ -954,6 +954,11 @@ contains
                             sxm, sxp, sym, syp, szm, szp, st_lo, st_hi, &
                             qm, qp, It_lo, It_hi)
 
+    call prepare_profile(k_lo, k_hi, &
+                         q, flatn, q_lo, q_hi, &
+                         sxm, sxp, sym, syp, szm, szp, st_lo, st_hi, &
+                         qm, qp, It_lo, It_hi)
+
     ! Compute F^x
 
     idir = 1
