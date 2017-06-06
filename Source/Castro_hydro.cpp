@@ -114,7 +114,7 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
   if (verbose)
     flush_output();
 
-  if (courno > 1.0)
-    amrex::Abort("CFL is too high at this level");
+//  if (courno > 1.0)
+//    amrex::Abort("CFL is too high at this level");
 
 }

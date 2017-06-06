@@ -49,6 +49,8 @@ contains
 
     call cuda_enforce_consistent_e<<<numBlocks, numThreads, 0, stream>>>(lo_d, hi_d, state, s_lo_d, s_hi_d)
 
+    cuda_result = cudaStreamSynchronize(stream)
+
 #else
 
     call enforce_consistent_e(lo, hi, state, s_lo, s_hi)
@@ -96,6 +98,8 @@ contains
     call threads_and_blocks(lo, hi, numBlocks, numThreads)
 
     call cuda_compute_temp<<<numBlocks, numThreads, 0, stream>>>(lo_d, hi_d, state, s_lo_d, s_hi_d)
+
+    cuda_result = cudaStreamSynchronize(stream)
 
 #else
 
@@ -147,6 +151,8 @@ contains
 
     call cuda_reset_internal_e<<<numBlocks, numThreads, 0, stream>>>(lo_d, hi_d, u, u_lo_d, u_hi_d, verbose_d)
 
+    cuda_result = cudaStreamSynchronize(stream)
+
 #else
 
     call reset_internal_e(lo, hi, u, u_lo, u_hi, verbose)
@@ -193,6 +199,8 @@ contains
     call threads_and_blocks(lo, hi, numBlocks, numThreads)
 
     call cuda_normalize_species<<<numBlocks, numThreads, 0, stream>>>(u, u_lo_d, u_hi_d, lo_d, hi_d)
+
+    cuda_result = cudaStreamSynchronize(stream)
 
 #else
 
@@ -361,6 +369,8 @@ contains
                                                             q,     q_lo_d,   q_hi_d, &
                                                             qaux, qa_lo_d,  qa_hi_d)
 
+    cuda_result = cudaStreamSynchronize(stream)
+
 #else
 
     call ctoprim(lo, hi, &
@@ -445,6 +455,8 @@ contains
                                                            delta_d,xlo_d,time_d,dt_d, &
                                                            bc_d,level_d,grid_no_d)
 
+    cuda_result = cudaStreamSynchronize(stream)
+
 #else
 
     call dervel(vel,v_lo,v_hi,nv, &
@@ -524,6 +536,8 @@ contains
                                                             lo_d,hi_d,domlo_d,domhi_d, &
                                                             dx_d,xlo_d,time_d,dt_d, &
                                                             bc_d,level_d,grid_no_d)
+
+    cuda_result = cudaStreamSynchronize(stream)
 
 #else
 
@@ -617,10 +631,10 @@ contains
                                  vol, vol_lo, vol_hi, &
                                  courno, verbose, idx) bind(C, name="ca_mol_single_stage")
 
-    use mol_module, only: prepare_for_fluxes, construct_flux
+    use mol_module, only: prepare_for_fluxes, prepare_profile, construct_flux
     use advection_util_module, only: construct_hydro_update
 #ifdef CUDA
-    use cuda_interfaces_module, only: cuda_prepare_for_fluxes, cuda_construct_flux, cuda_construct_hydro_update
+    use cuda_interfaces_module, only: cuda_prepare_for_fluxes, cuda_construct_flux, cuda_construct_hydro_update, cuda_prepare_profile
 #endif
 
     implicit none
@@ -820,7 +834,16 @@ contains
                                                                        sxm, sxp, sym, syp, szm, szp, st_lo_d, st_hi_d, &
                                                                        qm, qp, It_lo_d, It_hi_d)
 
+    cuda_result = cudaStreamSynchronize(stream)
+
     cuda_result = cudaMemcpyAsync(courno_loc, courno_d, 1, cudaMemcpyDeviceToHost, stream)
+
+    call cuda_prepare_profile<<<numBlocks, numThreads, 0, stream>>>(k_lo_d, k_hi_d, &
+                                                                    q, flatn, q_lo_d, q_hi_d, &
+                                                                    sxm, sxp, sym, syp, szm, szp, st_lo_d, st_hi_d, &
+                                                                    qm, qp, It_lo_d, It_hi_d)
+
+    cuda_result = cudaStreamSynchronize(stream)
 
     ! Compute F^x
 
@@ -844,6 +867,8 @@ contains
                                                                    area1, a1_lo_d, a1_hi_d, &
                                                                    qaux, qa_lo_d, qa_hi_d)
 
+    cuda_result = cudaStreamSynchronize(stream)
+
     ! Compute F^y
 
     idir = 2
@@ -866,6 +891,8 @@ contains
                                                                    area2, a2_lo_d, a2_hi_d, &
                                                                    qaux, qa_lo_d, qa_hi_d)
 
+    cuda_result = cudaStreamSynchronize(stream)
+
     ! Compute F^z
 
     idir = 3
@@ -887,6 +914,8 @@ contains
                                                                    flux3, q3, f3_lo_d, f3_hi_d, &
                                                                    area3, a3_lo_d, a3_hi_d, &
                                                                    qaux, qa_lo_d, qa_hi_d)
+
+    cuda_result = cudaStreamSynchronize(stream)
 
     ! Create an update source term based on the flux divergence.
 

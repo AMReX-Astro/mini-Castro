@@ -365,6 +365,53 @@ contains
 
 
   attributes(global) &
+  subroutine cuda_prepare_profile(lo, hi, &
+                                  q, flatn, q_lo, q_hi, &
+                                  sxm, sxp, sym, syp, szm, szp, st_lo, st_hi, &
+                                  qm, qp, It_lo, It_hi)
+
+    use amrex_fort_module, only: rt => amrex_real
+    use meth_params_module, only: NQ, NQAUX
+    use mol_module, only: prepare_profile
+
+    implicit none
+
+    integer,  intent(in   ) :: lo(3), hi(3)
+    integer,  intent(in   ) :: q_lo(3), q_hi(3)
+    integer,  intent(in   ) :: st_lo(3), st_hi(3)
+    integer,  intent(in   ) :: It_lo(3), It_hi(3)
+
+    real(rt), intent(inout) :: q(q_lo(1):q_hi(1), q_lo(2):q_hi(2), q_lo(3):q_hi(3), NQ)
+    real(rt), intent(inout) :: flatn(q_lo(1):q_hi(1), q_lo(2):q_hi(2), q_lo(3):q_hi(3))
+    real(rt), intent(inout) :: sxm(st_lo(1):st_hi(1),st_lo(2):st_hi(2),st_lo(3):st_hi(3),NQ)
+    real(rt), intent(inout) :: sxp(st_lo(1):st_hi(1),st_lo(2):st_hi(2),st_lo(3):st_hi(3),NQ)
+    real(rt), intent(inout) :: sym(st_lo(1):st_hi(1),st_lo(2):st_hi(2),st_lo(3):st_hi(3),NQ)
+    real(rt), intent(inout) :: syp(st_lo(1):st_hi(1),st_lo(2):st_hi(2),st_lo(3):st_hi(3),NQ)
+    real(rt), intent(inout) :: szm(st_lo(1):st_hi(1),st_lo(2):st_hi(2),st_lo(3):st_hi(3),NQ)
+    real(rt), intent(inout) :: szp(st_lo(1):st_hi(1),st_lo(2):st_hi(2),st_lo(3):st_hi(3),NQ)
+    real(rt), intent(inout) :: qm(It_lo(1):It_hi(1),It_lo(2):It_hi(2),It_lo(3):It_hi(3),NQ,3)
+    real(rt), intent(inout) :: qp(It_lo(1):It_hi(1),It_lo(2):It_hi(2),It_lo(3):It_hi(3),NQ,3)
+
+    integer :: idx(3)
+
+    ! Get our spatial index based on the CUDA thread index
+
+    idx(1) = lo(1) + (threadIdx%x - 1) + blockDim%x * (blockIdx%x - 1)
+    idx(2) = lo(2) + (threadIdx%y - 1) + blockDim%y * (blockIdx%y - 1)
+    idx(3) = lo(3) + (threadIdx%z - 1) + blockDim%z * (blockIdx%z - 1)
+
+    if (idx(1) .gt. hi(1) .or. idx(2) .gt. hi(2) .or. idx(3) .gt. hi(3)) return
+
+    call prepare_profile(idx, idx, &
+                         q, flatn, q_lo, q_hi, &
+                         sxm, sxp, sym, syp, szm, szp, st_lo, st_hi, &
+                         qm, qp, It_lo, It_hi)
+
+  end subroutine cuda_prepare_profile
+
+
+
+  attributes(global) &
   subroutine cuda_construct_flux(lo, hi, domlo, domhi, dx, dt, idir, &
                                  div, g_lo, g_hi, &
                                  uin, uin_lo, uin_hi, &

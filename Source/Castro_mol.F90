@@ -20,7 +20,7 @@ contains
     use meth_params_module, only: NQ, NQAUX
     use advection_util_module, only: compute_cfl, divu
     use flatten_module, only: uflaten
-    use ppm_module, only: ppm_reconstruct, ppm_int_profile
+    use ppm_module, only: ppm_reconstruct
 
     implicit none
 
@@ -61,11 +61,45 @@ contains
     call ppm_reconstruct(lo, hi, q, flatn, q_lo, q_hi, &
                          sxm, sxp, sym, syp, szm, szp, st_lo, st_hi)
 
+  end subroutine prepare_for_fluxes
+
+
+
+#ifdef CUDA
+  attributes(device) &
+#endif
+  subroutine prepare_profile(lo, hi, &
+                             q, flatn, q_lo, q_hi, &
+                             sxm, sxp, sym, syp, szm, szp, st_lo, st_hi, &
+                             qm, qp, It_lo, It_hi)
+
+    use amrex_fort_module, only: rt => amrex_real
+    use meth_params_module, only: NQ, NQAUX
+    use ppm_module, only: ppm_int_profile
+
+    implicit none
+
+    integer,  intent(in   ) :: lo(3), hi(3)
+    integer,  intent(in   ) :: q_lo(3), q_hi(3)
+    integer,  intent(in   ) :: st_lo(3), st_hi(3)
+    integer,  intent(in   ) :: It_lo(3), It_hi(3)
+
+    real(rt), intent(inout) :: q(q_lo(1):q_hi(1), q_lo(2):q_hi(2), q_lo(3):q_hi(3), NQ)
+    real(rt), intent(inout) :: flatn(q_lo(1):q_hi(1), q_lo(2):q_hi(2), q_lo(3):q_hi(3))
+    real(rt), intent(inout) :: sxm(st_lo(1):st_hi(1),st_lo(2):st_hi(2),st_lo(3):st_hi(3),NQ)
+    real(rt), intent(inout) :: sxp(st_lo(1):st_hi(1),st_lo(2):st_hi(2),st_lo(3):st_hi(3),NQ)
+    real(rt), intent(inout) :: sym(st_lo(1):st_hi(1),st_lo(2):st_hi(2),st_lo(3):st_hi(3),NQ)
+    real(rt), intent(inout) :: syp(st_lo(1):st_hi(1),st_lo(2):st_hi(2),st_lo(3):st_hi(3),NQ)
+    real(rt), intent(inout) :: szm(st_lo(1):st_hi(1),st_lo(2):st_hi(2),st_lo(3):st_hi(3),NQ)
+    real(rt), intent(inout) :: szp(st_lo(1):st_hi(1),st_lo(2):st_hi(2),st_lo(3):st_hi(3),NQ)
+    real(rt), intent(inout) :: qm(It_lo(1):It_hi(1),It_lo(2):It_hi(2),It_lo(3):It_hi(3),NQ,3)
+    real(rt), intent(inout) :: qp(It_lo(1):It_hi(1),It_lo(2):It_hi(2),It_lo(3):It_hi(3),NQ,3)
+
     ! Integrate under the reconstructed polynomial to get the edge state.
     call ppm_int_profile(lo, hi, sxm, sxp, sym, syp, szm, szp, st_lo, st_hi, &
                          qm, qp, It_lo, It_hi)
 
-  end subroutine prepare_for_fluxes
+  end subroutine prepare_profile
 
 
 
