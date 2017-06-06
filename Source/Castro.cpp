@@ -72,7 +72,11 @@ Array<Real> Castro::c_mol;
 
 std::string  Castro::probin_file = "probin";
 
+#ifdef CUDA
+IntVect      Castro::hydro_tile_size(1024000,1024000,1024000);
+#else
 IntVect      Castro::hydro_tile_size(1024,16,16);
+#endif
 
 int          Castro::num_state_type = 0;
 
