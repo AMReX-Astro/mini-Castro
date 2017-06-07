@@ -4,7 +4,7 @@
 #BSUB -J starlord
 #BSUB -o starlord.o%J
 #BSUB -W 30
-#BSUB -n 4
+#BSUB -n 1
 
 
 # need to find a better way to specify to cd into the submit dir
@@ -18,5 +18,9 @@
 
 export LD_LIBRARY_PATH=/sw/summitdev/gcc/5.4.0new/lib64/:$LD_LIBRARY_PATH
 
-mpirun -n 4 -map-by socket -gpu ./Castro3d.pgi.TPROF.MPI.CUDA.ex inputs
+mpirun -n 1 -map-by socket -gpu ./Castro3d.pgi.TPROF.MPI.CUDA.ex inputs.128
+
+
+
+
 
