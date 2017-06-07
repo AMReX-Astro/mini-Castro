@@ -8,7 +8,7 @@
 
 
 # need to find a better way to specify to cd into the submit dir
-cd /lustre/atlas/scratch/$USER/ast106/testing
+#cd /lustre/atlas/scratch/$USER/ast106/testing
 
 # we want to assign MPI tasks round-robin between sockets -- this
 # ensures that if we have 4 MPI tasks on a node, each one will have
