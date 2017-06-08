@@ -7,17 +7,17 @@ module extern_probin_module
 
   private
 
-  real (kind=dp_t), allocatable, save, public :: eos_gamma
+  real (kind=dp_t), allocatable, public :: eos_gamma
   !$acc declare create(eos_gamma)
 #ifdef CUDA
   attributes(managed) :: eos_gamma
 #endif
-  logical, allocatable, save, public :: eos_assume_neutral
+  logical, allocatable, public :: eos_assume_neutral
   !$acc declare create(eos_assume_neutral)
 #ifdef CUDA
   attributes(managed) :: eos_assume_neutral
 #endif
-  real (kind=dp_t), allocatable, save, public :: small_x
+  real (kind=dp_t), allocatable, public :: small_x
   !$acc declare create(small_x)
 #ifdef CUDA
   attributes(managed) :: small_x
