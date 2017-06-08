@@ -11,7 +11,7 @@ module probdata_module
 
 #ifdef CUDA
   attributes(managed) :: p_ambient, dens_ambient, exp_energy, &
-                         r_init, nsub, probtype, idir
+                         r_init, nsub, probtype
 #endif
   
 end module probdata_module
