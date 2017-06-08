@@ -175,16 +175,17 @@ extern "C"
      const amrex::Real* time, const amrex::Real* dt, const int* bcrec, 
      const int* level, const int* grid_no);
 
+  void ca_initdata
+    (const int& level, const amrex::Real& time,
+     const int* lo, const int* hi,
+     const int& num_state,
+     BL_FORT_FAB_ARG_3D(state),
+     const amrex::Real* dx, const amrex::Real* xlo, const amrex::Real* xhi);
+  
 #ifdef __cplusplus
 }
 #endif
 
 
-BL_FORT_PROC_DECL(CA_INITDATA,ca_initdata)
-    (const int& level, const amrex::Real& time,
-     const int* lo, const int* hi,
-     const int& num_state,
-     BL_FORT_FAB_ARG(state),
-     const amrex::Real* dx, const amrex::Real* xlo, const amrex::Real* xhi);
 
 #endif

@@ -43,11 +43,12 @@ subroutine amrex_probinit (init,name,namlen,problo,probhi) bind(c)
   
 end subroutine amrex_probinit
 
-
-
-subroutine ca_initdata(level,time,lo,hi,nscal, &
-                       state,state_l1,state_l2,state_l3,state_h1,state_h2,state_h3, &
-                       delta,xlo,xhi)
+#ifdef CUDA
+attributes(global) &
+#endif     
+subroutine initdata(level,time,lo,hi,nscal, &
+                    state,state_l1,state_l2,state_l3,state_h1,state_h2,state_h3, &
+                    delta,xlo,xhi)
 
   use probdata_module, only: probtype, r_init, exp_energy, nsub, p_ambient, dens_ambient
   use bl_constants_module, only: M_PI, FOUR3RD
@@ -75,6 +76,14 @@ subroutine ca_initdata(level,time,lo,hi,nscal, &
 
   integer :: i,j,k, ii, jj, kk
   integer :: npert, nambient
+
+  allocate(p_ambient)
+  allocate(dens_ambient)
+  allocate(exp_energy)
+  allocate(r_init)
+  allocate(nsub)
+  allocate(probtype)
+  
   
   if (probtype .eq. 32) then
 
@@ -235,9 +244,10 @@ subroutine ca_initdata(level,time,lo,hi,nscal, &
      
   else 
 
-     call bl_error('Dont know this probtype in initdata')
+     continue
+     !call bl_error('Dont know this probtype in initdata')
 
   end if
   
-end subroutine ca_initdata
+end subroutine initdata
 

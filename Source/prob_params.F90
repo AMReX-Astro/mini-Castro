@@ -16,7 +16,7 @@ module prob_params_module
 
   ! geometry information
   integer,  save :: coord_type
-  real(rt), save :: center(3), problo(3), probhi(3)
+  real(rt), save, allocatable :: center(:), problo(:), probhi(:)
 
   ! dimension information
   integer, allocatable, save :: dim
@@ -50,12 +50,11 @@ module prob_params_module
   type (momflux_t), save :: mom_flux_has_p(3)
 
 #ifdef CUDA
-
   attributes(managed) :: physbc_lo, physbc_hi
   attributes(managed) :: Interior, Inflow, Outflow, Symmetry, Slipwall, NoSlipWall
   attributes(managed) :: dim
   attributes(managed) :: dg
-
+  attributes(managed) :: center, problo, probhi
 #endif
   
 end module prob_params_module

@@ -429,10 +429,9 @@ Castro::initData ()
           const int* lo      = box.loVect();
           const int* hi      = box.hiVect();
 
-          BL_FORT_PROC_CALL(CA_INITDATA,ca_initdata)
-  	  (level, cur_time, lo, hi, ns,
-  	   BL_TO_FORTRAN(S_new[mfi]), dx,
-  	   gridloc.lo(), gridloc.hi());
+          ca_initdata(level, cur_time, lo, hi, ns,
+		      S_new[mfi].dataPtr(), S_new[mfi].loVect(), S_new[mfi].hiVect(), dx,
+		      gridloc.lo(), gridloc.hi());
 
           // Verify that the sum of (rho X)_i = rho at every cell
 	  const int idx = mfi.tileIndex();

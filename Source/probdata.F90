@@ -4,9 +4,14 @@ module probdata_module
 
   implicit none
 
-  real(rt), save ::  p_ambient, dens_ambient, exp_energy
-  real(rt), save ::  r_init
-  integer,  save ::  nsub
-  integer,  save :: probtype, idir
+  real(rt), allocatable, public :: p_ambient, dens_ambient, exp_energy
+  real(rt), allocatable, public :: r_init
+  integer,  allocatable, public :: nsub
+  integer,  allocatable, public :: probtype
 
+#ifdef CUDA
+  attributes(managed) :: p_ambient, dens_ambient, exp_energy, &
+                         r_init, nsub, probtype, idir
+#endif
+  
 end module probdata_module

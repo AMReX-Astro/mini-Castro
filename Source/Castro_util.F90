@@ -694,6 +694,10 @@ subroutine ca_set_problem_params(dm,physbc_lo_in,physbc_hi_in,&
   allocate(SlipWall)
   allocate(NoSlipWall)
 
+  allocate(center(3))
+  allocate(problo(3))
+  allocate(probhi(3))
+  
   Interior   = Interior_in
   Inflow     = Inflow_in
   Outflow    = Outflow_in

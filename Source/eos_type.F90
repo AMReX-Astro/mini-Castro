@@ -300,7 +300,9 @@ contains
   end subroutine print_state
 
 
-
+#ifdef CUDA  
+  attributes(device) &
+#endif
   subroutine eos_get_small_temp(small_temp_out)
 
     !$acc routine seq
@@ -314,7 +316,9 @@ contains
   end subroutine eos_get_small_temp
 
 
-
+#ifdef CUDA  
+  attributes(device) &
+#endif
   subroutine eos_get_small_dens(small_dens_out)
 
     !$acc routine seq
@@ -329,6 +333,9 @@ contains
 
 
 
+#ifdef CUDA  
+  attributes(device) &
+#endif
   subroutine eos_get_max_temp(max_temp_out)
 
     !$acc routine seq
@@ -343,6 +350,9 @@ contains
 
 
 
+#ifdef CUDA  
+  attributes(device) &
+#endif
   subroutine eos_get_max_dens(max_dens_out)
 
     !$acc routine seq

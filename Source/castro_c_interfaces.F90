@@ -11,6 +11,89 @@ module c_interface_modules
 
 contains
 
+  subroutine ca_initdata(level, time, lo, hi, ns, &
+                         state, s_lo, s_hi, dx, &
+                         xlo, xhi, idx) bind(C, name="ca_initdata")
+
+#ifdef CUDA
+    use cuda_interfaces_module, only: cuda_initdata
+#endif
+
+    implicit none
+    
+    integer,  intent(in   ) :: level, ns
+    integer,  intent(in   ) :: lo(3), hi(3)
+    integer,  intent(in   ) :: s_lo(3), s_hi(3)
+    real(rt), intent(in   ) :: xlo(3), xhi(3), time, dx(3)
+    real(rt), intent(inout) :: state(s_lo(1):s_hi(1),s_lo(2):s_hi(2),s_lo(3):s_hi(3),NVAR)
+    integer, intent(in)     :: idx
+    
+#ifdef CUDA
+
+    attributes(device) :: state
+
+    integer, managed, pointer :: lo_d(:), hi_d(:)
+    integer, managed, pointer :: s_lo_d(:), s_hi_d(:)
+    real(rt), managed, pointer :: xlo_d(:), xhi_d(:), dx_d(:), time_d(:)
+    integer, managed, pointer :: level_d(:)
+    integer, managed, pointer :: ns_d(:)
+    
+    integer :: cuda_result
+    integer(kind=cuda_stream_kind) :: stream
+    type(dim3) :: numThreads, numBlocks
+
+    stream = cuda_streams(mod(idx, max_cuda_streams) + 1)
+
+    call bl_allocate(lo_d, 1, 3)
+    call bl_allocate(hi_d, 1, 3)
+    call bl_allocate(s_lo_d, 1, 3)
+    call bl_allocate(s_hi_d, 1, 3)
+    call bl_allocate(xlo_d, 1, 3)
+    call bl_allocate(xhi_d, 1, 3)
+    call bl_allocate(dx_d, 1, 3)
+    call bl_allocate(time_d, 1, 1)
+    call bl_allocate(level_d, 1, 1)
+    call bl_allocate(ns_d, 1, 1)    
+
+    cuda_result = cudaMemcpyAsync(lo_d, lo, 3, cudaMemcpyHostToDevice, stream)
+    cuda_result = cudaMemcpyAsync(hi_d, hi, 3, cudaMemcpyHostToDevice, stream)
+
+    cuda_result = cudaMemcpyAsync(s_lo_d, s_lo, 3, cudaMemcpyHostToDevice, stream)
+    cuda_result = cudaMemcpyAsync(s_hi_d, s_hi, 3, cudaMemcpyHostToDevice, stream)
+
+    cuda_result = cudaMemcpyAsync(xlo_d, xlo, 3, cudaMemcpyHostToDevice, stream)
+    cuda_result = cudaMemcpyAsync(xhi_d, xhi, 3, cudaMemcpyHostToDevice, stream)
+
+    cuda_result = cudaMemcpyAsync(dx_d, dx, 3, cudaMemcpyHostToDevice, stream)
+    cuda_result = cudaMemcpyAsync(time_d, time, 3, cudaMemcpyHostToDevice, stream)
+    cuda_result = cudaMemcpyAsync(level_d, level, 3, cudaMemcpyHostToDevice, stream)
+    cuda_result = cudaMemcpyAsync(ns_d, ns, 3, cudaMemcpyHostToDevice, stream)
+    
+    call threads_and_blocks(lo, hi, numBlocks, numThreads)
+
+    call cuda_initdata<<<numBlocks, numThreads, 0, stream>>>( &
+         level_d, time_d, lo_d, hi_d, ns_d, &
+         state, s_lo_d, s_hi_d, dx_d, &
+         xlo_d, xhi_d)
+
+    cuda_result = cudaStreamSynchronize(stream)
+
+    call bl_deallocate(lo_d)
+    call bl_deallocate(hi_d)
+    call bl_deallocate(s_lo_d)
+    call bl_deallocate(s_hi_d)
+
+#else
+
+    call initdata(level, time, lo, hi, ns, &
+                  state, s_lo(1), s_lo(2), s_lo(3), s_hi(1), s_hi(2), s_hi(3), dx, &
+                  xlo(3), xhi(3))
+
+#endif
+    
+  end subroutine ca_initdata
+    
+  
   subroutine ca_enforce_consistent_e(lo,hi,state,s_lo,s_hi,idx) &
                                      bind(c, name='ca_enforce_consistent_e')
 
@@ -69,8 +152,7 @@ contains
 
   end subroutine ca_enforce_consistent_e
 
-
-
+  
   subroutine ca_compute_temp(lo, hi, state, s_lo, s_hi, idx) &
                              bind(C, name="ca_compute_temp")
 
