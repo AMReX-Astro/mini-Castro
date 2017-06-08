@@ -35,11 +35,12 @@ contains
 
   attributes(global) &
   subroutine cuda_initdata(level, time, lo, hi, ns, &
-                           state, s_lo, s_hi, xlo, xhi)
+                           state, s_lo, s_hi, dx, xlo, xhi)
 
     use amrex_fort_module, only: rt => amrex_real
     use meth_params_module, only: NVAR
-
+    use initdata_module, only : initdata
+    
     implicit none
 
     integer,  intent(in   ) :: level, ns
@@ -58,7 +59,8 @@ contains
 
     if (idx(1) .gt. hi(1) .or. idx(2) .gt. hi(2) .or. idx(3) .gt. hi(3)) return
 
-    call initdata(level, time, idx, idx, ns, state, s_lo, s_hi, xlo, xhi)
+    call initdata(level, time, idx, idx, ns, &
+                  state, s_lo(1), s_lo(2), s_lo(3), s_hi(1), s_hi(2), s_hi(3), dx, xlo, xhi)
 
   end subroutine cuda_initdata
   

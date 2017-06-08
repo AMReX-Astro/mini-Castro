@@ -43,8 +43,13 @@ subroutine amrex_probinit (init,name,namlen,problo,probhi) bind(c)
   
 end subroutine amrex_probinit
 
+
+module initdata_module
+
+contains
+  
 #ifdef CUDA
-attributes(global) &
+attributes(device) &
 #endif     
 subroutine initdata(level,time,lo,hi,nscal, &
                     state,state_l1,state_l2,state_l3,state_h1,state_h2,state_h3, &
@@ -77,177 +82,180 @@ subroutine initdata(level,time,lo,hi,nscal, &
   integer :: i,j,k, ii, jj, kk
   integer :: npert, nambient
 
-  allocate(p_ambient)
-  allocate(dens_ambient)
-  allocate(exp_energy)
-  allocate(r_init)
-  allocate(nsub)
-  allocate(probtype)
-  
-  
-  if (probtype .eq. 32) then
 
-     ! set explosion pressure -- we will convert the point-explosion
-     ! energy into a corresponding pressure distributed throughout the
-     ! perturbed volume
-     vctr  = M_PI*r_init**2
 
-     eos_state % e = exp_energy/vctr/dens_ambient
-     eos_state % rho = dens_ambient
-     eos_state % T = 100.0
-     eos_state % xn(:) = 0.0
-     eos_state % xn(1) = 1.0
+  ! allocate(p_ambient)
+  ! allocate(dens_ambient)
+  ! allocate(exp_energy)
+  ! allocate(r_init)
+  ! allocate(nsub)
+  ! allocate(probtype)
     
-     call eos(eos_input_re, eos_state)
+  ! if (probtype .eq. 32) then
 
-     p_exp = eos_state % p
+  !    ! set explosion pressure -- we will convert the point-explosion
+  !    ! energy into a corresponding pressure distributed throughout the
+  !    ! perturbed volume
+  !    vctr  = M_PI*r_init**2
+
+  !    eos_state % e = exp_energy/vctr/dens_ambient
+  !    eos_state % rho = dens_ambient
+  !    eos_state % T = 100.0
+  !    eos_state % xn(:) = 0.0
+  !    eos_state % xn(1) = 1.0
+    
+  !    call eos(eos_input_re, eos_state)
+
+  !    p_exp = eos_state % p
      
-     do k = lo(3), hi(3)
-        zmin = xlo(3) + delta(3)*dble(k-lo(3)) 
+  !    do k = lo(3), hi(3)
+  !       zmin = xlo(3) + delta(3)*dble(k-lo(3)) 
         
-        do j = lo(2), hi(2)
-           ymin = xlo(2) + delta(2)*dble(j-lo(2))
+  !       do j = lo(2), hi(2)
+  !          ymin = xlo(2) + delta(2)*dble(j-lo(2))
            
-           do i = lo(1), hi(1)
-              xmin = xlo(1) + delta(1)*dble(i-lo(1))
+  !          do i = lo(1), hi(1)
+  !             xmin = xlo(1) + delta(1)*dble(i-lo(1))
               
-              npert = 0
-              nambient = 0
+  !             npert = 0
+  !             nambient = 0
               
-              do jj = 0, nsub-1
-                 yy = ymin + (delta(2)/dble(nsub))*(jj + 0.5e0_rt)
+  !             do jj = 0, nsub-1
+  !                yy = ymin + (delta(2)/dble(nsub))*(jj + 0.5e0_rt)
                  
-                 do ii = 0, nsub-1
-                    xx = xmin + (delta(1)/dble(nsub))*(ii + 0.5e0_rt)
+  !                do ii = 0, nsub-1
+  !                   xx = xmin + (delta(1)/dble(nsub))*(ii + 0.5e0_rt)
                     
-                    dist = (center(1)-xx)**2 + (center(2)-yy)**2
+  !                   dist = (center(1)-xx)**2 + (center(2)-yy)**2
                     
-                    if(dist <= r_init**2) then
-                       npert = npert + 1
-                    else
-                       nambient = nambient + 1
-                    endif
+  !                   if(dist <= r_init**2) then
+  !                      npert = npert + 1
+  !                   else
+  !                      nambient = nambient + 1
+  !                   endif
                     
-                 enddo
-              enddo
+  !                enddo
+  !             enddo
               
-              p_zone = (dble(npert)*p_exp + dble(nambient)*p_ambient) / &
-                       (dble(npert) + dble(nambient))
+  !             p_zone = (dble(npert)*p_exp + dble(nambient)*p_ambient) / &
+  !                      (dble(npert) + dble(nambient))
 
-              eos_state % rho = dens_ambient
-              eos_state % xn(:) = 0.0
-              eos_state % xn(1) = 1.0
-              eos_state % p = p_zone
-              eos_state % T = 100.0
+  !             eos_state % rho = dens_ambient
+  !             eos_state % xn(:) = 0.0
+  !             eos_state % xn(1) = 1.0
+  !             eos_state % p = p_zone
+  !             eos_state % T = 100.0
 
-              call eos(eos_input_rp, eos_state)
+  !             call eos(eos_input_rp, eos_state)
 
-              eint = eos_state % e
+  !             eint = eos_state % e
 
-              state(i,j,k,URHO) = dens_ambient
-              state(i,j,k,UMX) = 0.e0_rt
-              state(i,j,k,UMY) = 0.e0_rt
-              state(i,j,k,UMZ) = 0.e0_rt
+  !             state(i,j,k,URHO) = dens_ambient
+  !             state(i,j,k,UMX) = 0.e0_rt
+  !             state(i,j,k,UMY) = 0.e0_rt
+  !             state(i,j,k,UMZ) = 0.e0_rt
               
-              state(i,j,k,UEDEN) = eint +  &
-                   0.5e0_rt*(state(i,j,k,UMX)**2/state(i,j,k,URHO) + &
-                          state(i,j,k,UMY)**2/state(i,j,k,URHO) + &
-                          state(i,j,k,UMZ)**2/state(i,j,k,URHO))
+  !             state(i,j,k,UEDEN) = eint +  &
+  !                  0.5e0_rt*(state(i,j,k,UMX)**2/state(i,j,k,URHO) + &
+  !                         state(i,j,k,UMY)**2/state(i,j,k,URHO) + &
+  !                         state(i,j,k,UMZ)**2/state(i,j,k,URHO))
 
-              state(i,j,k,UEINT) = eint
+  !             state(i,j,k,UEINT) = eint
 
-              state(i,j,k,UFS) = state(i,j,k,URHO)
+  !             state(i,j,k,UFS) = state(i,j,k,URHO)
 
-           enddo
-        enddo
-     enddo
+  !          enddo
+  !       enddo
+  !    enddo
      
-  else if (probtype .eq. 33) then
+  ! else if (probtype .eq. 33) then
 
-     ! set explosion pressure -- we will convert the point-explosion energy into
-     ! a corresponding pressure distributed throughout the perturbed volume
-     vctr  = FOUR3RD*M_PI*r_init**3
+  !    ! set explosion pressure -- we will convert the point-explosion energy into
+  !    ! a corresponding pressure distributed throughout the perturbed volume
+  !    vctr  = FOUR3RD*M_PI*r_init**3
 
-     eos_state % e = exp_energy/vctr/dens_ambient
-     eos_state % rho = dens_ambient
-     eos_state % T = 100.0
-     eos_state % xn(:) = 0.0
-     eos_state % xn(1) = 1.0
+  !    eos_state % e = exp_energy/vctr/dens_ambient
+  !    eos_state % rho = dens_ambient
+  !    eos_state % T = 100.0
+  !    eos_state % xn(:) = 0.0
+  !    eos_state % xn(1) = 1.0
     
-     call eos(eos_input_re, eos_state)
+  !    call eos(eos_input_re, eos_state)
 
-     p_exp = eos_state % p
+  !    p_exp = eos_state % p
 
-     do k = lo(3), hi(3)
-        zmin = xlo(3) + delta(3)*dble(k-lo(3)) 
+  !    do k = lo(3), hi(3)
+  !       zmin = xlo(3) + delta(3)*dble(k-lo(3)) 
 
-        do j = lo(2), hi(2)
-           ymin = xlo(2) + delta(2)*dble(j-lo(2))
+  !       do j = lo(2), hi(2)
+  !          ymin = xlo(2) + delta(2)*dble(j-lo(2))
            
-           do i = lo(1), hi(1)
-              xmin = xlo(1) + delta(1)*dble(i-lo(1))
+  !          do i = lo(1), hi(1)
+  !             xmin = xlo(1) + delta(1)*dble(i-lo(1))
 
-              npert = 0
-              nambient = 0
+  !             npert = 0
+  !             nambient = 0
 
-              do kk = 0, nsub-1
-                 zz = zmin + (delta(3)/dble(nsub))*(kk + 0.5e0_rt)
+  !             do kk = 0, nsub-1
+  !                zz = zmin + (delta(3)/dble(nsub))*(kk + 0.5e0_rt)
                  
-                 do jj = 0, nsub-1
-                    yy = ymin + (delta(2)/dble(nsub))*(jj + 0.5e0_rt)
+  !                do jj = 0, nsub-1
+  !                   yy = ymin + (delta(2)/dble(nsub))*(jj + 0.5e0_rt)
                     
-                    do ii = 0, nsub-1
-                       xx = xmin + (delta(1)/dble(nsub))*(ii + 0.5e0_rt)
+  !                   do ii = 0, nsub-1
+  !                      xx = xmin + (delta(1)/dble(nsub))*(ii + 0.5e0_rt)
                        
-                       dist = (center(1)-xx)**2 + (center(2)-yy)**2 + (center(3)-zz)**2
+  !                      dist = (center(1)-xx)**2 + (center(2)-yy)**2 + (center(3)-zz)**2
                        
-                       if(dist <= r_init**2) then
-                          npert = npert + 1
-                       else
-                          nambient = nambient + 1
-                       endif
+  !                      if(dist <= r_init**2) then
+  !                         npert = npert + 1
+  !                      else
+  !                         nambient = nambient + 1
+  !                      endif
                        
-                    enddo
-                 enddo
-              enddo
+  !                   enddo
+  !                enddo
+  !             enddo
               
-              p_zone = (dble(npert)*p_exp + dble(nambient)*p_ambient)/  &
-                   dble(nsub*nsub*nsub)
+  !             p_zone = (dble(npert)*p_exp + dble(nambient)*p_ambient)/  &
+  !                  dble(nsub*nsub*nsub)
 
-              eos_state % rho = dens_ambient
-              eos_state % xn(:) = 0.0
-              eos_state % xn(1) = 1.0
-              eos_state % p = p_zone
-              eos_state % T = 100.0
+  !             eos_state % rho = dens_ambient
+  !             eos_state % xn(:) = 0.0
+  !             eos_state % xn(1) = 1.0
+  !             eos_state % p = p_zone
+  !             eos_state % T = 100.0
 
-              call eos(eos_input_rp, eos_state)
+  !             call eos(eos_input_rp, eos_state)
 
-              eint = eos_state % e
+  !             eint = eos_state % e
 
-              state(i,j,k,URHO) = dens_ambient
-              state(i,j,k,UMX) = 0.e0_rt
-              state(i,j,k,UMY) = 0.e0_rt
-              state(i,j,k,UMZ) = 0.e0_rt
+  !             state(i,j,k,URHO) = dens_ambient
+  !             state(i,j,k,UMX) = 0.e0_rt
+  !             state(i,j,k,UMY) = 0.e0_rt
+  !             state(i,j,k,UMZ) = 0.e0_rt
               
-              state(i,j,k,UEDEN) = eint + &
-                   0.5e0_rt*(state(i,j,k,UMX)**2/state(i,j,k,URHO) + &
-                          state(i,j,k,UMY)**2/state(i,j,k,URHO) + &
-                          state(i,j,k,UMZ)**2/state(i,j,k,URHO))
+  !             state(i,j,k,UEDEN) = eint + &
+  !                  0.5e0_rt*(state(i,j,k,UMX)**2/state(i,j,k,URHO) + &
+  !                         state(i,j,k,UMY)**2/state(i,j,k,URHO) + &
+  !                         state(i,j,k,UMZ)**2/state(i,j,k,URHO))
 
-              state(i,j,k,UEINT) = eint
+  !             state(i,j,k,UEINT) = eint
 
-              state(i,j,k,UFS) = state(i,j,k,URHO)
+  !             state(i,j,k,UFS) = state(i,j,k,URHO)
 
-           enddo
-        enddo
-     enddo
+  !          enddo
+  !       enddo
+  !    enddo
      
-  else 
+  ! else 
 
-     continue
-     !call bl_error('Dont know this probtype in initdata')
+  !    continue
+  !    !call bl_error('Dont know this probtype in initdata')
 
-  end if
+  ! end if
+  
   
 end subroutine initdata
 
+end module initdata_module

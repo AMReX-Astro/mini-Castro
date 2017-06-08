@@ -18,7 +18,8 @@ contains
 #ifdef CUDA
     use cuda_interfaces_module, only: cuda_initdata
 #endif
-
+    use initdata_module, only: initdata
+    
     implicit none
     
     integer,  intent(in   ) :: level, ns
@@ -72,7 +73,7 @@ contains
     call threads_and_blocks(lo, hi, numBlocks, numThreads)
 
     call cuda_initdata<<<numBlocks, numThreads, 0, stream>>>( &
-         level_d, time_d, lo_d, hi_d, ns_d, &
+         level_d(1), time_d(1), lo_d, hi_d, ns_d(1), &
          state, s_lo_d, s_hi_d, dx_d, &
          xlo_d, xhi_d)
 
@@ -87,7 +88,7 @@ contains
 
     call initdata(level, time, lo, hi, ns, &
                   state, s_lo(1), s_lo(2), s_lo(3), s_hi(1), s_hi(2), s_hi(3), dx, &
-                  xlo(3), xhi(3))
+                  xlo, xhi)
 
 #endif
     
