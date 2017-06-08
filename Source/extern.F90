@@ -8,19 +8,12 @@ module extern_probin_module
   private
 
   logical, allocatable, public :: use_eos_coulomb
-  !$acc declare create(eos_gamma)
-#ifdef CUDA
-  attributes(managed) :: use_eos_coulomb
-#endif
   logical, allocatable, public :: eos_input_is_constant
-  !$acc declare create(eos_input_is_constant)
-#ifdef CUDA
-  attributes(managed) :: eos_input_is_constant
-#endif
   real (kind=dp_t), allocatable, public :: small_x
-  !$acc declare create(small_x)
 #ifdef CUDA
   attributes(managed) :: small_x
+  attributes(managed) :: eos_input_is_constant
+  attributes(managed) :: use_eos_coulomb
 #endif
 
 end module extern_probin_module

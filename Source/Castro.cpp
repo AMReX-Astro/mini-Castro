@@ -1222,12 +1222,11 @@ Castro::build_fine_mask()
 }
 
 // Fill a version of the state with ng ghost zones from the state data.
-
 void
 Castro::expand_state(MultiFab& S, Real time, int ng)
 {
 
-    BL_PROFILE("Castro::clean_state()");
+    BL_PROFILE("Castro::expand_state()");
 
     BL_ASSERT(S.nGrow() >= ng);
 

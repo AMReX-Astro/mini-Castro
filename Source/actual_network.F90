@@ -14,7 +14,7 @@ module actual_network
   character (len=16), save :: aux_names(naux)
   character (len= 5), save :: short_aux_names(naux)
 
-  real(rt), allocatable, save :: aion(:), zion(:)
+  real(rt), allocatable :: aion(:), zion(:)
 
   integer, parameter :: nrates = 1
   integer, parameter :: num_rate_groups = 1
