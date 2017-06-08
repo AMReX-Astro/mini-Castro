@@ -8,10 +8,14 @@ module bc_fill_module
 
 contains
 
+#ifdef CUDA
+  attributes(device) &
+#endif
   subroutine hypfill(blo, bhi, adv, adv_lo, adv_hi, domlo, domhi, dx, xlo, time, bc)
 
     use meth_params_module, only: NVAR
     use amrex_fort_module, only: rt => amrex_real
+    use filcc_module, only: filccn
 
     implicit none
 
@@ -32,10 +36,7 @@ contains
     logical  :: rho_only
 
     do n = 1,NVAR
-       call filcc(adv(blo(1),blo(2),blo(3),n), &
-                  blo(1),blo(2),blo(3), &
-                  bhi(1),bhi(2),bhi(3), &
-                  domlo,domhi,dx,xlo,bc(1,1,n))
+       call filccn(blo, bhi, adv, adv_lo, adv_hi, NVAR, domlo, domhi, dx, xlo, bc, n)
     enddo
 
     ! The strategy here is to set Dirichlet condition for inflow and
@@ -166,9 +167,13 @@ contains
 
 
 
+#ifdef CUDA
+  attributes(device) &
+#endif
   subroutine denfill(blo, bhi, adv, adv_lo, adv_hi, domlo, domhi, dx, xlo, time, bc)
 
     use amrex_fort_module, only: rt => amrex_real
+    use filcc_module, only: filccn
 
     implicit none
 
@@ -190,10 +195,7 @@ contains
     ! that the same function is called here and in hypfill where all the
     ! states are filled.
 
-    call filcc(adv(blo(1), blo(2), blo(3)), &
-               blo(1), blo(2), blo(3), &
-               bhi(1), bhi(2), bhi(3), &
-               domlo, domhi, dx, xlo, bc)
+    call filccn(blo, bhi, adv, adv_lo, adv_hi, 1, domlo, domhi, dx, xlo, bc, 1)
 
     rho_only = .TRUE.
 
@@ -278,6 +280,9 @@ contains
 
 
 
+#ifdef CUDA
+  attributes(device) &
+#endif
   subroutine bcnormal(u_int,u_ext,dir,sgn,rho_only)
 
     use probdata_module, only: dens_ambient, p_ambient

@@ -564,4 +564,66 @@ contains
 
   end subroutine cuda_summass
 
+
+
+  attributes(global) &
+  subroutine cuda_hypfill(adv, adv_lo, adv_hi, domlo, domhi, dx, xlo, time, bc)
+
+    use meth_params_module, only: NVAR
+    use amrex_fort_module, only: rt => amrex_real
+    use bc_fill_module, only: hypfill
+
+    implicit none
+
+    integer,  intent(in   ) :: adv_lo(3), adv_hi(3)
+    integer,  intent(in   ) :: bc(3,2,NVAR)
+    integer,  intent(in   ) :: domlo(3), domhi(3)
+    real(rt), intent(in   ) :: dx(3), xlo(3), time
+    real(rt), intent(inout) :: adv(adv_lo(1):adv_hi(1),adv_lo(2):adv_hi(2),adv_lo(3):adv_hi(3),NVAR)
+
+    integer :: idx(3)
+
+    ! Get our spatial index based on the CUDA thread index
+
+    idx(1) = adv_lo(1) + (threadIdx%x - 1) + blockDim%x * (blockIdx%x - 1)
+    idx(2) = adv_lo(2) + (threadIdx%y - 1) + blockDim%y * (blockIdx%y - 1)
+    idx(3) = adv_lo(3) + (threadIdx%z - 1) + blockDim%z * (blockIdx%z - 1)
+
+    if (idx(1) .gt. adv_hi(1) .or. idx(2) .gt. adv_hi(2) .or. idx(3) .gt. adv_hi(3)) return
+
+    call hypfill(idx, idx, adv, adv_lo, adv_hi, domlo, domhi, dx, xlo, time, bc)
+
+  end subroutine cuda_hypfill
+
+
+
+  attributes(global) &
+  subroutine cuda_denfill(adv, adv_lo, adv_hi, domlo, domhi, dx, xlo, time, bc)
+
+    use meth_params_module, only: NVAR
+    use amrex_fort_module, only: rt => amrex_real
+    use bc_fill_module, only: denfill
+
+    implicit none
+
+    integer,  intent(in   ) :: adv_lo(3), adv_hi(3)
+    integer,  intent(in   ) :: bc(3,2,NVAR)
+    integer,  intent(in   ) :: domlo(3), domhi(3)
+    real(rt), intent(in   ) :: dx(3), xlo(3), time
+    real(rt), intent(inout) :: adv(adv_lo(1):adv_hi(1),adv_lo(2):adv_hi(2),adv_lo(3):adv_hi(3),NVAR)
+
+    integer :: idx(3)
+
+    ! Get our spatial index based on the CUDA thread index
+
+    idx(1) = adv_lo(1) + (threadIdx%x - 1) + blockDim%x * (blockIdx%x - 1)
+    idx(2) = adv_lo(2) + (threadIdx%y - 1) + blockDim%y * (blockIdx%y - 1)
+    idx(3) = adv_lo(3) + (threadIdx%z - 1) + blockDim%z * (blockIdx%z - 1)
+
+    if (idx(1) .gt. adv_hi(1) .or. idx(2) .gt. adv_hi(2) .or. idx(3) .gt. adv_hi(3)) return
+
+    call denfill(idx, idx, adv, adv_lo, adv_hi, domlo, domhi, dx, xlo, time, bc)
+
+  end subroutine cuda_denfill
+
 end module cuda_interfaces_module
