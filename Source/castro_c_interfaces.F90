@@ -1393,4 +1393,73 @@ contains
 
   end subroutine ca_summass
 
+
+
+  subroutine ca_hypfill(adv,adv_l1,adv_l2,adv_l3,adv_h1,adv_h2, &
+                        adv_h3,domlo,domhi,delta,xlo,time,bc) bind(C, name="ca_hypfill")
+
+    use meth_params_module, only: NVAR
+    use amrex_fort_module, only: rt => amrex_real
+    use bc_fill_module, only: hypfill
+
+    implicit none
+
+    integer,  intent(in   ) :: adv_l1, adv_l2, adv_l3, adv_h1, adv_h2, adv_h3
+    integer,  intent(in   ) :: bc(3,2,NVAR)
+    integer,  intent(in   ) :: domlo(3), domhi(3)
+    real(rt), intent(in   ) :: delta(3), xlo(3), time
+    real(rt), intent(inout) :: adv(adv_l1:adv_h1,adv_l2:adv_h2,adv_l3:adv_h3,NVAR)
+
+    integer :: blo(3), bhi(3)
+    integer :: adv_lo(3), adv_hi(3)
+
+    adv_lo(1) = adv_l1
+    adv_lo(2) = adv_l2
+    adv_lo(3) = adv_l3
+    adv_hi(1) = adv_h1
+    adv_hi(2) = adv_h2
+    adv_hi(3) = adv_h3
+
+    blo = adv_lo
+    bhi = adv_hi
+
+    call hypfill(blo, bhi, adv, adv_lo, adv_hi, domlo, domhi, delta, xlo, time, bc)
+
+  end subroutine ca_hypfill
+
+
+
+  subroutine ca_denfill(adv,adv_l1,adv_l2,adv_l3,adv_h1,adv_h2, &
+                        adv_h3,domlo,domhi,delta,xlo,time,bc) bind(C, name="ca_denfill")
+
+    use amrex_fort_module, only: rt => amrex_real
+    use bc_fill_module, only: denfill
+
+    implicit none
+
+    include 'AMReX_bc_types.fi'
+
+    integer,  intent(in   ) :: adv_l1, adv_l2, adv_l3, adv_h1, adv_h2, adv_h3
+    integer,  intent(in   ) :: bc(3,2,1)
+    integer,  intent(in   ) :: domlo(3), domhi(3)
+    real(rt), intent(in   ) :: delta(3), xlo(3), time
+    real(rt), intent(inout) :: adv(adv_l1:adv_h1,adv_l2:adv_h2,adv_l3:adv_h3)
+
+    integer :: blo(3), bhi(3)
+    integer :: adv_lo(3), adv_hi(3)
+
+    adv_lo(1) = adv_l1
+    adv_lo(2) = adv_l2
+    adv_lo(3) = adv_l3
+    adv_hi(1) = adv_h1
+    adv_hi(2) = adv_h2
+    adv_hi(3) = adv_h3
+
+    blo = adv_lo
+    bhi = adv_hi
+
+    call denfill(blo, bhi, adv, adv_lo, adv_hi, domlo, domhi, delta, xlo, time, bc)
+
+  end subroutine ca_denfill
+
 end module c_interface_modules
