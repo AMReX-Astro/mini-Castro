@@ -2,12 +2,11 @@ module c_interface_modules
 
   use meth_params_module, only: NVAR, NQAUX, NQ, QVAR, NGDNV
   use amrex_fort_module, only: rt => amrex_real
-
+  use mempool_module, only: bl_allocate, bl_deallocate
 #ifdef CUDA
     use cudafor, only: cudaMemcpyAsync, cudaMemcpyHostToDevice, cudaMemcpyDeviceToHost, &
                        cudaStreamSynchronize, cudaDeviceSynchronize, dim3, cuda_stream_kind
     use cuda_module, only: threads_and_blocks, cuda_streams, max_cuda_streams
-    use mempool_module, only: bl_allocate, bl_deallocate
 #endif
 
 contains
@@ -932,6 +931,8 @@ contains
     call bl_allocate(szm, st_lo(1), st_hi(1), st_lo(2), st_hi(2), st_lo(3), st_hi(3), 1, NQ)
     call bl_allocate(szp, st_lo(1), st_hi(1), st_lo(2), st_hi(2), st_lo(3), st_hi(3), 1, NQ)
 
+#ifdef CUDA
+
     call bl_allocate(time_d, 1, 1)
     call bl_allocate(lo_d, 1, 3)
     call bl_allocate(hi_d, 1, 3)
@@ -975,7 +976,6 @@ contains
     call bl_allocate(verbose_d, 1, 1)
     call bl_allocate(idir_d, 1, 1)
 
-#ifdef CUDA
     stream = cuda_streams(mod(idx, max_cuda_streams) + 1)
 
     cuda_result = cudaMemcpyAsync(time_d, time, 1, cudaMemcpyHostToDevice, stream)
@@ -1392,5 +1392,74 @@ contains
 #endif
 
   end subroutine ca_summass
+
+
+
+  subroutine ca_hypfill(adv,adv_l1,adv_l2,adv_l3,adv_h1,adv_h2, &
+                        adv_h3,domlo,domhi,delta,xlo,time,bc) bind(C, name="ca_hypfill")
+
+    use meth_params_module, only: NVAR
+    use amrex_fort_module, only: rt => amrex_real
+    use bc_fill_module, only: hypfill
+
+    implicit none
+
+    integer,  intent(in   ) :: adv_l1, adv_l2, adv_l3, adv_h1, adv_h2, adv_h3
+    integer,  intent(in   ) :: bc(3,2,NVAR)
+    integer,  intent(in   ) :: domlo(3), domhi(3)
+    real(rt), intent(in   ) :: delta(3), xlo(3), time
+    real(rt), intent(inout) :: adv(adv_l1:adv_h1,adv_l2:adv_h2,adv_l3:adv_h3,NVAR)
+
+    integer :: blo(3), bhi(3)
+    integer :: adv_lo(3), adv_hi(3)
+
+    adv_lo(1) = adv_l1
+    adv_lo(2) = adv_l2
+    adv_lo(3) = adv_l3
+    adv_hi(1) = adv_h1
+    adv_hi(2) = adv_h2
+    adv_hi(3) = adv_h3
+
+    blo = adv_lo
+    bhi = adv_hi
+
+    call hypfill(blo, bhi, adv, adv_lo, adv_hi, domlo, domhi, delta, xlo, time, bc)
+
+  end subroutine ca_hypfill
+
+
+
+  subroutine ca_denfill(adv,adv_l1,adv_l2,adv_l3,adv_h1,adv_h2, &
+                        adv_h3,domlo,domhi,delta,xlo,time,bc) bind(C, name="ca_denfill")
+
+    use amrex_fort_module, only: rt => amrex_real
+    use bc_fill_module, only: denfill
+
+    implicit none
+
+    include 'AMReX_bc_types.fi'
+
+    integer,  intent(in   ) :: adv_l1, adv_l2, adv_l3, adv_h1, adv_h2, adv_h3
+    integer,  intent(in   ) :: bc(3,2,1)
+    integer,  intent(in   ) :: domlo(3), domhi(3)
+    real(rt), intent(in   ) :: delta(3), xlo(3), time
+    real(rt), intent(inout) :: adv(adv_l1:adv_h1,adv_l2:adv_h2,adv_l3:adv_h3)
+
+    integer :: blo(3), bhi(3)
+    integer :: adv_lo(3), adv_hi(3)
+
+    adv_lo(1) = adv_l1
+    adv_lo(2) = adv_l2
+    adv_lo(3) = adv_l3
+    adv_hi(1) = adv_h1
+    adv_hi(2) = adv_h2
+    adv_hi(3) = adv_h3
+
+    blo = adv_lo
+    bhi = adv_hi
+
+    call denfill(blo, bhi, adv, adv_lo, adv_hi, domlo, domhi, delta, xlo, time, bc)
+
+  end subroutine ca_denfill
 
 end module c_interface_modules

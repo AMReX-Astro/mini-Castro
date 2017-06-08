@@ -215,6 +215,9 @@ Castro::Castro (Amr&            papa,
     :
     AmrLevel(papa,lev,level_geom,bl,dm,time)
 {
+
+    BL_PROFILE("Castro::Castro()");
+
     buildMetrics();
 
     initMFs();
@@ -756,7 +759,11 @@ void
 Castro::post_regrid (int lbase,
                      int new_finest)
 {
+
+    BL_PROFILE("Castro::post_regrid()");
+
     fine_mask.clear();
+
 }
 
 void
@@ -799,6 +806,8 @@ Castro::okToContinue ()
 void
 Castro::FluxRegCrseInit() {
 
+    BL_PROFILE("Castro::FluxRegCrseInit()");
+
     if (level == parent->finestLevel()) return;
 
     Castro& fine_level = getLevel(level+1);
@@ -811,6 +820,8 @@ Castro::FluxRegCrseInit() {
 
 void
 Castro::FluxRegFineAdd() {
+
+    BL_PROFILE("Castro::FluxRegFineAdd()");
 
     if (level == 0) return;
 
@@ -875,7 +886,8 @@ Castro::reflux(int crse_level, int fine_level)
 void
 Castro::avgDown ()
 {
-    BL_PROFILE("Castro::avgDown()");
+
+  BL_PROFILE("Castro::avgDown()");
 
   if (level == parent->finestLevel()) return;
 
@@ -886,6 +898,8 @@ Castro::avgDown ()
 void
 Castro::normalize_species (MultiFab& S_new)
 {
+
+    BL_PROFILE("Castro::normalize_species()");
 
 //    Device::beginDeviceLaunchRegion();
 
@@ -911,6 +925,8 @@ void
 Castro::enforce_consistent_e (MultiFab& S)
 {
 
+  BL_PROFILE("Castro::enforce_consistent_e()");
+
   // Device::beginDeviceLaunchRegion();
 
 #ifdef _OPENMP
@@ -933,6 +949,8 @@ Castro::enforce_consistent_e (MultiFab& S)
 Real
 Castro::enforce_min_density (MultiFab& S_old, MultiFab& S_new)
 {
+
+    BL_PROFILE("Castro::enforce_min_density()");
 
     // This routine sets the density in S_new to be larger than the density floor.
     // Note that it will operate everywhere on S_new, including ghost zones.
@@ -1121,6 +1139,8 @@ void
 Castro::reset_internal_energy(MultiFab& S_new)
 {
 
+    BL_PROFILE("Castro::reset_internal_energy()");
+
     MultiFab old_state;
 
     int ng = S_new.nGrow();
@@ -1151,6 +1171,8 @@ Castro::reset_internal_energy(MultiFab& S_new)
 void
 Castro::computeTemp(MultiFab& State)
 {
+
+  BL_PROFILE("Castro::computeTemp()");
 
   reset_internal_energy(State);
 
@@ -1204,6 +1226,9 @@ Castro::build_fine_mask()
 void
 Castro::expand_state(MultiFab& S, Real time, int ng)
 {
+
+    BL_PROFILE("Castro::expand_state()");
+
     BL_ASSERT(S.nGrow() >= ng);
 
     AmrLevel::FillPatch(*this,S,ng,time,State_Type,0,NUM_STATE);
@@ -1216,6 +1241,8 @@ Castro::expand_state(MultiFab& S, Real time, int ng)
 void
 Castro::check_for_nan(MultiFab& state, int check_ghost)
 {
+
+  BL_PROFILE("Castro::check_for_nan()");
 
   int ng = 0;
   if (check_ghost == 1) {
@@ -1233,6 +1260,7 @@ Castro::check_for_nan(MultiFab& state, int check_ghost)
             }
         }
     }
+
 }
 
 // Convert a MultiFab with conservative state data u to a primitive MultiFab q.
@@ -1242,6 +1270,8 @@ Castro::check_for_nan(MultiFab& state, int check_ghost)
 
 Real
 Castro::clean_state(MultiFab& state) {
+
+    BL_PROFILE("Castro::clean_state()");
 
     // Enforce a minimum density.
 
