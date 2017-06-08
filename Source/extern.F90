@@ -7,17 +7,17 @@ module extern_probin_module
 
   private
 
-  real (kind=dp_t), allocatable, save, public :: eos_gamma
+  logical, allocatable, public :: use_eos_coulomb
   !$acc declare create(eos_gamma)
 #ifdef CUDA
-  attributes(managed) :: eos_gamma
+  attributes(managed) :: use_eos_coulomb
 #endif
-  logical, allocatable, save, public :: eos_assume_neutral
-  !$acc declare create(eos_assume_neutral)
+  logical, allocatable, public :: eos_input_is_constant
+  !$acc declare create(eos_input_is_constant)
 #ifdef CUDA
-  attributes(managed) :: eos_assume_neutral
+  attributes(managed) :: eos_input_is_constant
 #endif
-  real (kind=dp_t), allocatable, save, public :: small_x
+  real (kind=dp_t), allocatable, public :: small_x
   !$acc declare create(small_x)
 #ifdef CUDA
   attributes(managed) :: small_x
@@ -47,17 +47,17 @@ subroutine runtime_init(name,namlen)
   integer, parameter :: maxlen = 256
   character (len=maxlen) :: probin
 
-  namelist /extern/ eos_gamma
-  namelist /extern/ eos_assume_neutral
+  namelist /extern/ use_eos_coulomb
+  namelist /extern/ eos_input_is_constant
   namelist /extern/ small_x
 
-  allocate(eos_gamma)
-  allocate(eos_assume_neutral)
+  allocate(use_eos_coulomb)
+  allocate(eos_input_is_constant)
   allocate(small_x)
 
-  eos_gamma = 5.d0/3.d0
-  eos_assume_neutral = .true.
-  small_x = 1.d-3
+  use_eos_coulomb = .true.
+  eos_input_is_constant = .false.
+  small_x = 1.d-30
 
 
   ! create the filename
@@ -89,7 +89,7 @@ subroutine runtime_init(name,namlen)
   close (unit=un)
 
   !$acc update &
-  !$acc device(eos_gamma, eos_assume_neutral, small_x)
+  !$acc device(use_eos_coulomb, eos_input_is_constant, small_x)
 
 #ifdef CUDA
 !  cuda_result = cudaMemAdvise(eos_gamma, 1, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)

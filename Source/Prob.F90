@@ -50,11 +50,12 @@ subroutine ca_initdata(level,time,lo,hi,nscal, &
                        delta,xlo,xhi)
 
   use probdata_module, only: probtype, r_init, exp_energy, nsub, p_ambient, dens_ambient
-  use actual_eos_module, only: gamma_const
   use bl_constants_module, only: M_PI, FOUR3RD
   use meth_params_module , only: NVAR, URHO, UMX, UMY, UMZ, UEDEN, UEINT, UFS
   use prob_params_module, only: center
   use amrex_fort_module, only: rt => amrex_real
+  use eos_type_module, only : eos_t, eos_input_rp, eos_input_re
+  use eos_module, only: eos
 
   implicit none
 
@@ -70,6 +71,8 @@ subroutine ca_initdata(level,time,lo,hi,nscal, &
   real(rt) :: eint, p_zone
   real(rt) :: vctr, p_exp
 
+  type(eos_t) :: eos_state
+
   integer :: i,j,k, ii, jj, kk
   integer :: npert, nambient
   
@@ -79,7 +82,16 @@ subroutine ca_initdata(level,time,lo,hi,nscal, &
      ! energy into a corresponding pressure distributed throughout the
      ! perturbed volume
      vctr  = M_PI*r_init**2
-     p_exp = (gamma_const - 1.e0_rt)*exp_energy/vctr
+
+     eos_state % e = exp_energy/vctr/dens_ambient
+     eos_state % rho = dens_ambient
+     eos_state % T = 100.0
+     eos_state % xn(:) = 0.0
+     eos_state % xn(1) = 1.0
+    
+     call eos(eos_input_re, eos_state)
+
+     p_exp = eos_state % p
      
      do k = lo(3), hi(3)
         zmin = xlo(3) + delta(3)*dble(k-lo(3)) 
@@ -113,7 +125,15 @@ subroutine ca_initdata(level,time,lo,hi,nscal, &
               p_zone = (dble(npert)*p_exp + dble(nambient)*p_ambient) / &
                        (dble(npert) + dble(nambient))
 
-              eint = p_zone/(gamma_const - 1.e0_rt)
+              eos_state % rho = dens_ambient
+              eos_state % xn(:) = 0.0
+              eos_state % xn(1) = 1.0
+              eos_state % p = p_zone
+              eos_state % T = 100.0
+
+              call eos(eos_input_rp, eos_state)
+
+              eint = eos_state % e
 
               state(i,j,k,URHO) = dens_ambient
               state(i,j,k,UMX) = 0.e0_rt
@@ -138,7 +158,16 @@ subroutine ca_initdata(level,time,lo,hi,nscal, &
      ! set explosion pressure -- we will convert the point-explosion energy into
      ! a corresponding pressure distributed throughout the perturbed volume
      vctr  = FOUR3RD*M_PI*r_init**3
-     p_exp = (gamma_const - 1.e0_rt)*exp_energy/vctr
+
+     eos_state % e = exp_energy/vctr/dens_ambient
+     eos_state % rho = dens_ambient
+     eos_state % T = 100.0
+     eos_state % xn(:) = 0.0
+     eos_state % xn(1) = 1.0
+    
+     call eos(eos_input_re, eos_state)
+
+     p_exp = eos_state % p
 
      do k = lo(3), hi(3)
         zmin = xlo(3) + delta(3)*dble(k-lo(3)) 
@@ -176,7 +205,15 @@ subroutine ca_initdata(level,time,lo,hi,nscal, &
               p_zone = (dble(npert)*p_exp + dble(nambient)*p_ambient)/  &
                    dble(nsub*nsub*nsub)
 
-              eint = p_zone/(gamma_const - 1.e0_rt)
+              eos_state % rho = dens_ambient
+              eos_state % xn(:) = 0.0
+              eos_state % xn(1) = 1.0
+              eos_state % p = p_zone
+              eos_state % T = 100.0
+
+              call eos(eos_input_rp, eos_state)
+
+              eint = eos_state % e
 
               state(i,j,k,URHO) = dens_ambient
               state(i,j,k,UMX) = 0.e0_rt

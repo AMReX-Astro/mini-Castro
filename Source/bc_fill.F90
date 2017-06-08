@@ -281,7 +281,6 @@ contains
   subroutine bcnormal(u_int,u_ext,dir,sgn,rho_only)
 
     use probdata_module, only: dens_ambient, p_ambient
-    use actual_eos_module, only: gamma_const
     use meth_params_module, only: NVAR, URHO, UMX, UMY, UMZ, UEDEN, UEINT
     use amrex_fort_module, only: rt => amrex_real
 
@@ -315,8 +314,8 @@ contains
        u_ext(UMX)    = 0.e0_rt
        u_ext(UMY)    = 0.e0_rt
        u_ext(UMZ)    = 0.e0_rt
-       u_ext(UEDEN)  = p_ambient/(gamma_const-1.e0_rt)
-       u_ext(UEINT)  = u_ext(UEDEN)
+       !u_ext(UEDEN)  = p_ambient/(gamma_const-1.e0_rt)
+       !u_ext(UEINT)  = u_ext(UEDEN)
 
     endif
 
