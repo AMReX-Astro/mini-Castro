@@ -2,12 +2,11 @@ module c_interface_modules
 
   use meth_params_module, only: NVAR, NQAUX, NQ, QVAR, NGDNV
   use amrex_fort_module, only: rt => amrex_real
-
+  use mempool_module, only: bl_allocate, bl_deallocate
 #ifdef CUDA
     use cudafor, only: cudaMemcpyAsync, cudaMemcpyHostToDevice, cudaMemcpyDeviceToHost, &
                        cudaStreamSynchronize, cudaDeviceSynchronize, dim3, cuda_stream_kind
     use cuda_module, only: threads_and_blocks, cuda_streams, max_cuda_streams
-    use mempool_module, only: bl_allocate, bl_deallocate
 #endif
 
 contains
@@ -932,6 +931,8 @@ contains
     call bl_allocate(szm, st_lo(1), st_hi(1), st_lo(2), st_hi(2), st_lo(3), st_hi(3), 1, NQ)
     call bl_allocate(szp, st_lo(1), st_hi(1), st_lo(2), st_hi(2), st_lo(3), st_hi(3), 1, NQ)
 
+#ifdef CUDA
+
     call bl_allocate(time_d, 1, 1)
     call bl_allocate(lo_d, 1, 3)
     call bl_allocate(hi_d, 1, 3)
@@ -975,7 +976,6 @@ contains
     call bl_allocate(verbose_d, 1, 1)
     call bl_allocate(idir_d, 1, 1)
 
-#ifdef CUDA
     stream = cuda_streams(mod(idx, max_cuda_streams) + 1)
 
     cuda_result = cudaMemcpyAsync(time_d, time, 1, cudaMemcpyHostToDevice, stream)
