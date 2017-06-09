@@ -324,8 +324,6 @@ subroutine ca_set_method_params(dm,Density,Xmom,Eden,Eint,Temp, &
   integer, intent(in) :: numadv
   integer :: iadv, ispec
 
-  integer :: QLAST
-
   integer :: i
   integer :: ioproc
 
@@ -335,139 +333,6 @@ subroutine ca_set_method_params(dm,Density,Xmom,Eden,Eint,Temp, &
 
   call parallel_initialize()
 
-  !---------------------------------------------------------------------
-  ! conserved state components
-  !---------------------------------------------------------------------
-
-  allocate(NTHERM)
-  allocate(NVAR)
-  allocate(nadv)
-  allocate(URHO)
-  allocate(UMX)
-  allocate(UMY)
-  allocate(UMZ)
-  allocate(UEDEN)
-  allocate(UEINT)
-  allocate(UTEMP)
-  allocate(UFA)
-  allocate(UFS)
-  allocate(UFX)
-
-  ! NTHERM: number of thermodynamic variables (rho, 3 momenta, rho*e, rho*E, T)
-  ! NVAR  : number of total variables in initial system
-  NTHERM = 7
-
-  NVAR = NTHERM + nspec + naux + numadv
-
-  nadv = numadv
-
-  ! We use these to index into the state "U"
-  URHO  = Density   + 1
-  UMX   = Xmom      + 1
-  UMY   = Xmom      + 2
-  UMZ   = Xmom      + 3
-  UEDEN = Eden      + 1
-  UEINT = Eint      + 1
-  UTEMP = Temp      + 1
-
-  if (numadv .ge. 1) then
-     UFA   = FirstAdv  + 1
-  else
-     UFA = 1
-  end if
-
-  UFS   = FirstSpec + 1
-
-  if (naux .ge. 1) then
-     UFX = FirstAux  + 1
-  else
-     UFX = 1
-  end if
-
-  !---------------------------------------------------------------------
-  ! primitive state components
-  !---------------------------------------------------------------------
-
-  allocate(QTHERM)
-  allocate(QVAR)
-  allocate(NQ)
-  allocate(QRHO)
-  allocate(QU)
-  allocate(QV)
-  allocate(QW)
-  allocate(QGAME)
-  allocate(QPRES)
-  allocate(QREINT)
-  allocate(QTEMP)
-  allocate(QFA)
-  allocate(QFS)
-  allocate(QFX)
-
-  ! QTHERM: number of primitive variables: rho, p, (rho e), T + 3 velocity components 
-  ! QVAR  : number of total variables in primitive form
-
-  QTHERM = NTHERM + 1 ! the + 1 is for QGAME which is always defined in primitive mode
-
-  QVAR = QTHERM + nspec + naux + numadv
-  
-  ! NQ will be the number of hydro + radiation variables in the primitive
-  ! state.  Initialize it just for hydro here
-  NQ = QVAR
-
-  ! We use these to index into the state "Q"
-  QRHO  = 1
-
-  QU    = 2
-  QV    = 3
-  QW    = 4
-
-  QGAME = 5
-
-  QLAST   = QGAME
-
-  QPRES   = QLAST + 1
-  QREINT  = QLAST + 2
-
-  QTEMP   = QTHERM ! = QLAST + 3
-
-  if (numadv >= 1) then
-     QFA = QTHERM + 1
-     QFS = QFA + numadv
-
-  else
-     QFA = 1   ! density
-     QFS = QTHERM + 1
-
-  end if
-
-  if (naux >= 1) then
-     QFX = QFS + nspec
-
-  else
-     QFX = 1
-
-  end if
-
-  allocate(NQAUX)
-  allocate(QGAMC)
-  allocate(QC)
-  allocate(QCSML)
-  allocate(QDPDR)
-  allocate(QDPDE)
-
-  ! The NQAUX here are auxiliary quantities (game, gamc, c, csml, dpdr, dpde)
-  ! that we create in the primitive variable call but that do not need to
-  ! participate in tracing.
-  ! Note: radiation adds cg, gamcg, lambda (ngroups components), but we don't
-  ! yet know the number of radiation groups, so we'll add that lambda count
-  ! to it later
-   
-  NQAUX = 5
-  QGAMC   = 1
-  QC      = 2
-  QCSML   = 3
-  QDPDR   = 4
-  QDPDE   = 5
   ! easy indexing for the passively advected quantities.  This
   ! lets us loop over all groups (advected, species, aux)
   ! in a single loop.
@@ -545,52 +410,12 @@ subroutine ca_set_method_params(dm,Density,Xmom,Eden,Eint,Temp, &
   ! Update device variables
 
   !$acc update &
-  !$acc device(NTHERM, NVAR) &
-  !$acc device(NQ) &
-  !$acc device(URHO, UMX, UMY, UMZ, UEDEN, UEINT, UTEMP, UFA, UFS, UFX) &
-  !$acc device(QTHERM, QVAR) &
-  !$acc device(QRHO, QU, QV, QW, QPRES, QREINT, QTEMP, QGAME) &
-  !$acc device(QFA, QFS, QFX) &
-  !$acc device(NQAUX, QGAMC, QC, QCSML, QDPDR, QDPDE) &
   !$acc device(small_dens, small_temp)
 
 #ifdef CUDA
-  cuda_result = cudaMemAdvise(NTHERM, 1, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
-  cuda_result = cudaMemAdvise(NVAR, 1, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
-  cuda_result = cudaMemAdvise(nadv, 1, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
-  cuda_result = cudaMemAdvise(URHO, 1, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
-  cuda_result = cudaMemAdvise(UMX, 1, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
-  cuda_result = cudaMemAdvise(UMY, 1, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
-  cuda_result = cudaMemAdvise(UMZ, 1, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
-  cuda_result = cudaMemAdvise(UEDEN, 1, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
-  cuda_result = cudaMemAdvise(UEINT, 1, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
-  cuda_result = cudaMemAdvise(UTEMP, 1, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
-  cuda_result = cudaMemAdvise(UFA, 1, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
-  cuda_result = cudaMemAdvise(UFS, 1, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
-  cuda_result = cudaMemAdvise(UFX, 1, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
-  cuda_result = cudaMemAdvise(QTHERM, 1, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
-  cuda_result = cudaMemAdvise(QVAR, 1, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
-  cuda_result = cudaMemAdvise(NQ, 1, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
-  cuda_result = cudaMemAdvise(QRHO, 1, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
-  cuda_result = cudaMemAdvise(QU, 1, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
-  cuda_result = cudaMemAdvise(QV, 1, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
-  cuda_result = cudaMemAdvise(QW, 1, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
-  cuda_result = cudaMemAdvise(QGAME, 1, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
-  cuda_result = cudaMemAdvise(QPRES, 1, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
-  cuda_result = cudaMemAdvise(QREINT, 1, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
-  cuda_result = cudaMemAdvise(QTEMP, 1, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
-  cuda_result = cudaMemAdvise(QFA, 1, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
-  cuda_result = cudaMemAdvise(QFS, 1, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
-  cuda_result = cudaMemAdvise(QFX, 1, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
   cuda_result = cudaMemAdvise(qpass_map, QVAR, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
   cuda_result = cudaMemAdvise(upass_map, NVAR, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
   cuda_result = cudaMemAdvise(npassive, 1, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
-  cuda_result = cudaMemAdvise(NQAUX, 1, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
-  cuda_result = cudaMemAdvise(QGAMC, 1, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
-  cuda_result = cudaMemAdvise(QC, 1, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
-  cuda_result = cudaMemAdvise(QCSML, 1, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
-  cuda_result = cudaMemAdvise(QDPDR, 1, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
-  cuda_result = cudaMemAdvise(QDPDE, 1, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
 #endif
 
 end subroutine ca_set_method_params
@@ -607,40 +432,10 @@ subroutine ca_init_godunov_indices() bind(C, name="ca_init_godunov_indices")
 
   implicit none
 
-#ifdef CUDA
-  integer :: cuda_result
-#endif
-
-  allocate(NGDNV)
-  allocate(GDRHO)
-  allocate(GDU)
-  allocate(GDV)
-  allocate(GDW)
-  allocate(GDPRES)
-  allocate(GDGAME)
-
-  NGDNV = 6
-  GDRHO = 1
-  GDU = 2
-  GDV = 3
-  GDW = 4
-  GDPRES = 5
-  GDGAME = 6
-
   ! sanity check
   if ((QU /= GDU) .or. (QV /= GDV) .or. (QW /= GDW)) then
      call bl_error("ERROR: velocity components for godunov and primitive state are not aligned")
   endif
-
-#ifdef CUDA
-  cuda_result = cudaMemAdvise(NGDNV, 1, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
-  cuda_result = cudaMemAdvise(GDRHO, 1, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
-  cuda_result = cudaMemAdvise(GDU, 1, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
-  cuda_result = cudaMemAdvise(GDV, 1, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
-  cuda_result = cudaMemAdvise(GDW, 1, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
-  cuda_result = cudaMemAdvise(GDPRES, 1, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
-  cuda_result = cudaMemAdvise(GDGAME, 1, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
-#endif
 
 end subroutine ca_init_godunov_indices
 
