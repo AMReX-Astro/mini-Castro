@@ -29,7 +29,6 @@ subroutine amrex_probinit (init,name,namlen,problo,probhi) bind(c)
   allocate(nsub)
   allocate(probtype)
 
-  
   ! set namelist defaults
 
   p_ambient = 1.e-5_rt        ! ambient pressure (in erg/cc)

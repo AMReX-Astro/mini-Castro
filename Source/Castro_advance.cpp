@@ -73,7 +73,7 @@ Castro::do_advance (Real time,
 
     // Check for NaN's.
 
-    check_for_nan(S_old);
+//    check_for_nan(S_old);
 
     if (sub_iteration == 0) {
 
@@ -115,7 +115,7 @@ Castro::do_advance (Real time,
       clean_state(S_new);
 
       // Check for NaN's
-      check_for_nan(S_new);
+//      check_for_nan(S_new);
 
     }
 
