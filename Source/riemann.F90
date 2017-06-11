@@ -24,8 +24,6 @@ contains
                     flx, qint, flx_lo, flx_hi, &
                     qaux, qa_lo, qa_hi)
 
-    use eos_module, only: eos
-    use eos_type_module, only: eos_t, eos_input_re
     use network, only: nspec, naux
     use amrex_fort_module, only: rt => amrex_real
     use bl_constants_module, only: ZERO, HALF, ONE
@@ -52,8 +50,6 @@ contains
     integer      :: i, j, k
     integer      :: is_shock
     real(rt)     :: cl, cr
-    type (eos_t) :: eos_state
-    real(rt)     :: rhoInv
 
     integer :: n, nqp, ipassive
 
@@ -154,45 +150,6 @@ contains
                 gamcm  = qaux(i,j,k-1,QGAMC)
                 gamcp  = qaux(i,j,k,QGAMC)
              endif
-
-             ! recompute the thermodynamics on the interface to make it
-             ! all consistent
-
-             ! we want to take the edge states of rho, p, and X, and get
-             ! new values for gamc and (rho e) on the edges that are
-             ! thermodynamically consistent.
-
-             ! this is an initial guess for iterations, since we
-             ! can't be certain that temp is on interfaces
-             eos_state % T = 10000.0e0_rt
-
-             ! minus state
-             rhoInv = ONE / qm(i,j,k,QRHO,idir)
-             eos_state % rho = qm(i,j,k,QRHO,idir)
-             eos_state % p   = qm(i,j,k,QPRES,idir)
-             eos_state % e   = qm(i,j,k,QREINT,idir) * rhoInv
-             eos_state % xn  = qm(i,j,k,QFS:QFS+nspec-1,idir)
-             eos_state % aux = qm(i,j,k,QFX:QFX+naux-1,idir)
-
-             call eos(eos_input_re, eos_state)
-
-             qm(i,j,k,QREINT,idir) = eos_state % e * eos_state % rho
-             qm(i,j,k,QPRES,idir)  = eos_state % p
-             gamcm          = eos_state % gam1
-
-             rhoInv = ONE / qp(i,j,k,QRHO,idir)
-
-             eos_state % rho = qp(i,j,k,QRHO,idir)
-             eos_state % p   = qp(i,j,k,QPRES,idir)
-             eos_state % e   = qp(i,j,k,QREINT,idir) * rhoInv
-             eos_state % xn  = qp(i,j,k,QFS:QFS+nspec-1,idir)
-             eos_state % aux = qp(i,j,k,QFX:QFX+naux-1,idir)
-
-             call eos(eos_input_re, eos_state)
-
-             qp(i,j,k,QREINT,idir) = eos_state % e * eos_state % rho
-             qp(i,j,k,QPRES,idir)  = eos_state % p
-             gamcp                   = eos_state % gam1
 
              rl = max(qm(i,j,k,QRHO,idir), small_dens)
 
