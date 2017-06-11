@@ -144,11 +144,6 @@ module eos_type_module
 
     real(dp_t) :: cv
     real(dp_t) :: cp
-    real(dp_t) :: xne
-    real(dp_t) :: xnp
-    real(dp_t) :: eta
-    real(dp_t) :: pele
-    real(dp_t) :: ppos
     real(dp_t) :: mu
     real(dp_t) :: mu_e
     real(dp_t) :: y_e
