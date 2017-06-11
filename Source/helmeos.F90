@@ -63,44 +63,42 @@ module actual_eos_module
 private
     ! Math constants
     double precision, parameter :: pi       = 3.1415926535897932384d0
-    double precision, allocatable :: a2rad
-    double precision, allocatable :: rad2a
 
     ! Physical constants
     double precision, parameter :: h       = 6.6260689633d-27
-    double precision, allocatable :: hbar
+    double precision, parameter :: hbar    = 0.5d0 * h/pi
     double precision, parameter :: qe      = 4.8032042712d-10
     double precision, parameter :: avo_eos = 6.0221417930d23
     double precision, parameter :: clight  = 2.99792458d10
     double precision, parameter :: kerg    = 1.380650424d-16
     double precision, parameter :: ev2erg_eos  = 1.60217648740d-12
-    double precision, allocatable :: kev
+    double precision, parameter :: kev     = kerg/ev2erg_eos
     double precision, parameter :: amu     = 1.66053878283d-24
     double precision, parameter :: me_eos  = 9.1093821545d-28
-    double precision, allocatable :: rbohr
-    double precision, allocatable :: fine
+    double precision, parameter :: rbohr   = hbar*hbar/(me_eos * qe * qe)
+    double precision, parameter :: fine    = qe*qe/(hbar*clight)
 
 #ifdef RADIATION
     double precision, parameter :: ssol    = 0.0d0
 #else
     double precision, parameter :: ssol    = 5.67051d-5
 #endif
-    double precision, allocatable :: asol
-    double precision, allocatable :: weinlam
-    double precision, allocatable :: weinfre
+    double precision, parameter :: asol    = 4.0d0 * ssol / clight
+    double precision, parameter :: weinlam = h*clight/(kerg * 4.965114232d0)
+    double precision, parameter :: weinfre = 2.821439372d0*kerg/h
 
     ! Astronomical constants
     double precision, parameter :: ly      = 9.460528d17
-    double precision, allocatable :: pc
+    double precision, parameter :: pc      = 3.261633d0 * ly
 
     ! Some other useful combinations of the constants
-    double precision, allocatable :: sioncon
-    double precision, allocatable :: forth
-    double precision, allocatable :: forpi
-    double precision, allocatable :: kergavo
-    double precision, allocatable :: ikavo
-    double precision, allocatable :: asoli3
-    double precision, allocatable :: light2
+    double precision, parameter :: sioncon = (2.0d0 * pi * amu * kerg)/(h*h)
+    double precision, parameter :: forth   = 4.0d0/3.0d0
+    double precision, parameter :: forpi   = 4.0d0 * pi
+    double precision, parameter :: kergavo = kerg * avo_eos
+    double precision, parameter :: ikavo   = 1.0d0/kergavo
+    double precision, parameter :: asoli3  = asol/3.0d0
+    double precision, parameter :: light2  = clight * clight
 
     ! Constants used for the Coulomb corrections
     double precision, parameter :: a1    = -0.898004d0
@@ -112,23 +110,9 @@ private
     double precision, parameter :: b2    =  1.9885d0
     double precision, parameter :: c2    =  0.288675d0
     double precision, parameter :: onethird = 1.0d0/3.0d0
-    double precision, allocatable :: esqu
-
-#ifdef CUDA
-    attributes(managed) :: a2rad, rad2a, hbar, kev, rbohr, fine
-    attributes(managed) :: asol, weinlam, weinfre, pc, sioncon, forth, forpi
-    attributes(managed) :: kergavo, ikavo, asoli3, light2, esqu
-#endif
+    double precision, parameter :: esqu = qe * qe
 
     !$acc declare &
-    !$acc create(a2rad, rad2a) &
-    !$acc create(hbar) &
-    !$acc create(kev) &
-    !$acc create(rbohr, fine) &
-    !$acc create(asol, weinlam, weinfre) &
-    !$acc create(pc) &
-    !$acc create(sioncon, forth, forpi, kergavo, ikavo, asoli3, light2) &
-    !$acc create(esqu) &
     !$acc create(tlo, thi, dlo, dhi) &
     !$acc create(tstp, tstpi, dstp, dstpi) &
     !$acc create(itmax, jtmax, d, t) &
@@ -1122,24 +1106,6 @@ contains
         allocate(dd2_sav(imax))
         allocate(ddi_sav(imax))
         allocate(dd2i_sav(imax))
-        allocate(a2rad)
-        allocate(rad2a)
-        allocate(hbar)
-        allocate(kev)
-        allocate(rbohr)
-        allocate(fine)
-        allocate(asol)
-        allocate(weinlam)
-        allocate(weinfre)
-        allocate(pc)
-        allocate(sioncon)
-        allocate(forth)
-        allocate(forpi)
-        allocate(kergavo)
-        allocate(ikavo)
-        allocate(asoli3)
-        allocate(light2)
-        allocate(esqu)
         
         ! Read in the runtime parameters
 
@@ -1232,31 +1198,6 @@ contains
 
         close(unit=2)
 
-        ! Some initialization of constants
-
-        esqu = qe * qe
-
-        a2rad   = pi/180.0d0
-        rad2a   = 180.0d0/pi
-
-        hbar    = 0.5d0 * h/pi
-        kev     = kerg/ev2erg_eos
-        rbohr   = hbar*hbar/(me_eos * qe * qe)
-        fine    = qe*qe/(hbar*clight)
-
-        asol    = 4.0d0 * ssol / clight
-        weinlam = h*clight/(kerg * 4.965114232d0)
-        weinfre = 2.821439372d0*kerg/h
-        pc      = 3.261633d0 * ly
-
-        sioncon = (2.0d0 * pi * amu * kerg)/(h*h)
-        forth   = 4.0d0/3.0d0
-        forpi   = 4.0d0 * pi
-        kergavo = kerg * avo_eos
-        ikavo   = 1.0d0/kergavo
-        asoli3  = asol/3.0d0
-        light2  = clight * clight
-
         ! Set up the minimum and maximum possible densities.
 
         mintemp = 10.d0**tlo
@@ -1265,14 +1206,6 @@ contains
         maxdens = 10.d0**dhi
 
         !$acc update &
-        !$acc device(pi, a2rad, rad2a) &
-        !$acc device(h, hbar, qe, avo_eos, clight, kerg) &
-        !$acc device(ev2erg_eos, kev, amu, me_eos) &
-        !$acc device(rbohr, fine) &
-        !$acc device(ssol, asol, weinlam, weinfre) &
-        !$acc device(ly, pc) &
-        !$acc device(sioncon, forth, forpi, kergavo, ikavo, asoli3, light2) &
-        !$acc device(a1, b1, c1, d1, e1, a2, b2, c2, onethird, esqu) &
         !$acc device(ttol, dtol, tlo, thi, dlo, dhi) &
         !$acc device(tstp, tstpi, dstp, dstpi) &
         !$acc device(itmax, jtmax, d, t) &
@@ -1331,24 +1264,6 @@ contains
       deallocate(dd2_sav)
       deallocate(ddi_sav)
       deallocate(dd2i_sav)
-      deallocate(a2rad)
-      deallocate(rad2a)
-      deallocate(hbar)
-      deallocate(kev)
-      deallocate(rbohr)
-      deallocate(fine)
-      deallocate(asol)
-      deallocate(weinlam)
-      deallocate(weinfre)
-      deallocate(pc)
-      deallocate(sioncon)
-      deallocate(forth)
-      deallocate(forpi)
-      deallocate(kergavo)
-      deallocate(ikavo)
-      deallocate(asoli3)
-      deallocate(light2)
-      deallocate(esqu)      
     end subroutine actual_eos_finalize
 
     ! quintic hermite polynomial functions
