@@ -180,7 +180,7 @@ extern "C"
      const int* lo, const int* hi,
      const int& num_state,
      BL_FORT_FAB_ARG_3D(state),
-     const amrex::Real* dx, const amrex::Real* xlo, const amrex::Real* xhi);
+     const amrex::Real* dx, const amrex::Real* xlo, const amrex::Real* xhi, const int* idx);
   
 #ifdef __cplusplus
 }

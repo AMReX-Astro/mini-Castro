@@ -426,15 +426,15 @@ Castro::initData ()
        {
 	  RealBox gridloc = RealBox(grids[mfi.index()],geom.CellSize(),geom.ProbLo());
           const Box& box     = mfi.validbox();
+	  const int idx      = mfi.tileIndex();
           const int* lo      = box.loVect();
           const int* hi      = box.hiVect();
 
           ca_initdata(level, cur_time, lo, hi, ns,
 		      S_new[mfi].dataPtr(), S_new[mfi].loVect(), S_new[mfi].hiVect(), dx,
-		      gridloc.lo(), gridloc.hi());
+		      gridloc.lo(), gridloc.hi(), &idx);
 
           // Verify that the sum of (rho X)_i = rho at every cell
-	  const int idx = mfi.tileIndex();
 
           ca_check_initial_species(ARLIM_3D(lo), ARLIM_3D(hi), 
 				   BL_TO_FORTRAN_3D(S_new[mfi]), &idx);
