@@ -738,12 +738,12 @@ module castro_util_module
 contains
 
 #ifdef CUDA
-  attributes(device) &
+  attributes(global) &
 #endif
   subroutine enforce_consistent_e(lo,hi,state,s_lo,s_hi)
 
     use bl_constants_module, only: HALF, ONE
-    use amrex_fort_module, only: rt => amrex_real
+    use amrex_fort_module, only: rt => amrex_real, get_loop_bounds
     use meth_params_module, only: NVAR, URHO, UMX, UMY, UMZ, UEDEN, UEINT
 
     implicit none
@@ -754,14 +754,17 @@ contains
 
     ! Local variables
     integer  :: i,j,k
+    integer  :: blo(3), bhi(3)
     real(rt) :: u, v, w, rhoInv
+
+    call get_loop_bounds(blo, bhi, lo, hi)
 
     !
     ! Enforces (rho E) = (rho e) + 1/2 rho (u^2 + v^2 + w^2)
     !
-    do k = lo(3), hi(3)
-       do j = lo(2), hi(2)
-          do i = lo(1), hi(1)
+    do k = blo(3), bhi(3)
+       do j = blo(2), bhi(2)
+          do i = blo(1), bhi(1)
 
              rhoInv = ONE / state(i,j,k,URHO)
              u = state(i,j,k,UMX) * rhoInv
@@ -780,7 +783,7 @@ contains
 
 
 #ifdef CUDA
-  attributes(device) &
+  attributes(global) &
 #endif
   subroutine reset_internal_e(lo,hi,u,u_lo,u_hi,verbose)
 
@@ -788,7 +791,7 @@ contains
     use eos_type_module, only: eos_t, eos_input_re, eos_input_rt
     use network, only: nspec, naux
     use bl_constants_module, only: ZERO, HALF, ONE
-    use amrex_fort_module, only: rt => amrex_real
+    use amrex_fort_module, only: rt => amrex_real, get_loop_bounds
     use meth_params_module, only: NVAR, URHO, UMX, UMY, UMZ, UEDEN, UEINT, UFS, UFX, UTEMP, small_temp
 
     implicit none
@@ -800,17 +803,20 @@ contains
 
     ! Local variables
     integer  :: i,j,k
+    integer  :: blo(3), bhi(3)
     real(rt) :: Up, Vp, Wp, ke, rho_eint, eden, small_e, eint_new, rhoInv
 
     real(rt), parameter :: dual_energy_eta2 = 1.e-4_rt
 
     type (eos_t) :: eos_state
 
+    call get_loop_bounds(blo, bhi, lo, hi)
+
     ! Reset internal energy
 
-    do k = lo(3), hi(3)
-       do j = lo(2), hi(2)
-          do i = lo(1), hi(1)
+    do k = blo(3), bhi(3)
+       do j = blo(2), bhi(2)
+          do i = blo(1), bhi(1)
 
              rhoInv = ONE/u(i,j,k,URHO)
              Up = u(i,j,k,UMX) * rhoInv
@@ -878,7 +884,7 @@ contains
 
 
 #ifdef CUDA
-  attributes(device) &
+  attributes(global) &
 #endif
   subroutine compute_temp(lo,hi,state,s_lo,s_hi)
 
@@ -886,7 +892,7 @@ contains
     use eos_module, only: eos
     use eos_type_module, only: eos_input_re, eos_t
     use bl_constants_module, only: ZERO, ONE
-    use amrex_fort_module, only: rt => amrex_real
+    use amrex_fort_module, only: rt => amrex_real, get_loop_bounds
     use meth_params_module, only: NVAR, URHO, UEDEN, UEINT, UTEMP, UFS, UFX
 
     implicit none
@@ -896,15 +902,18 @@ contains
     real(rt), intent(inout) :: state(s_lo(1):s_hi(1),s_lo(2):s_hi(2),s_lo(3):s_hi(3),NVAR)
 
     integer  :: i,j,k
+    integer  :: blo(3), bhi(3)
     real(rt) :: rhoInv
 
     type (eos_t) :: eos_state
 
-    ! First check the inputs for validity.
+    call get_loop_bounds(blo, bhi, lo, hi)
 
-    do k = lo(3),hi(3)
-       do j = lo(2),hi(2)
-          do i = lo(1),hi(1)
+    do k = blo(3), bhi(3)
+       do j = blo(2), bhi(2)
+          do i = blo(1), bhi(1)
+
+             ! First check the inputs for validity.
 
 #ifndef CUDA
              if (state(i,j,k,URHO) <= ZERO) then
@@ -923,14 +932,6 @@ contains
                 call bl_error("Error:: compute_temp_nd.F90")
              end if
 #endif
-
-          enddo
-       enddo
-    enddo
-
-    do k = lo(3), hi(3)
-       do j = lo(2), hi(2)
-          do i = lo(1), hi(1)
 
              rhoInv = ONE / state(i,j,k,URHO)
 
@@ -994,13 +995,13 @@ contains
 
 
 #ifdef CUDA
-  attributes(device) &
+  attributes(global) &
 #endif
   subroutine normalize_species(u, u_lo, u_hi, lo, hi)
 
     use network, only: nspec
     use bl_constants_module, only: ONE
-    use amrex_fort_module, only: rt => amrex_real
+    use amrex_fort_module, only: rt => amrex_real, get_loop_bounds
     use extern_probin_module, only: small_x
     use meth_params_module, only: NVAR, URHO, UFS
 
@@ -1012,11 +1013,14 @@ contains
 
     ! Local variables
     integer  :: i, j, k
+    integer  :: blo(3), bhi(3)
     real(rt) :: xn(nspec)
 
-    do k = lo(3), hi(3)
-       do j = lo(2), hi(2)
-          do i = lo(1), hi(1)
+    call get_loop_bounds(blo, bhi, lo, hi)
+
+    do k = blo(3), bhi(3)
+       do j = blo(2), bhi(2)
+          do i = blo(1), bhi(1)
 
              xn = u(i,j,k,UFS:UFS+nspec-1)
 
@@ -1034,7 +1038,7 @@ contains
 
 
 #ifdef CUDA
-  attributes(device) &
+  attributes(global) &
 #endif
   subroutine dervel(vel,v_lo,v_hi,nv, &
                     dat,d_lo,d_hi,nc,lo,hi,domlo, &
@@ -1044,7 +1048,7 @@ contains
     ! This routine will derive the velocity from the momentum.
     !
   
-    use amrex_fort_module, only: rt => amrex_real
+    use amrex_fort_module, only: rt => amrex_real, get_loop_bounds
 
     implicit none
 
@@ -1059,10 +1063,13 @@ contains
     integer,  intent(in   ) :: level, grid_no
 
     integer :: i, j, k
+    integer :: blo(3), bhi(3)
 
-    do k = lo(3), hi(3)
-       do j = lo(2), hi(2)
-          do i = lo(1), hi(1)
+    call get_loop_bounds(blo, bhi, lo, hi)
+
+    do k = blo(3), bhi(3)
+       do j = blo(2), bhi(2)
+          do i = blo(1), bhi(1)
              vel(i,j,k,1) = dat(i,j,k,2) / dat(i,j,k,1)
           end do
        end do
@@ -1073,7 +1080,7 @@ contains
 
 
 #ifdef CUDA
-  attributes(device) &
+  attributes(global) &
 #endif
   subroutine derpres(p,p_lo,p_hi,ncomp_p, &
                      u,u_lo,u_hi,ncomp_u,lo,hi,domlo, &
@@ -1083,7 +1090,7 @@ contains
     use eos_module, only: eos
     use eos_type_module, only: eos_t, eos_input_re
     use bl_constants_module, only: ONE
-    use amrex_fort_module, only: rt => amrex_real
+    use amrex_fort_module, only: rt => amrex_real, get_loop_bounds
     use meth_params_module, only: URHO, UEINT, UTEMP, UFS, UFX
 
     implicit none
@@ -1099,12 +1106,15 @@ contains
 
     real(rt) :: rhoInv
     integer  :: i, j, k
+    integer  :: blo(3), bhi(3)
 
     type (eos_t) :: eos_state
 
-    do k = lo(3), hi(3)
-       do j = lo(2), hi(2)
-          do i = lo(1), hi(1)
+    call get_loop_bounds(blo, bhi, lo, hi)
+
+    do k = blo(3), bhi(3)
+       do j = blo(2), bhi(2)
+          do i = blo(1), bhi(1)
              rhoInv = ONE / u(i,j,k,URHO)
 
              eos_state % rho  = u(i,j,k,URHO)

@@ -7,7 +7,7 @@ module advection_util_module
 contains
 
 #ifdef CUDA
-  attributes(device) &
+  attributes(global) &
 #endif
   subroutine enforce_minimum_density(uin,uin_lo,uin_hi, &
                                      uout,uout_lo,uout_hi, &
@@ -16,7 +16,7 @@ contains
 
     use network, only: nspec, naux
     use bl_constants_module, only: ZERO
-    use amrex_fort_module, only: rt => amrex_real
+    use amrex_fort_module, only: rt => amrex_real, get_loop_bounds
     use meth_params_module, only: NVAR, URHO, UEINT, UEDEN, small_dens
 
     implicit none
@@ -33,17 +33,20 @@ contains
 
     ! Local variables
     integer  :: i,ii,j,jj,k,kk
+    integer  :: blo(3), bhi(3)
     integer  :: i_set, j_set, k_set
     real(rt) :: max_dens
     real(rt) :: f_c
     real(rt) :: old_state(NVAR), new_state(NVAR), unew(NVAR)
     integer  :: num_positive_zones
 
+    call get_loop_bounds(blo, bhi, lo, hi)
+
     max_dens = ZERO
 
-    do k = lo(3), hi(3)
-       do j = lo(2), hi(2)
-          do i = lo(1), hi(1)
+    do k = blo(3), bhi(3)
+       do j = blo(2), bhi(2)
+          do i = blo(1), bhi(1)
 
              if (uout(i,j,k,URHO) .eq. ZERO) then
 
@@ -321,7 +324,7 @@ contains
 
 
 #ifdef CUDA
-  attributes(device) &
+  attributes(global) &
 #endif
   subroutine ctoprim(lo, hi, &
                      uin, uin_lo, uin_hi, &
@@ -332,7 +335,7 @@ contains
     use eos_module, only: eos
     use eos_type_module, only: eos_t, eos_input_re
     use bl_constants_module, only: ZERO, HALF, ONE
-    use amrex_fort_module, only: rt => amrex_real
+    use amrex_fort_module, only: rt => amrex_real, get_loop_bounds
     use meth_params_module, only: NVAR, URHO, UMX, UMZ, &
                                   UEDEN, UEINT, UTEMP, &
                                   QRHO, QU, QV, QW, &
@@ -355,16 +358,19 @@ contains
     real(rt), parameter :: dual_energy_eta1 = 1.e0_rt
 
     integer  :: i, j, k, g
+    integer  :: blo(3), bhi(3)
     integer  :: n, iq, ipassive
     real(rt) :: kineng, rhoinv
     real(rt) :: vel(3)
 
     type (eos_t) :: eos_state
 
-    do k = lo(3), hi(3)
-       do j = lo(2), hi(2)
+    call get_loop_bounds(blo, bhi, lo, hi)
 
-          do i = lo(1), hi(1)
+    do k = blo(3), bhi(3)
+       do j = blo(2), bhi(2)
+          do i = blo(1), bhi(1)
+
 #ifndef CUDA
              if (uin(i,j,k,URHO) .le. ZERO) then
                 print *,'   '
@@ -378,9 +384,6 @@ contains
                 call bl_error("Error:: advection_util_nd.F90 :: ctoprim")
              endif
 #endif
-          end do
-
-          do i = lo(1), hi(1)
 
              q(i,j,k,QRHO) = uin(i,j,k,URHO)
              rhoinv = ONE/q(i,j,k,QRHO)
@@ -417,9 +420,9 @@ contains
     do ipassive = 1, npassive
        n  = upass_map(ipassive)
        iq = qpass_map(ipassive)
-       do k = lo(3),hi(3)
-          do j = lo(2),hi(2)
-             do i = lo(1),hi(1)
+       do k = blo(3), bhi(3)
+          do j = blo(2), bhi(2)
+             do i = blo(1), bhi(1)
                 q(i,j,k,iq) = uin(i,j,k,n)/q(i,j,k,QRHO)
              enddo
           enddo
@@ -427,9 +430,9 @@ contains
     enddo
 
     ! get gamc, p, T, c, csml using q state
-    do k = lo(3), hi(3)
-       do j = lo(2), hi(2)
-          do i = lo(1), hi(1)
+    do k = blo(3), bhi(3)
+       do j = blo(2), bhi(2)
+          do i = blo(1), bhi(1)
 
              eos_state % T   = q(i,j,k,QTEMP )
              eos_state % rho = q(i,j,k,QRHO  )

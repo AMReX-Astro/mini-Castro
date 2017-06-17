@@ -85,9 +85,6 @@ contains
                                      bind(c, name='ca_enforce_consistent_e')
 
     use castro_util_module, only: enforce_consistent_e
-#ifdef CUDA
-    use cuda_interfaces_module, only: cuda_enforce_consistent_e
-#endif
 
     implicit none
 
@@ -106,18 +103,13 @@ contains
     stream = cuda_streams(mod(idx, max_cuda_streams) + 1)
 
     call threads_and_blocks(lo, hi, numBlocks, numThreads)
+#endif
 
-    call cuda_enforce_consistent_e &
+    call enforce_consistent_e &
 #ifdef CUDA
          <<<numBlocks, numThreads, 0, stream>>> &
 #endif
          (lo, hi, state, s_lo, s_hi)
-
-#else
-
-    call enforce_consistent_e(lo, hi, state, s_lo, s_hi)
-
-#endif
 
   end subroutine ca_enforce_consistent_e
 
@@ -126,9 +118,6 @@ contains
                              bind(C, name="ca_compute_temp")
 
     use castro_util_module, only: compute_temp
-#ifdef CUDA
-    use cuda_interfaces_module, only: cuda_compute_temp
-#endif
 
     implicit none
 
@@ -146,18 +135,13 @@ contains
     stream = cuda_streams(mod(idx, max_cuda_streams) + 1)
 
     call threads_and_blocks(lo, hi, numBlocks, numThreads)
+#endif
 
-    call cuda_compute_temp &
+    call compute_temp &
 #ifdef CUDA
          <<<numBlocks, numThreads, 0, stream>>> &
 #endif
          (lo, hi, state, s_lo, s_hi)
-
-#else
-
-    call compute_temp(lo, hi, state, s_lo, s_hi)
-
-#endif
 
   end subroutine ca_compute_temp
 
@@ -166,9 +150,6 @@ contains
                                  bind(C, name="ca_reset_internal_e")
 
     use castro_util_module, only: reset_internal_e
-#ifdef CUDA
-    use cuda_interfaces_module, only: cuda_reset_internal_e
-#endif
 
     implicit none
 
@@ -187,18 +168,13 @@ contains
     stream = cuda_streams(mod(idx, max_cuda_streams) + 1)
 
     call threads_and_blocks(lo, hi, numBlocks, numThreads)
+#endif
 
-    call cuda_reset_internal_e &
+    call reset_internal_e &
 #ifdef CUDA
          <<<numBlocks, numThreads, 0, stream>>> &
 #endif
          (lo, hi, u, u_lo, u_hi, verbose)
-
-#else
-
-    call reset_internal_e(lo, hi, u, u_lo, u_hi, verbose)
-
-#endif
 
   end subroutine ca_reset_internal_e
 
@@ -207,9 +183,6 @@ contains
                                   bind(C, name="ca_normalize_species")
 
     use castro_util_module, only: normalize_species
-#ifdef CUDA
-    use cuda_interfaces_module, only: cuda_normalize_species
-#endif
 
     implicit none
 
@@ -227,18 +200,13 @@ contains
     stream = cuda_streams(mod(idx, max_cuda_streams) + 1)
 
     call threads_and_blocks(lo, hi, numBlocks, numThreads)
+#endif
 
-    call cuda_normalize_species &
+    call normalize_species &
 #ifdef CUDA
          <<<numBlocks, numThreads, 0, stream>>> &
 #endif
          (u, u_lo, u_hi, lo, hi)
-
-#else
-
-    call normalize_species(u, u_lo, u_hi, lo, hi)
-
-#endif
 
   end subroutine ca_normalize_species
 
@@ -250,9 +218,6 @@ contains
                                         bind(C, name="ca_enforce_minimum_density")
 
     use advection_util_module, only: enforce_minimum_density
-#ifdef CUDA
-    use cuda_interfaces_module, only: cuda_enforce_minimum_density
-#endif
 
     implicit none
 
@@ -287,15 +252,16 @@ contains
     local_frac_change = frac_change
 
     cuda_result = cudaMemcpyAsync(frac_change_d, local_frac_change, 1, cudaMemcpyHostToDevice, stream)
+    cuda_result = cudaMemcpyAsync(verbose_d, verbose, 1, cudaMemcpyHostToDevice, stream)
 
     call threads_and_blocks(lo, hi, numBlocks, numThreads)
 
-    call cuda_enforce_minimum_density &
+    call enforce_minimum_density &
          <<<numBlocks, numThreads, 0, stream>>> &
          (uin, uin_lo, uin_hi, &
           uout, uout_lo, uout_hi, &
           vol, vol_lo, vol_hi, &
-          lo, hi, frac_change_d(1), verbose)
+          lo, hi, frac_change_d(1), verbose_d(1))
 
     cuda_result = cudaMemcpyAsync(local_frac_change, frac_change_d, 1, cudaMemcpyDeviceToHost, stream)
 
@@ -304,6 +270,7 @@ contains
     frac_change = min(frac_change, local_frac_change)
 
     call bl_deallocate(frac_change_d)
+    call bl_deallocate(verbose_d)
 
 #else
 
@@ -340,9 +307,6 @@ contains
                         qaux, qa_lo,  qa_hi, idx) bind(C, name = "ca_ctoprim")
 
     use advection_util_module, only: ctoprim
-#ifdef CUDA
-    use cuda_interfaces_module, only: cuda_ctoprim
-#endif
 
     implicit none
 
@@ -365,21 +329,13 @@ contains
     stream = cuda_streams(mod(idx, max_cuda_streams) + 1)
 
     call threads_and_blocks(lo, hi, numBlocks, numThreads)
+#endif
 
-    call cuda_ctoprim &
+    call ctoprim &
 #ifdef CUDA
          <<<numBlocks, numThreads, 0, stream>>> &
 #endif
          (lo, hi, uin, uin_lo, uin_hi, q, q_lo, q_hi, qaux, qa_lo, qa_hi)
-
-#else
-
-    call ctoprim(lo, hi, &
-                 uin, uin_lo, uin_hi, &
-                 q,     q_lo,   q_hi, &
-                 qaux, qa_lo,  qa_hi)
-
-#endif
 
   end subroutine ca_ctoprim
 
@@ -390,9 +346,6 @@ contains
                        bind(c, name="ca_dervel")
 
     use castro_util_module, only: dervel
-#ifdef CUDA
-    use cuda_interfaces_module, only: cuda_dervel
-#endif
 
     implicit none
 
@@ -450,11 +403,11 @@ contains
 
     call threads_and_blocks(lo, hi, numBlocks, numThreads)
 
-    call cuda_dervel<<<numBlocks, numThreads, 0, stream>>>(vel,v_lo,v_hi,nv_d(1), &
-                                                           dat,d_lo,d_hi,nc_d(1), &
-                                                           lo,hi,domlo_d,domhi_d, &
-                                                           dx,xlo_d,time_d(1),dt_d(1), &
-                                                           bc_d,level_d(1),grid_no_d(1))
+    call dervel<<<numBlocks, numThreads, 0, stream>>>(vel,v_lo,v_hi,nv_d(1), &
+                                                      dat,d_lo,d_hi,nc_d(1), &
+                                                      lo,hi,domlo_d,domhi_d, &
+                                                      dx,xlo_d,time_d(1),dt_d(1), &
+                                                      bc_d,level_d(1),grid_no_d(1))
 
     cuda_result = cudaStreamSynchronize(stream)
 
@@ -487,9 +440,6 @@ contains
                         bind(c, name="ca_derpres")
 
     use castro_util_module, only: derpres
-#ifdef CUDA
-    use cuda_interfaces_module, only: cuda_derpres
-#endif
 
     implicit none
 
@@ -543,11 +493,11 @@ contains
 
     call threads_and_blocks(lo, hi, numBlocks, numThreads)
 
-    call cuda_derpres<<<numBlocks, numThreads, 0, stream>>>(p,p_lo,p_hi,np_d(1), &
-                                                            u,u_lo,u_hi,nc_d(1), &
-                                                            lo,hi,domlo_d,domhi_d, &
-                                                            dx,xlo_d,time_d(1),dt_d(1), &
-                                                            bc_d,level_d(1),grid_no_d(1))
+    call derpres<<<numBlocks, numThreads, 0, stream>>>(p,p_lo,p_hi,np_d(1), &
+                                                       u,u_lo,u_hi,nc_d(1), &
+                                                       lo,hi,domlo_d,domhi_d, &
+                                                       dx,xlo_d,time_d(1),dt_d(1), &
+                                                       bc_d,level_d(1),grid_no_d(1))
 
     cuda_result = cudaStreamSynchronize(stream)
 
@@ -575,9 +525,6 @@ contains
   subroutine ca_estdt(lo,hi,u,u_lo,u_hi,dx,dt,idx) bind(C, name="ca_estdt")
 
     use timestep_module, only: estdt
-#ifdef CUDA
-    use cuda_interfaces_module, only: cuda_estdt
-#endif
 
     implicit none
 
@@ -609,7 +556,7 @@ contains
 
     call threads_and_blocks(lo, hi, numBlocks, numThreads)
 
-    call cuda_estdt<<<numBlocks, numThreads, 0, stream>>>(lo, hi, u, u_lo, u_hi, dx, dt_loc_d(1))
+    call estdt<<<numBlocks, numThreads, 0, stream>>>(lo, hi, u, u_lo, u_hi, dx, dt_loc_d(1))
 
     cuda_result = cudaMemcpyAsync(dt_loc, dt_loc_d, 1, cudaMemcpyDeviceToHost, stream)
 
