@@ -86,7 +86,7 @@ contains
     real(rt), intent(inout) :: uout(uout_lo(1):uout_hi(1),uout_lo(2):uout_hi(2),uout_lo(3):uout_hi(3),NVAR)
     real(rt), intent(in   ) :: vol(vol_lo(1):vol_hi(1),vol_lo(2):vol_hi(2),vol_lo(3):vol_hi(3))
     real(rt), intent(inout) :: frac_change
-    integer,  intent(in   ) :: verbose
+    integer,  intent(in   ), value :: verbose
 
     integer :: idx(3)
 
@@ -185,7 +185,8 @@ contains
 
     implicit none
 
-    integer,  intent(in   ) :: lo(3), hi(3), verbose
+    integer,  intent(in   ) :: lo(3), hi(3)
+    integer,  intent(in   ), value :: verbose
     integer,  intent(in   ) :: u_lo(3), u_hi(3)
     real(rt), intent(inout) :: u(u_lo(1):u_hi(1),u_lo(2):u_hi(2),u_lo(3):u_hi(3),NVAR)
 
