@@ -22,14 +22,21 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
 
   BL_PROFILE_VAR("Castro::construct_mol_hydro_source()", CA_HYDRO);
 
+  MultiFab flux_mf[BL_SPACEDIM];
+
+  for (int i = 0; i < BL_SPACEDIM; ++i)
+      flux_mf[i].define(getEdgeBoxArray(i), dmap, NUM_STATE, 0);
+
+  MultiFab q_mf;
+  q_mf.define(grids, dmap, NUM_STATE, 0);
+
+  MultiFab qaux_mf;
+  qaux_mf.define(grids, dmap, NUM_STATE, 0);
+
 #ifdef _OPENMP
 #pragma omp parallel
 #endif
   {
-
-    FArrayBox flux[BL_SPACEDIM];
-
-    FArrayBox q, qaux;
 
     Real cflLoc = -1.0e+200;
 
@@ -44,6 +51,8 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
 	const int* lo = bx.loVect();
 	const int* hi = bx.hiVect();
 
+	FArrayBox &q        = q_mf[mfi];
+	FArrayBox &qaux     = qaux_mf[mfi];
 	FArrayBox &statein  = Sborder[mfi];
 	FArrayBox &stateout = S_new[mfi];
 
@@ -65,13 +74,6 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
 		   q.dataPtr(), ARLIM_3D(q.loVect()), ARLIM_3D(q.hiVect()),
 		   qaux.dataPtr(), ARLIM_3D(qaux.loVect()), ARLIM_3D(qaux.hiVect()), &idx);
 
-
-	// Allocate fabs for fluxes
-	for (int i = 0; i < BL_SPACEDIM ; i++)  {
-	  const Box& bxtmp = amrex::surroundingNodes(bx,i);
-	  flux[i].resize(bxtmp,NUM_STATE);
-	}
-
 	ca_mol_single_stage
 	  (&time,
 	   lo, hi, domain_lo, domain_hi,
@@ -81,9 +83,9 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
 	   BL_TO_FORTRAN_3D(qaux),
 	   BL_TO_FORTRAN_3D(source_out),
 	   dx, &dt,
-	   D_DECL(BL_TO_FORTRAN_3D(flux[0]),
-		  BL_TO_FORTRAN_3D(flux[1]),
-		  BL_TO_FORTRAN_3D(flux[2])),
+	   D_DECL(BL_TO_FORTRAN_3D(flux_mf[0][mfi]),
+		  BL_TO_FORTRAN_3D(flux_mf[1][mfi]),
+		  BL_TO_FORTRAN_3D(flux_mf[2][mfi])),
 	   D_DECL(BL_TO_FORTRAN_3D(area[0][mfi]),
 		  BL_TO_FORTRAN_3D(area[1][mfi]),
 		  BL_TO_FORTRAN_3D(area[2][mfi])),
@@ -93,7 +95,7 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
 	// Store the fluxes from this advance -- we weight them by the
 	// integrator weight for this stage
 	for (int i = 0; i < BL_SPACEDIM ; i++) {
-	  (*fluxes    [i])[mfi].saxpy(b_mol[istage], flux[i], 
+	  (*fluxes    [i])[mfi].saxpy(b_mol[istage], flux_mf[i][mfi], 
 				      mfi.nodaltilebox(i), mfi.nodaltilebox(i), 0, 0, NUM_STATE);
 	}
 
