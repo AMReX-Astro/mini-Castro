@@ -14,7 +14,6 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
   int finest_level = parent->finestLevel();
 
   const Real *dx = geom.CellSize();
-  Real courno    = -1.0e+200;
 
   MultiFab& S_new = get_new_data(State_Type);
 
@@ -70,8 +69,6 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
 #pragma omp parallel
 #endif
   {
-
-    Real cflLoc = -1.0e+200;
 
     const int*  domain_lo = geom.Domain().loVect();
     const int*  domain_hi = geom.Domain().hiVect();
@@ -146,7 +143,7 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
 	   BL_TO_FORTRAN_3D(area[1][mfi]),
 	   BL_TO_FORTRAN_3D(area[2][mfi]),
 	   BL_TO_FORTRAN_3D(volume[mfi]),
-	   &cflLoc, verbose, &idx);
+	   verbose, &idx);
 
 	// Store the fluxes from this advance -- we weight them by the
 	// integrator weight for this stage
@@ -157,12 +154,6 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
 
       } // MFIter loop
 
-#ifdef _OPENMP
-#pragma omp critical (hydro_courno)
-#endif
-    {
-      courno = std::max(courno,cflLoc);
-    }
   }  // end of omp parallel region
 
   BL_PROFILE_VAR_STOP(CA_HYDRO);
@@ -171,8 +162,5 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
 
   if (verbose)
     flush_output();
-
-//  if (courno > 1.0)
-//    amrex::Abort("CFL is too high at this level");
 
 }

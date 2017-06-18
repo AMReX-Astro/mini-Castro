@@ -575,7 +575,7 @@ contains
                                  area2, a2_lo, a2_hi, &
                                  area3, a3_lo, a3_hi, &
                                  vol, vol_lo, vol_hi, &
-                                 courno, verbose, idx) bind(C, name="ca_mol_single_stage")
+                                 verbose, idx) bind(C, name="ca_mol_single_stage")
 
     use mol_module, only: prepare_for_fluxes, prepare_profile, construct_flux
     use advection_util_module, only: construct_hydro_update
@@ -638,7 +638,6 @@ contains
     real(rt), intent(in   ) :: vol(vol_lo(1):vol_hi(1), vol_lo(2):vol_hi(2), vol_lo(3):vol_hi(3))
     real(rt), intent(in   ) :: dx(3)
     real(rt), intent(in   ), value :: dt, time
-    real(rt), intent(inout) :: courno
 
     integer :: k_lo(3), k_hi(3)
     integer :: idir
@@ -660,22 +659,14 @@ contains
     type(dim3)                :: numThreads, numBlocks
 
     integer,  managed, pointer :: k_lo_d(:), k_hi_d(:)
-    real(rt), managed, pointer :: courno_d(:)
-
-    real(rt) :: courno_loc
 #endif
 
 #ifdef CUDA
 
     call bl_allocate(k_lo_d, 1, 3)
     call bl_allocate(k_hi_d, 1, 3)
-    call bl_allocate(courno_d, 1, 1)
 
     stream = cuda_streams(mod(idx, max_cuda_streams) + 1)
-
-    courno_loc = courno
-
-    cuda_result = cudaMemcpyAsync(courno_d, courno_loc, 1, cudaMemcpyHostToDevice, stream)
 
     ! Construct edge states as inputs to flux construction
 
@@ -687,7 +678,7 @@ contains
 
     call threads_and_blocks(k_lo, k_hi, numBlocks, numThreads)
 
-    call prepare_for_fluxes<<<numBlocks, numThreads, 0, stream>>>(k_lo_d, k_hi_d, dt, dx, courno_d(1), &
+    call prepare_for_fluxes<<<numBlocks, numThreads, 0, stream>>>(k_lo_d, k_hi_d, dt, dx, &
                                                                   q, flatn, q_lo, q_hi, &
                                                                   div, div_lo, div_hi, &
                                                                   qaux, qa_lo, qa_hi, &
@@ -695,8 +686,6 @@ contains
                                                                   qm, qp, qm_lo, qm_hi)
 
     cuda_result = cudaStreamSynchronize(stream)
-
-    cuda_result = cudaMemcpyAsync(courno_loc, courno_d, 1, cudaMemcpyDeviceToHost, stream)
 
     call prepare_profile<<<numBlocks, numThreads, 0, stream>>>(k_lo_d, k_hi_d, &
                                                                q, flatn, q_lo, q_hi, &
@@ -793,15 +782,13 @@ contains
 
     cuda_result = cudaStreamSynchronize(stream)
 
-    courno = max(courno, courno_loc)
-
 #else
 
     ! Construct edge states as inputs to flux construction
 
     k_lo = div_lo
     k_hi = div_hi
-    call prepare_for_fluxes(k_lo, k_hi, dt, dx, courno, &
+    call prepare_for_fluxes(k_lo, k_hi, dt, dx, &
                             q, flatn, q_lo, q_hi, &
                             div, div_lo, div_hi, &
                             qaux, qa_lo, qa_hi, &
@@ -872,7 +859,6 @@ contains
 
     call bl_deallocate(k_lo_d)
     call bl_deallocate(k_hi_d)
-    call bl_deallocate(courno_d)
 
 #endif
 

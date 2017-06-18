@@ -11,7 +11,7 @@ contains
 #ifdef CUDA
   attributes(global) &
 #endif
-  subroutine prepare_for_fluxes(lo, hi, dt, dx, courno, &
+  subroutine prepare_for_fluxes(lo, hi, dt, dx, &
                                 q, flatn, q_lo, q_hi, &
                                 div, g_lo, g_hi, &
                                 qaux, qa_lo, qa_hi, &
@@ -46,16 +46,10 @@ contains
     real(rt), intent(inout) :: qp(It_lo(1):It_hi(1),It_lo(2):It_hi(2),It_lo(3):It_hi(3),NQ,3)
     real(rt), intent(in   ) :: dx(3)
     real(rt), intent(in   ), value :: dt
-    real(rt), intent(inout) :: courno
 
     integer :: blo(3), bhi(3)
 
     call get_loop_bounds(blo, bhi, lo, hi)
-
-    ! Check if we have violated the CFL criterion.
-    call compute_cfl(blo, bhi, dt, dx, courno, &
-                     q, q_lo, q_hi, &
-                     qaux, qa_lo, qa_hi)
 
     ! Compute divergence of velocity field.
     call divu(blo, bhi, dx, q, q_lo, q_hi, div, g_lo, g_hi)
