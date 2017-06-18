@@ -9,19 +9,19 @@ module bc_fill_module
 contains
 
 #ifdef CUDA
-  attributes(device) &
+  attributes(global) &
 #endif
-  subroutine hypfill(blo, bhi, adv, adv_lo, adv_hi, domlo, domhi, dx, xlo, time, bc)
+  subroutine hypfill(lo, hi, adv, adv_lo, adv_hi, domlo, domhi, dx, xlo, time, bc)
 
     use meth_params_module, only: NVAR
-    use amrex_fort_module, only: rt => amrex_real
+    use amrex_fort_module, only: rt => amrex_real, get_loop_bounds
     use filcc_module, only: filccn
 
     implicit none
 
     include 'AMReX_bc_types.fi'
 
-    integer,  intent(in   ) :: blo(3), bhi(3)
+    integer,  intent(in   ) :: lo(3), hi(3)
     integer,  intent(in   ) :: adv_lo(3), adv_hi(3)
     integer,  intent(in   ) :: bc(3,2,NVAR)
     integer,  intent(in   ) :: domlo(3), domhi(3)
@@ -31,9 +31,11 @@ contains
     real(rt) :: state(NVAR)
     real(rt) :: staten(NVAR)
 
-    integer  :: i, j, k, n, lo(3), hi(3)
+    integer  :: i, j, k, n, blo(3), bhi(3)
     real(rt) :: x, y, z
     logical  :: rho_only
+
+    call get_loop_bounds(blo, bhi, lo, hi)
 
     do n = 1,NVAR
        call filccn(blo, bhi, adv, adv_lo, adv_hi, NVAR, domlo, domhi, dx, xlo, bc, n)
@@ -168,18 +170,18 @@ contains
 
 
 #ifdef CUDA
-  attributes(device) &
+  attributes(global) &
 #endif
-  subroutine denfill(blo, bhi, adv, adv_lo, adv_hi, domlo, domhi, dx, xlo, time, bc)
+  subroutine denfill(lo, hi, adv, adv_lo, adv_hi, domlo, domhi, dx, xlo, time, bc)
 
-    use amrex_fort_module, only: rt => amrex_real
+    use amrex_fort_module, only: rt => amrex_real, get_loop_bounds
     use filcc_module, only: filccn
 
     implicit none
 
     include 'AMReX_bc_types.fi'
 
-    integer,  intent(in   ) :: blo(3), bhi(3)
+    integer,  intent(in   ) :: lo(3), hi(3)
     integer,  intent(in   ) :: adv_lo(3), adv_hi(3)
     integer,  intent(in   ) :: bc(3,2,1)
     integer,  intent(in   ) :: domlo(3), domhi(3)
@@ -188,6 +190,9 @@ contains
 
     logical :: rho_only
     integer :: i, j, k
+    integer :: blo(3), bhi(3)
+
+    call get_loop_bounds(blo, bhi, lo, hi)
 
     ! Note: this function should not be needed, technically, but is
     ! provided to filpatch because there are many times in the algorithm

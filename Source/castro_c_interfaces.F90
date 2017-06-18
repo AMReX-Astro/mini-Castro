@@ -582,9 +582,6 @@ contains
 
     use mol_module, only: prepare_for_fluxes, prepare_profile, construct_flux
     use advection_util_module, only: construct_hydro_update
-#ifdef CUDA
-    use cuda_interfaces_module, only: cuda_prepare_for_fluxes, cuda_construct_flux, cuda_construct_hydro_update, cuda_prepare_profile
-#endif
 
     implicit none
 
@@ -748,21 +745,21 @@ contains
 
     call threads_and_blocks(k_lo, k_hi, numBlocks, numThreads)
 
-    call cuda_prepare_for_fluxes<<<numBlocks, numThreads, 0, stream>>>(k_lo_d, k_hi_d, dt_d(1), dx, courno_d(1), &
-                                                                       q, flatn, q_lo, q_hi, &
-                                                                       div, g_lo_d, g_hi_d, &
-                                                                       qaux, qa_lo, qa_hi, &
-                                                                       sxm, sxp, sym, syp, szm, szp, st_lo_d, st_hi_d, &
-                                                                       qm, qp, It_lo_d, It_hi_d)
+    call prepare_for_fluxes<<<numBlocks, numThreads, 0, stream>>>(k_lo_d, k_hi_d, dt_d(1), dx, courno_d(1), &
+                                                                  q, flatn, q_lo, q_hi, &
+                                                                  div, g_lo_d, g_hi_d, &
+                                                                  qaux, qa_lo, qa_hi, &
+                                                                  sxm, sxp, sym, syp, szm, szp, st_lo_d, st_hi_d, &
+                                                                  qm, qp, It_lo_d, It_hi_d)
 
     cuda_result = cudaStreamSynchronize(stream)
 
     cuda_result = cudaMemcpyAsync(courno_loc, courno_d, 1, cudaMemcpyDeviceToHost, stream)
 
-    call cuda_prepare_profile<<<numBlocks, numThreads, 0, stream>>>(k_lo_d, k_hi_d, &
-                                                                    q, flatn, q_lo, q_hi, &
-                                                                    sxm, sxp, sym, syp, szm, szp, st_lo_d, st_hi_d, &
-                                                                    qm, qp, It_lo_d, It_hi_d)
+    call prepare_profile<<<numBlocks, numThreads, 0, stream>>>(k_lo_d, k_hi_d, &
+                                                               q, flatn, q_lo, q_hi, &
+                                                               sxm, sxp, sym, syp, szm, szp, st_lo_d, st_hi_d, &
+                                                               qm, qp, It_lo_d, It_hi_d)
 
     cuda_result = cudaStreamSynchronize(stream)
 
@@ -780,13 +777,13 @@ contains
 
     call threads_and_blocks(k_lo, k_hi, numBlocks, numThreads)
 
-    call cuda_construct_flux<<<numBlocks, numThreads, 0, stream>>>(k_lo_d, k_hi_d, domlo_d, domhi_d, dx, dt_d(1), idir_d(1), &
-                                                                   div, g_lo_d, g_hi_d, &
-                                                                   uin, uin_lo, uin_hi, &
-                                                                   qm, qp, It_lo_d, It_hi_d, &
-                                                                   flux1, q1, f1_lo, f1_hi, &
-                                                                   area1, a1_lo, a1_hi, &
-                                                                   qaux, qa_lo, qa_hi)
+    call construct_flux<<<numBlocks, numThreads, 0, stream>>>(k_lo_d, k_hi_d, domlo_d, domhi_d, dx, dt_d(1), idir_d(1), &
+                                                              div, g_lo_d, g_hi_d, &
+                                                              uin, uin_lo, uin_hi, &
+                                                              qm, qp, It_lo_d, It_hi_d, &
+                                                              flux1, q1, f1_lo, f1_hi, &
+                                                              area1, a1_lo, a1_hi, &
+                                                              qaux, qa_lo, qa_hi)
 
     cuda_result = cudaStreamSynchronize(stream)
 
@@ -804,13 +801,13 @@ contains
 
     call threads_and_blocks(k_lo, k_hi, numBlocks, numThreads)
 
-    call cuda_construct_flux<<<numBlocks, numThreads, 0, stream>>>(k_lo_d, k_hi_d, domlo_d, domhi_d, dx, dt_d(1), idir_d(1), &
-                                                                   div, g_lo_d, g_hi_d, &
-                                                                   uin, uin_lo, uin_hi, &
-                                                                   qm, qp, It_lo_d, It_hi_d, &
-                                                                   flux2, q2, f2_lo, f2_hi, &
-                                                                   area2, a2_lo, a2_hi, &
-                                                                   qaux, qa_lo, qa_hi)
+    call construct_flux<<<numBlocks, numThreads, 0, stream>>>(k_lo_d, k_hi_d, domlo_d, domhi_d, dx, dt_d(1), idir_d(1), &
+                                                              div, g_lo_d, g_hi_d, &
+                                                              uin, uin_lo, uin_hi, &
+                                                              qm, qp, It_lo_d, It_hi_d, &
+                                                              flux2, q2, f2_lo, f2_hi, &
+                                                              area2, a2_lo, a2_hi, &
+                                                              qaux, qa_lo, qa_hi)
 
     cuda_result = cudaStreamSynchronize(stream)
 
@@ -828,13 +825,13 @@ contains
 
     call threads_and_blocks(k_lo, k_hi, numBlocks, numThreads)
 
-    call cuda_construct_flux<<<numBlocks, numThreads, 0, stream>>>(k_lo_d, k_hi_d, domlo_d, domhi_d, dx, dt_d(1), idir_d(1), &
-                                                                   div, g_lo_d, g_hi_d, &
-                                                                   uin, uin_lo, uin_hi, &
-                                                                   qm, qp, It_lo_d, It_hi_d, &
-                                                                   flux3, q3, f3_lo, f3_hi, &
-                                                                   area3, a3_lo, a3_hi, &
-                                                                   qaux, qa_lo, qa_hi)
+    call construct_flux<<<numBlocks, numThreads, 0, stream>>>(k_lo_d, k_hi_d, domlo_d, domhi_d, dx, dt_d(1), idir_d(1), &
+                                                              div, g_lo_d, g_hi_d, &
+                                                              uin, uin_lo, uin_hi, &
+                                                              qm, qp, It_lo_d, It_hi_d, &
+                                                              flux3, q3, f3_lo, f3_hi, &
+                                                              area3, a3_lo, a3_hi, &
+                                                              qaux, qa_lo, qa_hi)
 
     cuda_result = cudaStreamSynchronize(stream)
 
@@ -848,15 +845,15 @@ contains
 
     call threads_and_blocks(k_lo, k_hi, numBlocks, numThreads)
 
-    call cuda_construct_hydro_update<<<numBlocks, numThreads, 0, stream>>>(k_lo_d, k_hi_d, dx, dt_d(1), &
-                                                                           flux1, q1, f1_lo, f1_hi, &
-                                                                           flux2, q2, f2_lo, f2_hi, &
-                                                                           flux3, q3, f3_lo, f3_hi, &
-                                                                           area1, a1_lo, a1_hi, &
-                                                                           area2, a2_lo, a2_hi, &
-                                                                           area3, a3_lo, a3_hi, &
-                                                                           vol, vol_lo, vol_hi, &
-                                                                           update, updt_lo, updt_hi)
+    call construct_hydro_update<<<numBlocks, numThreads, 0, stream>>>(k_lo_d, k_hi_d, dx, dt_d(1), &
+                                                                      flux1, q1, f1_lo, f1_hi, &
+                                                                      flux2, q2, f2_lo, f2_hi, &
+                                                                      flux3, q3, f3_lo, f3_hi, &
+                                                                      area1, a1_lo, a1_hi, &
+                                                                      area2, a2_lo, a2_hi, &
+                                                                      area3, a3_lo, a3_hi, &
+                                                                      vol, vol_lo, vol_hi, &
+                                                                      update, updt_lo, updt_hi)
 
     cuda_result = cudaStreamSynchronize(stream)
 
@@ -982,9 +979,6 @@ contains
     use bl_constants_module, only: ZERO
     use amrex_fort_module, only: rt => amrex_real
     use castro_util_module, only: summass
-#ifdef CUDA
-    use cuda_interfaces_module, only: cuda_summass
-#endif
 
     implicit none
 
@@ -1016,8 +1010,8 @@ contains
 
     call threads_and_blocks(lo, hi, numBlocks, numThreads)
 
-    call cuda_summass<<<numBlocks, numThreads, 0, stream>>>(lo, hi, rho, r_lo, r_hi, &
-                                                            dx, vol, v_lo, v_hi, mass_d(1))
+    call summass<<<numBlocks, numThreads, 0, stream>>>(lo, hi, rho, r_lo, r_hi, &
+                                                       dx, vol, v_lo, v_hi, mass_d(1))
 
     cuda_result = cudaMemcpyAsync(mass_loc, mass_d, 1, cudaMemcpyDeviceToHost, stream)
 
@@ -1044,9 +1038,6 @@ contains
                         adv_h3,domlo,domhi,dx,xlo,time,bc) bind(C, name="ca_hypfill")
 
     use bc_fill_module, only: hypfill
-#ifdef CUDA
-    use cuda_interfaces_module, only: cuda_hypfill
-#endif
 
     implicit none
 
@@ -1110,8 +1101,8 @@ contains
 
     call threads_and_blocks(adv_lo, adv_hi, numBlocks, numThreads)
 
-    call cuda_hypfill<<<numBlocks, numThreads, 0, stream>>>(adv, adv_lo_d, adv_hi_d, domlo_d, domhi_d, &
-                                                            dx_d, xlo_d, time_d(1), bc_d)
+    call hypfill<<<numBlocks, numThreads, 0, stream>>>(adv_lo_d, adv_hi_d, adv, adv_lo_d, adv_hi_d, domlo_d, domhi_d, &
+                                                       dx_d, xlo_d, time_d(1), bc_d)
 
     cuda_result = cudaStreamSynchronize(stream)
 
@@ -1139,9 +1130,6 @@ contains
 
     use amrex_fort_module, only: rt => amrex_real
     use bc_fill_module, only: denfill
-#ifdef CUDA
-    use cuda_interfaces_module, only: cuda_denfill
-#endif
 
     implicit none
 
@@ -1208,8 +1196,8 @@ contains
 
     call threads_and_blocks(adv_lo, adv_hi, numBlocks, numThreads)
 
-    call cuda_denfill<<<numBlocks, numThreads, 0, stream>>>(adv, adv_lo_d, adv_hi_d, domlo_d, domhi_d, &
-                                                            dx_d, xlo_d, time_d(1), bc_d)
+    call denfill<<<numBlocks, numThreads, 0, stream>>>(adv_lo_d, adv_hi_d, adv, adv_lo_d, adv_hi_d, domlo_d, domhi_d, &
+                                                       dx_d, xlo_d, time_d(1), bc_d)
 
     cuda_result = cudaStreamSynchronize(stream)
 

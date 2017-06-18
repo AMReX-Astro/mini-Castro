@@ -1,6 +1,6 @@
 module advection_util_module
 
-  use amrex_fort_module, only: rt => amrex_real
+  use amrex_fort_module, only: rt => amrex_real, get_loop_bounds
 
   implicit none
 
@@ -651,7 +651,7 @@ contains
 
 
 #ifdef CUDA
-  attributes(device) &
+  attributes(global) &
 #endif
   subroutine construct_hydro_update(lo, hi, dx, dt, &
                                     f1, q1, f1_lo, f1_hi, &
@@ -692,15 +692,18 @@ contains
     real(rt), intent(inout) :: update(u_lo(1):u_hi(1),u_lo(2):u_hi(2),u_lo(3):u_hi(3),NVAR)
 
     integer  :: i, j, k, n
+    integer  :: blo(3), bhi(3)
     real(rt) :: pdivu, dxinv(3), dtinv
+
+    call get_loop_bounds(blo, bhi, lo, hi)
 
     dtinv = ONE / dt
     dxinv = ONE / dx
 
     do n = 1, NVAR
-       do k = lo(3), hi(3)
-          do j = lo(2), hi(2)
-             do i = lo(1), hi(1)
+       do k = blo(3), bhi(3)
+          do j = blo(2), bhi(2)
+             do i = blo(1), bhi(1)
 
                 ! Note that the fluxes have already been scaled by dt * dA.
 

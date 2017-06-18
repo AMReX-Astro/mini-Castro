@@ -2,12 +2,14 @@
 
 module mol_module
 
+  use amrex_fort_module, only: rt => amrex_real, get_loop_bounds
+
   implicit none
 
 contains
 
 #ifdef CUDA
-  attributes(device) &
+  attributes(global) &
 #endif
   subroutine prepare_for_fluxes(lo, hi, dt, dx, courno, &
                                 q, flatn, q_lo, q_hi, &
@@ -16,7 +18,6 @@ contains
                                 sxm, sxp, sym, syp, szm, szp, st_lo, st_hi, &
                                 qm, qp, It_lo, It_hi)
 
-    use amrex_fort_module, only: rt => amrex_real
     use meth_params_module, only: NQ, NQAUX
     use advection_util_module, only: compute_cfl, divu
     use flatten_module, only: uflaten
@@ -46,19 +47,23 @@ contains
     real(rt), intent(in   ) :: dx(3), dt
     real(rt), intent(inout) :: courno
 
+    integer :: blo(3), bhi(3)
+
+    call get_loop_bounds(blo, bhi, lo, hi)
+
     ! Check if we have violated the CFL criterion.
-    call compute_cfl(lo, hi, dt, dx, courno, &
+    call compute_cfl(blo, bhi, dt, dx, courno, &
                      q, q_lo, q_hi, &
                      qaux, qa_lo, qa_hi)
 
     ! Compute divergence of velocity field.
-    call divu(lo, hi, dx, q, q_lo, q_hi, div, g_lo, g_hi)
+    call divu(blo, bhi, dx, q, q_lo, q_hi, div, g_lo, g_hi)
 
     ! Compute flattening coefficient for slope calculations.
-    call uflaten(lo, hi, q, flatn, q_lo, q_hi)
+    call uflaten(blo, bhi, q, flatn, q_lo, q_hi)
 
     ! Create polynomial interpolation of fluid state.
-    call ppm_reconstruct(lo, hi, q, flatn, q_lo, q_hi, &
+    call ppm_reconstruct(blo, bhi, q, flatn, q_lo, q_hi, &
                          sxm, sxp, sym, syp, szm, szp, st_lo, st_hi)
 
   end subroutine prepare_for_fluxes
@@ -66,7 +71,7 @@ contains
 
 
 #ifdef CUDA
-  attributes(device) &
+  attributes(global) &
 #endif
   subroutine prepare_profile(lo, hi, &
                              q, flatn, q_lo, q_hi, &
@@ -95,8 +100,12 @@ contains
     real(rt), intent(inout) :: qm(It_lo(1):It_hi(1),It_lo(2):It_hi(2),It_lo(3):It_hi(3),NQ,3)
     real(rt), intent(inout) :: qp(It_lo(1):It_hi(1),It_lo(2):It_hi(2),It_lo(3):It_hi(3),NQ,3)
 
+    integer :: blo(3), bhi(3)
+
+    call get_loop_bounds(blo, bhi, lo, hi)
+
     ! Integrate under the reconstructed polynomial to get the edge state.
-    call ppm_int_profile(lo, hi, sxm, sxp, sym, syp, szm, szp, st_lo, st_hi, &
+    call ppm_int_profile(blo, bhi, sxm, sxp, sym, syp, szm, szp, st_lo, st_hi, &
                          qm, qp, It_lo, It_hi)
 
   end subroutine prepare_profile
@@ -104,7 +113,7 @@ contains
 
 
 #ifdef CUDA
-  attributes(device) &
+  attributes(global) &
 #endif
   subroutine construct_flux(lo, hi, domlo, domhi, dx, dt, idir, &
                             div, g_lo, g_hi, &
@@ -140,10 +149,14 @@ contains
     real(rt), intent(inout) :: qaux(qa_lo(1):qa_hi(1), qa_lo(2):qa_hi(2), qa_lo(3):qa_hi(3), NQAUX)
     real(rt), intent(in   ) :: dx(3), dt
 
-    call cmpflx(lo, hi, domlo, domhi, idir, qm, qp, It_lo, It_hi, flux, qint, f_lo, f_hi, qaux, qa_lo, qa_hi)
-    call apply_av(lo, hi, idir, dx, div, g_lo, g_hi, uin, uin_lo, uin_hi, flux, f_lo, f_hi)
-    call normalize_species_fluxes(lo, hi, flux, f_lo, f_hi)
-    call scale_flux(lo, hi, flux, f_lo, f_hi, area, a_lo, a_hi, dt)
+    integer :: blo(3), bhi(3)
+
+    call get_loop_bounds(blo, bhi, lo, hi)
+
+    call cmpflx(blo, bhi, domlo, domhi, idir, qm, qp, It_lo, It_hi, flux, qint, f_lo, f_hi, qaux, qa_lo, qa_hi)
+    call apply_av(blo, bhi, idir, dx, div, g_lo, g_hi, uin, uin_lo, uin_hi, flux, f_lo, f_hi)
+    call normalize_species_fluxes(blo, bhi, flux, f_lo, f_hi)
+    call scale_flux(blo, bhi, flux, f_lo, f_hi, area, a_lo, a_hi, dt)
 
   end subroutine construct_flux
 

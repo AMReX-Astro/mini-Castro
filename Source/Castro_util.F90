@@ -1135,12 +1135,12 @@ contains
 
 
 #ifdef CUDA
-  attributes(device) &
+  attributes(global) &
 #endif
   subroutine summass(lo,hi,rho,r_lo,r_hi,dx, &
                      vol,v_lo,v_hi,mass)
 
-    use amrex_fort_module, only: rt => amrex_real
+    use amrex_fort_module, only: rt => amrex_real, get_loop_bounds
 
     implicit none
 
@@ -1153,11 +1153,14 @@ contains
     real(rt), intent(inout) :: mass
 
     integer  :: i, j, k
+    integer  :: blo(3), bhi(3)
     real(rt) :: dm
 
-    do k = lo(3), hi(3)
-       do j = lo(2), hi(2)
-          do i = lo(1), hi(1)
+    call get_loop_bounds(blo, bhi, lo, hi)
+
+    do k = blo(3), bhi(3)
+       do j = blo(2), bhi(2)
+          do i = blo(1), bhi(1)
              dm = rho(i,j,k) * vol(i,j,k)
 #ifdef CUDA
              dm = atomicAdd(mass, dm)
