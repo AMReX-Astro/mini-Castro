@@ -568,9 +568,22 @@ contains
                                  uin, uin_lo, uin_hi, &
                                  uout, uout_lo, uout_hi, &
                                  q, q_lo, q_hi, &
+                                 flatn, flatn_lo, flatn_hi, &
+                                 div, div_lo, div_hi, &
                                  qaux, qa_lo, qa_hi, &
                                  update, updt_lo, updt_hi, &
                                  dx, dt, &
+                                 q1, q1_lo, q1_hi, &
+                                 q2, q2_lo, q2_hi, &
+                                 q3, q3_lo, q3_hi, &
+                                 qm, qm_lo, qp_hi, &
+                                 qp, qp_lo, qm_hi, &
+                                 sxm, sxm_lo, sxm_hi, &
+                                 sxp, sxp_lo, sxp_hi, &
+                                 sym, sym_lo, sym_hi, &
+                                 syp, syp_lo, syp_hi, &
+                                 szm, szm_lo, szm_hi, &
+                                 szp, szp_lo, szp_hi, &
                                  flux1, f1_lo, f1_hi, &
                                  flux2, f2_lo, f2_hi, &
                                  flux3, f3_lo, f3_hi, &
@@ -585,13 +598,27 @@ contains
 
     implicit none
 
-    integer,  intent(in   ) :: lo(3), hi(3), verbose, idx
+    integer,  intent(in   ) :: lo(3), hi(3), idx
+    integer,  intent(in   ), value :: verbose
     integer,  intent(in   ) :: domlo(3), domhi(3)
     integer,  intent(in   ) :: uin_lo(3), uin_hi(3)
     integer,  intent(in   ) :: uout_lo(3), uout_hi(3)
     integer,  intent(in   ) :: q_lo(3), q_hi(3)
+    integer,  intent(in   ) :: flatn_lo(3), flatn_hi(3)
+    integer,  intent(in   ) :: div_lo(3), div_hi(3)
     integer,  intent(in   ) :: qa_lo(3), qa_hi(3)
     integer,  intent(in   ) :: updt_lo(3), updt_hi(3)
+    integer,  intent(in   ) :: q1_lo(3), q1_hi(3)
+    integer,  intent(in   ) :: q2_lo(3), q2_hi(3)
+    integer,  intent(in   ) :: q3_lo(3), q3_hi(3)
+    integer,  intent(in   ) :: qm_lo(3), qm_hi(3)
+    integer,  intent(in   ) :: qp_lo(3), qp_hi(3)
+    integer,  intent(in   ) :: sxm_lo(3), sxm_hi(3)
+    integer,  intent(in   ) :: sxp_lo(3), sxp_hi(3)
+    integer,  intent(in   ) :: sym_lo(3), sym_hi(3)
+    integer,  intent(in   ) :: syp_lo(3), syp_hi(3)
+    integer,  intent(in   ) :: szm_lo(3), szm_hi(3)
+    integer,  intent(in   ) :: szp_lo(3), szp_hi(3)
     integer,  intent(in   ) :: f1_lo(3), f1_hi(3)
     integer,  intent(in   ) :: f2_lo(3), f2_hi(3)
     integer,  intent(in   ) :: f3_lo(3), f3_hi(3)
@@ -603,8 +630,21 @@ contains
     real(rt), intent(in   ) :: uin(uin_lo(1):uin_hi(1), uin_lo(2):uin_hi(2), uin_lo(3):uin_hi(3), NVAR)
     real(rt), intent(inout) :: uout(uout_lo(1):uout_hi(1), uout_lo(2):uout_hi(2), uout_lo(3):uout_hi(3), NVAR)
     real(rt), intent(inout) :: q(q_lo(1):q_hi(1), q_lo(2):q_hi(2), q_lo(3):q_hi(3), NQ)
+    real(rt), intent(inout) :: flatn(flatn_lo(1):flatn_hi(1), flatn_lo(2):flatn_hi(2), flatn_lo(3):flatn_hi(3), NQ)
+    real(rt), intent(inout) :: div(div_lo(1):div_hi(1), div_lo(2):div_hi(2), div_lo(3):div_hi(3))
     real(rt), intent(inout) :: qaux(qa_lo(1):qa_hi(1), qa_lo(2):qa_hi(2), qa_lo(3):qa_hi(3), NQAUX)
     real(rt), intent(inout) :: update(updt_lo(1):updt_hi(1), updt_lo(2):updt_hi(2), updt_lo(3):updt_hi(3), NVAR)
+    real(rt), intent(inout) :: q1(q1_lo(1):q1_hi(1), q1_lo(2):q1_hi(2), q1_lo(3):q1_hi(3), NGDNV)
+    real(rt), intent(inout) :: q2(q2_lo(1):q2_hi(1), q2_lo(2):q2_hi(2), q2_lo(3):q2_hi(3), NGDNV)
+    real(rt), intent(inout) :: q3(q3_lo(1):q3_hi(1), q3_lo(2):q3_hi(2), q3_lo(3):q3_hi(3), NGDNV)
+    real(rt), intent(inout) :: qm(qm_lo(1):qm_hi(1), qm_lo(2):qm_hi(2), qm_lo(3):qm_hi(3), NQ)
+    real(rt), intent(inout) :: qp(qp_lo(1):qp_hi(1), qp_lo(2):qp_hi(2), qp_lo(3):qp_hi(3), NQ)
+    real(rt), intent(inout) :: sxm(sxm_lo(1):sxm_hi(1), sxm_lo(2):sxm_hi(2), sxm_lo(3):sxm_hi(3), NQ)
+    real(rt), intent(inout) :: sxp(sxp_lo(1):sxp_hi(1), sxp_lo(2):sxp_hi(2), sxp_lo(3):sxp_hi(3), NQ)
+    real(rt), intent(inout) :: sym(sym_lo(1):sym_hi(1), sym_lo(2):sym_hi(2), sym_lo(3):sym_hi(3), NQ)
+    real(rt), intent(inout) :: syp(syp_lo(1):syp_hi(1), syp_lo(2):syp_hi(2), syp_lo(3):syp_hi(3), NQ)
+    real(rt), intent(inout) :: szm(szm_lo(1):szm_hi(1), szm_lo(2):szm_hi(2), szm_lo(3):szm_hi(3), NQ)
+    real(rt), intent(inout) :: szp(szp_lo(1):szp_hi(1), szp_lo(2):szp_hi(2), szp_lo(3):szp_hi(3), NQ)
     real(rt), intent(inout) :: flux1(f1_lo(1):f1_hi(1), f1_lo(2):f1_hi(2), f1_lo(3):f1_hi(3), NVAR)
     real(rt), intent(inout) :: flux2(f2_lo(1):f2_hi(1), f2_lo(2):f2_hi(2), f2_lo(3):f2_hi(3), NVAR)
     real(rt), intent(inout) :: flux3(f3_lo(1):f3_hi(1), f3_lo(2):f3_hi(2), f3_lo(3):f3_hi(3), NVAR)
@@ -612,145 +652,69 @@ contains
     real(rt), intent(in   ) :: area2(a2_lo(1):a2_hi(1), a2_lo(2):a2_hi(2), a2_lo(3):a2_hi(3))
     real(rt), intent(in   ) :: area3(a3_lo(1):a3_hi(1), a3_lo(2):a3_hi(2), a3_lo(3):a3_hi(3))
     real(rt), intent(in   ) :: vol(vol_lo(1):vol_hi(1), vol_lo(2):vol_hi(2), vol_lo(3):vol_hi(3))
-    real(rt), intent(in   ) :: dx(3), dt, time
+    real(rt), intent(in   ) :: dx(3)
+    real(rt), intent(in   ), value :: dt, time
     real(rt), intent(inout) :: courno
 
-    integer :: ngf
-    integer :: It_lo(3), It_hi(3)
-    integer :: st_lo(3), st_hi(3)
-    integer :: g_lo(3), g_hi(3)
-    integer :: gd_lo(3), gd_hi(3)
     integer :: k_lo(3), k_hi(3)
     integer :: idir
-
-    real(rt), pointer :: q1(:,:,:,:)
-    real(rt), pointer :: q2(:,:,:,:)
-    real(rt), pointer :: q3(:,:,:,:)
-
-    real(rt), pointer :: flatn(:,:,:)
-    real(rt), pointer :: div(:,:,:)
-
-    real(rt), pointer :: qm(:,:,:,:,:)
-    real(rt), pointer :: qp(:,:,:,:,:)
-
-    real(rt), pointer :: sxm(:,:,:,:), sym(:,:,:,:), szm(:,:,:,:)
-    real(rt), pointer :: sxp(:,:,:,:), syp(:,:,:,:), szp(:,:,:,:)
 
 #ifdef CUDA
     attributes(managed) :: uin, uout, q, qaux, update, flux1, flux2, flux3, area1, area2, area3, vol, &
                            lo, hi, uin_lo, uin_hi, uout_lo, uout_hi, q_lo, q_hi, qa_lo, qa_hi, &
                            updt_lo, updt_hi, dx, f1_lo, f1_hi, f2_lo, f2_hi, f3_lo, f3_hi, &
-                           a1_lo, a1_hi, a2_lo, a2_hi, a3_lo, a3_hi, vol_lo, vol_hi
-    attributes(managed) :: q1, q2, q3, flatn, div, sxm, sxp, sym, syp, szm, szp, qm, qp
+                           a1_lo, a1_hi, a2_lo, a2_hi, a3_lo, a3_hi, vol_lo, vol_hi, &
+                           q1, q1_lo, q1_hi, q2, q2_lo, q2_hi, q3, q3_lo, q3_hi, &
+                           qm, qm_lo, qm_hi, qp, qp_lo, qp_hi, &
+                           sxm, sxm_lo, sxm_hi, sxp, sxp_lo, sxp_hi, &
+                           sym, sym_lo, sym_hi, syp, syp_lo, syp_hi, &
+                           szm, szm_lo, szm_hi, szp, szp_lo, szp_hi, &
+                           flatn, flatn_lo, flatn_hi, div, div_lo, div_hi
 
     integer                   :: cuda_result
     integer(cuda_stream_kind) :: stream
     type(dim3)                :: numThreads, numBlocks
 
-    real(rt), managed, pointer :: time_d(:)
     integer,  managed, pointer :: domlo_d(:), domhi_d(:)
-    real(rt), managed, pointer :: dt_d(:)
     integer,  managed, pointer :: k_lo_d(:), k_hi_d(:)
-    integer,  managed, pointer :: st_lo_d(:), st_hi_d(:)
-    integer,  managed, pointer :: It_lo_d(:), It_hi_d(:)
-    integer,  managed, pointer :: g_lo_d(:), g_hi_d(:)
     real(rt), managed, pointer :: courno_d(:)
-    integer,  managed, pointer :: verbose_d(:)
-    integer,  managed, pointer :: idir_d(:)
 
     real(rt) :: courno_loc
 #endif
 
-    ngf = 1
-
-    It_lo = lo - 1
-    It_hi = hi + 1
-
-    st_lo = lo - 2
-    st_hi = hi + 2
-
-    gd_lo = lo
-    gd_hi = hi + 1
-
-    g_lo = lo - ngf
-    g_hi = hi + ngf
-
-    call bl_allocate(q1, f1_lo(1), f1_hi(1), f1_lo(2), f1_hi(2), f1_lo(3), f1_hi(3), 1, NGDNV)
-    call bl_allocate(q2, f2_lo(1), f2_hi(1), f2_lo(2), f2_hi(2), f2_lo(3), f2_hi(3), 1, NGDNV)
-    call bl_allocate(q3, f3_lo(1), f3_hi(1), f3_lo(2), f3_hi(2), f3_lo(3), f3_hi(3), 1, NGDNV)
-
-    call bl_allocate(flatn, q_lo(1), q_hi(1), q_lo(2), q_hi(2), q_lo(3), q_hi(3))
-
-    call bl_allocate(div, g_lo(1), g_hi(1), g_lo(2), g_hi(2), g_lo(3), g_hi(3))
-
-    call bl_allocate(qm, It_lo(1), It_hi(1), It_lo(2), It_hi(2), It_lo(3), It_hi(3), 1, NQ, 1, 3)
-    call bl_allocate(qp, It_lo(1), It_hi(1), It_lo(2), It_hi(2), It_lo(3), It_hi(3), 1, NQ, 1, 3)
-
-    call bl_allocate(sxm, st_lo(1), st_hi(1), st_lo(2), st_hi(2), st_lo(3), st_hi(3), 1, NQ)
-    call bl_allocate(sxp, st_lo(1), st_hi(1), st_lo(2), st_hi(2), st_lo(3), st_hi(3), 1, NQ)
-    call bl_allocate(sym, st_lo(1), st_hi(1), st_lo(2), st_hi(2), st_lo(3), st_hi(3), 1, NQ)
-    call bl_allocate(syp, st_lo(1), st_hi(1), st_lo(2), st_hi(2), st_lo(3), st_hi(3), 1, NQ)
-    call bl_allocate(szm, st_lo(1), st_hi(1), st_lo(2), st_hi(2), st_lo(3), st_hi(3), 1, NQ)
-    call bl_allocate(szp, st_lo(1), st_hi(1), st_lo(2), st_hi(2), st_lo(3), st_hi(3), 1, NQ)
-
 #ifdef CUDA
 
-    call bl_allocate(time_d, 1, 1)
     call bl_allocate(domlo_d, 1, 3)
     call bl_allocate(domhi_d, 1, 3)
-    call bl_allocate(dt_d, 1, 1)
     call bl_allocate(k_lo_d, 1, 3)
     call bl_allocate(k_hi_d, 1, 3)
-    call bl_allocate(st_lo_d, 1, 3)
-    call bl_allocate(st_hi_d, 1, 3)
-    call bl_allocate(It_lo_d, 1, 3)
-    call bl_allocate(It_hi_d, 1, 3)
-    call bl_allocate(g_lo_d, 1, 3)
-    call bl_allocate(g_hi_d, 1, 3)
     call bl_allocate(courno_d, 1, 1)
-    call bl_allocate(verbose_d, 1, 1)
-    call bl_allocate(idir_d, 1, 1)
 
     stream = cuda_streams(mod(idx, max_cuda_streams) + 1)
 
-    cuda_result = cudaMemcpyAsync(time_d, time, 1, cudaMemcpyHostToDevice, stream)
-
     cuda_result = cudaMemcpyAsync(domlo_d, domlo, 3, cudaMemcpyHostToDevice, stream)
     cuda_result = cudaMemcpyAsync(domhi_d, domhi, 3, cudaMemcpyHostToDevice, stream)
-
-    cuda_result = cudaMemcpyAsync(dt_d, dt, 1, cudaMemcpyHostToDevice, stream)
-
-    cuda_result = cudaMemcpyAsync(st_lo_d, st_lo, 3, cudaMemcpyHostToDevice, stream)
-    cuda_result = cudaMemcpyAsync(st_hi_d, st_hi, 3, cudaMemcpyHostToDevice, stream)
-
-    cuda_result = cudaMemcpyAsync(It_lo_d, It_lo, 3, cudaMemcpyHostToDevice, stream)
-    cuda_result = cudaMemcpyAsync(It_hi_d, It_hi, 3, cudaMemcpyHostToDevice, stream)
-
-    cuda_result = cudaMemcpyAsync(g_lo_d, g_lo, 3, cudaMemcpyHostToDevice, stream)
-    cuda_result = cudaMemcpyAsync(g_hi_d, g_hi, 3, cudaMemcpyHostToDevice, stream)
 
     courno_loc = courno
 
     cuda_result = cudaMemcpyAsync(courno_d, courno_loc, 1, cudaMemcpyHostToDevice, stream)
 
-    cuda_result = cudaMemcpyAsync(verbose_d, verbose, 1, cudaMemcpyHostToDevice, stream)
-
     ! Construct edge states as inputs to flux construction
 
-    k_lo = g_lo
-    k_hi = g_hi
+    k_lo = div_lo
+    k_hi = div_hi
 
     cuda_result = cudaMemcpyAsync(k_lo_d, k_lo, 3, cudaMemcpyHostToDevice, stream)
     cuda_result = cudaMemcpyAsync(k_hi_d, k_hi, 3, cudaMemcpyHostToDevice, stream)
 
     call threads_and_blocks(k_lo, k_hi, numBlocks, numThreads)
 
-    call prepare_for_fluxes<<<numBlocks, numThreads, 0, stream>>>(k_lo_d, k_hi_d, dt_d(1), dx, courno_d(1), &
+    call prepare_for_fluxes<<<numBlocks, numThreads, 0, stream>>>(k_lo_d, k_hi_d, dt, dx, courno_d(1), &
                                                                   q, flatn, q_lo, q_hi, &
-                                                                  div, g_lo_d, g_hi_d, &
+                                                                  div, div_lo, div_hi, &
                                                                   qaux, qa_lo, qa_hi, &
-                                                                  sxm, sxp, sym, syp, szm, szp, st_lo_d, st_hi_d, &
-                                                                  qm, qp, It_lo_d, It_hi_d)
+                                                                  sxm, sxp, sym, syp, szm, szp, sxm_lo, sxm_hi, &
+                                                                  qm, qp, qm_lo, qm_hi)
 
     cuda_result = cudaStreamSynchronize(stream)
 
@@ -758,16 +722,14 @@ contains
 
     call prepare_profile<<<numBlocks, numThreads, 0, stream>>>(k_lo_d, k_hi_d, &
                                                                q, flatn, q_lo, q_hi, &
-                                                               sxm, sxp, sym, syp, szm, szp, st_lo_d, st_hi_d, &
-                                                               qm, qp, It_lo_d, It_hi_d)
+                                                               sxm, sxp, sym, syp, szm, szp, sxm_lo, sxm_hi, &
+                                                               qm, qp, qm_lo, qm_hi)
 
     cuda_result = cudaStreamSynchronize(stream)
 
     ! Compute F^x
 
     idir = 1
-
-    cuda_result = cudaMemcpyAsync(idir_d, idir, 1, cudaMemcpyHostToDevice, stream)
 
     k_lo = f1_lo
     k_hi = f1_hi
@@ -777,10 +739,10 @@ contains
 
     call threads_and_blocks(k_lo, k_hi, numBlocks, numThreads)
 
-    call construct_flux<<<numBlocks, numThreads, 0, stream>>>(k_lo_d, k_hi_d, domlo_d, domhi_d, dx, dt_d(1), idir_d(1), &
-                                                              div, g_lo_d, g_hi_d, &
+    call construct_flux<<<numBlocks, numThreads, 0, stream>>>(k_lo_d, k_hi_d, domlo_d, domhi_d, dx, dt, idir, &
+                                                              div, div_lo, div_hi, &
                                                               uin, uin_lo, uin_hi, &
-                                                              qm, qp, It_lo_d, It_hi_d, &
+                                                              qm, qp, qm_lo, qm_hi, &
                                                               flux1, q1, f1_lo, f1_hi, &
                                                               area1, a1_lo, a1_hi, &
                                                               qaux, qa_lo, qa_hi)
@@ -791,8 +753,6 @@ contains
 
     idir = 2
 
-    cuda_result = cudaMemcpyAsync(idir_d, idir, 1, cudaMemcpyHostToDevice, stream)
-
     k_lo = f2_lo
     k_hi = f2_hi
 
@@ -801,10 +761,10 @@ contains
 
     call threads_and_blocks(k_lo, k_hi, numBlocks, numThreads)
 
-    call construct_flux<<<numBlocks, numThreads, 0, stream>>>(k_lo_d, k_hi_d, domlo_d, domhi_d, dx, dt_d(1), idir_d(1), &
-                                                              div, g_lo_d, g_hi_d, &
+    call construct_flux<<<numBlocks, numThreads, 0, stream>>>(k_lo_d, k_hi_d, domlo_d, domhi_d, dx, dt, idir, &
+                                                              div, div_lo, div_hi, &
                                                               uin, uin_lo, uin_hi, &
-                                                              qm, qp, It_lo_d, It_hi_d, &
+                                                              qm, qp, qm_lo, qm_hi, &
                                                               flux2, q2, f2_lo, f2_hi, &
                                                               area2, a2_lo, a2_hi, &
                                                               qaux, qa_lo, qa_hi)
@@ -815,8 +775,6 @@ contains
 
     idir = 3
 
-    cuda_result = cudaMemcpyAsync(idir_d, idir, 1, cudaMemcpyHostToDevice, stream)
-
     k_lo = f3_lo
     k_hi = f3_hi
 
@@ -825,10 +783,10 @@ contains
 
     call threads_and_blocks(k_lo, k_hi, numBlocks, numThreads)
 
-    call construct_flux<<<numBlocks, numThreads, 0, stream>>>(k_lo_d, k_hi_d, domlo_d, domhi_d, dx, dt_d(1), idir_d(1), &
-                                                              div, g_lo_d, g_hi_d, &
+    call construct_flux<<<numBlocks, numThreads, 0, stream>>>(k_lo_d, k_hi_d, domlo_d, domhi_d, dx, dt, idir, &
+                                                              div, div_lo, div_hi, &
                                                               uin, uin_lo, uin_hi, &
-                                                              qm, qp, It_lo_d, It_hi_d, &
+                                                              qm, qp, qm_lo, qm_hi, &
                                                               flux3, q3, f3_lo, f3_hi, &
                                                               area3, a3_lo, a3_hi, &
                                                               qaux, qa_lo, qa_hi)
@@ -845,7 +803,7 @@ contains
 
     call threads_and_blocks(k_lo, k_hi, numBlocks, numThreads)
 
-    call construct_hydro_update<<<numBlocks, numThreads, 0, stream>>>(k_lo_d, k_hi_d, dx, dt_d(1), &
+    call construct_hydro_update<<<numBlocks, numThreads, 0, stream>>>(k_lo_d, k_hi_d, dx, dt, &
                                                                       flux1, q1, f1_lo, f1_hi, &
                                                                       flux2, q2, f2_lo, f2_hi, &
                                                                       flux3, q3, f3_lo, f3_hi, &
@@ -863,19 +821,19 @@ contains
 
     ! Construct edge states as inputs to flux construction
 
-    k_lo = g_lo
-    k_hi = g_hi
+    k_lo = div_lo
+    k_hi = div_hi
     call prepare_for_fluxes(k_lo, k_hi, dt, dx, courno, &
                             q, flatn, q_lo, q_hi, &
-                            div, g_lo, g_hi, &
+                            div, div_lo, div_hi, &
                             qaux, qa_lo, qa_hi, &
-                            sxm, sxp, sym, syp, szm, szp, st_lo, st_hi, &
-                            qm, qp, It_lo, It_hi)
+                            sxm, sxp, sym, syp, szm, szp, sxm_lo, sxm_hi, &
+                            qm, qp, qm_lo, qm_hi)
 
     call prepare_profile(k_lo, k_hi, &
                          q, flatn, q_lo, q_hi, &
-                         sxm, sxp, sym, syp, szm, szp, st_lo, st_hi, &
-                         qm, qp, It_lo, It_hi)
+                         sxm, sxp, sym, syp, szm, szp, sxm_lo, sxm_hi, &
+                         qm, qp, qm_lo, qm_hi)
 
     ! Compute F^x
 
@@ -883,9 +841,9 @@ contains
     k_lo = f1_lo
     k_hi = f1_hi
     call construct_flux(k_lo, k_hi, domlo, domhi, dx, dt, idir, &
-                        div, g_lo, g_hi, &
+                        div, div_lo, div_hi, &
                         uin, uin_lo, uin_hi, &
-                        qm, qp, It_lo, It_hi, &
+                        qm, qp, qm_lo, qm_hi, &
                         flux1, q1, f1_lo, f1_hi, &
                         area1, a1_lo, a1_hi, &
                         qaux, qa_lo, qa_hi)
@@ -896,9 +854,9 @@ contains
     k_lo = f2_lo
     k_hi = f2_hi
     call construct_flux(k_lo, k_hi, domlo, domhi, dx, dt, idir, &
-                        div, g_lo, g_hi, &
+                        div, div_lo, div_hi, &
                         uin, uin_lo, uin_hi, &
-                        qm, qp, It_lo, It_hi, &
+                        qm, qp, qm_lo, qm_hi, &
                         flux2, q2, f2_lo, f2_hi, &
                         area2, a2_lo, a2_hi, &
                         qaux, qa_lo, qa_hi)
@@ -909,9 +867,9 @@ contains
     k_lo = f3_lo
     k_hi = f3_hi
     call construct_flux(k_lo, k_hi, domlo, domhi, dx, dt, idir, &
-                        div, g_lo, g_hi, &
+                        div, div_lo, div_hi, &
                         uin, uin_lo, uin_hi, &
-                        qm, qp, It_lo, It_hi, &
+                        qm, qp, qm_lo, qm_hi, &
                         flux3, q3, f3_lo, f3_hi, &
                         area3, a3_lo, a3_hi, &
                         qaux, qa_lo, qa_hi)
@@ -932,40 +890,13 @@ contains
 
 #endif
 
-    call bl_deallocate(q1)
-    call bl_deallocate(q2)
-    call bl_deallocate(q3)
-
-    call bl_deallocate(flatn)
-    call bl_deallocate(div)
-
-    call bl_deallocate(qm)
-    call bl_deallocate(qp)
-
-    call bl_deallocate(sxm)
-    call bl_deallocate(sxp)
-    call bl_deallocate(sym)
-    call bl_deallocate(syp)
-    call bl_deallocate(szm)
-    call bl_deallocate(szp)
-
 #ifdef CUDA
 
-    call bl_deallocate(time_d)
     call bl_deallocate(domlo_d)
     call bl_deallocate(domhi_d)
-    call bl_deallocate(dt_d)
     call bl_deallocate(k_lo_d)
     call bl_deallocate(k_hi_d)
-    call bl_deallocate(st_lo_d)
-    call bl_deallocate(st_hi_d)
-    call bl_deallocate(It_lo_d)
-    call bl_deallocate(It_hi_d)
-    call bl_deallocate(g_lo_d)
-    call bl_deallocate(g_hi_d)
     call bl_deallocate(courno_d)
-    call bl_deallocate(verbose_d)
-    call bl_deallocate(idir_d)
 
 #endif
 

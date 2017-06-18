@@ -170,6 +170,22 @@ end subroutine ca_get_nqaux
 ! ::: ----------------------------------------------------------------
 ! :::
 
+subroutine ca_get_ngdnv(ngdnv_in) bind(C, name="ca_get_ngdnv")
+
+  use meth_params_module, only: NGDNV
+
+  implicit none
+
+  integer, intent(inout) :: ngdnv_in
+
+  ngdnv_in = NGDNV
+
+end subroutine ca_get_ngdnv
+
+! :::
+! ::: ----------------------------------------------------------------
+! :::
+
 subroutine ca_get_method_params(nGrowHyp) bind(C, name="ca_get_method_params")
 
   ! Passing data from F90 back to C++

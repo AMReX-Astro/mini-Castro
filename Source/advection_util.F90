@@ -677,7 +677,8 @@ contains
     integer,  intent(in   ) :: a3_lo(3), a3_hi(3)
     integer,  intent(in   ) :: vol_lo(3), vol_hi(3)
     integer,  intent(in   ) :: u_lo(3), u_hi(3)
-    real(rt), intent(in   ) :: dx(3), dt
+    real(rt), intent(in   ) :: dx(3)
+    real(rt), intent(in   ), value :: dt
 
     real(rt), intent(in   ) :: q1(f1_lo(1):f1_hi(1),f1_lo(2):f1_hi(2),f1_lo(3):f1_hi(3),NGDNV)
     real(rt), intent(in   ) :: q2(f2_lo(1):f2_hi(1),f2_lo(2):f2_hi(2),f2_lo(3):f2_hi(3),NGDNV)

@@ -44,7 +44,8 @@ contains
     real(rt), intent(inout) :: szp(st_lo(1):st_hi(1),st_lo(2):st_hi(2),st_lo(3):st_hi(3),NQ)
     real(rt), intent(inout) :: qm(It_lo(1):It_hi(1),It_lo(2):It_hi(2),It_lo(3):It_hi(3),NQ,3)
     real(rt), intent(inout) :: qp(It_lo(1):It_hi(1),It_lo(2):It_hi(2),It_lo(3):It_hi(3),NQ,3)
-    real(rt), intent(in   ) :: dx(3), dt
+    real(rt), intent(in   ) :: dx(3)
+    real(rt), intent(in   ), value :: dt
     real(rt), intent(inout) :: courno
 
     integer :: blo(3), bhi(3)
@@ -130,7 +131,8 @@ contains
 
     implicit none
 
-    integer,  intent(in   ) :: lo(3), hi(3), idir
+    integer,  intent(in   ) :: lo(3), hi(3)
+    integer,  intent(in   ), value :: idir
     integer,  intent(in   ) :: domlo(3), domhi(3)
     integer,  intent(in   ) :: g_lo(3), g_hi(3)
     integer,  intent(in   ) :: uin_lo(3), uin_hi(3)
@@ -147,7 +149,8 @@ contains
     real(rt), intent(inout) :: flux(f_lo(1):f_hi(1), f_lo(2):f_hi(2), f_lo(3):f_hi(3), NVAR)
     real(rt), intent(in   ) :: area(a_lo(1):a_hi(1), a_lo(2):a_hi(2), a_lo(3):a_hi(3))
     real(rt), intent(inout) :: qaux(qa_lo(1):qa_hi(1), qa_lo(2):qa_hi(2), qa_lo(3):qa_hi(3), NQAUX)
-    real(rt), intent(in   ) :: dx(3), dt
+    real(rt), intent(in   ) :: dx(3)
+    real(rt), intent(in   ), value :: dt
 
     integer :: blo(3), bhi(3)
 

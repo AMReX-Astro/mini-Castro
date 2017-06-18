@@ -28,6 +28,8 @@ extern "C"
 
   void ca_get_nqaux(int* nqaux);
 
+  void ca_get_ngdnv(int* ngdnv);
+
   void ca_set_special_tagging_flag(const amrex::Real& max_den, const int* flag);
 
   void ca_get_method_params(int* HYP_GROW);
@@ -132,24 +134,37 @@ extern "C"
      const amrex::Real* dx, const amrex::Real* dt_old, amrex::Real* dt);
 
   void ca_mol_single_stage
-    (const amrex::Real* time,
+    (const amrex::Real time,
      const int    lo[], const int    hi[],
      const int domlo[], const int domhi[],
      const BL_FORT_FAB_ARG_3D(state),
      BL_FORT_FAB_ARG_3D(stateout),
      BL_FORT_FAB_ARG_3D(q),
+     BL_FORT_FAB_ARG_3D(flatn),
+     BL_FORT_FAB_ARG_3D(div),
      BL_FORT_FAB_ARG_3D(qaux),
      BL_FORT_FAB_ARG_3D(update),
-     const amrex::Real dx[], const amrex::Real* dt,
-     D_DECL(BL_FORT_FAB_ARG_3D(xflux),
-            BL_FORT_FAB_ARG_3D(yflux),
-            BL_FORT_FAB_ARG_3D(zflux)),
-     D_DECL(BL_FORT_FAB_ARG_3D(xarea),
-            BL_FORT_FAB_ARG_3D(yarea),
-            BL_FORT_FAB_ARG_3D(zarea)),
+     const amrex::Real dx[], const amrex::Real dt,
+     BL_FORT_FAB_ARG_3D(q1),
+     BL_FORT_FAB_ARG_3D(q2),
+     BL_FORT_FAB_ARG_3D(q3),
+     BL_FORT_FAB_ARG_3D(qm),
+     BL_FORT_FAB_ARG_3D(qp),
+     BL_FORT_FAB_ARG_3D(sxm),
+     BL_FORT_FAB_ARG_3D(sxp),
+     BL_FORT_FAB_ARG_3D(sym),
+     BL_FORT_FAB_ARG_3D(syp),
+     BL_FORT_FAB_ARG_3D(szm),
+     BL_FORT_FAB_ARG_3D(szp),
+     BL_FORT_FAB_ARG_3D(xflux),
+     BL_FORT_FAB_ARG_3D(yflux),
+     BL_FORT_FAB_ARG_3D(zflux),
+     BL_FORT_FAB_ARG_3D(xarea),
+     BL_FORT_FAB_ARG_3D(yarea),
+     BL_FORT_FAB_ARG_3D(zarea),
      const BL_FORT_FAB_ARG_3D(volume),
      amrex::Real* cflLoc,
-     const int&  verbose, const int* idx);
+     const int verbose, const int* idx);
 
   void flush_output();
 

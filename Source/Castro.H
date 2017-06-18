@@ -227,6 +227,7 @@ public:
     static int       QRADVAR;
     static int       NQAUX;
     static int       NQ;
+    static int       NGDNV;
 
     static int       FirstAdv,  NumAdv;
     static int       FirstSpec, NumSpec;

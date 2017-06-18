@@ -164,6 +164,7 @@ Castro::variableSetUp ()
 
   ca_get_qvar(&QVAR);
   ca_get_nqaux(&NQAUX);
+  ca_get_ngdnv(&NGDNV);
 
   int coord_type = Geometry::Coord();
 

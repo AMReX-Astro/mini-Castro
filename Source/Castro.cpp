@@ -61,6 +61,7 @@ int          Castro::QVAR          = -1;
 int          Castro::QRADVAR       = 0;
 int          Castro::NQAUX         = -1;
 int          Castro::NQ            = -1;
+int          Castro::NGDNV         = -1;
 
 int          Castro::MOL_STAGES;
 Array< Array<Real> > Castro::a_mol;
