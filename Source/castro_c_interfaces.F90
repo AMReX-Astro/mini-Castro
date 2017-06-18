@@ -30,9 +30,9 @@ contains
     integer, intent(in)     :: idx
 
 #ifdef CUDA
-    attributes(managed) :: state, lo, hi, s_lo, s_hi, dx
+    attributes(managed) :: state, lo, hi, s_lo, s_hi, dx, xlo, xhi
 
-    real(rt), managed, pointer :: xlo_d(:), xhi_d(:), time_d(:)
+    real(rt), managed, pointer :: time_d(:)
     integer, managed, pointer :: level_d(:)
     integer, managed, pointer :: ns_d(:)
 
@@ -42,14 +42,9 @@ contains
 
     stream = cuda_streams(mod(idx, max_cuda_streams) + 1)
 
-    call bl_allocate(xlo_d, 1, 3)
-    call bl_allocate(xhi_d, 1, 3)
     call bl_allocate(time_d, 1, 1)
     call bl_allocate(level_d, 1, 1)
     call bl_allocate(ns_d, 1, 1)    
-
-    cuda_result = cudaMemcpyAsync(xlo_d, xlo, 3, cudaMemcpyHostToDevice, stream)
-    cuda_result = cudaMemcpyAsync(xhi_d, xhi, 3, cudaMemcpyHostToDevice, stream)
 
     cuda_result = cudaMemcpyAsync(time_d, time, 3, cudaMemcpyHostToDevice, stream)
     cuda_result = cudaMemcpyAsync(level_d, level, 3, cudaMemcpyHostToDevice, stream)
@@ -60,12 +55,10 @@ contains
     call cuda_initdata<<<numBlocks, numThreads, 0, stream>>>( &
          level_d(1), time_d(1), lo, hi, ns_d(1), &
          state, s_lo, s_hi, dx, &
-         xlo_d, xhi_d)
+         xlo, xhi)
 
     cuda_result = cudaStreamSynchronize(stream)
 
-    call bl_deallocate(xlo_d)
-    call bl_deallocate(xhi_d)
     call bl_deallocate(time_d)
     call bl_deallocate(level_d)
     call bl_Deallocate(ns_d)
@@ -360,12 +353,12 @@ contains
     integer,  intent(in   ) :: level, grid_no
 
 #ifdef CUDA
-    attributes(managed) :: vel, dat, lo, hi, v_lo, v_hi, d_lo, d_hi, dx
+    attributes(managed) :: vel, dat, lo, hi, v_lo, v_hi, d_lo, d_hi, dx, xlo
 
     integer,  managed, pointer :: nv_d(:), nc_d(:)
     integer,  managed, pointer :: domlo_d(:), domhi_d(:)
     integer,  managed, pointer :: bc_d(:,:,:)
-    real(rt), managed, pointer :: xlo_d(:), time_d(:), dt_d(:)
+    real(rt), managed, pointer :: time_d(:), dt_d(:)
     integer,  managed, pointer :: level_d(:), grid_no_d(:)
 
     integer :: cuda_result
@@ -382,7 +375,6 @@ contains
     call bl_allocate(domlo_d, 1, 3)
     call bl_allocate(domhi_d, 1, 3)
     call bl_allocate(bc_d, 1, 3, 1, 2, 1, nc)
-    call bl_allocate(xlo_d, 1, 3)
     call bl_allocate(time_d, 1, 1)
     call bl_allocate(dt_d, 1, 1)
     call bl_allocate(level_d, 1, 1)
@@ -395,7 +387,6 @@ contains
     cuda_result = cudaMemcpyAsync(domhi_d, domhi, 3, cudaMemcpyHostToDevice, stream)
 
     cuda_result = cudaMemcpyAsync(bc_d, bc, 6 * nc, cudaMemcpyHostToDevice, stream)
-    cuda_result = cudaMemcpyAsync(xlo_d, xlo, 3, cudaMemcpyHostToDevice, stream)
     cuda_result = cudaMemcpyAsync(time_d, time, 1, cudaMemcpyHostToDevice, stream)
     cuda_result = cudaMemcpyAsync(dt_d, dt, 1, cudaMemcpyHostToDevice, stream)
     cuda_result = cudaMemcpyAsync(level_d, level, 1, cudaMemcpyHostToDevice, stream)
@@ -406,7 +397,7 @@ contains
     call dervel<<<numBlocks, numThreads, 0, stream>>>(vel,v_lo,v_hi,nv_d(1), &
                                                       dat,d_lo,d_hi,nc_d(1), &
                                                       lo,hi,domlo_d,domhi_d, &
-                                                      dx,xlo_d,time_d(1),dt_d(1), &
+                                                      dx,xlo,time_d(1),dt_d(1), &
                                                       bc_d,level_d(1),grid_no_d(1))
 
     cuda_result = cudaStreamSynchronize(stream)
@@ -416,7 +407,6 @@ contains
     call bl_deallocate(domlo_d)
     call bl_deallocate(domhi_d)
     call bl_deallocate(bc_d)
-    call bl_deallocate(xlo_d)
     call bl_deallocate(time_d)
     call bl_deallocate(dt_d)
     call bl_deallocate(level_d)
@@ -453,12 +443,12 @@ contains
     integer,  intent(in   ) :: bc(3,2,nc), level, grid_no
 
 #ifdef CUDA
-    attributes(managed) :: p, u, lo, hi, p_lo, p_hi, u_lo, u_hi, dx
+    attributes(managed) :: p, u, lo, hi, p_lo, p_hi, u_lo, u_hi, dx, xlo
 
     integer,  managed, pointer :: np_d(:), nc_d(:)
     integer,  managed, pointer :: domlo_d(:), domhi_d(:)
     integer,  managed, pointer :: bc_d(:,:,:)
-    real(rt), managed, pointer :: xlo_d(:), time_d(:), dt_d(:)
+    real(rt), managed, pointer :: time_d(:), dt_d(:)
     integer,  managed, pointer :: level_d(:), grid_no_d(:)
 
     integer :: cuda_result
@@ -472,7 +462,6 @@ contains
     call bl_allocate(domlo_d, 1, 3)
     call bl_allocate(domhi_d, 1, 3)
     call bl_allocate(bc_d, 1, 3, 1, 2, 1, nc)
-    call bl_allocate(xlo_d, 1, 3)
     call bl_allocate(time_d, 1, 1)
     call bl_allocate(dt_d, 1, 1)
     call bl_allocate(level_d, 1, 1)
@@ -485,7 +474,6 @@ contains
     cuda_result = cudaMemcpyAsync(domhi_d, domhi, 3, cudaMemcpyHostToDevice, stream)
 
     cuda_result = cudaMemcpyAsync(bc_d, bc, 6 * nc, cudaMemcpyHostToDevice, stream)
-    cuda_result = cudaMemcpyAsync(xlo_d, xlo, 3, cudaMemcpyHostToDevice, stream)
     cuda_result = cudaMemcpyAsync(time_d, time, 1, cudaMemcpyHostToDevice, stream)
     cuda_result = cudaMemcpyAsync(dt_d, dt, 1, cudaMemcpyHostToDevice, stream)
     cuda_result = cudaMemcpyAsync(level_d, level, 1, cudaMemcpyHostToDevice, stream)
@@ -496,7 +484,7 @@ contains
     call derpres<<<numBlocks, numThreads, 0, stream>>>(p,p_lo,p_hi,np_d(1), &
                                                        u,u_lo,u_hi,nc_d(1), &
                                                        lo,hi,domlo_d,domhi_d, &
-                                                       dx,xlo_d,time_d(1),dt_d(1), &
+                                                       dx,xlo,time_d(1),dt_d(1), &
                                                        bc_d,level_d(1),grid_no_d(1))
 
     cuda_result = cudaStreamSynchronize(stream)
@@ -506,7 +494,6 @@ contains
     call bl_deallocate(domlo_d)
     call bl_deallocate(domhi_d)
     call bl_deallocate(bc_d)
-    call bl_deallocate(xlo_d)
     call bl_deallocate(time_d)
     call bl_deallocate(dt_d)
     call bl_deallocate(level_d)
