@@ -11,7 +11,7 @@ module c_interface_modules
 
 contains
 
-  subroutine ca_initdata(level, time, lo, hi, ns, &
+  subroutine ca_initdata(level, lo, hi, &
                          state, s_lo, s_hi, dx, &
                          xlo, xhi, idx) bind(C, name="ca_initdata")
 
@@ -22,19 +22,15 @@ contains
 
     implicit none
 
-    integer,  intent(in   ) :: level, ns
+    integer,  intent(in   ), value :: level
     integer,  intent(in   ) :: lo(3), hi(3)
     integer,  intent(in   ) :: s_lo(3), s_hi(3)
-    real(rt), intent(in   ) :: xlo(3), xhi(3), time, dx(3)
+    real(rt), intent(in   ) :: xlo(3), xhi(3), dx(3)
     real(rt), intent(inout) :: state(s_lo(1):s_hi(1),s_lo(2):s_hi(2),s_lo(3):s_hi(3),NVAR)
     integer, intent(in)     :: idx
 
 #ifdef CUDA
     attributes(managed) :: state, lo, hi, s_lo, s_hi, dx, xlo, xhi
-
-    real(rt), managed, pointer :: time_d(:)
-    integer, managed, pointer :: level_d(:)
-    integer, managed, pointer :: ns_d(:)
 
     integer :: cuda_result
     integer(kind=cuda_stream_kind) :: stream
@@ -42,32 +38,15 @@ contains
 
     stream = cuda_streams(mod(idx, max_cuda_streams) + 1)
 
-    call bl_allocate(time_d, 1, 1)
-    call bl_allocate(level_d, 1, 1)
-    call bl_allocate(ns_d, 1, 1)    
-
-    cuda_result = cudaMemcpyAsync(time_d, time, 3, cudaMemcpyHostToDevice, stream)
-    cuda_result = cudaMemcpyAsync(level_d, level, 3, cudaMemcpyHostToDevice, stream)
-    cuda_result = cudaMemcpyAsync(ns_d, ns, 3, cudaMemcpyHostToDevice, stream)
-    
     call threads_and_blocks(lo, hi, numBlocks, numThreads)
 
-    call cuda_initdata<<<numBlocks, numThreads, 0, stream>>>( &
-         level_d(1), time_d(1), lo, hi, ns_d(1), &
-         state, s_lo, s_hi, dx, &
-         xlo, xhi)
-
-    cuda_result = cudaStreamSynchronize(stream)
-
-    call bl_deallocate(time_d)
-    call bl_deallocate(level_d)
-    call bl_Deallocate(ns_d)
+    call cuda_initdata &
+         <<<numBlocks, numThreads, 0, stream>>> &
+         (level, lo, hi, state, s_lo, s_hi, dx, xlo, xhi)
 
 #else
 
-    call initdata(level, time, lo, hi, ns, &
-                  state, s_lo(1), s_lo(2), s_lo(3), s_hi(1), s_hi(2), s_hi(3), dx, &
-                  xlo, xhi)
+    call initdata(level, lo, hi, state, s_lo(1), s_lo(2), s_lo(3), s_hi(1), s_hi(2), s_hi(3), dx, xlo, xhi)
 
 #endif
 

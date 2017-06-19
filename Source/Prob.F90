@@ -58,7 +58,7 @@ contains
 #ifdef CUDA
 attributes(device) &
 #endif     
-subroutine initdata(level,time,lo,hi,nscal, &
+subroutine initdata(level,lo,hi, &
                     state,state_l1,state_l2,state_l3,state_h1,state_h2,state_h3, &
                     delta,xlo,xhi)
 
@@ -72,10 +72,10 @@ subroutine initdata(level,time,lo,hi,nscal, &
 
   implicit none
 
-  integer,  intent(in   ) :: level, nscal
+  integer,  intent(in   ), value :: level
   integer,  intent(in   ) :: lo(3), hi(3)
   integer,  intent(in   ) :: state_l1,state_l2,state_l3,state_h1,state_h2,state_h3
-  real(rt), intent(in   ) :: xlo(3), xhi(3), time, delta(3)
+  real(rt), intent(in   ) :: xlo(3), xhi(3), delta(3)
   real(rt), intent(inout) :: state(state_l1:state_h1,state_l2:state_h2,state_l3:state_h3,NVAR)
 
   real(rt) :: xmin, ymin, zmin

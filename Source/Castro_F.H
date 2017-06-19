@@ -190,9 +190,7 @@ extern "C"
      const int* level, const int* grid_no);
 
   void ca_initdata
-    (const int& level, const amrex::Real& time,
-     const int* lo, const int* hi,
-     const int& num_state,
+    (const int level, const int* lo, const int* hi,
      BL_FORT_FAB_ARG_3D(state),
      const amrex::Real* dx, const amrex::Real* xlo, const amrex::Real* xhi, const int* idx);
   

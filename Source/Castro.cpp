@@ -405,7 +405,6 @@ Castro::initData ()
     //
     // Loop over grids, call FORTRAN function to init with data.
     //
-    int ns          = NUM_STATE;
     const Real* dx  = geom.CellSize();
     MultiFab& S_new = get_new_data(State_Type);
     Real cur_time   = state[State_Type].curTime();
@@ -434,7 +433,7 @@ Castro::initData ()
           const int* lo      = box.loVect();
           const int* hi      = box.hiVect();
 
-          ca_initdata(level, cur_time, lo, hi, ns,
+          ca_initdata(level, lo, hi,
 		      S_new[mfi].dataPtr(), S_new[mfi].loVect(), S_new[mfi].hiVect(), dx,
 		      rbx[mfi.tileIndex()].lo(), rbx[mfi.tileIndex()].hi(), &idx);
 
