@@ -101,9 +101,6 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
 
 	FArrayBox& vol = volume[mfi];
 
-	q.resize(qbx, QVAR);
-	qaux.resize(qbx, NQAUX);
-
 	// convert the conservative state to the primitive variable state.
 	// this fills both q and qaux.
 
