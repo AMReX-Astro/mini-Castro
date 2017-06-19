@@ -67,30 +67,30 @@ extern "C"
   void ca_ctoprim(const int* lo, const int* hi,
 	          const amrex::Real* u, const int* u_lo, const int* u_hi,
 		  const amrex::Real* q, const int* q_lo, const int* q_hi,
-		  const amrex::Real* qaux, const int* qa_lo, const int* qa_hi, const int* idx);
+		  const amrex::Real* qaux, const int* qa_lo, const int* qa_hi);
 
   void ca_check_initial_species
-    (const int* lo, const int* hi, BL_FORT_FAB_ARG_3D(state), const int* idx);
+    (const int* lo, const int* hi, BL_FORT_FAB_ARG_3D(state));
 
   void ca_enforce_minimum_density
     (const amrex::Real* S_old, const int* s_old_lo, const int* s_old_hi,
      const amrex::Real* S_new, const int* s_new_lo, const int* s_new_hi,
      const amrex::Real* vol, const int* vol_lo, const int* vol_hi,
      const int* lo, const int* hi,
-     const amrex::Real* frac_change, const int* verbose, const int* idx);
+     const amrex::Real* frac_change, const int verbose);
 
   void ca_normalize_species
-    (BL_FORT_FAB_ARG_3D(S_new), const int* lo, const int* hi, const int* idx);
+    (BL_FORT_FAB_ARG_3D(S_new), const int* lo, const int* hi);
 
   void ca_compute_temp
-    (const int* lo, const int* hi, const BL_FORT_FAB_ARG_3D(state), const int* idx);
+    (const int* lo, const int* hi, const BL_FORT_FAB_ARG_3D(state));
 
   void ca_enforce_consistent_e
-    (const int* lo, const int* hi, BL_FORT_FAB_ARG_3D(state), const int* idx);
+    (const int* lo, const int* hi, BL_FORT_FAB_ARG_3D(state));
 
   void ca_reset_internal_e
     (const int* lo, const int* hi, BL_FORT_FAB_ARG_3D(S_new),
-     const int& verbose, const int* idx);
+     const int verbose);
 
   void ca_hypfill
     (BL_FORT_FAB_ARG(state),
@@ -125,7 +125,7 @@ extern "C"
   void ca_estdt
     (const int* lo, const int* hi,
      const BL_FORT_FAB_ARG_3D(state),
-     const amrex::Real* dx, amrex::Real* dt, const int* idx);
+     const amrex::Real* dx, amrex::Real* dt);
 
   void ca_check_timestep
     (const BL_FORT_FAB_ARG_3D(state_old),
@@ -163,13 +163,13 @@ extern "C"
      BL_FORT_FAB_ARG_3D(yarea),
      BL_FORT_FAB_ARG_3D(zarea),
      const BL_FORT_FAB_ARG_3D(volume),
-     const int verbose, const int* idx);
+     const int verbose);
 
   void flush_output();
 
   void ca_summass
     (const int* lo, const int* hi, const BL_FORT_FAB_ARG_3D(rho),
-     const amrex::Real* dx, BL_FORT_FAB_ARG_3D(vol), amrex::Real* mass, const int* idx);
+     const amrex::Real* dx, BL_FORT_FAB_ARG_3D(vol), amrex::Real* mass);
 
   void ca_derpres
     (BL_FORT_FAB_ARG_3D(der),const int* nvar,
@@ -192,7 +192,7 @@ extern "C"
   void ca_initdata
     (const int level, const int* lo, const int* hi,
      BL_FORT_FAB_ARG_3D(state),
-     const amrex::Real* dx, const amrex::Real* xlo, const amrex::Real* xhi, const int* idx);
+     const amrex::Real* dx, const amrex::Real* xlo, const amrex::Real* xhi);
   
 #ifdef __cplusplus
 }

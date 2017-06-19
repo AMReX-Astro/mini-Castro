@@ -433,14 +433,16 @@ Castro::initData ()
           const int* lo      = box.loVect();
           const int* hi      = box.hiVect();
 
+	  set_stream_index(idx);
+
           ca_initdata(level, lo, hi,
 		      S_new[mfi].dataPtr(), S_new[mfi].loVect(), S_new[mfi].hiVect(), dx,
-		      rbx[mfi.tileIndex()].lo(), rbx[mfi.tileIndex()].hi(), &idx);
+		      rbx[mfi.tileIndex()].lo(), rbx[mfi.tileIndex()].hi());
 
           // Verify that the sum of (rho X)_i = rho at every cell
 
           ca_check_initial_species(ARLIM_3D(lo), ARLIM_3D(hi), 
-				   BL_TO_FORTRAN_3D(S_new[mfi]), &idx);
+				   BL_TO_FORTRAN_3D(S_new[mfi]));
        }
 #ifdef CUDA
        gpu_synchronize();
@@ -552,9 +554,11 @@ Castro::estTimeStep (Real dt_old)
 	    const Box& box = mfi.tilebox();
 	    const int idx = mfi.tileIndex();
 
+	    set_stream_index(idx);
+
 	    ca_estdt(ARLIM_3D(box.loVect()), ARLIM_3D(box.hiVect()),
 		     BL_TO_FORTRAN_3D(stateMF[mfi]),
-		     ZFILL(dx),&dt,&idx);
+		     ZFILL(dx),&dt);
 	}
 #ifdef _OPENMP
 #pragma omp critical (castro_estdt)
@@ -918,11 +922,17 @@ Castro::normalize_species (MultiFab& S_new)
        const Box& bx = mfi.growntilebox(ng);
        const int idx = mfi.tileIndex();
 
+       set_stream_index(idx);
+
        ca_normalize_species(BL_TO_FORTRAN_3D(S_new[mfi]), 
-			    ARLIM_3D(bx.loVect()), ARLIM_3D(bx.hiVect()), &idx);
+			    ARLIM_3D(bx.loVect()), ARLIM_3D(bx.hiVect()));
     }
 
 //    Device::endDeviceLaunchRegion();
+
+#ifdef CUDA
+    gpu_synchronize();
+#endif
 
 }
 
@@ -944,10 +954,17 @@ Castro::enforce_consistent_e (MultiFab& S)
         const int* hi      = box.hiVect();
 
 	const int idx      = mfi.tileIndex();
-        ca_enforce_consistent_e(ARLIM_3D(lo), ARLIM_3D(hi), BL_TO_FORTRAN_3D(S[mfi]), &idx);
+
+	set_stream_index(idx);
+
+        ca_enforce_consistent_e(ARLIM_3D(lo), ARLIM_3D(hi), BL_TO_FORTRAN_3D(S[mfi]));
     }
 
   // Device::endDeviceLaunchRegion();
+
+#ifdef CUDA
+    gpu_synchronize();
+#endif
 
 }
 
@@ -979,12 +996,14 @@ Castro::enforce_min_density (MultiFab& S_old, MultiFab& S_new)
 	FArrayBox& statenew = S_new[mfi];
 	FArrayBox& vol      = volume[mfi];
 	const int idx = mfi.tileIndex();
-	
+
+	set_stream_index(idx);
+
 	ca_enforce_minimum_density(stateold.dataPtr(), ARLIM_3D(stateold.loVect()), ARLIM_3D(stateold.hiVect()),
 				   statenew.dataPtr(), ARLIM_3D(statenew.loVect()), ARLIM_3D(statenew.hiVect()),
 				   vol.dataPtr(), ARLIM_3D(vol.loVect()), ARLIM_3D(vol.hiVect()),
 				   ARLIM_3D(bx.loVect()), ARLIM_3D(bx.hiVect()),
-				   &dens_change, &verbose, &idx);
+				   &dens_change, verbose);
 
     }
 
@@ -1161,10 +1180,16 @@ Castro::reset_internal_energy(MultiFab& S_new)
         const Box& bx = mfi.growntilebox(ng);
 	const int idx = mfi.tileIndex();
 
+	set_stream_index(idx);
+
         ca_reset_internal_e(ARLIM_3D(bx.loVect()), ARLIM_3D(bx.hiVect()),
 			    BL_TO_FORTRAN_3D(S_new[mfi]),
-			    print_fortran_warnings, &idx);
+			    print_fortran_warnings);
     }
+
+#ifdef CUDA
+    gpu_synchronize();
+#endif
 
     // Flush Fortran output
 
@@ -1187,11 +1212,16 @@ Castro::computeTemp(MultiFab& State)
   for (MFIter mfi(State,true); mfi.isValid(); ++mfi)
     {
       const Box& bx = mfi.growntilebox();
-      
+
 	const int idx = mfi.tileIndex();
 	ca_compute_temp(ARLIM_3D(bx.loVect()), ARLIM_3D(bx.hiVect()),
-			BL_TO_FORTRAN_3D(State[mfi]), &idx);
+			BL_TO_FORTRAN_3D(State[mfi]));
     }
+
+#ifdef CUDA
+  gpu_synchronize();
+#endif
+
 }
 
 MultiFab&
@@ -1253,7 +1283,7 @@ Castro::check_for_nan(MultiFab& state, int check_ghost)
   if (check_ghost == 1) {
     ng = state.nComp();
   }
-  
+
   if (state.contains_nan(Density,state.nComp(),ng,true))
     {
       for (int i = 0; i < state.nComp(); i++)

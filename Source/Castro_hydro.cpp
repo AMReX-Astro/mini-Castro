@@ -109,10 +109,12 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
 
 	const int idx = mfi.tileIndex();
 
+	set_stream_index(idx);
+
 	ca_ctoprim(ARLIM_3D(qbx.loVect()), ARLIM_3D(qbx.hiVect()),
 		   statein.dataPtr(), ARLIM_3D(statein.loVect()), ARLIM_3D(statein.hiVect()),
 		   q.dataPtr(), ARLIM_3D(q.loVect()), ARLIM_3D(q.hiVect()),
-		   qaux.dataPtr(), ARLIM_3D(qaux.loVect()), ARLIM_3D(qaux.hiVect()), &idx);
+		   qaux.dataPtr(), ARLIM_3D(qaux.loVect()), ARLIM_3D(qaux.hiVect()));
 
 	ca_mol_single_stage
 	  (time,
@@ -143,7 +145,7 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
 	   BL_TO_FORTRAN_3D(area[1][mfi]),
 	   BL_TO_FORTRAN_3D(area[2][mfi]),
 	   BL_TO_FORTRAN_3D(volume[mfi]),
-	   verbose, &idx);
+	   verbose);
 
 	// Store the fluxes from this advance -- we weight them by the
 	// integrator weight for this stage

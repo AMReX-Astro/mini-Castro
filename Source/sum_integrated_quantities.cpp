@@ -136,13 +136,15 @@ Castro::volWgtSum (const std::string& name,
         const int* hi   = box.hiVect();
 	const int  idx  = mfi.tileIndex();
 
+	set_stream_index(idx);
+
         //
         // Note that this routine will do a volume weighted sum of
         // whatever quantity is passed in, not strictly the "mass".
         //
 
 	ca_summass(ARLIM_3D(lo),ARLIM_3D(hi),BL_TO_FORTRAN_3D(fab),
-		   ZFILL(dx),BL_TO_FORTRAN_3D(volume[mfi]),&s,&idx);
+		   ZFILL(dx),BL_TO_FORTRAN_3D(volume[mfi]),&s);
 
         sum += s;
     }
