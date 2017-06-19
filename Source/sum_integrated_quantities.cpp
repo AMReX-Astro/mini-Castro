@@ -136,7 +136,7 @@ Castro::volWgtSum (const std::string& name,
         const int* hi   = box.hiVect();
 	const int  idx  = mfi.tileIndex();
 
-	set_stream_index(idx);
+	Device::set_stream_index(idx);
 
         //
         // Note that this routine will do a volume weighted sum of
