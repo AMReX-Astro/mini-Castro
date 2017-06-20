@@ -604,46 +604,40 @@ contains
 
     do n = 1, NVAR
 
-       if ( n == UTEMP ) then
+       if ( n == UTEMP ) cycle
 
-          flux(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),n) = ZERO
+       do k = lo(3), hi(3)
+          do j = lo(2), hi(2)
+             do i = lo(1), hi(1)
 
-       else
+                if (idir .eq. 1) then
 
-          do k = lo(3), hi(3)
-             do j = lo(2), hi(2)
-                do i = lo(1), hi(1)
+                   div1 = FOURTH * (div(i,j,k  ) + div(i,j+1,k  ) + &
+                        div(i,j,k+1) + div(i,j+1,k+1))
+                   div1 = difmag * min(ZERO, div1)
+                   div1 = div1 * (uin(i,j,k,n) - uin(i-1,j,k,n))
 
-                   if (idir .eq. 1) then
+                else if (idir .eq. 2) then
 
-                      div1 = FOURTH * (div(i,j,k  ) + div(i,j+1,k  ) + &
-                                       div(i,j,k+1) + div(i,j+1,k+1))
-                      div1 = difmag * min(ZERO, div1)
-                      div1 = div1 * (uin(i,j,k,n) - uin(i-1,j,k,n))
+                   div1 = FOURTH * (div(i,j,k  ) + div(i+1,j,k  ) + &
+                        div(i,j,k+1) + div(i+1,j,k+1))
+                   div1 = difmag * min(ZERO, div1)
+                   div1 = div1 * (uin(i,j,k,n) - uin(i,j-1,k,n))
 
-                   else if (idir .eq. 2) then
+                else
 
-                      div1 = FOURTH * (div(i,j,k  ) + div(i+1,j,k  ) + &
-                                       div(i,j,k+1) + div(i+1,j,k+1))
-                      div1 = difmag * min(ZERO, div1)
-                      div1 = div1 * (uin(i,j,k,n) - uin(i,j-1,k,n))
+                   div1 = FOURTH * (div(i,j  ,k) + div(i+1,j,k  ) + &
+                        div(i,j+1,k) + div(i+1,j+1,k))
+                   div1 = difmag * min(ZERO, div1)
+                   div1 = div1 * (uin(i,j,k,n)-uin(i,j,k-1,n))
 
-                   else
+                end if
 
-                      div1 = FOURTH * (div(i,j  ,k) + div(i+1,j,k  ) + &
-                                       div(i,j+1,k) + div(i+1,j+1,k))
-                      div1 = difmag * min(ZERO, div1)
-                      div1 = div1 * (uin(i,j,k,n)-uin(i,j,k-1,n))
+                flux(i,j,k,n) = flux(i,j,k,n) + dx(idir) * div1
 
-                   end if
-
-                   flux(i,j,k,n) = flux(i,j,k,n) + dx(idir) * div1
-
-                end do
              end do
           end do
-
-       end if
+       end do
 
     end do
 

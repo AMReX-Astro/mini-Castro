@@ -3,7 +3,7 @@ module riemann_module
   use amrex_fort_module, only: rt => amrex_real
   use meth_params_module, only: NQ, NQAUX, NVAR, QRHO, QU, QV, QW, &
                                 QPRES, QGAME, QREINT, QFS, &
-                                QFX, URHO, UMX, UMY, UMZ, UEDEN, UEINT, &
+                                QFX, URHO, UMX, UMY, UMZ, UTEMP, UEDEN, UEINT, &
                                 UFS, UFX, &
                                 NGDNV, GDRHO, GDPRES, GDGAME, &
                                 QC, QCSML, QGAMC, &
@@ -294,6 +294,7 @@ contains
 
              rhoetot = regdnv + HALF*qint(i,j,k,GDRHO)*(qint(i,j,k,iu)**2 + qint(i,j,k,iv1)**2 + qint(i,j,k,iv2)**2)
 
+             flx(i,j,k,UTEMP) = ZERO
              flx(i,j,k,UEDEN) = u_adv*(rhoetot + qint(i,j,k,GDPRES))
              flx(i,j,k,UEINT) = u_adv*regdnv
 
