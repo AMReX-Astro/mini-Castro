@@ -238,7 +238,19 @@ contains
     integer,  intent(in) :: state_lo(3), state_hi(3)
     real(rt), intent(in) :: state(state_lo(1):state_hi(1),state_lo(2):state_hi(2),state_lo(3):state_hi(3),NVAR)
 
-    call check_initial_species(lo, hi, state, state_lo, state_hi)
+#ifdef CUDA
+    attributes(managed) :: lo, hi, state, state_lo, state_hi
+
+    type(dim3) :: numThreads, numBlocks
+
+    call threads_and_blocks(lo, hi, numBlocks, numThreads)
+#endif
+
+    call check_initial_species &
+#ifdef CUDA
+         <<<numBlocks, numThreads, 0, cuda_streams(stream_from_index(stream_index))>>> &
+#endif
+         (lo, hi, state, state_lo, state_hi)
 
   end subroutine ca_check_initial_species
 

@@ -973,11 +973,14 @@ contains
   
 
 
+#ifdef CUDA
+  attributes(global) &
+#endif
   subroutine check_initial_species(lo, hi, state, state_lo, state_hi)
 
     use network           , only: nspec
     use meth_params_module, only: NVAR, URHO, UFS
-    use amrex_fort_module, only: rt => amrex_real
+    use amrex_fort_module, only: rt => amrex_real, get_loop_bounds
 
     implicit none
 
@@ -987,18 +990,23 @@ contains
 
     ! Local variables
     integer  :: i, j, k
+    integer  :: blo(3), bhi(3)
     real(rt) :: spec_sum
 
-    do k = lo(3), hi(3)
-       do j = lo(2), hi(2)
-          do i = lo(1), hi(1)
+    call get_loop_bounds(blo, bhi, lo, hi)
+
+    do k = blo(3), bhi(3)
+       do j = blo(2), bhi(2)
+          do i = blo(1), bhi(1)
 
              spec_sum = sum(state(i,j,k,UFS:UFS+nspec-1))
 
              if (abs(state(i,j,k,URHO)-spec_sum) .gt. 1.e-8_rt * state(i,j,k,URHO)) then
 
+#ifndef CUDA
                 print *,'Sum of (rho X)_i vs rho at (i,j,k): ',i,j,k,spec_sum,state(i,j,k,URHO)
                 call bl_error("Error:: Failed check of initial species summing to 1")
+#endif
 
              end if
 
