@@ -7,6 +7,8 @@ void
 Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
 {
 
+  BL_PROFILE_VAR("Castro::construct_mol_hydro_source()", CA_HYDRO);
+
   // this constructs the hydrodynamic source (essentially the flux
   // divergence) using method of lines integration.  The output, as a
   // update to the state, is stored in the k_mol array of multifabs.
@@ -18,8 +20,6 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
   MultiFab& S_new = get_new_data(State_Type);
 
   MultiFab& k_stage = *k_mol[istage];
-
-  BL_PROFILE_VAR("Castro::construct_mol_hydro_source()", CA_HYDRO);
 
   MultiFab flux_mf[BL_SPACEDIM];
   MultiFab qe[BL_SPACEDIM];
@@ -97,7 +97,7 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
 	FArrayBox &stateout = S_new[mfi];
 
 	// the output of this will be stored in the correct stage MF
-	FArrayBox &source_out = k_stage[mfi];
+	FArrayBox &source_out = hydro_source[mfi];
 
 	FArrayBox& vol = volume[mfi];
 
@@ -114,6 +114,7 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
 	ca_mol_single_stage
 	  (time,
 	   lo, hi, domain_lo, domain_hi,
+	   b_mol[istage],
 	   BL_TO_FORTRAN_3D(statein), 
 	   BL_TO_FORTRAN_3D(stateout),
 	   BL_TO_FORTRAN_3D(q),

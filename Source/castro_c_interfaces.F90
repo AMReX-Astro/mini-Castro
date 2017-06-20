@@ -502,6 +502,7 @@ contains
 
   subroutine ca_mol_single_stage(time, &
                                  lo, hi, domlo, domhi, &
+                                 stage_weight, &
                                  uin, uin_lo, uin_hi, &
                                  uout, uout_lo, uout_hi, &
                                  q, q_lo, q_hi, &
@@ -590,7 +591,7 @@ contains
     real(rt), intent(in   ) :: area3(a3_lo(1):a3_hi(1), a3_lo(2):a3_hi(2), a3_lo(3):a3_hi(3))
     real(rt), intent(in   ) :: vol(vol_lo(1):vol_hi(1), vol_lo(2):vol_hi(2), vol_lo(3):vol_hi(3))
     real(rt), intent(in   ) :: dx(3)
-    real(rt), intent(in   ), value :: dt, time
+    real(rt), intent(in   ), value :: dt, time, stage_weight
 
     integer :: k_lo(3), k_hi(3)
     integer :: idir
@@ -720,7 +721,8 @@ contains
 
     call threads_and_blocks(k_lo, k_hi, numBlocks, numThreads)
 
-    call construct_hydro_update<<<numBlocks, numThreads, 0, cuda_streams(stream_from_index(stream_index))>>>(k_lo_d, k_hi_d, dx, dt, &
+    call construct_hydro_update<<<numBlocks, numThreads, 0, cuda_streams(stream_from_index(stream_index))>>> &
+                                                                     (k_lo_d, k_hi_d, dx, dt, stage_weight, &
                                                                       flux1, q1, f1_lo, f1_hi, &
                                                                       flux2, q2, f2_lo, f2_hi, &
                                                                       flux3, q3, f3_lo, f3_hi, &
@@ -793,7 +795,7 @@ contains
 
     k_lo = lo
     k_hi = hi
-    call construct_hydro_update(k_lo, k_hi, dx, dt, &
+    call construct_hydro_update(k_lo, k_hi, dx, dt, stage_weight, &
                                 flux1, q1, f1_lo, f1_hi, &
                                 flux2, q2, f2_lo, f2_hi, &
                                 flux3, q3, f3_lo, f3_hi, &

@@ -137,6 +137,7 @@ extern "C"
     (const amrex::Real time,
      const int    lo[], const int    hi[],
      const int domlo[], const int domhi[],
+     const amrex::Real stage_weight,
      const BL_FORT_FAB_ARG_3D(state),
      BL_FORT_FAB_ARG_3D(stateout),
      BL_FORT_FAB_ARG_3D(q),

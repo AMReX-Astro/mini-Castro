@@ -648,7 +648,7 @@ contains
 #ifdef CUDA
   attributes(global) &
 #endif
-  subroutine construct_hydro_update(lo, hi, dx, dt, &
+  subroutine construct_hydro_update(lo, hi, dx, dt, stage_weight, &
                                     f1, q1, f1_lo, f1_hi, &
                                     f2, q2, f2_lo, f2_hi, &
                                     f3, q3, f3_lo, f3_hi, &
@@ -673,7 +673,7 @@ contains
     integer,  intent(in   ) :: vol_lo(3), vol_hi(3)
     integer,  intent(in   ) :: u_lo(3), u_hi(3)
     real(rt), intent(in   ) :: dx(3)
-    real(rt), intent(in   ), value :: dt
+    real(rt), intent(in   ), value :: dt, stage_weight
 
     real(rt), intent(in   ) :: q1(f1_lo(1):f1_hi(1),f1_lo(2):f1_hi(2),f1_lo(3):f1_hi(3),NGDNV)
     real(rt), intent(in   ) :: q2(f2_lo(1):f2_hi(1),f2_lo(2):f2_hi(2),f2_lo(3):f2_hi(3),NGDNV)
@@ -703,9 +703,9 @@ contains
 
                 ! Note that the fluxes have already been scaled by dt * dA.
 
-                update(i,j,k,n) = update(i,j,k,n) + dtinv * (f1(i,j,k,n) - f1(i+1,j,k,n) + &
-                                                             f2(i,j,k,n) - f2(i,j+1,k,n) + &
-                                                             f3(i,j,k,n) - f3(i,j,k+1,n) ) / vol(i,j,k)
+                update(i,j,k,n) = update(i,j,k,n) + stage_weight * dtinv * (f1(i,j,k,n) - f1(i+1,j,k,n) + &
+                                                                            f2(i,j,k,n) - f2(i,j+1,k,n) + &
+                                                                            f3(i,j,k,n) - f3(i,j,k+1,n) ) / vol(i,j,k)
 
                 ! Add the p div(u) source term to (rho e).
                 if (n .eq. UEINT) then
@@ -717,7 +717,7 @@ contains
                            HALF * (q3(i,j,k+1,GDPRES) + q3(i,j,k,GDPRES)) * &
                                   (q3(i,j,k+1,GDW) - q3(i,j,k,GDW)) * dxinv(3)
 
-                   update(i,j,k,n) = update(i,j,k,n) - pdivu
+                   update(i,j,k,n) = update(i,j,k,n) - stage_weight * pdivu
 
                 endif
 

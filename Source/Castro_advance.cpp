@@ -83,7 +83,10 @@ Castro::do_advance (Real time,
 
       // store the result of the burn in Sburn for later stages
 
-      MultiFab::Copy(Sburn, Sborder, 0, 0, NUM_STATE, 0);
+      MultiFab::Copy(Sburn, Sborder, 0, 0, NUM_STATE, Sburn.nGrow());
+
+      // we'll add each stage's contribution to -div{F(U)} as we compute them
+      hydro_source.setVal(0.0);
 
     }
 
@@ -96,25 +99,18 @@ Castro::do_advance (Real time,
     // the last stage
 
     if (sub_iteration == sub_ncycle-1) {
-      // we just finished the last stage of the MOL integration.
-      // Construct S_new now using the weighted sum of the k_mol
-      // updates
-      
-      // compute the hydro update
-      hydro_source.setVal(0.0);
-      for (int n = 0; n < MOL_STAGES; ++n) {
-	MultiFab::Saxpy(hydro_source, dt*b_mol[n], *k_mol[n], 0, 0, hydro_source.nComp(), 0);
-      }
 
-      // Apply the update -- we need to build on Sburn, so
-      // start with that state
-      MultiFab::Copy(S_new, Sburn, 0, 0, S_new.nComp(), 0);
-      MultiFab::Add(S_new, hydro_source, 0, 0, S_new.nComp(), 0);
-      
-      // define the temperature now
-      clean_state(S_new);
+	// We just finished the last stage of the MOL integration.
+	// Construct S_new now using the weighted sum of the updates,
+	// starting from the post-burn state.
 
-      // Check for NaN's
+	MultiFab::Copy(S_new, Sburn, 0, 0, S_new.nComp(), 0);
+	MultiFab::Saxpy(S_new, dt, hydro_source, 0, 0, S_new.nComp(), 0);
+      
+	// Define the temperature now.
+	clean_state(S_new);
+
+	// Check for NaN's
 //      check_for_nan(S_new);
 
     }
