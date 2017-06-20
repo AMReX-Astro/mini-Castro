@@ -442,9 +442,7 @@ Castro::initData ()
           ca_check_initial_species(ARLIM_3D(lo), ARLIM_3D(hi), 
 				   BL_TO_FORTRAN_3D(S_new[mfi]));
        }
-#ifdef CUDA
-       gpu_synchronize();
-#endif
+
        enforce_consistent_e(S_new);
 
        // Do a FillPatch so that we can get the ghost zones filled.
@@ -924,10 +922,6 @@ Castro::normalize_species (MultiFab& S_new)
 
 //    Device::endDeviceLaunchRegion();
 
-#ifdef CUDA
-    gpu_synchronize();
-#endif
-
 }
 
 void
@@ -953,10 +947,6 @@ Castro::enforce_consistent_e (MultiFab& S)
     }
 
   // Device::endDeviceLaunchRegion();
-
-#ifdef CUDA
-    gpu_synchronize();
-#endif
 
 }
 
@@ -1175,10 +1165,6 @@ Castro::reset_internal_energy(MultiFab& S_new)
 			    print_fortran_warnings);
     }
 
-#ifdef CUDA
-    gpu_synchronize();
-#endif
-
     // Flush Fortran output
 
     if (verbose)
@@ -1205,10 +1191,6 @@ Castro::computeTemp(MultiFab& State)
 	ca_compute_temp(ARLIM_3D(bx.loVect()), ARLIM_3D(bx.hiVect()),
 			BL_TO_FORTRAN_3D(State[mfi]));
     }
-
-#ifdef CUDA
-  gpu_synchronize();
-#endif
 
 }
 
