@@ -106,10 +106,6 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
 
 	const int idx = mfi.tileIndex();
 
-#ifdef CUDA
-	Device::set_stream_index(idx);
-#endif
-
 	ca_ctoprim(ARLIM_3D(qbx.loVect()), ARLIM_3D(qbx.hiVect()),
 		   statein.dataPtr(), ARLIM_3D(statein.loVect()), ARLIM_3D(statein.hiVect()),
 		   q.dataPtr(), ARLIM_3D(q.loVect()), ARLIM_3D(q.hiVect()),

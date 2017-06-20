@@ -136,10 +136,6 @@ Castro::volWgtSum (const std::string& name,
         const int* hi   = box.hiVect();
 	const int  idx  = mfi.tileIndex();
 
-#ifdef CUDA
-	Device::set_stream_index(idx);
-#endif
-
         //
         // Note that this routine will do a volume weighted sum of
         // whatever quantity is passed in, not strictly the "mass".

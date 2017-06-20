@@ -433,10 +433,6 @@ Castro::initData ()
           const int* lo      = box.loVect();
           const int* hi      = box.hiVect();
 
-#ifdef CUDA
-	  Device::set_stream_index(idx);
-#endif
-
           ca_initdata(level, lo, hi,
 		      S_new[mfi].dataPtr(), S_new[mfi].loVect(), S_new[mfi].hiVect(), dx,
 		      rbx[mfi.tileIndex()].lo(), rbx[mfi.tileIndex()].hi());
@@ -555,10 +551,6 @@ Castro::estTimeStep (Real dt_old)
 	{
 	    const Box& box = mfi.tilebox();
 	    const int idx = mfi.tileIndex();
-
-#ifdef CUDA
-	    Device::set_stream_index(idx);
-#endif
 
 	    ca_estdt(ARLIM_3D(box.loVect()), ARLIM_3D(box.hiVect()),
 		     BL_TO_FORTRAN_3D(stateMF[mfi]),
@@ -926,10 +918,6 @@ Castro::normalize_species (MultiFab& S_new)
        const Box& bx = mfi.growntilebox(ng);
        const int idx = mfi.tileIndex();
 
-#ifdef CUDA
-       Device::set_stream_index(idx);
-#endif
-
        ca_normalize_species(BL_TO_FORTRAN_3D(S_new[mfi]), 
 			    ARLIM_3D(bx.loVect()), ARLIM_3D(bx.hiVect()));
     }
@@ -960,10 +948,6 @@ Castro::enforce_consistent_e (MultiFab& S)
         const int* hi      = box.hiVect();
 
 	const int idx      = mfi.tileIndex();
-
-#ifdef CUDA
-	Device::set_stream_index(idx);
-#endif
 
         ca_enforce_consistent_e(ARLIM_3D(lo), ARLIM_3D(hi), BL_TO_FORTRAN_3D(S[mfi]));
     }
@@ -1004,10 +988,6 @@ Castro::enforce_min_density (MultiFab& S_old, MultiFab& S_new)
 	FArrayBox& statenew = S_new[mfi];
 	FArrayBox& vol      = volume[mfi];
 	const int idx = mfi.tileIndex();
-
-#ifdef CUDA
-	Device::set_stream_index(idx);
-#endif
 
 	ca_enforce_minimum_density(stateold.dataPtr(), ARLIM_3D(stateold.loVect()), ARLIM_3D(stateold.hiVect()),
 				   statenew.dataPtr(), ARLIM_3D(statenew.loVect()), ARLIM_3D(statenew.hiVect()),
@@ -1189,10 +1169,6 @@ Castro::reset_internal_energy(MultiFab& S_new)
     {
         const Box& bx = mfi.growntilebox(ng);
 	const int idx = mfi.tileIndex();
-
-#ifdef CUDA
-	Device::set_stream_index(idx);
-#endif
 
         ca_reset_internal_e(ARLIM_3D(bx.loVect()), ARLIM_3D(bx.hiVect()),
 			    BL_TO_FORTRAN_3D(S_new[mfi]),
