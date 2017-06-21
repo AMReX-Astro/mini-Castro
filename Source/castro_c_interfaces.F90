@@ -15,9 +15,6 @@ contains
                          state, s_lo, s_hi, dx, &
                          xlo, xhi) bind(C, name="ca_initdata")
 
-#ifdef CUDA
-    use cuda_interfaces_module, only: cuda_initdata
-#endif
     use initdata_module, only: initdata
 
     implicit none
@@ -34,16 +31,13 @@ contains
     type(dim3) :: numThreads, numBlocks
 
     call threads_and_blocks(lo, hi, numBlocks, numThreads)
-
-    call cuda_initdata &
-         <<<numBlocks, numThreads, 0, cuda_streams(stream_from_index(stream_index))>>> &
-         (level, lo, hi, state, s_lo, s_hi, dx, xlo, xhi)
-
-#else
-
-    call initdata(level, lo, hi, state, s_lo(1), s_lo(2), s_lo(3), s_hi(1), s_hi(2), s_hi(3), dx, xlo, xhi)
-
 #endif
+
+    call initdata &
+#ifdef CUDA
+         <<<numBlocks, numThreads, 0, cuda_streams(stream_from_index(stream_index))>>> &
+#endif
+         (level, lo, hi, state, s_lo, s_hi, dx, xlo, xhi)
 
   end subroutine ca_initdata
 

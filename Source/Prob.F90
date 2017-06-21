@@ -56,17 +56,15 @@ module initdata_module
 contains
   
 #ifdef CUDA
-attributes(device) &
+attributes(global) &
 #endif     
-subroutine initdata(level,lo,hi, &
-                    state,state_l1,state_l2,state_l3,state_h1,state_h2,state_h3, &
-                    delta,xlo,xhi)
+subroutine initdata(level, lo, hi, state, s_lo, s_hi, dx, xlo, xhi)
 
   use probdata_module, only: probtype, r_init, exp_energy, nsub, p_ambient, dens_ambient
   use bl_constants_module, only: M_PI, FOUR3RD
   use meth_params_module , only: NVAR, URHO, UMX, UMY, UMZ, UTEMP, UEDEN, UEINT, UFS
   use prob_params_module, only: center
-  use amrex_fort_module, only: rt => amrex_real
+  use amrex_fort_module, only: rt => amrex_real, get_loop_bounds
   use eos_type_module, only : eos_t, eos_input_rp, eos_input_re
   use eos_module, only: eos
 
@@ -74,9 +72,9 @@ subroutine initdata(level,lo,hi, &
 
   integer,  intent(in   ), value :: level
   integer,  intent(in   ) :: lo(3), hi(3)
-  integer,  intent(in   ) :: state_l1,state_l2,state_l3,state_h1,state_h2,state_h3
-  real(rt), intent(in   ) :: xlo(3), xhi(3), delta(3)
-  real(rt), intent(inout) :: state(state_l1:state_h1,state_l2:state_h2,state_l3:state_h3,NVAR)
+  integer,  intent(in   ) :: s_lo(3), s_hi(3)
+  real(rt), intent(in   ) :: xlo(3), xhi(3), dx(3)
+  real(rt), intent(inout) :: state(s_lo(1):s_hi(1),s_lo(2):s_hi(2),s_lo(3):s_hi(3),NVAR)
 
   real(rt) :: xmin, ymin, zmin
   real(rt) :: xx, yy, zz
@@ -87,7 +85,10 @@ subroutine initdata(level,lo,hi, &
   type(eos_t) :: eos_state
 
   integer :: i,j,k, ii, jj, kk
+  integer :: blo(3), bhi(3)
   integer :: npert, nambient
+
+  call get_loop_bounds(blo, bhi, lo, hi)
 
   ! set explosion pressure -- we will convert the point-explosion energy into
   ! a corresponding pressure distributed throughout the perturbed volume
@@ -103,26 +104,26 @@ subroutine initdata(level,lo,hi, &
 
   p_exp = eos_state % p
 
-  do k = lo(3), hi(3)
-     zmin = xlo(3) + delta(3)*dble(k-lo(3)) 
+  do k = blo(3), bhi(3)
+     zmin = xlo(3) + dx(3)*dble(k-lo(3))
 
-     do j = lo(2), hi(2)
-        ymin = xlo(2) + delta(2)*dble(j-lo(2))
+     do j = blo(2), bhi(2)
+        ymin = xlo(2) + dx(2)*dble(j-lo(2))
 
-        do i = lo(1), hi(1)
-           xmin = xlo(1) + delta(1)*dble(i-lo(1))
+        do i = blo(1), bhi(1)
+           xmin = xlo(1) + dx(1)*dble(i-lo(1))
 
            npert = 0
            nambient = 0
 
            do kk = 0, nsub-1
-              zz = zmin + (delta(3)/dble(nsub))*(kk + 0.5e0_rt)
+              zz = zmin + (dx(3)/dble(nsub))*(kk + 0.5e0_rt)
 
               do jj = 0, nsub-1
-                 yy = ymin + (delta(2)/dble(nsub))*(jj + 0.5e0_rt)
+                 yy = ymin + (dx(2)/dble(nsub))*(jj + 0.5e0_rt)
 
                  do ii = 0, nsub-1
-                    xx = xmin + (delta(1)/dble(nsub))*(ii + 0.5e0_rt)
+                    xx = xmin + (dx(1)/dble(nsub))*(ii + 0.5e0_rt)
 
                     dist = (center(1)-xx)**2 + (center(2)-yy)**2 + (center(3)-zz)**2
 
