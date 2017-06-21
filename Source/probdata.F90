@@ -7,11 +7,10 @@ module probdata_module
   real(rt), allocatable, public :: p_ambient, dens_ambient, exp_energy
   real(rt), allocatable, public :: r_init
   integer,  allocatable, public :: nsub
-  integer,  allocatable, public :: probtype
 
 #ifdef CUDA
   attributes(managed) :: p_ambient, dens_ambient, exp_energy, &
-                         r_init, nsub, probtype
+                         r_init, nsub
 #endif
   
 end module probdata_module

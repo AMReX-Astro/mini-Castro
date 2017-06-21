@@ -1,6 +1,6 @@
 subroutine amrex_probinit (init,name,namlen,problo,probhi) bind(c)
 
-  use probdata_module, only: probtype, p_ambient, dens_ambient, exp_energy, r_init, nsub
+  use probdata_module, only: p_ambient, dens_ambient, exp_energy, r_init, nsub
   use prob_params_module, only: center
   use amrex_fort_module, only: rt => amrex_real
 
@@ -12,7 +12,7 @@ subroutine amrex_probinit (init,name,namlen,problo,probhi) bind(c)
 
   integer :: untin, i
 
-  namelist /fortin/ probtype, p_ambient, dens_ambient, exp_energy, r_init, nsub
+  namelist /fortin/ p_ambient, dens_ambient, exp_energy, r_init, nsub
   
   ! Build "probin" filename -- the name of file containing fortin namelist.
   integer, parameter :: maxlen = 256
@@ -27,7 +27,6 @@ subroutine amrex_probinit (init,name,namlen,problo,probhi) bind(c)
   allocate(exp_energy)
   allocate(r_init)
   allocate(nsub)
-  allocate(probtype)
 
   ! set namelist defaults
 
@@ -60,7 +59,7 @@ attributes(global) &
 #endif     
 subroutine initdata(level, lo, hi, state, s_lo, s_hi, dx, xlo, xhi)
 
-  use probdata_module, only: probtype, r_init, exp_energy, nsub, p_ambient, dens_ambient
+  use probdata_module, only: r_init, exp_energy, nsub, p_ambient, dens_ambient
   use bl_constants_module, only: M_PI, FOUR3RD
   use meth_params_module , only: NVAR, URHO, UMX, UMY, UMZ, UTEMP, UEDEN, UEINT, UFS
   use prob_params_module, only: center
