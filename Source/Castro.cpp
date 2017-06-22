@@ -433,6 +433,8 @@ Castro::initData ()
           const int* lo      = box.loVect();
           const int* hi      = box.hiVect();
 
+          // Note: avoid using BL_TO_FORTRAN on this call
+          // if it is executed on the host.
           ca_initdata(level, lo, hi,
 		      S_new[mfi].dataPtr(), S_new[mfi].loVect(), S_new[mfi].hiVect(), dx,
 		      rbx[mfi.tileIndex()].lo(), rbx[mfi.tileIndex()].hi());
