@@ -54,9 +54,6 @@ module initdata_module
 
 contains
   
-#ifdef CUDA
-attributes(global) &
-#endif     
 subroutine initdata(level, lo, hi, state, s_lo, s_hi, dx, xlo, xhi)
 
   use probdata_module, only: r_init, exp_energy, nsub, p_ambient, dens_ambient
@@ -84,10 +81,7 @@ subroutine initdata(level, lo, hi, state, s_lo, s_hi, dx, xlo, xhi)
   type(eos_t) :: eos_state
 
   integer :: i,j,k, ii, jj, kk
-  integer :: blo(3), bhi(3)
   integer :: npert, nambient
-
-  call get_loop_bounds(blo, bhi, lo, hi)
 
   ! set explosion pressure -- we will convert the point-explosion energy into
   ! a corresponding pressure distributed throughout the perturbed volume
@@ -103,13 +97,13 @@ subroutine initdata(level, lo, hi, state, s_lo, s_hi, dx, xlo, xhi)
 
   p_exp = eos_state % p
 
-  do k = blo(3), bhi(3)
+  do k = lo(3), hi(3)
      zmin = xlo(3) + dx(3)*dble(k-lo(3))
 
-     do j = blo(2), bhi(2)
+     do j = lo(2), hi(2)
         ymin = xlo(2) + dx(2)*dble(j-lo(2))
 
-        do i = blo(1), bhi(1)
+        do i = lo(1), hi(1)
            xmin = xlo(1) + dx(1)*dble(i-lo(1))
 
            npert = 0

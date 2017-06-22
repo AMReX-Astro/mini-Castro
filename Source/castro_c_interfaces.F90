@@ -25,19 +25,7 @@ contains
     real(rt), intent(in   ) :: xlo(3), xhi(3), dx(3)
     real(rt), intent(inout) :: state(s_lo(1):s_hi(1),s_lo(2):s_hi(2),s_lo(3):s_hi(3),NVAR)
 
-#ifdef CUDA
-    attributes(managed) :: state, lo, hi, s_lo, s_hi, dx, xlo, xhi
-
-    type(dim3) :: numThreads, numBlocks
-
-    call threads_and_blocks(lo, hi, numBlocks, numThreads)
-#endif
-
-    call initdata &
-#ifdef CUDA
-         <<<numBlocks, numThreads, 0, cuda_streams(stream_from_index(stream_index))>>> &
-#endif
-         (level, lo, hi, state, s_lo, s_hi, dx, xlo, xhi)
+    call initdata (level, lo, hi, state, s_lo, s_hi, dx, xlo, xhi)
 
   end subroutine ca_initdata
 

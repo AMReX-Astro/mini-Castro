@@ -423,11 +423,10 @@ Castro::initData ()
 
     {
        MFIter mfi(S_new);
-       RealBox rbx[mfi.length()];
 
-       for (; mfi.isValid(); ++mfi)
+       for (MFIter mfi(S_new); mfi.isValid(); ++mfi)
        {
-          rbx[mfi.tileIndex()] = RealBox(grids[mfi.index()],geom.CellSize(),geom.ProbLo());
+          const RealBox& rbx = RealBox(grids[mfi.index()],geom.CellSize(),geom.ProbLo());
           const Box& box     = mfi.validbox();
 	  const int idx      = mfi.tileIndex();
           const int* lo      = box.loVect();
@@ -437,12 +436,18 @@ Castro::initData ()
           // if it is executed on the host.
           ca_initdata(level, lo, hi,
 		      S_new[mfi].dataPtr(), S_new[mfi].loVect(), S_new[mfi].hiVect(), dx,
-		      rbx[mfi.tileIndex()].lo(), rbx[mfi.tileIndex()].hi());
+		      rbx.lo(), rbx.hi());
+       }
 
-          // Verify that the sum of (rho X)_i = rho at every cell
+       for (MFIter mfi(S_new); mfi.isValid(); ++mfi)
+       {
+           const Box& box     = mfi.validbox();
+           const int* lo      = box.loVect();
+           const int* hi      = box.hiVect();
 
-          ca_check_initial_species(ARLIM_3D(lo), ARLIM_3D(hi), 
-				   BL_TO_FORTRAN_3D(S_new[mfi]));
+           // Verify that the sum of (rho X)_i = rho at every cell
+           ca_check_initial_species(ARLIM_3D(lo), ARLIM_3D(hi), 
+                                    BL_TO_FORTRAN_3D(S_new[mfi]));
        }
 
        enforce_consistent_e(S_new);
