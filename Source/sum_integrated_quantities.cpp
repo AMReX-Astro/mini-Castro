@@ -141,7 +141,9 @@ Castro::volWgtSum (const std::string& name,
         // whatever quantity is passed in, not strictly the "mass".
         //
 
-	ca_summass(ARLIM_3D(lo),ARLIM_3D(hi),BL_TO_FORTRAN_3D(fab),
+        Device::prepare_for_launch(lo, hi);
+
+	ca_summass(ARLIM_3D(box.loVectF()),ARLIM_3D(box.hiVectF()),BL_TO_FORTRAN_3D(fab),
 		   ZFILL(dx),BL_TO_FORTRAN_3D(volume[mfi]),&s);
 
         sum += s;

@@ -105,16 +105,20 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
 
 	const int idx = mfi.tileIndex();
 
+        Device::prepare_for_launch(qbx.loVect(), qbx.hiVect());
+
 	ca_ctoprim
-          (ARLIM_3D(qbx.loVect()), ARLIM_3D(qbx.hiVect()),
+          (ARLIM_3D(qbx.loVectF()), ARLIM_3D(qbx.hiVectF()),
 	   BL_TO_FORTRAN_ANYD(statein),
            BL_TO_FORTRAN_ANYD(q),
            BL_TO_FORTRAN_ANYD(qaux));
 
         const Box& obx = mfi.growntilebox(1);
 
+        Device::prepare_for_launch(obx.loVect(), obx.hiVect());
+
         ca_prepare_for_fluxes
-          (ARLIM_3D(obx.loVect()), ARLIM_3D(obx.hiVect()),
+          (ARLIM_3D(obx.loVectF()), ARLIM_3D(obx.hiVectF()),
 	   dx, dt,
 	   BL_TO_FORTRAN_ANYD(q),
 	   BL_TO_FORTRAN_ANYD(qaux),
@@ -128,7 +132,7 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
 	   BL_TO_FORTRAN_ANYD(szp));
 
         ca_prepare_profile
-          (ARLIM_3D(obx.loVect()), ARLIM_3D(obx.hiVect()),
+          (ARLIM_3D(obx.loVectF()), ARLIM_3D(obx.hiVectF()),
 	   BL_TO_FORTRAN_ANYD(q),
 	   BL_TO_FORTRAN_ANYD(qm),
 	   BL_TO_FORTRAN_ANYD(qp),
@@ -145,8 +149,10 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
 
             const Box& ebx = mfi.nodaltilebox(idir);
 
+            Device::prepare_for_launch(ebx.loVect(), ebx.hiVect());
+
             ca_construct_flux
-              (ARLIM_3D(ebx.loVect()), ARLIM_3D(ebx.hiVect()),
+              (ARLIM_3D(ebx.loVectF()), ARLIM_3D(ebx.hiVectF()),
                domain_lo, domain_hi,
                dx, dt,
                idir_f,
@@ -161,8 +167,10 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
 
         }
 
+        Device::prepare_for_launch(bx.loVect(), bx.hiVect());
+
 	ca_construct_hydro_update
-          (ARLIM_3D(bx.loVect()), ARLIM_3D(bx.hiVect()),
+          (ARLIM_3D(bx.loVectF()), ARLIM_3D(bx.hiVectF()),
            dx, dt,
 	   b_mol[istage],
            BL_TO_FORTRAN_ANYD(qe[0][mfi]),

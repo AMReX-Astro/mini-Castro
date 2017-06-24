@@ -557,7 +557,9 @@ Castro::estTimeStep (Real dt_old)
 	    const Box& box = mfi.tilebox();
 	    const int idx = mfi.tileIndex();
 
-	    ca_estdt(ARLIM_3D(box.loVect()), ARLIM_3D(box.hiVect()),
+            Device::prepare_for_launch(box.loVect(), box.hiVect());
+
+	    ca_estdt(ARLIM_3D(box.loVectF()), ARLIM_3D(box.hiVectF()),
 		     BL_TO_FORTRAN_3D(stateMF[mfi]),
 		     ZFILL(dx),&dt);
 	}
@@ -923,8 +925,10 @@ Castro::normalize_species (MultiFab& S_new)
        const Box& bx = mfi.growntilebox(ng);
        const int idx = mfi.tileIndex();
 
+       Device::prepare_for_launch(bx.loVect(), bx.hiVect());
+
        ca_normalize_species(BL_TO_FORTRAN_3D(S_new[mfi]), 
-			    ARLIM_3D(bx.loVect()), ARLIM_3D(bx.hiVect()));
+			    ARLIM_3D(bx.loVectF()), ARLIM_3D(bx.hiVectF()));
     }
 
 //    Device::endDeviceLaunchRegion();
@@ -950,7 +954,9 @@ Castro::enforce_consistent_e (MultiFab& S)
 
 	const int idx      = mfi.tileIndex();
 
-        ca_enforce_consistent_e(ARLIM_3D(lo), ARLIM_3D(hi), BL_TO_FORTRAN_3D(S[mfi]));
+        Device::prepare_for_launch(lo, hi);
+
+        ca_enforce_consistent_e(ARLIM_3D(box.loVectF()), ARLIM_3D(box.hiVectF()), BL_TO_FORTRAN_3D(S[mfi]));
     }
 
   // Device::endDeviceLaunchRegion();
@@ -986,10 +992,12 @@ Castro::enforce_min_density (MultiFab& S_old, MultiFab& S_new)
 	FArrayBox& vol      = volume[mfi];
 	const int idx = mfi.tileIndex();
 
-	ca_enforce_minimum_density(stateold.dataPtr(), ARLIM_3D(stateold.loVect()), ARLIM_3D(stateold.hiVect()),
-				   statenew.dataPtr(), ARLIM_3D(statenew.loVect()), ARLIM_3D(statenew.hiVect()),
-				   vol.dataPtr(), ARLIM_3D(vol.loVect()), ARLIM_3D(vol.hiVect()),
-				   ARLIM_3D(bx.loVect()), ARLIM_3D(bx.hiVect()),
+        Device::prepare_for_launch(bx.loVect(), bx.hiVect());
+
+	ca_enforce_minimum_density(BL_TO_FORTRAN_ANYD(stateold),
+				   BL_TO_FORTRAN_ANYD(statenew),
+				   BL_TO_FORTRAN_ANYD(vol),
+				   ARLIM_3D(bx.loVectF()), ARLIM_3D(bx.hiVectF()),
 				   &dens_change, verbose);
 
     }
@@ -1167,7 +1175,9 @@ Castro::reset_internal_energy(MultiFab& S_new)
         const Box& bx = mfi.growntilebox(ng);
 	const int idx = mfi.tileIndex();
 
-        ca_reset_internal_e(ARLIM_3D(bx.loVect()), ARLIM_3D(bx.hiVect()),
+        Device::prepare_for_launch(bx.loVect(), bx.hiVect());
+
+        ca_reset_internal_e(ARLIM_3D(bx.loVectF()), ARLIM_3D(bx.hiVectF()),
 			    BL_TO_FORTRAN_3D(S_new[mfi]),
 			    print_fortran_warnings);
     }
@@ -1195,7 +1205,10 @@ Castro::computeTemp(MultiFab& State)
       const Box& bx = mfi.growntilebox();
 
 	const int idx = mfi.tileIndex();
-	ca_compute_temp(ARLIM_3D(bx.loVect()), ARLIM_3D(bx.hiVect()),
+
+        Device::prepare_for_launch(bx.loVect(), bx.hiVect());
+
+	ca_compute_temp(ARLIM_3D(bx.loVectF()), ARLIM_3D(bx.hiVectF()),
 			BL_TO_FORTRAN_3D(State[mfi]));
     }
 

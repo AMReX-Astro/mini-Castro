@@ -6,7 +6,7 @@ module c_interface_modules
 #ifdef CUDA
   use cudafor, only: cudaMemcpyAsync, cudaMemcpyHostToDevice, cudaMemcpyDeviceToHost, &
                      cudaStreamSynchronize, cudaDeviceSynchronize, dim3, cuda_stream_kind
-  use cuda_module, only: threads_and_blocks, cuda_stream
+  use cuda_module, only: numBlocks, numThreads, cuda_stream
 #endif
 
 contains
@@ -25,7 +25,7 @@ contains
     real(rt), intent(in   ) :: xlo(3), xhi(3), dx(3)
     real(rt), intent(inout) :: state(s_lo(1):s_hi(1),s_lo(2):s_hi(2),s_lo(3):s_hi(3),NVAR)
 
-    call initdata (level, lo, hi, state, s_lo, s_hi, dx, xlo, xhi)
+    call initdata(level, lo, hi, state, s_lo, s_hi, dx, xlo, xhi)
 
   end subroutine ca_initdata
 
@@ -43,10 +43,6 @@ contains
 
 #ifdef CUDA
     attributes(managed) :: state, lo, hi, s_lo, s_hi
-
-    type(dim3) :: numThreads, numBlocks
-
-    call threads_and_blocks(lo, hi, numBlocks, numThreads)
 #endif
 
     call enforce_consistent_e &
@@ -71,10 +67,6 @@ contains
 
 #ifdef CUDA
     attributes(managed) :: state, lo, hi, s_lo, s_hi
-
-    type(dim3) :: numThreads, numBlocks
-
-    call threads_and_blocks(lo, hi, numBlocks, numThreads)
 #endif
 
     call compute_temp &
@@ -100,10 +92,6 @@ contains
 
 #ifdef CUDA
     attributes(managed) :: u, lo, hi, u_lo, u_hi
-
-    type(dim3) :: numThreads, numBlocks
-
-    call threads_and_blocks(lo, hi, numBlocks, numThreads)
 #endif
 
     call reset_internal_e &
@@ -128,10 +116,6 @@ contains
 
 #ifdef CUDA
     attributes(managed) :: u, lo, hi, u_lo, u_hi
-
-    type(dim3) :: numThreads, numBlocks
-
-    call threads_and_blocks(lo, hi, numBlocks, numThreads)
 #endif
 
     call normalize_species &
@@ -170,7 +154,6 @@ contains
     real(rt), managed, pointer :: frac_change_d(:)
 
     integer :: cuda_result
-    type(dim3) :: numThreads, numBlocks
 
     real(rt) :: local_frac_change
 
@@ -179,8 +162,6 @@ contains
     local_frac_change = frac_change
 
     cuda_result = cudaMemcpyAsync(frac_change_d, local_frac_change, 1, cudaMemcpyHostToDevice, cuda_stream)
-
-    call threads_and_blocks(lo, hi, numBlocks, numThreads)
 
     call enforce_minimum_density &
          <<<numBlocks, numThreads, 0, cuda_stream>>> &
@@ -222,10 +203,6 @@ contains
 
 #ifdef CUDA
     attributes(managed) :: lo, hi, state, state_lo, state_hi
-
-    type(dim3) :: numThreads, numBlocks
-
-    call threads_and_blocks(lo, hi, numBlocks, numThreads)
 #endif
 
     call check_initial_species &
@@ -257,10 +234,6 @@ contains
 
 #ifdef CUDA
     attributes(managed) :: uin, q, qaux, lo, hi, uin_lo, uin_hi, q_lo, q_hi, qa_lo, qa_hi
-
-    type(dim3) :: numThreads, numBlocks
-
-    call threads_and_blocks(lo, hi, numBlocks, numThreads)
 #endif
 
     call ctoprim &
@@ -300,7 +273,6 @@ contains
     integer,  managed, pointer :: level_d(:), grid_no_d(:)
 
     integer :: cuda_result
-    type(dim3) :: numThreads, numBlocks
 
     ! Note that this stream calculation is not ideal because there are
     ! potentially multiple tiles per box.
@@ -321,8 +293,6 @@ contains
     cuda_result = cudaMemcpyAsync(dt_d, dt, 1, cudaMemcpyHostToDevice, cuda_stream)
     cuda_result = cudaMemcpyAsync(level_d, level, 1, cudaMemcpyHostToDevice, cuda_stream)
     cuda_result = cudaMemcpyAsync(grid_no_d, grid_no, 1, cudaMemcpyHostToDevice, cuda_stream)
-
-    call threads_and_blocks(lo, hi, numBlocks, numThreads)
 
     call dervel<<<numBlocks, numThreads, 0, cuda_stream>>>(vel,v_lo,v_hi,nv_d(1), &
                                                            dat,d_lo,d_hi,nc_d(1), &
@@ -379,7 +349,6 @@ contains
     integer,  managed, pointer :: level_d(:), grid_no_d(:)
 
     integer :: cuda_result
-    type(dim3) :: numThreads, numBlocks
 
     call bl_allocate(np_d, 1, 1)
     call bl_allocate(nc_d, 1, 1)
@@ -397,8 +366,6 @@ contains
     cuda_result = cudaMemcpyAsync(dt_d, dt, 1, cudaMemcpyHostToDevice, cuda_stream)
     cuda_result = cudaMemcpyAsync(level_d, level, 1, cudaMemcpyHostToDevice, cuda_stream)
     cuda_result = cudaMemcpyAsync(grid_no_d, grid_no, 1, cudaMemcpyHostToDevice, cuda_stream)
-
-    call threads_and_blocks(lo, hi, numBlocks, numThreads)
 
     call derpres<<<numBlocks, numThreads, 0, cuda_stream>>>(p,p_lo,p_hi,np_d(1), &
                                                             u,u_lo,u_hi,nc_d(1), &
@@ -444,7 +411,6 @@ contains
     real(rt), managed, pointer :: dt_loc_d(:)
 
     integer                   :: cuda_result
-    type(dim3)                :: numThreads, numBlocks
 
     real(rt) :: dt_loc
 
@@ -453,8 +419,6 @@ contains
     dt_loc = dt
 
     cuda_result = cudaMemcpyAsync(dt_loc_d, dt, 1, cudaMemcpyHostToDevice, cuda_stream)
-
-    call threads_and_blocks(lo, hi, numBlocks, numThreads)
 
     call estdt<<<numBlocks, numThreads, 0, cuda_stream>>>(lo, hi, u, u_lo, u_hi, dx, dt_loc_d(1))
 
@@ -525,10 +489,6 @@ contains
                            sxm, sxm_lo, sxm_hi, sxp, sxp_lo, sxp_hi, &
                            sym, sym_lo, sym_hi, syp, syp_lo, syp_hi, &
                            szm, szm_lo, szm_hi, szp, szp_lo, szp_hi
-
-    type(dim3) :: numThreads, numBlocks
-
-    call threads_and_blocks(lo, hi, numBlocks, numThreads)
 #endif
 
     ! Construct edge states as inputs to flux construction
@@ -591,10 +551,6 @@ contains
                            sxm, sxm_lo, sxm_hi, sxp, sxp_lo, sxp_hi, &
                            sym, sym_lo, sym_hi, syp, syp_lo, syp_hi, &
                            szm, szm_lo, szm_hi, szp, szp_lo, szp_hi
-
-    type(dim3) :: numThreads, numBlocks
-
-    call threads_and_blocks(lo, hi, numBlocks, numThreads)
 #endif
 
     call prepare_profile &
@@ -660,10 +616,6 @@ contains
                            qe, qe_lo, qe_hi, &
                            flux, f_lo, f_hi, &
                            area, a_lo, a_hi
-
-    type(dim3) :: numThreads, numBlocks
-
-    call threads_and_blocks(lo, hi, numBlocks, numThreads)
 #endif
 
     call construct_flux &
@@ -741,10 +693,6 @@ contains
                            area3, a3_lo, a3_hi, &
                            vol, vol_lo, vol_hi, &
                            update, updt_lo, updt_hi
-
-    type(dim3) :: numThreads, numBlocks
-
-    call threads_and_blocks(lo, hi, numBlocks, numThreads)
 #endif
 
     ! Create an update source term based on the flux divergence.
@@ -788,7 +736,6 @@ contains
     attributes(managed) :: rho, vol, lo, hi, r_lo, r_hi, v_lo, v_hi, dx
 
     integer                   :: cuda_result
-    type(dim3)                :: numThreads, numBlocks
 
     real(rt)         :: mass_loc
     real(rt), managed, pointer :: mass_d(:)
@@ -798,8 +745,6 @@ contains
     mass_loc = ZERO
 
     cuda_result = cudaMemcpyAsync(mass_d, mass_loc, 1, cudaMemcpyHostToDevice, cuda_stream)
-
-    call threads_and_blocks(lo, hi, numBlocks, numThreads)
 
     call summass<<<numBlocks, numThreads, 0, cuda_stream>>>(lo, hi, rho, r_lo, r_hi, &
                                                        dx, vol, v_lo, v_hi, mass_d(1))
@@ -843,7 +788,6 @@ contains
     attributes(device) :: adv, domlo, domhi
 
     integer                   :: cuda_result
-    type(dim3)                :: numThreads, numBlocks
 
     integer,  managed, pointer :: adv_lo_d(:), adv_hi_d(:)
     real(rt), managed, pointer :: dx_d(:), xlo_d(:), time_d(:)
@@ -878,8 +822,6 @@ contains
     cuda_result = cudaMemcpyAsync(time_d, time, 1, cudaMemcpyHostToDevice, cuda_stream)
 
     cuda_result = cudaMemcpyAsync(bc_d, bc, 6*NVAR, cudaMemcpyHostToDevice, cuda_stream)
-
-    call threads_and_blocks(adv_lo, adv_hi, numBlocks, numThreads)
 
     call hypfill<<<numBlocks, numThreads, 0, cuda_stream>>>(adv_lo_d, adv_hi_d, adv, adv_lo_d, adv_hi_d, domlo, domhi, &
                                                             dx_d, xlo_d, time_d(1), bc_d)
@@ -923,7 +865,6 @@ contains
     attributes(device) :: adv, domlo, domhi
 
     integer                   :: cuda_result
-    type(dim3)                :: numThreads, numBlocks
 
     integer,  managed, pointer :: adv_lo_d(:), adv_hi_d(:)
     real(rt), managed, pointer :: dx_d(:), xlo_d(:), time_d(:)
@@ -958,8 +899,6 @@ contains
     cuda_result = cudaMemcpyAsync(time_d, time, 1, cudaMemcpyHostToDevice, cuda_stream)
 
     cuda_result = cudaMemcpyAsync(bc_d, bc, 6*NVAR, cudaMemcpyHostToDevice, cuda_stream)
-
-    call threads_and_blocks(adv_lo, adv_hi, numBlocks, numThreads)
 
     call denfill<<<numBlocks, numThreads, 0, cuda_stream>>>(adv_lo_d, adv_hi_d, adv, adv_lo_d, adv_hi_d, domlo, domhi, &
                                                             dx_d, xlo_d, time_d(1), bc_d)
