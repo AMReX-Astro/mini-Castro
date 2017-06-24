@@ -133,22 +133,23 @@ extern "C"
      const int* lo, const int* hi,
      const amrex::Real* dx, const amrex::Real* dt_old, amrex::Real* dt);
 
-  void ca_mol_single_stage
-    (const amrex::Real time,
-     const int    lo[], const int    hi[],
-     const int domlo[], const int domhi[],
-     const amrex::Real stage_weight,
-     const BL_FORT_FAB_ARG_3D(state),
-     BL_FORT_FAB_ARG_3D(stateout),
+  void ca_prepare_for_fluxes
+    (const int* lo, const int* hi,
+     const amrex::Real* dx, const amrex::Real dt,
      BL_FORT_FAB_ARG_3D(q),
+     BL_FORT_FAB_ARG_3D(qaux),
      BL_FORT_FAB_ARG_3D(flatn),
      BL_FORT_FAB_ARG_3D(div),
-     BL_FORT_FAB_ARG_3D(qaux),
-     BL_FORT_FAB_ARG_3D(update),
-     const amrex::Real dx[], const amrex::Real dt,
-     BL_FORT_FAB_ARG_3D(q1),
-     BL_FORT_FAB_ARG_3D(q2),
-     BL_FORT_FAB_ARG_3D(q3),
+     BL_FORT_FAB_ARG_3D(sxm),
+     BL_FORT_FAB_ARG_3D(sxp),
+     BL_FORT_FAB_ARG_3D(sym),
+     BL_FORT_FAB_ARG_3D(syp),
+     BL_FORT_FAB_ARG_3D(szm),
+     BL_FORT_FAB_ARG_3D(szp));
+
+  void ca_prepare_profile
+    (const int* lo, const int* hi,
+     BL_FORT_FAB_ARG_3D(q),
      BL_FORT_FAB_ARG_3D(qm),
      BL_FORT_FAB_ARG_3D(qp),
      BL_FORT_FAB_ARG_3D(sxm),
@@ -156,7 +157,29 @@ extern "C"
      BL_FORT_FAB_ARG_3D(sym),
      BL_FORT_FAB_ARG_3D(syp),
      BL_FORT_FAB_ARG_3D(szm),
-     BL_FORT_FAB_ARG_3D(szp),
+     BL_FORT_FAB_ARG_3D(szp));
+
+  void ca_construct_flux
+    (const int* lo, const int* hi,
+     const int* domlo, const int* domhi,
+     const amrex::Real* dx, const amrex::Real dt,
+     const int idir,
+     const BL_FORT_FAB_ARG_3D(statein),
+     BL_FORT_FAB_ARG_3D(div),
+     BL_FORT_FAB_ARG_3D(qaux),
+     BL_FORT_FAB_ARG_3D(qm),
+     BL_FORT_FAB_ARG_3D(qp),
+     BL_FORT_FAB_ARG_3D(qe),
+     BL_FORT_FAB_ARG_3D(flux),
+     BL_FORT_FAB_ARG_3D(area));
+
+  void ca_construct_hydro_update
+    (const int* lo, const int* hi,
+     const amrex::Real* dx, const amrex::Real dt,
+     const amrex::Real stage_weight,
+     BL_FORT_FAB_ARG_3D(qx),
+     BL_FORT_FAB_ARG_3D(qy),
+     BL_FORT_FAB_ARG_3D(qz),
      BL_FORT_FAB_ARG_3D(xflux),
      BL_FORT_FAB_ARG_3D(yflux),
      BL_FORT_FAB_ARG_3D(zflux),
@@ -164,7 +187,7 @@ extern "C"
      BL_FORT_FAB_ARG_3D(yarea),
      BL_FORT_FAB_ARG_3D(zarea),
      const BL_FORT_FAB_ARG_3D(volume),
-     const int verbose);
+     BL_FORT_FAB_ARG_3D(update));
 
   void flush_output();
 

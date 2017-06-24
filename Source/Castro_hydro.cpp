@@ -76,7 +76,7 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
     for (MFIter mfi(S_new, hydro_tile_size); mfi.isValid(); ++mfi)
       {
 	const Box& bx  = mfi.tilebox();
-	const Box& qbx = amrex::grow(bx, NUM_GROW);
+	const Box& qbx = mfi.growntilebox(NUM_GROW);
 
 	const int* lo = bx.loVect();
 	const int* hi = bx.hiVect();
@@ -96,7 +96,6 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
 	FArrayBox &statein  = Sborder[mfi];
 	FArrayBox &stateout = S_new[mfi];
 
-	// the output of this will be stored in the correct stage MF
 	FArrayBox &source_out = hydro_source[mfi];
 
 	FArrayBox& vol = volume[mfi];
@@ -106,42 +105,77 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
 
 	const int idx = mfi.tileIndex();
 
-	ca_ctoprim(ARLIM_3D(qbx.loVect()), ARLIM_3D(qbx.hiVect()),
-		   statein.dataPtr(), ARLIM_3D(statein.loVect()), ARLIM_3D(statein.hiVect()),
-		   q.dataPtr(), ARLIM_3D(q.loVect()), ARLIM_3D(q.hiVect()),
-		   qaux.dataPtr(), ARLIM_3D(qaux.loVect()), ARLIM_3D(qaux.hiVect()));
+	ca_ctoprim
+          (ARLIM_3D(qbx.loVect()), ARLIM_3D(qbx.hiVect()),
+	   BL_TO_FORTRAN_ANYD(statein),
+           BL_TO_FORTRAN_ANYD(q),
+           BL_TO_FORTRAN_ANYD(qaux));
 
-	ca_mol_single_stage
-	  (time,
-	   lo, hi, domain_lo, domain_hi,
-	   b_mol[istage],
-	   BL_TO_FORTRAN_3D(statein), 
-	   BL_TO_FORTRAN_3D(stateout),
-	   BL_TO_FORTRAN_3D(q),
-	   BL_TO_FORTRAN_3D(flatn),
-	   BL_TO_FORTRAN_3D(div),
-	   BL_TO_FORTRAN_3D(qaux),
-	   BL_TO_FORTRAN_3D(source_out),
+        const Box& obx = mfi.growntilebox(1);
+
+        ca_prepare_for_fluxes
+          (ARLIM_3D(obx.loVect()), ARLIM_3D(obx.hiVect()),
 	   dx, dt,
-	   BL_TO_FORTRAN_3D(qe[0][mfi]),
-	   BL_TO_FORTRAN_3D(qe[1][mfi]),
-	   BL_TO_FORTRAN_3D(qe[2][mfi]),
-	   BL_TO_FORTRAN_3D(qm),
-	   BL_TO_FORTRAN_3D(qp),
-	   BL_TO_FORTRAN_3D(sxm),
-	   BL_TO_FORTRAN_3D(sxp),
-	   BL_TO_FORTRAN_3D(sym),
-	   BL_TO_FORTRAN_3D(syp),
-	   BL_TO_FORTRAN_3D(szm),
-	   BL_TO_FORTRAN_3D(szp),
-	   BL_TO_FORTRAN_3D(flux_mf[0][mfi]),
-	   BL_TO_FORTRAN_3D(flux_mf[1][mfi]),
-	   BL_TO_FORTRAN_3D(flux_mf[2][mfi]),
-	   BL_TO_FORTRAN_3D(area[0][mfi]),
-	   BL_TO_FORTRAN_3D(area[1][mfi]),
-	   BL_TO_FORTRAN_3D(area[2][mfi]),
-	   BL_TO_FORTRAN_3D(volume[mfi]),
-	   verbose);
+	   BL_TO_FORTRAN_ANYD(q),
+	   BL_TO_FORTRAN_ANYD(qaux),
+	   BL_TO_FORTRAN_ANYD(flatn),
+	   BL_TO_FORTRAN_ANYD(div),
+	   BL_TO_FORTRAN_ANYD(sxm),
+	   BL_TO_FORTRAN_ANYD(sxp),
+	   BL_TO_FORTRAN_ANYD(sym),
+	   BL_TO_FORTRAN_ANYD(syp),
+	   BL_TO_FORTRAN_ANYD(szm),
+	   BL_TO_FORTRAN_ANYD(szp));
+
+        ca_prepare_profile
+          (ARLIM_3D(obx.loVect()), ARLIM_3D(obx.hiVect()),
+	   BL_TO_FORTRAN_ANYD(q),
+	   BL_TO_FORTRAN_ANYD(qm),
+	   BL_TO_FORTRAN_ANYD(qp),
+	   BL_TO_FORTRAN_ANYD(sxm),
+	   BL_TO_FORTRAN_ANYD(sxp),
+	   BL_TO_FORTRAN_ANYD(sym),
+	   BL_TO_FORTRAN_ANYD(syp),
+	   BL_TO_FORTRAN_ANYD(szm),
+	   BL_TO_FORTRAN_ANYD(szp));
+
+        for (int idir = 0; idir < BL_SPACEDIM; ++idir) {
+
+            int idir_f = idir + 1;
+
+            const Box& ebx = mfi.nodaltilebox(idir);
+
+            ca_construct_flux
+              (ARLIM_3D(ebx.loVect()), ARLIM_3D(ebx.hiVect()),
+               domain_lo, domain_hi,
+               dx, dt,
+               idir_f,
+               BL_TO_FORTRAN_ANYD(statein),
+               BL_TO_FORTRAN_ANYD(div),
+               BL_TO_FORTRAN_ANYD(qaux),
+               BL_TO_FORTRAN_ANYD(qm),
+               BL_TO_FORTRAN_ANYD(qp),
+               BL_TO_FORTRAN_ANYD(qe[idir][mfi]),
+               BL_TO_FORTRAN_ANYD(flux_mf[idir][mfi]),
+               BL_TO_FORTRAN_ANYD(area[idir][mfi]));
+
+        }
+
+	ca_construct_hydro_update
+          (ARLIM_3D(bx.loVect()), ARLIM_3D(bx.hiVect()),
+           dx, dt,
+	   b_mol[istage],
+           BL_TO_FORTRAN_ANYD(qe[0][mfi]),
+	   BL_TO_FORTRAN_ANYD(qe[1][mfi]),
+	   BL_TO_FORTRAN_ANYD(qe[2][mfi]),
+	   BL_TO_FORTRAN_ANYD(flux_mf[0][mfi]),
+	   BL_TO_FORTRAN_ANYD(flux_mf[1][mfi]),
+	   BL_TO_FORTRAN_ANYD(flux_mf[2][mfi]),
+	   BL_TO_FORTRAN_ANYD(area[0][mfi]),
+	   BL_TO_FORTRAN_ANYD(area[1][mfi]),
+	   BL_TO_FORTRAN_ANYD(area[2][mfi]),
+	   BL_TO_FORTRAN_ANYD(volume[mfi]),
+           BL_TO_FORTRAN_ANYD(source_out));
 
 	// Store the fluxes from this advance -- we weight them by the
 	// integrator weight for this stage

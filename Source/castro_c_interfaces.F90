@@ -482,55 +482,95 @@ contains
 
 
 
-  subroutine ca_mol_single_stage(time, &
-                                 lo, hi, domlo, domhi, &
-                                 stage_weight, &
-                                 uin, uin_lo, uin_hi, &
-                                 uout, uout_lo, uout_hi, &
-                                 q, q_lo, q_hi, &
-                                 flatn, flatn_lo, flatn_hi, &
-                                 div, div_lo, div_hi, &
-                                 qaux, qa_lo, qa_hi, &
-                                 update, updt_lo, updt_hi, &
-                                 dx, dt, &
-                                 q1, q1_lo, q1_hi, &
-                                 q2, q2_lo, q2_hi, &
-                                 q3, q3_lo, q3_hi, &
-                                 qm, qm_lo, qp_hi, &
-                                 qp, qp_lo, qm_hi, &
-                                 sxm, sxm_lo, sxm_hi, &
-                                 sxp, sxp_lo, sxp_hi, &
-                                 sym, sym_lo, sym_hi, &
-                                 syp, syp_lo, syp_hi, &
-                                 szm, szm_lo, szm_hi, &
-                                 szp, szp_lo, szp_hi, &
-                                 flux1, f1_lo, f1_hi, &
-                                 flux2, f2_lo, f2_hi, &
-                                 flux3, f3_lo, f3_hi, &
-                                 area1, a1_lo, a1_hi, &
-                                 area2, a2_lo, a2_hi, &
-                                 area3, a3_lo, a3_hi, &
-                                 vol, vol_lo, vol_hi, &
-                                 verbose) bind(C, name="ca_mol_single_stage")
 
-    use mol_module, only: prepare_for_fluxes, prepare_profile, construct_flux
-    use advection_util_module, only: construct_hydro_update
+  subroutine ca_prepare_for_fluxes(lo, hi, &
+                                   dx, dt, &
+                                   q, q_lo, q_hi, &
+                                   qaux, qa_lo, qa_hi, &
+                                   flatn, flatn_lo, flatn_hi, &
+                                   div, div_lo, div_hi, &
+                                   sxm, sxm_lo, sxm_hi, &
+                                   sxp, sxp_lo, sxp_hi, &
+                                   sym, sym_lo, sym_hi, &
+                                   syp, syp_lo, syp_hi, &
+                                   szm, szm_lo, szm_hi, &
+                                   szp, szp_lo, szp_hi) bind(C, name="ca_prepare_for_fluxes")
+
+    use mol_module, only: prepare_for_fluxes
 
     implicit none
 
     integer,  intent(in   ) :: lo(3), hi(3)
-    integer,  intent(in   ), value :: verbose
-    integer,  intent(in   ) :: domlo(3), domhi(3)
-    integer,  intent(in   ) :: uin_lo(3), uin_hi(3)
-    integer,  intent(in   ) :: uout_lo(3), uout_hi(3)
     integer,  intent(in   ) :: q_lo(3), q_hi(3)
     integer,  intent(in   ) :: flatn_lo(3), flatn_hi(3)
     integer,  intent(in   ) :: div_lo(3), div_hi(3)
     integer,  intent(in   ) :: qa_lo(3), qa_hi(3)
-    integer,  intent(in   ) :: updt_lo(3), updt_hi(3)
-    integer,  intent(in   ) :: q1_lo(3), q1_hi(3)
-    integer,  intent(in   ) :: q2_lo(3), q2_hi(3)
-    integer,  intent(in   ) :: q3_lo(3), q3_hi(3)
+    integer,  intent(in   ) :: sxm_lo(3), sxm_hi(3)
+    integer,  intent(in   ) :: sxp_lo(3), sxp_hi(3)
+    integer,  intent(in   ) :: sym_lo(3), sym_hi(3)
+    integer,  intent(in   ) :: syp_lo(3), syp_hi(3)
+    integer,  intent(in   ) :: szm_lo(3), szm_hi(3)
+    integer,  intent(in   ) :: szp_lo(3), szp_hi(3)
+
+    real(rt), intent(in   ) :: q(q_lo(1):q_hi(1), q_lo(2):q_hi(2), q_lo(3):q_hi(3), NQ)
+    real(rt), intent(inout) :: qaux(qa_lo(1):qa_hi(1), qa_lo(2):qa_hi(2), qa_lo(3):qa_hi(3), NQAUX)
+    real(rt), intent(inout) :: flatn(flatn_lo(1):flatn_hi(1), flatn_lo(2):flatn_hi(2), flatn_lo(3):flatn_hi(3), NQ)
+    real(rt), intent(inout) :: div(div_lo(1):div_hi(1), div_lo(2):div_hi(2), div_lo(3):div_hi(3))
+    real(rt), intent(inout) :: sxm(sxm_lo(1):sxm_hi(1), sxm_lo(2):sxm_hi(2), sxm_lo(3):sxm_hi(3), NQ)
+    real(rt), intent(inout) :: sxp(sxp_lo(1):sxp_hi(1), sxp_lo(2):sxp_hi(2), sxp_lo(3):sxp_hi(3), NQ)
+    real(rt), intent(inout) :: sym(sym_lo(1):sym_hi(1), sym_lo(2):sym_hi(2), sym_lo(3):sym_hi(3), NQ)
+    real(rt), intent(inout) :: syp(syp_lo(1):syp_hi(1), syp_lo(2):syp_hi(2), syp_lo(3):syp_hi(3), NQ)
+    real(rt), intent(inout) :: szm(szm_lo(1):szm_hi(1), szm_lo(2):szm_hi(2), szm_lo(3):szm_hi(3), NQ)
+    real(rt), intent(inout) :: szp(szp_lo(1):szp_hi(1), szp_lo(2):szp_hi(2), szp_lo(3):szp_hi(3), NQ)
+    real(rt), intent(in   ) :: dx(3)
+    real(rt), intent(in   ), value :: dt
+
+#ifdef CUDA
+    attributes(managed) :: lo, hi, dx, q, q_lo, q_hi, qaux, qa_lo, qa_hi, &
+                           flatn, flatn_lo, flatn_hi, div, div_lo, div_hi, &
+                           sxm, sxm_lo, sxm_hi, sxp, sxp_lo, sxp_hi, &
+                           sym, sym_lo, sym_hi, syp, syp_lo, syp_hi, &
+                           szm, szm_lo, szm_hi, szp, szp_lo, szp_hi
+
+    type(dim3) :: numThreads, numBlocks
+
+    call threads_and_blocks(lo, hi, numBlocks, numThreads)
+#endif
+
+    ! Construct edge states as inputs to flux construction
+
+    call prepare_for_fluxes &
+#ifdef CUDA
+         <<<numBlocks, numThreads, 0, cuda_streams(stream_from_index(stream_index))>>> &
+#endif
+         (lo, hi, dt, dx, &
+          q, q_lo, q_hi, &
+          qaux, qa_lo, qa_hi, &
+          flatn, flatn_lo, flatn_hi, &
+          div, div_lo, div_hi, &
+          sxm, sxp, sym, syp, szm, szp, sxm_lo, sxm_hi)
+
+  end subroutine ca_prepare_for_fluxes
+
+
+
+  subroutine ca_prepare_profile(lo, hi, &
+                                q, q_lo, q_hi, &
+                                qm, qm_lo, qp_hi, &
+                                qp, qp_lo, qm_hi, &
+                                sxm, sxm_lo, sxm_hi, &
+                                sxp, sxp_lo, sxp_hi, &
+                                sym, sym_lo, sym_hi, &
+                                syp, syp_lo, syp_hi, &
+                                szm, szm_lo, szm_hi, &
+                                szp, szp_lo, szp_hi) bind(C, name="ca_prepare_profile")
+
+    use mol_module, only: prepare_profile
+
+    implicit none
+
+    integer,  intent(in   ) :: lo(3), hi(3)
+    integer,  intent(in   ) :: q_lo(3), q_hi(3)
     integer,  intent(in   ) :: qm_lo(3), qm_hi(3)
     integer,  intent(in   ) :: qp_lo(3), qp_hi(3)
     integer,  intent(in   ) :: sxm_lo(3), sxm_hi(3)
@@ -539,6 +579,138 @@ contains
     integer,  intent(in   ) :: syp_lo(3), syp_hi(3)
     integer,  intent(in   ) :: szm_lo(3), szm_hi(3)
     integer,  intent(in   ) :: szp_lo(3), szp_hi(3)
+
+    real(rt), intent(in   ) :: q(q_lo(1):q_hi(1), q_lo(2):q_hi(2), q_lo(3):q_hi(3), NQ)
+    real(rt), intent(inout) :: qm(qm_lo(1):qm_hi(1), qm_lo(2):qm_hi(2), qm_lo(3):qm_hi(3), NQ, 3)
+    real(rt), intent(inout) :: qp(qp_lo(1):qp_hi(1), qp_lo(2):qp_hi(2), qp_lo(3):qp_hi(3), NQ, 3)
+    real(rt), intent(in   ) :: sxm(sxm_lo(1):sxm_hi(1), sxm_lo(2):sxm_hi(2), sxm_lo(3):sxm_hi(3), NQ)
+    real(rt), intent(in   ) :: sxp(sxp_lo(1):sxp_hi(1), sxp_lo(2):sxp_hi(2), sxp_lo(3):sxp_hi(3), NQ)
+    real(rt), intent(in   ) :: sym(sym_lo(1):sym_hi(1), sym_lo(2):sym_hi(2), sym_lo(3):sym_hi(3), NQ)
+    real(rt), intent(in   ) :: syp(syp_lo(1):syp_hi(1), syp_lo(2):syp_hi(2), syp_lo(3):syp_hi(3), NQ)
+    real(rt), intent(in   ) :: szm(szm_lo(1):szm_hi(1), szm_lo(2):szm_hi(2), szm_lo(3):szm_hi(3), NQ)
+    real(rt), intent(in   ) :: szp(szp_lo(1):szp_hi(1), szp_lo(2):szp_hi(2), szp_lo(3):szp_hi(3), NQ)
+
+#ifdef CUDA
+    attributes(managed) :: lo, hi, q, q_lo, q_hi, &
+                           flatn, flatn_lo, flatn_hi, &
+                           qm, qm_lo, qm_hi, qp, qp_lo, qp_hi, &
+                           sxm, sxm_lo, sxm_hi, sxp, sxp_lo, sxp_hi, &
+                           sym, sym_lo, sym_hi, syp, syp_lo, syp_hi, &
+                           szm, szm_lo, szm_hi, szp, szp_lo, szp_hi
+
+    type(dim3) :: numThreads, numBlocks
+
+    call threads_and_blocks(lo, hi, numBlocks, numThreads)
+#endif
+
+    call prepare_profile &
+#ifdef CUDA
+         <<<numBlocks, numThreads, 0, cuda_streams(stream_from_index(stream_index))>>> &
+#endif
+         (lo, hi, &
+          q, q_lo, q_hi, &
+          sxm, sxp, sym, syp, szm, szp, sxm_lo, sxm_hi, &
+          qm, qp, qm_lo, qm_hi)
+
+  end subroutine ca_prepare_profile
+
+
+
+  subroutine ca_construct_flux(lo, hi, &
+                               domlo, domhi, &
+                               dx, dt, &
+                               idir, &
+                               uin, uin_lo, uin_hi, &
+                               div, div_lo, div_hi, &
+                               qaux, qa_lo, qa_hi, &
+                               qm, qm_lo, qp_hi, &
+                               qp, qp_lo, qm_hi, &
+                               qe, qe_lo, qe_hi, &
+                               flux, f_lo, f_hi, &
+                               area, a_lo, a_hi) bind(C, name="ca_construct_flux")
+
+    use mol_module, only: construct_flux
+
+    implicit none
+
+    integer,  intent(in   ) :: lo(3), hi(3)
+    integer,  intent(in   ) :: domlo(3), domhi(3)
+    integer,  intent(in   ), value :: idir
+    integer,  intent(in   ) :: uin_lo(3), uin_hi(3)
+    integer,  intent(in   ) :: div_lo(3), div_hi(3)
+    integer,  intent(in   ) :: qa_lo(3), qa_hi(3)
+    integer,  intent(in   ) :: qm_lo(3), qm_hi(3)
+    integer,  intent(in   ) :: qp_lo(3), qp_hi(3)
+    integer,  intent(in   ) :: qe_lo(3), qe_hi(3)
+    integer,  intent(in   ) :: f_lo(3), f_hi(3)
+    integer,  intent(in   ) :: a_lo(3), a_hi(3)
+
+    real(rt), intent(in   ) :: uin(uin_lo(1):uin_hi(1), uin_lo(2):uin_hi(2), uin_lo(3):uin_hi(3), NVAR)
+    real(rt), intent(in   ) :: div(div_lo(1):div_hi(1), div_lo(2):div_hi(2), div_lo(3):div_hi(3))
+    real(rt), intent(in   ) :: qaux(qa_lo(1):qa_hi(1), qa_lo(2):qa_hi(2), qa_lo(3):qa_hi(3), NQAUX)
+    real(rt), intent(in   ) :: qm(qm_lo(1):qm_hi(1), qm_lo(2):qm_hi(2), qm_lo(3):qm_hi(3), NQ, 3)
+    real(rt), intent(in   ) :: qp(qp_lo(1):qp_hi(1), qp_lo(2):qp_hi(2), qp_lo(3):qp_hi(3), NQ, 3)
+    real(rt), intent(inout) :: qe(qe_lo(1):qe_hi(1), qe_lo(2):qe_hi(2), qe_lo(3):qe_hi(3), NGDNV)
+    real(rt), intent(inout) :: flux(f_lo(1):f_hi(1), f_lo(2):f_hi(2), f_lo(3):f_hi(3), NVAR)
+    real(rt), intent(in   ) :: area(a_lo(1):a_hi(1), a_lo(2):a_hi(2), a_lo(3):a_hi(3))
+    real(rt), intent(in   ) :: dx(3)
+    real(rt), intent(in   ), value :: dt
+
+#ifdef CUDA
+    attributes(managed) :: lo, hi, domlo, domhi, dx, &
+                           uin, uin_lo, uin_hi, &
+                           div, div_lo, div_hi, &
+                           qaux, qa_lo, qa_hi, &
+                           qm, qm_lo, qm_hi, &
+                           qp, qp_lo, qp_hi, &
+                           qe, qe_lo, qe_hi, &
+                           flux, f_lo, f_hi, &
+                           area, a_lo, a_hi
+
+    type(dim3) :: numThreads, numBlocks
+
+    call threads_and_blocks(lo, hi, numBlocks, numThreads)
+#endif
+
+    call construct_flux &
+#ifdef CUDA
+         <<<numBlocks, numThreads, 0, cuda_streams(stream_from_index(stream_index))>>> &
+#endif
+         (lo, hi, domlo, domhi, dx, dt, idir, &
+          div, div_lo, div_hi, &
+          uin, uin_lo, uin_hi, &
+          qm, qp, qm_lo, qm_hi, &
+          flux, qe, f_lo, f_hi, &
+          area, a_lo, a_hi, &
+          qaux, qa_lo, qa_hi)
+
+  end subroutine ca_construct_flux
+
+
+
+  subroutine ca_construct_hydro_update(lo, hi, &
+                                       dx, dt, &
+                                       stage_weight, &
+                                       q1, q1_lo, q1_hi, &
+                                       q2, q2_lo, q2_hi, &
+                                       q3, q3_lo, q3_hi, &
+                                       flux1, f1_lo, f1_hi, &
+                                       flux2, f2_lo, f2_hi, &
+                                       flux3, f3_lo, f3_hi, &
+                                       area1, a1_lo, a1_hi, &
+                                       area2, a2_lo, a2_hi, &
+                                       area3, a3_lo, a3_hi, &
+                                       vol, vol_lo, vol_hi, &
+                                       update, updt_lo, updt_hi) bind(C, name="ca_construct_hydro_update")
+
+    use advection_util_module, only: construct_hydro_update
+
+    implicit none
+
+    integer,  intent(in   ) :: lo(3), hi(3)
+    integer,  intent(in   ) :: q1_lo(3), q1_hi(3)
+    integer,  intent(in   ) :: q2_lo(3), q2_hi(3)
+    integer,  intent(in   ) :: q3_lo(3), q3_hi(3)
     integer,  intent(in   ) :: f1_lo(3), f1_hi(3)
     integer,  intent(in   ) :: f2_lo(3), f2_hi(3)
     integer,  intent(in   ) :: f3_lo(3), f3_hi(3)
@@ -546,247 +718,58 @@ contains
     integer,  intent(in   ) :: a2_lo(3), a2_hi(3)
     integer,  intent(in   ) :: a3_lo(3), a3_hi(3)
     integer,  intent(in   ) :: vol_lo(3), vol_hi(3)
+    integer,  intent(in   ) :: updt_lo(3), updt_hi(3)
 
-    real(rt), intent(in   ) :: uin(uin_lo(1):uin_hi(1), uin_lo(2):uin_hi(2), uin_lo(3):uin_hi(3), NVAR)
-    real(rt), intent(inout) :: uout(uout_lo(1):uout_hi(1), uout_lo(2):uout_hi(2), uout_lo(3):uout_hi(3), NVAR)
-    real(rt), intent(inout) :: q(q_lo(1):q_hi(1), q_lo(2):q_hi(2), q_lo(3):q_hi(3), NQ)
-    real(rt), intent(inout) :: flatn(flatn_lo(1):flatn_hi(1), flatn_lo(2):flatn_hi(2), flatn_lo(3):flatn_hi(3), NQ)
-    real(rt), intent(inout) :: div(div_lo(1):div_hi(1), div_lo(2):div_hi(2), div_lo(3):div_hi(3))
-    real(rt), intent(inout) :: qaux(qa_lo(1):qa_hi(1), qa_lo(2):qa_hi(2), qa_lo(3):qa_hi(3), NQAUX)
-    real(rt), intent(inout) :: update(updt_lo(1):updt_hi(1), updt_lo(2):updt_hi(2), updt_lo(3):updt_hi(3), NVAR)
-    real(rt), intent(inout) :: q1(q1_lo(1):q1_hi(1), q1_lo(2):q1_hi(2), q1_lo(3):q1_hi(3), NGDNV)
-    real(rt), intent(inout) :: q2(q2_lo(1):q2_hi(1), q2_lo(2):q2_hi(2), q2_lo(3):q2_hi(3), NGDNV)
-    real(rt), intent(inout) :: q3(q3_lo(1):q3_hi(1), q3_lo(2):q3_hi(2), q3_lo(3):q3_hi(3), NGDNV)
-    real(rt), intent(inout) :: qm(qm_lo(1):qm_hi(1), qm_lo(2):qm_hi(2), qm_lo(3):qm_hi(3), NQ)
-    real(rt), intent(inout) :: qp(qp_lo(1):qp_hi(1), qp_lo(2):qp_hi(2), qp_lo(3):qp_hi(3), NQ)
-    real(rt), intent(inout) :: sxm(sxm_lo(1):sxm_hi(1), sxm_lo(2):sxm_hi(2), sxm_lo(3):sxm_hi(3), NQ)
-    real(rt), intent(inout) :: sxp(sxp_lo(1):sxp_hi(1), sxp_lo(2):sxp_hi(2), sxp_lo(3):sxp_hi(3), NQ)
-    real(rt), intent(inout) :: sym(sym_lo(1):sym_hi(1), sym_lo(2):sym_hi(2), sym_lo(3):sym_hi(3), NQ)
-    real(rt), intent(inout) :: syp(syp_lo(1):syp_hi(1), syp_lo(2):syp_hi(2), syp_lo(3):syp_hi(3), NQ)
-    real(rt), intent(inout) :: szm(szm_lo(1):szm_hi(1), szm_lo(2):szm_hi(2), szm_lo(3):szm_hi(3), NQ)
-    real(rt), intent(inout) :: szp(szp_lo(1):szp_hi(1), szp_lo(2):szp_hi(2), szp_lo(3):szp_hi(3), NQ)
-    real(rt), intent(inout) :: flux1(f1_lo(1):f1_hi(1), f1_lo(2):f1_hi(2), f1_lo(3):f1_hi(3), NVAR)
-    real(rt), intent(inout) :: flux2(f2_lo(1):f2_hi(1), f2_lo(2):f2_hi(2), f2_lo(3):f2_hi(3), NVAR)
-    real(rt), intent(inout) :: flux3(f3_lo(1):f3_hi(1), f3_lo(2):f3_hi(2), f3_lo(3):f3_hi(3), NVAR)
+    real(rt), intent(in   ) :: q1(q1_lo(1):q1_hi(1), q1_lo(2):q1_hi(2), q1_lo(3):q1_hi(3), NGDNV)
+    real(rt), intent(in   ) :: q2(q2_lo(1):q2_hi(1), q2_lo(2):q2_hi(2), q2_lo(3):q2_hi(3), NGDNV)
+    real(rt), intent(in   ) :: q3(q3_lo(1):q3_hi(1), q3_lo(2):q3_hi(2), q3_lo(3):q3_hi(3), NGDNV)
+    real(rt), intent(in   ) :: flux1(f1_lo(1):f1_hi(1), f1_lo(2):f1_hi(2), f1_lo(3):f1_hi(3), NVAR)
+    real(rt), intent(in   ) :: flux2(f2_lo(1):f2_hi(1), f2_lo(2):f2_hi(2), f2_lo(3):f2_hi(3), NVAR)
+    real(rt), intent(in   ) :: flux3(f3_lo(1):f3_hi(1), f3_lo(2):f3_hi(2), f3_lo(3):f3_hi(3), NVAR)
     real(rt), intent(in   ) :: area1(a1_lo(1):a1_hi(1), a1_lo(2):a1_hi(2), a1_lo(3):a1_hi(3))
     real(rt), intent(in   ) :: area2(a2_lo(1):a2_hi(1), a2_lo(2):a2_hi(2), a2_lo(3):a2_hi(3))
     real(rt), intent(in   ) :: area3(a3_lo(1):a3_hi(1), a3_lo(2):a3_hi(2), a3_lo(3):a3_hi(3))
     real(rt), intent(in   ) :: vol(vol_lo(1):vol_hi(1), vol_lo(2):vol_hi(2), vol_lo(3):vol_hi(3))
+    real(rt), intent(inout) :: update(updt_lo(1):updt_hi(1), updt_lo(2):updt_hi(2), updt_lo(3):updt_hi(3), NVAR)
     real(rt), intent(in   ) :: dx(3)
-    real(rt), intent(in   ), value :: dt, time, stage_weight
-
-    integer :: k_lo(3), k_hi(3)
-    integer :: idir
+    real(rt), intent(in   ), value :: dt, stage_weight
 
 #ifdef CUDA
-    attributes(managed) :: uin, uout, q, qaux, update, flux1, flux2, flux3, area1, area2, area3, vol, &
-                           lo, hi, uin_lo, uin_hi, uout_lo, uout_hi, q_lo, q_hi, qa_lo, qa_hi, &
-                           updt_lo, updt_hi, dx, f1_lo, f1_hi, f2_lo, f2_hi, f3_lo, f3_hi, &
-                           a1_lo, a1_hi, a2_lo, a2_hi, a3_lo, a3_hi, vol_lo, vol_hi, &
-                           q1, q1_lo, q1_hi, q2, q2_lo, q2_hi, q3, q3_lo, q3_hi, &
-                           qm, qm_lo, qm_hi, qp, qp_lo, qp_hi, domlo, domhi, &
-                           sxm, sxm_lo, sxm_hi, sxp, sxp_lo, sxp_hi, &
-                           sym, sym_lo, sym_hi, syp, syp_lo, syp_hi, &
-                           szm, szm_lo, szm_hi, szp, szp_lo, szp_hi, &
-                           flatn, flatn_lo, flatn_hi, div, div_lo, div_hi
+    attributes(managed) :: lo, hi, dx, &
+                           q1, q1_lo, q1_hi, &
+                           q2, q2_lo, q2_hi, &
+                           q3, q3_lo, q3_hi, &
+                           flux1, f1_lo, f1_hi, &
+                           flux2, f2_lo, f2_hi, &
+                           flux3, f3_lo, f3_hi, &
+                           area1, a1_lo, a1_hi, &
+                           area2, a2_lo, a2_hi, &
+                           area3, a3_lo, a3_hi, &
+                           vol, vol_lo, vol_hi, &
+                           update, updt_lo, updt_hi
 
-    integer                   :: cuda_result
-    type(dim3)                :: numThreads, numBlocks
+    type(dim3) :: numThreads, numBlocks
 
-    integer,  managed, pointer :: k_lo_d(:), k_hi_d(:)
+    call threads_and_blocks(lo, hi, numBlocks, numThreads)
 #endif
-
-#ifdef CUDA
-
-    call bl_allocate(k_lo_d, 1, 3)
-    call bl_allocate(k_hi_d, 1, 3)
-
-    ! Construct edge states as inputs to flux construction
-
-    k_lo = div_lo
-    k_hi = div_hi
-
-    cuda_result = cudaMemcpyAsync(k_lo_d, k_lo, 3, cudaMemcpyHostToDevice, cuda_streams(stream_from_index(stream_index)))
-    cuda_result = cudaMemcpyAsync(k_hi_d, k_hi, 3, cudaMemcpyHostToDevice, cuda_streams(stream_from_index(stream_index)))
-
-    call threads_and_blocks(k_lo, k_hi, numBlocks, numThreads)
-
-    call prepare_for_fluxes<<<numBlocks, numThreads, 0, cuda_streams(stream_from_index(stream_index))>>>(k_lo_d, k_hi_d, dt, dx, &
-                                                                  q, flatn, q_lo, q_hi, &
-                                                                  div, div_lo, div_hi, &
-                                                                  qaux, qa_lo, qa_hi, &
-                                                                  sxm, sxp, sym, syp, szm, szp, sxm_lo, sxm_hi, &
-                                                                  qm, qp, qm_lo, qm_hi)
-
-    call prepare_profile<<<numBlocks, numThreads, 0, cuda_streams(stream_from_index(stream_index))>>>(k_lo_d, k_hi_d, &
-                                                               q, flatn, q_lo, q_hi, &
-                                                               sxm, sxp, sym, syp, szm, szp, sxm_lo, sxm_hi, &
-                                                               qm, qp, qm_lo, qm_hi)
-
-    ! Compute F^x
-
-    idir = 1
-
-    k_lo = f1_lo
-    k_hi = f1_hi
-
-    cuda_result = cudaMemcpyAsync(k_lo_d, k_lo, 3, cudaMemcpyHostToDevice, cuda_streams(stream_from_index(stream_index)))
-    cuda_result = cudaMemcpyAsync(k_hi_d, k_hi, 3, cudaMemcpyHostToDevice, cuda_streams(stream_from_index(stream_index)))
-
-    call threads_and_blocks(k_lo, k_hi, numBlocks, numThreads)
-
-    call construct_flux<<<numBlocks, numThreads, 0, cuda_streams(stream_from_index(stream_index))>>>(k_lo_d, k_hi_d, domlo, domhi, dx, dt, idir, &
-                                                              div, div_lo, div_hi, &
-                                                              uin, uin_lo, uin_hi, &
-                                                              qm, qp, qm_lo, qm_hi, &
-                                                              flux1, q1, f1_lo, f1_hi, &
-                                                              area1, a1_lo, a1_hi, &
-                                                              qaux, qa_lo, qa_hi)
-
-    ! Compute F^y
-
-    idir = 2
-
-    k_lo = f2_lo
-    k_hi = f2_hi
-
-    cuda_result = cudaMemcpyAsync(k_lo_d, k_lo, 3, cudaMemcpyHostToDevice, cuda_streams(stream_from_index(stream_index)))
-    cuda_result = cudaMemcpyAsync(k_hi_d, k_hi, 3, cudaMemcpyHostToDevice, cuda_streams(stream_from_index(stream_index)))
-
-    call threads_and_blocks(k_lo, k_hi, numBlocks, numThreads)
-
-    call construct_flux<<<numBlocks, numThreads, 0, cuda_streams(stream_from_index(stream_index))>>>(k_lo_d, k_hi_d, domlo, domhi, dx, dt, idir, &
-                                                              div, div_lo, div_hi, &
-                                                              uin, uin_lo, uin_hi, &
-                                                              qm, qp, qm_lo, qm_hi, &
-                                                              flux2, q2, f2_lo, f2_hi, &
-                                                              area2, a2_lo, a2_hi, &
-                                                              qaux, qa_lo, qa_hi)
-
-    ! Compute F^z
-
-    idir = 3
-
-    k_lo = f3_lo
-    k_hi = f3_hi
-
-    cuda_result = cudaMemcpyAsync(k_lo_d, k_lo, 3, cudaMemcpyHostToDevice, cuda_streams(stream_from_index(stream_index)))
-    cuda_result = cudaMemcpyAsync(k_hi_d, k_hi, 3, cudaMemcpyHostToDevice, cuda_streams(stream_from_index(stream_index)))
-
-    call threads_and_blocks(k_lo, k_hi, numBlocks, numThreads)
-
-    call construct_flux<<<numBlocks, numThreads, 0, cuda_streams(stream_from_index(stream_index))>>>(k_lo_d, k_hi_d, domlo, domhi, dx, dt, idir, &
-                                                              div, div_lo, div_hi, &
-                                                              uin, uin_lo, uin_hi, &
-                                                              qm, qp, qm_lo, qm_hi, &
-                                                              flux3, q3, f3_lo, f3_hi, &
-                                                              area3, a3_lo, a3_hi, &
-                                                              qaux, qa_lo, qa_hi)
 
     ! Create an update source term based on the flux divergence.
 
-    k_lo = lo
-    k_hi = hi
-
-    cuda_result = cudaMemcpyAsync(k_lo_d, k_lo, 3, cudaMemcpyHostToDevice, cuda_streams(stream_from_index(stream_index)))
-    cuda_result = cudaMemcpyAsync(k_hi_d, k_hi, 3, cudaMemcpyHostToDevice, cuda_streams(stream_from_index(stream_index)))
-
-    call threads_and_blocks(k_lo, k_hi, numBlocks, numThreads)
-
-    call construct_hydro_update<<<numBlocks, numThreads, 0, cuda_streams(stream_from_index(stream_index))>>> &
-                                                                     (k_lo_d, k_hi_d, dx, dt, stage_weight, &
-                                                                      flux1, q1, f1_lo, f1_hi, &
-                                                                      flux2, q2, f2_lo, f2_hi, &
-                                                                      flux3, q3, f3_lo, f3_hi, &
-                                                                      area1, a1_lo, a1_hi, &
-                                                                      area2, a2_lo, a2_hi, &
-                                                                      area3, a3_lo, a3_hi, &
-                                                                      vol, vol_lo, vol_hi, &
-                                                                      update, updt_lo, updt_hi)
-
-    cuda_result = cudaStreamSynchronize(cuda_streams(stream_from_index(stream_index)))
-
-#else
-
-    ! Construct edge states as inputs to flux construction
-
-    k_lo = div_lo
-    k_hi = div_hi
-    call prepare_for_fluxes(k_lo, k_hi, dt, dx, &
-                            q, flatn, q_lo, q_hi, &
-                            div, div_lo, div_hi, &
-                            qaux, qa_lo, qa_hi, &
-                            sxm, sxp, sym, syp, szm, szp, sxm_lo, sxm_hi, &
-                            qm, qp, qm_lo, qm_hi)
-
-    call prepare_profile(k_lo, k_hi, &
-                         q, flatn, q_lo, q_hi, &
-                         sxm, sxp, sym, syp, szm, szp, sxm_lo, sxm_hi, &
-                         qm, qp, qm_lo, qm_hi)
-
-    ! Compute F^x
-
-    idir = 1
-    k_lo = f1_lo
-    k_hi = f1_hi
-    call construct_flux(k_lo, k_hi, domlo, domhi, dx, dt, idir, &
-                        div, div_lo, div_hi, &
-                        uin, uin_lo, uin_hi, &
-                        qm, qp, qm_lo, qm_hi, &
-                        flux1, q1, f1_lo, f1_hi, &
-                        area1, a1_lo, a1_hi, &
-                        qaux, qa_lo, qa_hi)
-
-    ! Compute F^y
-
-    idir = 2
-    k_lo = f2_lo
-    k_hi = f2_hi
-    call construct_flux(k_lo, k_hi, domlo, domhi, dx, dt, idir, &
-                        div, div_lo, div_hi, &
-                        uin, uin_lo, uin_hi, &
-                        qm, qp, qm_lo, qm_hi, &
-                        flux2, q2, f2_lo, f2_hi, &
-                        area2, a2_lo, a2_hi, &
-                        qaux, qa_lo, qa_hi)
-
-    ! Compute F^z
-
-    idir = 3
-    k_lo = f3_lo
-    k_hi = f3_hi
-    call construct_flux(k_lo, k_hi, domlo, domhi, dx, dt, idir, &
-                        div, div_lo, div_hi, &
-                        uin, uin_lo, uin_hi, &
-                        qm, qp, qm_lo, qm_hi, &
-                        flux3, q3, f3_lo, f3_hi, &
-                        area3, a3_lo, a3_hi, &
-                        qaux, qa_lo, qa_hi)
-
-    ! Create an update source term based on the flux divergence.
-
-    k_lo = lo
-    k_hi = hi
-    call construct_hydro_update(k_lo, k_hi, dx, dt, stage_weight, &
-                                flux1, q1, f1_lo, f1_hi, &
-                                flux2, q2, f2_lo, f2_hi, &
-                                flux3, q3, f3_lo, f3_hi, &
-                                area1, a1_lo, a1_hi, &
-                                area2, a2_lo, a2_hi, &
-                                area3, a3_lo, a3_hi, &
-                                vol, vol_lo, vol_hi, &
-                                update, updt_lo, updt_hi)
-
-#endif
-
+    call construct_hydro_update &
 #ifdef CUDA
-
-    call bl_deallocate(k_lo_d)
-    call bl_deallocate(k_hi_d)
-
+         <<<numBlocks, numThreads, 0, cuda_streams(stream_from_index(stream_index))>>> &
 #endif
+         (lo, hi, dx, dt, stage_weight, &
+          flux1, q1, f1_lo, f1_hi, &
+          flux2, q2, f2_lo, f2_hi, &
+          flux3, q3, f3_lo, f3_hi, &
+          area1, a1_lo, a1_hi, &
+          area2, a2_lo, a2_hi, &
+          area3, a3_lo, a3_hi, &
+          vol, vol_lo, vol_hi, &
+          update, updt_lo, updt_hi)
 
-  end subroutine ca_mol_single_stage
+  end subroutine ca_construct_hydro_update
 
 
 
