@@ -618,14 +618,10 @@ contains
                                                                   sxm, sxp, sym, syp, szm, szp, sxm_lo, sxm_hi, &
                                                                   qm, qp, qm_lo, qm_hi)
 
-    cuda_result = cudaStreamSynchronize(cuda_streams(stream_from_index(stream_index)))
-
     call prepare_profile<<<numBlocks, numThreads, 0, cuda_streams(stream_from_index(stream_index))>>>(k_lo_d, k_hi_d, &
                                                                q, flatn, q_lo, q_hi, &
                                                                sxm, sxp, sym, syp, szm, szp, sxm_lo, sxm_hi, &
                                                                qm, qp, qm_lo, qm_hi)
-
-    cuda_result = cudaStreamSynchronize(cuda_streams(stream_from_index(stream_index)))
 
     ! Compute F^x
 
@@ -647,8 +643,6 @@ contains
                                                               area1, a1_lo, a1_hi, &
                                                               qaux, qa_lo, qa_hi)
 
-    cuda_result = cudaStreamSynchronize(cuda_streams(stream_from_index(stream_index)))
-
     ! Compute F^y
 
     idir = 2
@@ -669,8 +663,6 @@ contains
                                                               area2, a2_lo, a2_hi, &
                                                               qaux, qa_lo, qa_hi)
 
-    cuda_result = cudaStreamSynchronize(cuda_streams(stream_from_index(stream_index)))
-
     ! Compute F^z
 
     idir = 3
@@ -690,8 +682,6 @@ contains
                                                               flux3, q3, f3_lo, f3_hi, &
                                                               area3, a3_lo, a3_hi, &
                                                               qaux, qa_lo, qa_hi)
-
-    cuda_result = cudaStreamSynchronize(cuda_streams(stream_from_index(stream_index)))
 
     ! Create an update source term based on the flux divergence.
 
