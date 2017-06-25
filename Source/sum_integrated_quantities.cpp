@@ -140,7 +140,19 @@ Castro::volWgtSum (const std::string& name,
 
         Device::prepare_for_launch(box.loVect(), box.hiVect());
 
-	ca_summass(BL_TO_FORTRAN_BOX(box), BL_TO_FORTRAN_ANYD(fab), ZFILL(dx), BL_TO_FORTRAN_ANYD(volume[mfi]), &s);
+#ifdef CUDA
+        Real* s_d = (Real*) Device::device_malloc(sizeof(Real));
+        Device::device_htod_memcpy_async(s_d, &s, sizeof(Real), mfi.tileIndex());
+#else
+        Real* s_d = &s;
+#endif
+
+	ca_summass(BL_TO_FORTRAN_BOX(box), BL_TO_FORTRAN_ANYD(fab), ZFILL(dx), BL_TO_FORTRAN_ANYD(volume[mfi]), s_d);
+
+#ifdef CUDA
+        Device::device_dtoh_memcpy_async(&s, s_d, sizeof(Real), mfi.tileIndex());
+        Device::stream_synchronize(mfi.tileIndex());
+#endif
 
         sum += s;
     }

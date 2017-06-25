@@ -548,15 +548,30 @@ Castro::estTimeStep (Real dt_old)
     {
 	Real dt = max_dt / cfl;
 
+#ifdef CUDA
+        Real* dt_d = (Real*) Device::device_malloc(sizeof(Real));
+#else
+        Real* dt_d = &dt;
+#endif
+
 	for (MFIter mfi(stateMF,true); mfi.isValid(); ++mfi)
 	{
 	    const Box& box = mfi.tilebox();
+
+#ifdef CUDA
+            Device::device_htod_memcpy_async(dt_d, &dt, sizeof(Real), mfi.tileIndex());
+#endif
 
             Device::prepare_for_launch(box.loVect(), box.hiVect());
 
 	    ca_estdt(BL_TO_FORTRAN_BOX(box),
 		     BL_TO_FORTRAN_ANYD(stateMF[mfi]),
-		     ZFILL(dx),&dt);
+		     ZFILL(dx),dt_d);
+
+#ifdef CUDA
+            Device::device_dtoh_memcpy_async(&dt, dt_d, sizeof(Real), mfi.tileIndex());
+            Device::stream_synchronize(mfi.tileIndex());
+#endif
 	}
 #ifdef _OPENMP
 #pragma omp critical (castro_estdt)
@@ -564,6 +579,10 @@ Castro::estTimeStep (Real dt_old)
 	{
 	    estdt_hydro = std::min(estdt_hydro,dt);
 	}
+
+#ifdef CUDA
+        Device::device_free(dt_d);
+#endif
     }
 
     ParallelDescriptor::ReduceRealMin(estdt_hydro);
@@ -977,13 +996,25 @@ Castro::enforce_min_density (MultiFab& S_old, MultiFab& S_new)
 	FArrayBox& statenew = S_new[mfi];
 	FArrayBox& vol      = volume[mfi];
 
+#ifdef CUDA
+        Real* dens_change_d = (Real*) Device::device_malloc(sizeof(Real));
+        Device::device_htod_memcpy_async(dens_change_d, &dens_change, sizeof(Real), mfi.tileIndex());
+#else
+        Real* dens_change_d = &dens_change;
+#endif
+
         Device::prepare_for_launch(bx.loVect(), bx.hiVect());
 
 	ca_enforce_minimum_density(BL_TO_FORTRAN_ANYD(stateold),
 				   BL_TO_FORTRAN_ANYD(statenew),
 				   BL_TO_FORTRAN_ANYD(vol),
 				   BL_TO_FORTRAN_BOX(bx),
-				   &dens_change, verbose);
+				   dens_change_d, verbose);
+
+#ifdef CUDA
+        Device::device_dtoh_memcpy_async(&dens_change, dens_change_d, sizeof(Real), mfi.tileIndex());
+        Device::stream_synchronize(mfi.tileIndex());
+#endif
 
     }
 

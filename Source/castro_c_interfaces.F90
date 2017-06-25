@@ -4,8 +4,7 @@ module c_interface_modules
   use amrex_fort_module, only: rt => amrex_real
   use mempool_module, only: bl_allocate, bl_deallocate
 #ifdef CUDA
-  use cudafor, only: cudaMemcpyAsync, cudaMemcpyHostToDevice, cudaMemcpyDeviceToHost, &
-                     cudaStreamSynchronize, cudaDeviceSynchronize, dim3, cuda_stream_kind
+  use cudafor, only: cudaMemcpyAsync, cudaMemcpyHostToDevice, cudaStreamSynchronize
   use cuda_module, only: numBlocks, numThreads, cuda_stream
 #endif
 
@@ -149,43 +148,17 @@ contains
     real(rt), intent(inout) :: frac_change
 
 #ifdef CUDA
-    attributes(managed) :: uin, uout, vol, lo, hi, uin_lo, uin_hi, uout_lo, uout_hi, vol_lo, vol_hi
-
-    real(rt), managed, pointer :: frac_change_d(:)
-
-    integer :: cuda_result
-
-    real(rt) :: local_frac_change
-
-    call bl_allocate(frac_change_d, 1, 1)
-
-    local_frac_change = frac_change
-
-    cuda_result = cudaMemcpyAsync(frac_change_d, local_frac_change, 1, cudaMemcpyHostToDevice, cuda_stream)
+    attributes(managed) :: uin, uout, vol, lo, hi, uin_lo, uin_hi, uout_lo, uout_hi, vol_lo, vol_hi, frac_change
+#endif
 
     call enforce_minimum_density &
+#ifdef CUDA
          <<<numBlocks, numThreads, 0, cuda_stream>>> &
+#endif
          (uin, uin_lo, uin_hi, &
           uout, uout_lo, uout_hi, &
           vol, vol_lo, vol_hi, &
-          lo, hi, frac_change_d(1), verbose)
-
-    cuda_result = cudaMemcpyAsync(local_frac_change, frac_change_d, 1, cudaMemcpyDeviceToHost, cuda_stream)
-
-    cuda_result = cudaStreamSynchronize(cuda_stream)
-
-    frac_change = min(frac_change, local_frac_change)
-
-    call bl_deallocate(frac_change_d)
-
-#else
-
-    call enforce_minimum_density(uin, uin_lo, uin_hi, &
-                                 uout, uout_lo, uout_hi, &
-                                 vol, vol_lo, vol_hi, &
-                                 lo, hi, frac_change, verbose)
-
-#endif
+          lo, hi, frac_change, verbose)
 
   end subroutine ca_enforce_minimum_density
 
@@ -406,35 +379,14 @@ contains
     real(rt), intent(inout) :: dt
 
 #ifdef CUDA
-    attributes(managed) :: u, lo, hi, u_lo, u_hi, dx
-
-    real(rt), managed, pointer :: dt_loc_d(:)
-
-    integer                   :: cuda_result
-
-    real(rt) :: dt_loc
-
-    call bl_allocate(dt_loc_d, 1, 1)
-
-    dt_loc = dt
-
-    cuda_result = cudaMemcpyAsync(dt_loc_d, dt, 1, cudaMemcpyHostToDevice, cuda_stream)
-
-    call estdt<<<numBlocks, numThreads, 0, cuda_stream>>>(lo, hi, u, u_lo, u_hi, dx, dt_loc_d(1))
-
-    cuda_result = cudaMemcpyAsync(dt_loc, dt_loc_d, 1, cudaMemcpyDeviceToHost, cuda_stream)
-
-    cuda_result = cudaStreamSynchronize(cuda_stream)
-
-    dt = min(dt, dt_loc)
-
-    call bl_deallocate(dt_loc_d)
-
-#else
-
-    call estdt(lo, hi, u, u_lo, u_hi, dx, dt)
-
+    attributes(device) :: u, lo, hi, u_lo, u_hi, dx, dt
 #endif
+
+    call estdt &
+#ifdef CUDA
+         <<<numBlocks, numThreads, 0, cuda_stream>>> &
+#endif
+         (lo, hi, u, u_lo, u_hi, dx, dt)
 
   end subroutine ca_estdt
 
@@ -718,8 +670,6 @@ contains
   subroutine ca_summass(lo,hi,rho,r_lo,r_hi,dx, &
                         vol,v_lo,v_hi,mass) bind(c, name='ca_summass')
 
-    use bl_constants_module, only: ZERO
-    use amrex_fort_module, only: rt => amrex_real
     use castro_util_module, only: summass
 
     implicit none
@@ -733,38 +683,14 @@ contains
     real(rt), intent(inout) :: mass
 
 #ifdef CUDA
-    attributes(managed) :: rho, vol, lo, hi, r_lo, r_hi, v_lo, v_hi, dx
-
-    integer                   :: cuda_result
-
-    real(rt)         :: mass_loc
-    real(rt), managed, pointer :: mass_d(:)
-
-    call bl_allocate(mass_d, 1, 1)
-
-    mass_loc = ZERO
-
-    cuda_result = cudaMemcpyAsync(mass_d, mass_loc, 1, cudaMemcpyHostToDevice, cuda_stream)
-
-    call summass<<<numBlocks, numThreads, 0, cuda_stream>>>(lo, hi, rho, r_lo, r_hi, &
-                                                       dx, vol, v_lo, v_hi, mass_d(1))
-
-    cuda_result = cudaMemcpyAsync(mass_loc, mass_d, 1, cudaMemcpyDeviceToHost, cuda_stream)
-
-    cuda_result = cudaStreamSynchronize(cuda_stream)
-
-    mass = mass + mass_loc
-
-    call bl_deallocate(mass_d)
-
-#else
-
-    mass = ZERO
-
-    call summass(lo,hi,rho,r_lo,r_hi,dx, &
-                 vol,v_lo,v_hi,mass)
-
+    attributes(device) :: rho, vol, lo, hi, r_lo, r_hi, v_lo, v_hi, dx, mass
 #endif
+
+    call summass &
+#ifdef CUDA
+         <<<numBlocks, numThreads, 0, cuda_stream>>> &
+#endif
+         (lo, hi, rho, r_lo, r_hi, dx, vol, v_lo, v_hi, mass)
 
   end subroutine ca_summass
 
