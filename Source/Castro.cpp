@@ -428,7 +428,6 @@ Castro::initData ()
        {
           const RealBox& rbx = RealBox(grids[mfi.index()],geom.CellSize(),geom.ProbLo());
           const Box& box     = mfi.validbox();
-	  const int idx      = mfi.tileIndex();
           const int* lo      = box.loVect();
           const int* hi      = box.hiVect();
 
@@ -442,12 +441,9 @@ Castro::initData ()
        for (MFIter mfi(S_new); mfi.isValid(); ++mfi)
        {
            const Box& box     = mfi.validbox();
-           const int* lo      = box.loVect();
-           const int* hi      = box.hiVect();
 
            // Verify that the sum of (rho X)_i = rho at every cell
-           ca_check_initial_species(ARLIM_3D(lo), ARLIM_3D(hi), 
-                                    BL_TO_FORTRAN_3D(S_new[mfi]));
+           ca_check_initial_species(BL_TO_FORTRAN_BOX(box), BL_TO_FORTRAN_ANYD(S_new[mfi]));
        }
 
        enforce_consistent_e(S_new);
@@ -555,12 +551,11 @@ Castro::estTimeStep (Real dt_old)
 	for (MFIter mfi(stateMF,true); mfi.isValid(); ++mfi)
 	{
 	    const Box& box = mfi.tilebox();
-	    const int idx = mfi.tileIndex();
 
             Device::prepare_for_launch(box.loVect(), box.hiVect());
 
-	    ca_estdt(ARLIM_3D(box.loVectF()), ARLIM_3D(box.hiVectF()),
-		     BL_TO_FORTRAN_3D(stateMF[mfi]),
+	    ca_estdt(BL_TO_FORTRAN_BOX(box),
+		     BL_TO_FORTRAN_ANYD(stateMF[mfi]),
 		     ZFILL(dx),&dt);
 	}
 #ifdef _OPENMP
@@ -913,8 +908,6 @@ Castro::normalize_species (MultiFab& S_new)
 
     BL_PROFILE("Castro::normalize_species()");
 
-//    Device::beginDeviceLaunchRegion();
-
     int ng = S_new.nGrow();
 
 #ifdef _OPENMP
@@ -923,15 +916,12 @@ Castro::normalize_species (MultiFab& S_new)
     for (MFIter mfi(S_new,true); mfi.isValid(); ++mfi)
     {
        const Box& bx = mfi.growntilebox(ng);
-       const int idx = mfi.tileIndex();
 
        Device::prepare_for_launch(bx.loVect(), bx.hiVect());
 
-       ca_normalize_species(BL_TO_FORTRAN_3D(S_new[mfi]), 
-			    ARLIM_3D(bx.loVectF()), ARLIM_3D(bx.hiVectF()));
+       ca_normalize_species(BL_TO_FORTRAN_ANYD(S_new[mfi]), 
+			    BL_TO_FORTRAN_BOX(bx));
     }
-
-//    Device::endDeviceLaunchRegion();
 
 }
 
@@ -940,8 +930,6 @@ Castro::enforce_consistent_e (MultiFab& S)
 {
 
   BL_PROFILE("Castro::enforce_consistent_e()");
-
-  // Device::beginDeviceLaunchRegion();
 
 #ifdef _OPENMP
 #pragma omp parallel
@@ -952,11 +940,9 @@ Castro::enforce_consistent_e (MultiFab& S)
         const int* lo      = box.loVect();
         const int* hi      = box.hiVect();
 
-	const int idx      = mfi.tileIndex();
-
         Device::prepare_for_launch(lo, hi);
 
-        ca_enforce_consistent_e(ARLIM_3D(box.loVectF()), ARLIM_3D(box.hiVectF()), BL_TO_FORTRAN_3D(S[mfi]));
+        ca_enforce_consistent_e(BL_TO_FORTRAN_BOX(box), BL_TO_FORTRAN_ANYD(S[mfi]));
     }
 
   // Device::endDeviceLaunchRegion();
@@ -990,14 +976,13 @@ Castro::enforce_min_density (MultiFab& S_old, MultiFab& S_new)
 	FArrayBox& stateold = S_old[mfi];
 	FArrayBox& statenew = S_new[mfi];
 	FArrayBox& vol      = volume[mfi];
-	const int idx = mfi.tileIndex();
 
         Device::prepare_for_launch(bx.loVect(), bx.hiVect());
 
 	ca_enforce_minimum_density(BL_TO_FORTRAN_ANYD(stateold),
 				   BL_TO_FORTRAN_ANYD(statenew),
 				   BL_TO_FORTRAN_ANYD(vol),
-				   ARLIM_3D(bx.loVectF()), ARLIM_3D(bx.hiVectF()),
+				   BL_TO_FORTRAN_BOX(bx),
 				   &dens_change, verbose);
 
     }
@@ -1173,12 +1158,11 @@ Castro::reset_internal_energy(MultiFab& S_new)
     for (MFIter mfi(S_new,true); mfi.isValid(); ++mfi)
     {
         const Box& bx = mfi.growntilebox(ng);
-	const int idx = mfi.tileIndex();
 
         Device::prepare_for_launch(bx.loVect(), bx.hiVect());
 
-        ca_reset_internal_e(ARLIM_3D(bx.loVectF()), ARLIM_3D(bx.hiVectF()),
-			    BL_TO_FORTRAN_3D(S_new[mfi]),
+        ca_reset_internal_e(BL_TO_FORTRAN_BOX(bx),
+			    BL_TO_FORTRAN_ANYD(S_new[mfi]),
 			    print_fortran_warnings);
     }
 
@@ -1204,12 +1188,9 @@ Castro::computeTemp(MultiFab& State)
     {
       const Box& bx = mfi.growntilebox();
 
-	const int idx = mfi.tileIndex();
-
         Device::prepare_for_launch(bx.loVect(), bx.hiVect());
 
-	ca_compute_temp(ARLIM_3D(bx.loVectF()), ARLIM_3D(bx.hiVectF()),
-			BL_TO_FORTRAN_3D(State[mfi]));
+	ca_compute_temp(BL_TO_FORTRAN_BOX(bx), BL_TO_FORTRAN_3D(State[mfi]));
     }
 
 }

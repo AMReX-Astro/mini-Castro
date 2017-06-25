@@ -103,12 +103,10 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
 	// convert the conservative state to the primitive variable state.
 	// this fills both q and qaux.
 
-	const int idx = mfi.tileIndex();
-
         Device::prepare_for_launch(qbx.loVect(), qbx.hiVect());
 
 	ca_ctoprim
-          (ARLIM_3D(qbx.loVectF()), ARLIM_3D(qbx.hiVectF()),
+          (BL_TO_FORTRAN_BOX(qbx),
 	   BL_TO_FORTRAN_ANYD(statein),
            BL_TO_FORTRAN_ANYD(q),
            BL_TO_FORTRAN_ANYD(qaux));
@@ -118,7 +116,7 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
         Device::prepare_for_launch(obx.loVect(), obx.hiVect());
 
         ca_prepare_for_fluxes
-          (ARLIM_3D(obx.loVectF()), ARLIM_3D(obx.hiVectF()),
+          (BL_TO_FORTRAN_BOX(obx),
 	   dx, dt,
 	   BL_TO_FORTRAN_ANYD(q),
 	   BL_TO_FORTRAN_ANYD(qaux),
@@ -132,7 +130,7 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
 	   BL_TO_FORTRAN_ANYD(szp));
 
         ca_prepare_profile
-          (ARLIM_3D(obx.loVectF()), ARLIM_3D(obx.hiVectF()),
+          (BL_TO_FORTRAN_BOX(obx),
 	   BL_TO_FORTRAN_ANYD(q),
 	   BL_TO_FORTRAN_ANYD(qm),
 	   BL_TO_FORTRAN_ANYD(qp),
@@ -152,7 +150,7 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
             Device::prepare_for_launch(ebx.loVect(), ebx.hiVect());
 
             ca_construct_flux
-              (ARLIM_3D(ebx.loVectF()), ARLIM_3D(ebx.hiVectF()),
+              (BL_TO_FORTRAN_BOX(ebx),
                domain_lo, domain_hi,
                dx, dt,
                idir_f,
@@ -170,7 +168,7 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
         Device::prepare_for_launch(bx.loVect(), bx.hiVect());
 
 	ca_construct_hydro_update
-          (ARLIM_3D(bx.loVectF()), ARLIM_3D(bx.hiVectF()),
+          (BL_TO_FORTRAN_BOX(bx),
            dx, dt,
 	   b_mol[istage],
            BL_TO_FORTRAN_ANYD(qe[0][mfi]),
