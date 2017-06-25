@@ -76,7 +76,7 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
     for (MFIter mfi(S_new, hydro_tile_size); mfi.isValid(); ++mfi)
       {
 	const Box& bx  = mfi.tilebox();
-	const Box& qbx = mfi.growntilebox(NUM_GROW);
+	const Box& qbx = mfi.registerBox(amrex::grow(bx, NUM_GROW));
 
 	const int* lo = bx.loVect();
 	const int* hi = bx.hiVect();
@@ -111,7 +111,7 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
            BL_TO_FORTRAN_ANYD(q),
            BL_TO_FORTRAN_ANYD(qaux));
 
-        const Box& obx = mfi.growntilebox(1);
+        const Box& obx = mfi.registerBox(amrex::grow(bx, 1));
 
         Device::prepare_for_launch(obx.loVect(), obx.hiVect());
 
@@ -145,7 +145,7 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
 
             int idir_f = idir + 1;
 
-            const Box& ebx = mfi.nodaltilebox(idir);
+            const Box& ebx = mfi.registerBox(amrex::surroundingNodes(bx, idir));
 
             Device::prepare_for_launch(ebx.loVect(), ebx.hiVect());
 
