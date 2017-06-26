@@ -11,7 +11,7 @@ contains
 #ifdef CUDA
   attributes(global) &
 #endif
-  subroutine hypfill(lo, hi, adv, adv_lo, adv_hi, domlo, domhi, dx, xlo, time, bc)
+  subroutine hypfill(adv, adv_l1, adv_l2, adv_l3, adv_h1, adv_h2, adv_h3, domlo, domhi, dx, xlo, time, bc)
 
     use meth_params_module, only: NVAR
     use amrex_fort_module, only: rt => amrex_real, get_loop_bounds
@@ -21,24 +21,31 @@ contains
 
     include 'AMReX_bc_types.fi'
 
-    integer,  intent(in   ) :: lo(3), hi(3)
-    integer,  intent(in   ) :: adv_lo(3), adv_hi(3)
+    integer,  intent(in   ) :: adv_l1, adv_l2, adv_l3, adv_h1, adv_h2, adv_h3
     integer,  intent(in   ) :: bc(3,2,NVAR)
     integer,  intent(in   ) :: domlo(3), domhi(3)
     real(rt), intent(in   ) :: dx(3), xlo(3), time
-    real(rt), intent(inout) :: adv(adv_lo(1):adv_hi(1),adv_lo(2):adv_hi(2),adv_lo(3):adv_hi(3),NVAR)
+    real(rt), intent(inout) :: adv(adv_l1:adv_h1,adv_l2:adv_h2,adv_l3:adv_h3,NVAR)
 
     real(rt) :: state(NVAR)
     real(rt) :: staten(NVAR)
 
-    integer  :: i, j, k, n, blo(3), bhi(3)
+    integer  :: i, j, k, n
+    integer  :: blo(3), bhi(3), lo(3), hi(3)
     real(rt) :: x, y, z
     logical  :: rho_only
+
+    lo(1) = adv_l1
+    lo(2) = adv_l2
+    lo(3) = adv_l3
+    hi(1) = adv_h1
+    hi(2) = adv_h2
+    hi(3) = adv_h3
 
     call get_loop_bounds(blo, bhi, lo, hi)
 
     do n = 1,NVAR
-       call filccn(blo, bhi, adv, adv_lo, adv_hi, NVAR, domlo, domhi, dx, xlo, bc, n)
+       call filccn(blo, bhi, adv, lo, hi, NVAR, domlo, domhi, dx, xlo, bc, n)
     enddo
 
     ! The strategy here is to set Dirichlet condition for inflow and
@@ -172,7 +179,7 @@ contains
 #ifdef CUDA
   attributes(global) &
 #endif
-  subroutine denfill(lo, hi, adv, adv_lo, adv_hi, domlo, domhi, dx, xlo, time, bc)
+  subroutine denfill(adv, adv_l1, adv_l2, adv_l3, adv_h1, adv_h2, adv_h3, domlo, domhi, dx, xlo, time, bc)
 
     use amrex_fort_module, only: rt => amrex_real, get_loop_bounds
     use filcc_module, only: filccn
@@ -181,16 +188,22 @@ contains
 
     include 'AMReX_bc_types.fi'
 
-    integer,  intent(in   ) :: lo(3), hi(3)
-    integer,  intent(in   ) :: adv_lo(3), adv_hi(3)
+    integer,  intent(in   ) :: adv_l1, adv_l2, adv_l3, adv_h1, adv_h2, adv_h3
     integer,  intent(in   ) :: bc(3,2,1)
     integer,  intent(in   ) :: domlo(3), domhi(3)
     real(rt), intent(in   ) :: dx(3), xlo(3), time
-    real(rt), intent(inout) :: adv(adv_lo(1):adv_hi(1),adv_lo(2):adv_hi(2),adv_lo(3):adv_hi(3))
+    real(rt), intent(inout) :: adv(adv_l1:adv_h1,adv_l2:adv_h2,adv_l3:adv_h3)
 
     logical :: rho_only
     integer :: i, j, k
-    integer :: blo(3), bhi(3)
+    integer :: blo(3), bhi(3), lo(3), hi(3)
+
+    lo(1) = adv_l1
+    lo(2) = adv_l2
+    lo(3) = adv_l3
+    hi(1) = adv_h1
+    hi(2) = adv_h2
+    hi(3) = adv_h3
 
     call get_loop_bounds(blo, bhi, lo, hi)
 
@@ -200,7 +213,7 @@ contains
     ! that the same function is called here and in hypfill where all the
     ! states are filled.
 
-    call filccn(blo, bhi, adv, adv_lo, adv_hi, 1, domlo, domhi, dx, xlo, bc, 1)
+    call filccn(blo, bhi, adv, lo, hi, 1, domlo, domhi, dx, xlo, bc, 1)
 
     rho_only = .TRUE.
 

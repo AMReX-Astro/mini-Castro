@@ -711,59 +711,39 @@ contains
 
 #ifdef CUDA
 
-    attributes(device) :: adv, domlo, domhi
+    attributes(device) :: adv, adv_l1, adv_l2, adv_l3, adv_h1, adv_h2, adv_h3, dx, domlo, domhi
 
-    integer                   :: cuda_result
+    integer :: cuda_result
 
-    integer,  managed, pointer :: adv_lo_d(:), adv_hi_d(:)
-    real(rt), managed, pointer :: dx_d(:), xlo_d(:), time_d(:)
+    real(rt), managed, pointer :: xlo_d(:), time_d(:)
     integer,  managed, pointer :: bc_d(:,:,:)
 
 #endif
 
-    integer :: adv_lo(3), adv_hi(3)
-
-    adv_lo(1) = adv_l1
-    adv_lo(2) = adv_l2
-    adv_lo(3) = adv_l3
-    adv_hi(1) = adv_h1
-    adv_hi(2) = adv_h2
-    adv_hi(3) = adv_h3
-
 #ifdef CUDA
 
-    call bl_allocate(adv_lo_d, 1, 3)
-    call bl_allocate(adv_hi_d, 1, 3)
-    call bl_allocate(dx_d, 1, 3)
     call bl_allocate(xlo_d, 1, 3)
     call bl_allocate(time_d, 1, 1)
     call bl_allocate(bc_d, 1, 3, 1, 2, 1, NVAR)
 
-    cuda_result = cudaMemcpyAsync(adv_lo_d, adv_lo, 3, cudaMemcpyHostToDevice, cuda_stream)
-    cuda_result = cudaMemcpyAsync(adv_hi_d, adv_hi, 3, cudaMemcpyHostToDevice, cuda_stream)
-
-    cuda_result = cudaMemcpyAsync(dx_d, dx, 3, cudaMemcpyHostToDevice, cuda_stream)
     cuda_result = cudaMemcpyAsync(xlo_d, xlo, 3, cudaMemcpyHostToDevice, cuda_stream)
 
     cuda_result = cudaMemcpyAsync(time_d, time, 1, cudaMemcpyHostToDevice, cuda_stream)
 
     cuda_result = cudaMemcpyAsync(bc_d, bc, 6*NVAR, cudaMemcpyHostToDevice, cuda_stream)
 
-    call hypfill<<<numBlocks, numThreads, 0, cuda_stream>>>(adv_lo_d, adv_hi_d, adv, adv_lo_d, adv_hi_d, domlo, domhi, &
-                                                            dx_d, xlo_d, time_d(1), bc_d)
+    call hypfill<<<numBlocks, numThreads, 0, cuda_stream>>>(adv, adv_l1, adv_l2, adv_l3, adv_h1, adv_h2, adv_h3, domlo, domhi, &
+                                                            dx, xlo_d, time_d(1), bc_d)
 
     cuda_result = cudaStreamSynchronize(cuda_stream)
 
-    call bl_deallocate(adv_lo_d)
-    call bl_deallocate(adv_hi_d)
-    call bl_deallocate(dx_d)
     call bl_deallocate(xlo_d)
     call bl_deallocate(time_d)
     call bl_deallocate(bc_d)
 
 #else
 
-    call hypfill(adv_lo, adv_hi, adv, adv_lo, adv_hi, domlo, domhi, dx, xlo, time, bc)
+    call hypfill(adv, adv_l1, adv_l2, adv_l3, adv_h1, adv_h2, adv_h3, domlo, domhi, dx, xlo, time, bc)
 
 #endif
 
@@ -788,59 +768,39 @@ contains
     real(rt), intent(inout) :: adv(adv_l1:adv_h1,adv_l2:adv_h2,adv_l3:adv_h3)
 #ifdef CUDA
 
-    attributes(device) :: adv, domlo, domhi
+    attributes(device) :: adv, adv_l1, adv_l2, adv_l3, adv_h1, adv_h2, adv_h3, dx, domlo, domhi
 
     integer                   :: cuda_result
 
-    integer,  managed, pointer :: adv_lo_d(:), adv_hi_d(:)
-    real(rt), managed, pointer :: dx_d(:), xlo_d(:), time_d(:)
+    real(rt), managed, pointer :: xlo_d(:), time_d(:)
     integer,  managed, pointer :: bc_d(:,:,:)
 
 #endif
 
-    integer :: adv_lo(3), adv_hi(3)
-
-    adv_lo(1) = adv_l1
-    adv_lo(2) = adv_l2
-    adv_lo(3) = adv_l3
-    adv_hi(1) = adv_h1
-    adv_hi(2) = adv_h2
-    adv_hi(3) = adv_h3
-
 #ifdef CUDA
 
-    call bl_allocate(adv_lo_d, 1, 3)
-    call bl_allocate(adv_hi_d, 1, 3)
-    call bl_allocate(dx_d, 1, 3)
     call bl_allocate(xlo_d, 1, 3)
     call bl_allocate(time_d, 1, 1)
     call bl_allocate(bc_d, 1, 3, 1, 2, 1, NVAR)
 
-    cuda_result = cudaMemcpyAsync(adv_lo_d, adv_lo, 3, cudaMemcpyHostToDevice, cuda_stream)
-    cuda_result = cudaMemcpyAsync(adv_hi_d, adv_hi, 3, cudaMemcpyHostToDevice, cuda_stream)
-
-    cuda_result = cudaMemcpyAsync(dx_d, dx, 3, cudaMemcpyHostToDevice, cuda_stream)
     cuda_result = cudaMemcpyAsync(xlo_d, xlo, 3, cudaMemcpyHostToDevice, cuda_stream)
 
     cuda_result = cudaMemcpyAsync(time_d, time, 1, cudaMemcpyHostToDevice, cuda_stream)
 
     cuda_result = cudaMemcpyAsync(bc_d, bc, 6*NVAR, cudaMemcpyHostToDevice, cuda_stream)
 
-    call denfill<<<numBlocks, numThreads, 0, cuda_stream>>>(adv_lo_d, adv_hi_d, adv, adv_lo_d, adv_hi_d, domlo, domhi, &
-                                                            dx_d, xlo_d, time_d(1), bc_d)
+    call denfill<<<numBlocks, numThreads, 0, cuda_stream>>>(adv, adv_l1, adv_l2, adv_l3, adv_h1, adv_h2, adv_h3, domlo, domhi, &
+                                                            dx, xlo_d, time_d(1), bc_d)
 
     cuda_result = cudaStreamSynchronize(cuda_stream)
 
-    call bl_deallocate(adv_lo_d)
-    call bl_deallocate(adv_hi_d)
-    call bl_deallocate(dx_d)
     call bl_deallocate(xlo_d)
     call bl_deallocate(time_d)
     call bl_deallocate(bc_d)
 
 #else
 
-    call denfill(adv_lo, adv_hi, adv, adv_lo, adv_hi, domlo, domhi, dx, xlo, time, bc)
+    call denfill(adv, adv_l1, adv_l2, adv_l3, adv_h1, adv_h2, adv_h3, domlo, domhi, dx, xlo, time, bc)
 
 #endif
 
