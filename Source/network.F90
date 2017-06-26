@@ -30,7 +30,7 @@ module network
   logical :: network_initialized = .false.
 
   ! this will be computed here, not in the actual network
-  real(rt), allocatable, save :: aion_inv(:)
+  real(rt), allocatable :: aion_inv(:)
 
   !$acc declare create(aion_inv)
 

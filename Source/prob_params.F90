@@ -10,21 +10,21 @@ module prob_params_module
   implicit none
 
   ! boundary condition information
-  integer, allocatable, save :: physbc_lo(:)
-  integer, allocatable, save :: physbc_hi(:)
-  integer, allocatable, save :: Interior, Inflow, Outflow, Symmetry, SlipWall, NoSlipWall
+  integer, allocatable :: physbc_lo(:)
+  integer, allocatable :: physbc_hi(:)
+  integer, allocatable :: Interior, Inflow, Outflow, Symmetry, SlipWall, NoSlipWall
 
   ! geometry information
   integer,  save :: coord_type
-  real(rt), save, allocatable :: center(:), problo(:), probhi(:)
+  real(rt), allocatable :: center(:), problo(:), probhi(:)
 
   ! dimension information
-  integer, allocatable, save :: dim
+  integer, allocatable :: dim
 
   ! indices that we use for dimension agnostic routines 
   ! to ensure we don't illegally access non-existent ghost cells
   ! the format is dg(1:dim) = 1, dg(dim+1:3) = 0
-  integer, allocatable, save :: dg(:)
+  integer, allocatable :: dg(:)
 
   ! grid information
   integer         , save              :: max_level

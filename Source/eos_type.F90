@@ -41,22 +41,22 @@ module eos_type_module
 
   ! Minimum and maximum thermodynamic quantities permitted by the EOS.
 
-  real(dp_t), allocatable, save :: mintemp
-  real(dp_t), allocatable, save :: maxtemp
-  real(dp_t), allocatable, save :: mindens
-  real(dp_t), allocatable, save :: maxdens
-  real(dp_t), allocatable, save :: minx
-  real(dp_t), allocatable, save :: maxx
-  real(dp_t), allocatable, save :: minye
-  real(dp_t), allocatable, save :: maxye
-  real(dp_t), allocatable, save :: mine
-  real(dp_t), allocatable, save :: maxe
-  real(dp_t), allocatable, save :: minp
-  real(dp_t), allocatable, save :: maxp
-  real(dp_t), allocatable, save :: mins
-  real(dp_t), allocatable, save :: maxs
-  real(dp_t), allocatable, save :: minh
-  real(dp_t), allocatable, save :: maxh
+  real(dp_t), allocatable :: mintemp
+  real(dp_t), allocatable :: maxtemp
+  real(dp_t), allocatable :: mindens
+  real(dp_t), allocatable :: maxdens
+  real(dp_t), allocatable :: minx
+  real(dp_t), allocatable :: maxx
+  real(dp_t), allocatable :: minye
+  real(dp_t), allocatable :: maxye
+  real(dp_t), allocatable :: mine
+  real(dp_t), allocatable :: maxe
+  real(dp_t), allocatable :: minp
+  real(dp_t), allocatable :: maxp
+  real(dp_t), allocatable :: mins
+  real(dp_t), allocatable :: maxs
+  real(dp_t), allocatable :: minh
+  real(dp_t), allocatable :: maxh
 
   !$acc declare &
   !$acc create(mintemp, maxtemp, mindens, maxdens, minx, maxx, minye, maxye) &

@@ -82,8 +82,8 @@ module meth_params_module
   ! NQ will be the total number of primitive variables, hydro + radiation
   integer, parameter :: NQ = QVAR
 
-  integer, allocatable, save :: npassive
-  integer, allocatable, save :: qpass_map(:), upass_map(:)
+  integer, allocatable :: npassive
+  integer, allocatable :: qpass_map(:), upass_map(:)
 
   ! These are used for the Godunov state
   ! Note that the velocity indices here are picked to be the same value
@@ -111,9 +111,9 @@ module meth_params_module
 
   ! Begin the declarations of the ParmParse parameters
 
-  real(rt), allocatable, save :: small_dens
-  real(rt), allocatable, save :: small_temp
-  real(rt), allocatable, save :: cfl
+  real(rt), allocatable :: small_dens
+  real(rt), allocatable :: small_temp
+  real(rt), allocatable :: cfl
 
 #ifdef CUDA
   attributes(managed) :: small_dens
