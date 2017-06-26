@@ -936,7 +936,9 @@ Castro::normalize_species (MultiFab& S_new)
     {
        const Box& bx = mfi.growntilebox(ng);
 
+#ifdef CUDA
        Device::prepare_for_launch(bx.loVect(), bx.hiVect());
+#endif
 
        ca_normalize_species(BL_TO_FORTRAN_ANYD(S_new[mfi]), 
 			    BL_TO_FORTRAN_BOX(bx));
@@ -959,7 +961,9 @@ Castro::enforce_consistent_e (MultiFab& S)
         const int* lo      = box.loVect();
         const int* hi      = box.hiVect();
 
+#ifdef CUDA
         Device::prepare_for_launch(lo, hi);
+#endif
 
         ca_enforce_consistent_e(BL_TO_FORTRAN_BOX(box), BL_TO_FORTRAN_ANYD(S[mfi]));
     }
@@ -1003,8 +1007,9 @@ Castro::enforce_min_density (MultiFab& S_old, MultiFab& S_new)
         Real* dens_change_d = &dens_change;
 #endif
 
+#ifdef CUDA
         Device::prepare_for_launch(bx.loVect(), bx.hiVect());
-
+#endif
 	ca_enforce_minimum_density(BL_TO_FORTRAN_ANYD(stateold),
 				   BL_TO_FORTRAN_ANYD(statenew),
 				   BL_TO_FORTRAN_ANYD(vol),
@@ -1190,8 +1195,9 @@ Castro::reset_internal_energy(MultiFab& S_new)
     {
         const Box& bx = mfi.growntilebox(ng);
 
+#ifdef
         Device::prepare_for_launch(bx.loVect(), bx.hiVect());
-
+#endif
         ca_reset_internal_e(BL_TO_FORTRAN_BOX(bx),
 			    BL_TO_FORTRAN_ANYD(S_new[mfi]),
 			    print_fortran_warnings);
@@ -1219,8 +1225,9 @@ Castro::computeTemp(MultiFab& State)
     {
       const Box& bx = mfi.growntilebox();
 
+#ifdef
         Device::prepare_for_launch(bx.loVect(), bx.hiVect());
-
+#endif
 	ca_compute_temp(BL_TO_FORTRAN_BOX(bx), BL_TO_FORTRAN_3D(State[mfi]));
     }
 

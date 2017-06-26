@@ -103,7 +103,9 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
 	// convert the conservative state to the primitive variable state.
 	// this fills both q and qaux.
 
+#ifdef CUDA
         Device::prepare_for_launch(qbx.loVect(), qbx.hiVect());
+#endif
 
 	ca_ctoprim
           (BL_TO_FORTRAN_BOX(qbx),
@@ -113,7 +115,9 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
 
         const Box& obx = mfi.registerBox(amrex::grow(bx, 1));
 
+#ifdef CUDA
         Device::prepare_for_launch(obx.loVect(), obx.hiVect());
+#endif
 
         ca_prepare_for_fluxes
           (BL_TO_FORTRAN_BOX(obx),
@@ -147,7 +151,9 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
 
             const Box& ebx = mfi.registerBox(amrex::surroundingNodes(bx, idir));
 
+#ifdef CUDA
             Device::prepare_for_launch(ebx.loVect(), ebx.hiVect());
+#endif
 
             ca_construct_flux
               (BL_TO_FORTRAN_BOX(ebx),
@@ -165,7 +171,9 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
 
         }
 
+#ifdef CUDA
         Device::prepare_for_launch(bx.loVect(), bx.hiVect());
+#endif
 
 	ca_construct_hydro_update
           (BL_TO_FORTRAN_BOX(bx),
