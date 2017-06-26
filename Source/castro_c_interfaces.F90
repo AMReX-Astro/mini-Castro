@@ -419,7 +419,6 @@ contains
 
 #ifdef CUDA
     attributes(managed) :: lo, hi, q, q_lo, q_hi, &
-                           flatn, flatn_lo, flatn_hi, &
                            qm, qm_lo, qm_hi, qp, qp_lo, qp_hi, &
                            sxm, sxm_lo, sxm_hi, sxp, sxp_lo, sxp_hi, &
                            sym, sym_lo, sym_hi, syp, syp_lo, syp_hi, &
