@@ -2,9 +2,7 @@ module c_interface_modules
 
   use meth_params_module, only: NVAR, NQAUX, NQ, QVAR, NGDNV
   use amrex_fort_module, only: rt => amrex_real
-  use mempool_module, only: bl_allocate, bl_deallocate
 #ifdef CUDA
-  use cudafor, only: cudaMemcpyAsync, cudaMemcpyHostToDevice, cudaStreamSynchronize
   use cuda_module, only: numBlocks, numThreads, cuda_stream
 #endif
 
@@ -238,58 +236,18 @@ contains
     integer,  intent(in   ) :: level, grid_no
 
 #ifdef CUDA
-    attributes(managed) :: vel, dat, lo, hi, v_lo, v_hi, d_lo, d_hi, dx, xlo, domlo, domhi
-
-    integer,  managed, pointer :: nv_d(:), nc_d(:)
-    integer,  managed, pointer :: bc_d(:,:,:)
-    real(rt), managed, pointer :: time_d(:), dt_d(:)
-    integer,  managed, pointer :: level_d(:), grid_no_d(:)
-
-    integer :: cuda_result
-
-    ! Note that this stream calculation is not ideal because there are
-    ! potentially multiple tiles per box.
-
-    call bl_allocate(nv_d, 1, 1)
-    call bl_allocate(nc_d, 1, 1)
-    call bl_allocate(bc_d, 1, 3, 1, 2, 1, nc)
-    call bl_allocate(time_d, 1, 1)
-    call bl_allocate(dt_d, 1, 1)
-    call bl_allocate(level_d, 1, 1)
-    call bl_allocate(grid_no_d, 1, 1)
-
-    cuda_result = cudaMemcpyAsync(nv_d, nv, 1, cudaMemcpyHostToDevice, cuda_stream)
-    cuda_result = cudaMemcpyAsync(nc_d, nc, 1, cudaMemcpyHostToDevice, cuda_stream)
-
-    cuda_result = cudaMemcpyAsync(bc_d, bc, 6 * nc, cudaMemcpyHostToDevice, cuda_stream)
-    cuda_result = cudaMemcpyAsync(time_d, time, 1, cudaMemcpyHostToDevice, cuda_stream)
-    cuda_result = cudaMemcpyAsync(dt_d, dt, 1, cudaMemcpyHostToDevice, cuda_stream)
-    cuda_result = cudaMemcpyAsync(level_d, level, 1, cudaMemcpyHostToDevice, cuda_stream)
-    cuda_result = cudaMemcpyAsync(grid_no_d, grid_no, 1, cudaMemcpyHostToDevice, cuda_stream)
-
-    call dervel<<<numBlocks, numThreads, 0, cuda_stream>>>(vel,v_lo,v_hi,nv_d(1), &
-                                                           dat,d_lo,d_hi,nc_d(1), &
-                                                           lo,hi,domlo,domhi, &
-                                                           dx,xlo,time_d(1),dt_d(1), &
-                                                           bc_d,level_d(1),grid_no_d(1))
-
-    cuda_result = cudaStreamSynchronize(cuda_stream)
-
-    call bl_deallocate(nv_d)
-    call bl_deallocate(nc_d)
-    call bl_deallocate(bc_d)
-    call bl_deallocate(time_d)
-    call bl_deallocate(dt_d)
-    call bl_deallocate(level_d)
-    call bl_deallocate(grid_no_d)
-
-#else
-
-    call dervel(vel,v_lo,v_hi,nv, &
-                dat,d_lo,d_hi,nc,lo,hi,domlo, &
-                domhi,dx,xlo,time,dt,bc,level,grid_no)
-
+    attributes(device) :: vel, dat, lo, hi, v_lo, v_hi, d_lo, d_hi, dx, xlo, domlo, domhi, nv, nc, bc, time, dt, level, grid_no
 #endif
+
+    call dervel &
+#ifdef CUDA
+         <<<numBlocks, numThreads, 0, cuda_stream>>> &
+#endif
+         (vel,v_lo,v_hi,nv, &
+          dat,d_lo,d_hi,nc, &
+          lo,hi,domlo,domhi, &
+          dx,xlo,time,dt, &
+          bc,level,grid_no)
 
   end subroutine ca_dervel
 
@@ -314,55 +272,18 @@ contains
     integer,  intent(in   ) :: bc(3,2,nc), level, grid_no
 
 #ifdef CUDA
-    attributes(managed) :: p, u, lo, hi, p_lo, p_hi, u_lo, u_hi, dx, xlo, domlo, domhi
-
-    integer,  managed, pointer :: np_d(:), nc_d(:)
-    integer,  managed, pointer :: bc_d(:,:,:)
-    real(rt), managed, pointer :: time_d(:), dt_d(:)
-    integer,  managed, pointer :: level_d(:), grid_no_d(:)
-
-    integer :: cuda_result
-
-    call bl_allocate(np_d, 1, 1)
-    call bl_allocate(nc_d, 1, 1)
-    call bl_allocate(bc_d, 1, 3, 1, 2, 1, nc)
-    call bl_allocate(time_d, 1, 1)
-    call bl_allocate(dt_d, 1, 1)
-    call bl_allocate(level_d, 1, 1)
-    call bl_allocate(grid_no_d, 1, 1)
-
-    cuda_result = cudaMemcpyAsync(np_d, np, 1, cudaMemcpyHostToDevice, cuda_stream)
-    cuda_result = cudaMemcpyAsync(nc_d, nc, 1, cudaMemcpyHostToDevice, cuda_stream)
-
-    cuda_result = cudaMemcpyAsync(bc_d, bc, 6 * nc, cudaMemcpyHostToDevice, cuda_stream)
-    cuda_result = cudaMemcpyAsync(time_d, time, 1, cudaMemcpyHostToDevice, cuda_stream)
-    cuda_result = cudaMemcpyAsync(dt_d, dt, 1, cudaMemcpyHostToDevice, cuda_stream)
-    cuda_result = cudaMemcpyAsync(level_d, level, 1, cudaMemcpyHostToDevice, cuda_stream)
-    cuda_result = cudaMemcpyAsync(grid_no_d, grid_no, 1, cudaMemcpyHostToDevice, cuda_stream)
-
-    call derpres<<<numBlocks, numThreads, 0, cuda_stream>>>(p,p_lo,p_hi,np_d(1), &
-                                                            u,u_lo,u_hi,nc_d(1), &
-                                                            lo,hi,domlo,domhi, &
-                                                            dx,xlo,time_d(1),dt_d(1), &
-                                                            bc_d,level_d(1),grid_no_d(1))
-
-    cuda_result = cudaStreamSynchronize(cuda_stream)
-
-    call bl_deallocate(np_d)
-    call bl_deallocate(nc_d)
-    call bl_deallocate(bc_d)
-    call bl_deallocate(time_d)
-    call bl_deallocate(dt_d)
-    call bl_deallocate(level_d)
-    call bl_deallocate(grid_no_d)
-
-#else
-
-    call derpres(p,p_lo,p_hi,np, &
-                 u,u_lo,u_hi,nc,lo,hi,domlo, &
-                 domhi,dx,xlo,time,dt,bc,level,grid_no)
-
+    attributes(managed) :: p, u, lo, hi, p_lo, p_hi, u_lo, u_hi, dx, xlo, domlo, domhi, np, nc, bc, time, dt, level, grid_no
 #endif
+
+    call derpres &
+#ifdef CUDA
+         <<<numBlocks, numThreads, 0, cuda_stream>>> &
+#endif
+         (p,p_lo,p_hi,np, &
+          u,u_lo,u_hi,nc, &
+          lo,hi,domlo,domhi, &
+          dx,xlo,time,dt, &
+          bc,level,grid_no)
 
   end subroutine ca_derpres
 
