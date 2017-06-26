@@ -560,10 +560,8 @@ Castro::estTimeStep (Real dt_old)
 
 #ifdef CUDA
             Device::device_htod_memcpy_async(dt_d, &dt, sizeof(Real), mfi.tileIndex());
-#endif
-
             Device::prepare_for_launch(box.loVect(), box.hiVect());
-
+#endif
 	    ca_estdt(BL_TO_FORTRAN_BOX(box),
 		     BL_TO_FORTRAN_ANYD(stateMF[mfi]),
 		     ZFILL(dx),dt_d);
@@ -1195,7 +1193,7 @@ Castro::reset_internal_energy(MultiFab& S_new)
     {
         const Box& bx = mfi.growntilebox(ng);
 
-#ifdef
+#ifdef CUDA
         Device::prepare_for_launch(bx.loVect(), bx.hiVect());
 #endif
         ca_reset_internal_e(BL_TO_FORTRAN_BOX(bx),
@@ -1225,7 +1223,7 @@ Castro::computeTemp(MultiFab& State)
     {
       const Box& bx = mfi.growntilebox();
 
-#ifdef
+#ifdef CUDA
         Device::prepare_for_launch(bx.loVect(), bx.hiVect());
 #endif
 	ca_compute_temp(BL_TO_FORTRAN_BOX(bx), BL_TO_FORTRAN_3D(State[mfi]));
