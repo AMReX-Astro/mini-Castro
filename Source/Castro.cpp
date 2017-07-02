@@ -533,7 +533,7 @@ Castro::estTimeStep (Real dt_old)
 
     const MultiFab& stateMF = get_new_data(State_Type);
 
-    const Real* dx = geom.CellSize();
+    const Real* dx = geom.CellSizeF();
 
     // Start the hydro with the max_dt value, but divide by CFL
     // to account for the fact that we multiply by it at the end.
