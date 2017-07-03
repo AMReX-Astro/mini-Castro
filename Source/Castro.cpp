@@ -1317,8 +1317,7 @@ Castro::clean_state(MultiFab& state) {
 
     // Enforce a minimum density.
 
-//    Real frac_change = enforce_min_density(state, state);
-    Real frac_change = 0.0;
+    Real frac_change = enforce_min_density(state, state);
 
     // Ensure all species are normalized.
 
