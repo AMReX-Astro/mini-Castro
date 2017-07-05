@@ -45,7 +45,8 @@ contains
     use bl_error_module, only: bl_error
     use bl_constants_module, only: ONE
 #ifdef CUDA
-    use cudafor, only: cudaMemAdvise, cudaMemAdviseSetReadMostly, cudaCpuDeviceId
+    use cudafor, only: cudaMemAdvise, cudaMemAdviseSetPreferredLocation
+    use cuda_module, only: cuda_device_id
 #endif
 
     implicit none
@@ -79,9 +80,9 @@ contains
     !$acc update device(aion_inv)
 
 #ifdef CUDA
-    cuda_result = cudaMemAdvise(aion_inv, nspec, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
-    cuda_result = cudaMemAdvise(aion, nspec, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
-    cuda_result = cudaMemAdvise(zion, nspec, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
+    cuda_result = cudaMemAdvise(aion_inv, nspec, cudaMemAdviseSetPreferredLocation, cuda_device_id)
+    cuda_result = cudaMemAdvise(aion, nspec, cudaMemAdviseSetPreferredLocation, cuda_device_id)
+    cuda_result = cudaMemAdvise(zion, nspec, cudaMemAdviseSetPreferredLocation, cuda_device_id)
 #endif
 
     network_initialized = .true.

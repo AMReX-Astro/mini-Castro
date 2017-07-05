@@ -329,7 +329,8 @@ subroutine ca_set_method_params(dm,Density,Xmom,Eden,Eint,Temp, &
   use bl_constants_module, only: ZERO, ONE
   use amrex_fort_module, only: rt => amrex_real
 #ifdef CUDA
-  use cudafor, only: cudaMemAdvise, cudaMemAdviseSetReadMostly, cudaCpuDeviceId
+  use cudafor, only: cudaMemAdvise, cudaMemAdviseSetPreferredLocation
+  use cuda_module, only: cuda_device_id
 #endif
 
   implicit none
@@ -429,9 +430,9 @@ subroutine ca_set_method_params(dm,Density,Xmom,Eden,Eint,Temp, &
   !$acc device(small_dens, small_temp)
 
 #ifdef CUDA
-  cuda_result = cudaMemAdvise(qpass_map, QVAR, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
-  cuda_result = cudaMemAdvise(upass_map, NVAR, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
-  cuda_result = cudaMemAdvise(npassive, 1, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
+  cuda_result = cudaMemAdvise(qpass_map, QVAR, cudaMemAdviseSetPreferredLocation, cuda_device_id)
+  cuda_result = cudaMemAdvise(upass_map, NVAR, cudaMemAdviseSetPreferredLocation, cuda_device_id)
+  cuda_result = cudaMemAdvise(npassive, 1, cudaMemAdviseSetPreferredLocation, cuda_device_id)
 #endif
 
 end subroutine ca_set_method_params
@@ -443,7 +444,8 @@ subroutine ca_init_godunov_indices() bind(C, name="ca_init_godunov_indices")
                                 QU, QV, QW
   use amrex_fort_module, only: rt => amrex_real
 #ifdef CUDA
-  use cudafor, only: cudaMemAdvise, cudaMemAdviseSetReadMostly, cudaCpuDeviceId
+  use cudafor, only: cudaMemAdvise, cudaMemAdviseSetPreferredLocation
+  use cuda_module, only: cuda_device_id
 #endif
 
   implicit none
@@ -473,7 +475,8 @@ subroutine ca_set_problem_params(dm,physbc_lo_in,physbc_hi_in,&
   use meth_params_module, only: UMX, UMY, UMZ
   use amrex_fort_module, only: rt => amrex_real
 #ifdef CUDA
-  use cudafor, only: cudaMemAdvise, cudaMemAdviseSetReadMostly, cudaCpuDeviceId
+  use cudafor, only: cudaMemAdvise, cudaMemAdviseSetPreferredLocation
+  use cuda_module, only: cuda_device_id
 #endif
 
   implicit none
@@ -561,16 +564,16 @@ subroutine ca_set_problem_params(dm,physbc_lo_in,physbc_hi_in,&
   mom_flux_has_p(3)%comp(UMZ) = .true.
 
 #ifdef CUDA
-  cuda_result = cudaMemAdvise(dim, 1, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
-  cuda_result = cudaMemAdvise(physbc_lo, 3, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
-  cuda_result = cudaMemAdvise(physbc_hi, 3, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
-  cuda_result = cudaMemAdvise(Interior, 1, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
-  cuda_result = cudaMemAdvise(Inflow, 1, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
-  cuda_result = cudaMemAdvise(Outflow, 1, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
-  cuda_result = cudaMemAdvise(Symmetry, 1, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
-  cuda_result = cudaMemAdvise(SlipWall, 1, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
-  cuda_result = cudaMemAdvise(NoSlipWall, 1, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
-  cuda_result = cudaMemAdvise(dg, 3, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
+  cuda_result = cudaMemAdvise(dim, 1, cudaMemAdviseSetPreferredLocation, cuda_device_id)
+  cuda_result = cudaMemAdvise(physbc_lo, 3, cudaMemAdviseSetPreferredLocation, cuda_device_id)
+  cuda_result = cudaMemAdvise(physbc_hi, 3, cudaMemAdviseSetPreferredLocation, cuda_device_id)
+  cuda_result = cudaMemAdvise(Interior, 1, cudaMemAdviseSetPreferredLocation, cuda_device_id)
+  cuda_result = cudaMemAdvise(Inflow, 1, cudaMemAdviseSetPreferredLocation, cuda_device_id)
+  cuda_result = cudaMemAdvise(Outflow, 1, cudaMemAdviseSetPreferredLocation, cuda_device_id)
+  cuda_result = cudaMemAdvise(Symmetry, 1, cudaMemAdviseSetPreferredLocation, cuda_device_id)
+  cuda_result = cudaMemAdvise(SlipWall, 1, cudaMemAdviseSetPreferredLocation, cuda_device_id)
+  cuda_result = cudaMemAdvise(NoSlipWall, 1, cudaMemAdviseSetPreferredLocation, cuda_device_id)
+  cuda_result = cudaMemAdvise(dg, 3, cudaMemAdviseSetPreferredLocation, cuda_device_id)
 #endif
 
 end subroutine ca_set_problem_params
