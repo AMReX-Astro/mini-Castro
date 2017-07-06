@@ -426,7 +426,7 @@ Castro::initData ()
 
        for (MFIter mfi(S_new); mfi.isValid(); ++mfi)
        {
-          const RealBox& rbx = RealBox(grids[mfi.index()],geom.CellSize(),geom.ProbLo());
+          const RealBox& rbx = mfi.registerRealBox(RealBox(grids[mfi.index()],geom.CellSize(),geom.ProbLo()));
           const Box& box     = mfi.validbox();
           const int* lo      = box.loVect();
           const int* hi      = box.hiVect();
@@ -1110,7 +1110,7 @@ Castro::apply_tagging_func(TagBoxArray& tags, int clearval, int tagval, Real tim
 		const Box&  tilebx  = mfi.tilebox();
 
 		// physical tile box
-		const RealBox& pbx  = RealBox(tilebx,geom.CellSize(),geom.ProbLo());
+		const RealBox& pbx  = mfi.registerRealBox(RealBox(tilebx,geom.CellSize(),geom.ProbLo()));
 
 		//fab box
 		const Box&  datbox  = datfab.box();
