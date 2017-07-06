@@ -548,28 +548,18 @@ Castro::estTimeStep (Real dt_old)
     {
 	Real dt = max_dt / cfl;
 
-#ifdef CUDA
-        Real* dt_d = (Real*) Device::device_malloc(sizeof(Real));
-#else
-        Real* dt_d = &dt;
-#endif
-
 	for (MFIter mfi(stateMF,true); mfi.isValid(); ++mfi)
 	{
 	    const Box& box = mfi.tilebox();
 
-#ifdef CUDA
-            Device::device_htod_memcpy_async(dt_d, &dt, sizeof(Real), mfi.tileIndex());
+            Real* dt_f = mfi.add_reduce_value(&dt, MFIter::MIN);
+
             Device::prepare_for_launch(box.loVect(), box.hiVect());
-#endif
+
 	    ca_estdt(BL_TO_FORTRAN_BOX(box),
 		     BL_TO_FORTRAN_ANYD(stateMF[mfi]),
-		     ZFILL(dx),dt_d);
+		     ZFILL(dx),dt_f);
 
-#ifdef CUDA
-            Device::device_dtoh_memcpy_async(&dt, dt_d, sizeof(Real), mfi.tileIndex());
-            Device::stream_synchronize(mfi.tileIndex());
-#endif
 	}
 #ifdef _OPENMP
 #pragma omp critical (castro_estdt)
@@ -578,9 +568,6 @@ Castro::estTimeStep (Real dt_old)
 	    estdt_hydro = std::min(estdt_hydro,dt);
 	}
 
-#ifdef CUDA
-        Device::device_free(dt_d);
-#endif
     }
 
     ParallelDescriptor::ReduceRealMin(estdt_hydro);
@@ -934,9 +921,7 @@ Castro::normalize_species (MultiFab& S_new)
     {
        const Box& bx = mfi.growntilebox(ng);
 
-#ifdef CUDA
        Device::prepare_for_launch(bx.loVect(), bx.hiVect());
-#endif
 
        ca_normalize_species(BL_TO_FORTRAN_ANYD(S_new[mfi]), 
 			    BL_TO_FORTRAN_BOX(bx));
@@ -959,9 +944,7 @@ Castro::enforce_consistent_e (MultiFab& S)
         const int* lo      = box.loVect();
         const int* hi      = box.hiVect();
 
-#ifdef CUDA
         Device::prepare_for_launch(lo, hi);
-#endif
 
         ca_enforce_consistent_e(BL_TO_FORTRAN_BOX(box), BL_TO_FORTRAN_ANYD(S[mfi]));
     }
@@ -998,26 +981,15 @@ Castro::enforce_min_density (MultiFab& S_old, MultiFab& S_new)
 	FArrayBox& statenew = S_new[mfi];
 	FArrayBox& vol      = volume[mfi];
 
-#ifdef CUDA
-        Real* dens_change_d = (Real*) Device::device_malloc(sizeof(Real));
-        Device::device_htod_memcpy_async(dens_change_d, &dens_change, sizeof(Real), mfi.tileIndex());
-#else
-        Real* dens_change_d = &dens_change;
-#endif
+        Real* dens_change_f = mfi.add_reduce_value(&dens_change, MFIter::MIN);
 
-#ifdef CUDA
         Device::prepare_for_launch(bx.loVect(), bx.hiVect());
-#endif
+
 	ca_enforce_minimum_density(BL_TO_FORTRAN_ANYD(stateold),
 				   BL_TO_FORTRAN_ANYD(statenew),
 				   BL_TO_FORTRAN_ANYD(vol),
 				   BL_TO_FORTRAN_BOX(bx),
-				   dens_change_d, verbose);
-
-#ifdef CUDA
-        Device::device_dtoh_memcpy_async(&dens_change, dens_change_d, sizeof(Real), mfi.tileIndex());
-        Device::stream_synchronize(mfi.tileIndex());
-#endif
+				   dens_change_f, verbose);
 
     }
 
@@ -1193,9 +1165,8 @@ Castro::reset_internal_energy(MultiFab& S_new)
     {
         const Box& bx = mfi.growntilebox(ng);
 
-#ifdef CUDA
         Device::prepare_for_launch(bx.loVect(), bx.hiVect());
-#endif
+
         ca_reset_internal_e(BL_TO_FORTRAN_BOX(bx),
 			    BL_TO_FORTRAN_ANYD(S_new[mfi]),
 			    print_fortran_warnings);
@@ -1223,9 +1194,8 @@ Castro::computeTemp(MultiFab& State)
     {
       const Box& bx = mfi.growntilebox();
 
-#ifdef CUDA
         Device::prepare_for_launch(bx.loVect(), bx.hiVect());
-#endif
+
 	ca_compute_temp(BL_TO_FORTRAN_BOX(bx), BL_TO_FORTRAN_3D(State[mfi]));
     }
 
