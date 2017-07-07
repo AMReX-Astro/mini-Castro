@@ -17,7 +17,7 @@ contains
     use eos_module, only: eos
     use eos_type_module, only: eos_t, eos_input_re
     use bl_constants_module, only: ONE
-    use amrex_fort_module, only: rt => amrex_real, get_loop_bounds
+    use amrex_fort_module, only: rt => amrex_real, get_loop_bounds, amrex_min
     use meth_params_module, only: NVAR, URHO, UMX, UMY, UMZ, UEINT, UTEMP, UFS, UFX
     use prob_params_module, only: dim
 
@@ -80,11 +80,7 @@ contains
                 dt_tmp = dt_tmp + ONE/dt3
              endif
 
-#ifdef CUDA
-             dt_tmp = atomicmin(dt, ONE/dt_tmp)
-#else
-             dt = min(dt, ONE/dt_tmp)
-#endif
+             call amrex_min(dt, ONE / dt_tmp)
 
           enddo
        enddo

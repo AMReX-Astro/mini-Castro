@@ -1164,7 +1164,7 @@ contains
   subroutine summass(lo,hi,rho,r_lo,r_hi,dx, &
                      vol,v_lo,v_hi,mass)
 
-    use amrex_fort_module, only: rt => amrex_real, get_loop_bounds
+    use amrex_fort_module, only: rt => amrex_real, get_loop_bounds, amrex_add
 
     implicit none
 
@@ -1185,12 +1185,11 @@ contains
     do k = blo(3), bhi(3)
        do j = blo(2), bhi(2)
           do i = blo(1), bhi(1)
+
              dm = rho(i,j,k) * vol(i,j,k)
-#ifdef CUDA
-             dm = atomicAdd(mass, dm)
-#else
-             mass = mass + dm
-#endif
+
+             call amrex_add(mass, dm)
+
           enddo
        enddo
     enddo
