@@ -66,6 +66,21 @@ subroutine amrex_probinit (init,name,namlen,problo,probhi) bind(c)
 end subroutine amrex_probinit
 
 
+subroutine probinit_finalize() bind(c)
+
+  use probdata_module
+
+  deallocate(p_ambient)
+  deallocate(dens_ambient)
+  deallocate(e_ambient)
+  deallocate(exp_energy)
+  deallocate(r_init)
+  deallocate(nsub)
+
+end subroutine probinit_finalize
+
+
+
 module initdata_module
 
 contains

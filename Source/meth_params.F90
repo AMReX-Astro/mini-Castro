@@ -164,4 +164,16 @@ contains
 
   end subroutine ca_set_castro_method_params
 
+
+
+  subroutine ca_destroy_castro_method_params() bind(C, name="ca_destroy_castro_method_params")
+
+    implicit none
+
+    deallocate(small_dens)
+    deallocate(small_temp)
+    deallocate(cfl)
+
+  end subroutine ca_destroy_castro_method_params
+
 end module meth_params_module

@@ -673,4 +673,35 @@ contains
   end subroutine eos_kernel_launch
 #endif
 
+  subroutine eos_finalize() bind(c, name='eos_finalize')
+
+    use eos_type_module, only: mintemp, maxtemp, mindens, maxdens, &
+                               minx, maxx, minye, maxye, &
+                               mine, maxe, minp, maxp, &
+                               mins, maxs, minh, maxh
+    use actual_eos_module, only: actual_eos_finalize
+
+    implicit none
+
+    deallocate(mintemp)
+    deallocate(maxtemp)
+    deallocate(mindens)
+    deallocate(maxdens)
+    deallocate(minx)
+    deallocate(maxx)
+    deallocate(minye)
+    deallocate(maxye)
+    deallocate(mine)
+    deallocate(maxe)
+    deallocate(minp)
+    deallocate(maxp)
+    deallocate(mins)
+    deallocate(maxs)
+    deallocate(minh)
+    deallocate(maxh)
+
+    call actual_eos_finalize()
+
+  end subroutine eos_finalize
+
 end module eos_module

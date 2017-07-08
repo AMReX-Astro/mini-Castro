@@ -105,4 +105,17 @@ contains
 
   end function network_species_index
 
+
+  subroutine network_finalize() bind(c, name='network_finalize')
+
+    use actual_network, only: actual_network_finalize
+
+    implicit none
+
+    deallocate(aion_inv)
+
+    call actual_network_finalize()
+
+  end subroutine network_finalize
+
 end module network

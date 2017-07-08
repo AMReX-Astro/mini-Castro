@@ -437,6 +437,21 @@ subroutine ca_set_method_params(dm,Density,Xmom,Eden,Eint,Temp, &
 end subroutine ca_set_method_params
 
 
+
+subroutine ca_destroy_method_params() bind(C, name="ca_destroy_method_params")
+
+  use meth_params_module, only: qpass_map, upass_map, npassive
+
+  implicit none
+
+  deallocate(qpass_map)
+  deallocate(upass_map)
+  deallocate(npassive)
+
+end subroutine ca_destroy_method_params
+
+
+
 subroutine ca_init_godunov_indices() bind(C, name="ca_init_godunov_indices")
 
   use meth_params_module, only: GDRHO, GDU, GDV, GDW, GDPRES, GDGAME, NGDNV, &
@@ -575,6 +590,32 @@ subroutine ca_set_problem_params(dm,physbc_lo_in,physbc_hi_in,&
 
 end subroutine ca_set_problem_params
 
+
+
+subroutine ca_destroy_problem_params() bind(C, name="ca_destroy_problem_params")
+
+  use prob_params_module
+
+  deallocate(dim)
+
+  deallocate(physbc_lo)
+  deallocate(physbc_hi)
+
+  deallocate(Interior)
+  deallocate(Inflow)
+  deallocate(Outflow)
+  deallocate(Symmetry)
+  deallocate(SlipWall)
+  deallocate(NoSlipWall)
+
+  deallocate(center)
+  deallocate(problo)
+  deallocate(probhi)
+
+  deallocate(dg)
+
+end subroutine ca_destroy_problem_params
+
 ! :::
 ! ::: ----------------------------------------------------------------
 ! :::
@@ -642,6 +683,23 @@ subroutine ca_set_grid_info(max_level_in, dx_level_in, domlo_in, domhi_in, &
   enddo
 
 end subroutine ca_set_grid_info
+
+
+
+subroutine ca_destroy_grid_info() bind(c, name='ca_destroy_grid_info')
+
+  use prob_params_module, only: max_level, dx_level, domlo_level, domhi_level, n_error_buf, ref_ratio, blocking_factor
+
+  implicit none
+
+  deallocate(dx_level)
+  deallocate(domlo_level)
+  deallocate(domhi_level)
+  deallocate(ref_ratio)
+  deallocate(n_error_buf)
+  deallocate(blocking_factor)
+
+end subroutine ca_destroy_grid_info
 
 ! :::
 ! ::: ----------------------------------------------------------------

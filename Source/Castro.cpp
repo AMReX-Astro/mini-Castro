@@ -87,6 +87,22 @@ void
 Castro::variableCleanUp ()
 {
     desc_lst.clear();
+
+    eos_finalize();
+
+    network_finalize();
+
+    ca_extern_finalize();
+
+    ca_destroy_grid_info();
+
+    ca_destroy_method_params();
+
+    ca_destroy_castro_method_params();
+
+    ca_destroy_problem_params();
+
+    probinit_finalize();
 }
 
 void

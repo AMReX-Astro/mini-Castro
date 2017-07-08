@@ -92,3 +92,15 @@ subroutine runtime_init(name,namlen)
 
 end subroutine runtime_init
 
+
+subroutine ca_extern_finalize() bind(c, name='ca_extern_finalize')
+
+  use extern_probin_module
+
+  implicit none
+
+  deallocate(use_eos_coulomb)
+  deallocate(eos_input_is_constant)
+  deallocate(small_x)
+
+end subroutine ca_extern_finalize
