@@ -22,7 +22,15 @@ contains
     real(rt), intent(in   ) :: xlo(3), xhi(3), dx(3)
     real(rt), intent(inout) :: state(s_lo(1):s_hi(1),s_lo(2):s_hi(2),s_lo(3):s_hi(3),NVAR)
 
-    call initdata(level, lo, hi, state, s_lo, s_hi, dx, xlo, xhi)
+#ifdef CUDA
+    attributes(device) :: lo, hi, s_lo, s_hi, xlo, xhi, dx, state
+#endif
+
+    call initdata &
+#ifdef CUDA
+         <<<numBlocks, numThreads, 0, cuda_stream>>> &
+#endif
+         (level, lo, hi, state, s_lo, s_hi, dx, xlo, xhi)
 
   end subroutine ca_initdata
 

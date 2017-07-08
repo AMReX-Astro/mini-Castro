@@ -406,6 +406,7 @@ Castro::initData ()
     // Loop over grids, call FORTRAN function to init with data.
     //
     const Real* dx  = geom.CellSize();
+    const Real* dx_f = geom.CellSizeF();
     MultiFab& S_new = get_new_data(State_Type);
     Real cur_time   = state[State_Type].curTime();
 
@@ -422,25 +423,23 @@ Castro::initData ()
        std::cout << "Initializing the data at level " << level << std::endl;
 
     {
-       MFIter mfi(S_new);
-
        for (MFIter mfi(S_new); mfi.isValid(); ++mfi)
        {
           const RealBox& rbx = mfi.registerRealBox(RealBox(grids[mfi.index()],geom.CellSize(),geom.ProbLo()));
           const Box& box     = mfi.validbox();
-          const int* lo      = box.loVect();
-          const int* hi      = box.hiVect();
 
-          // Note: avoid using BL_TO_FORTRAN on this call
-          // if it is executed on the host.
-          ca_initdata(level, lo, hi,
-		      S_new[mfi].dataPtr(), S_new[mfi].loVect(), S_new[mfi].hiVect(), dx,
-		      rbx.lo(), rbx.hi());
+          Device::prepare_for_launch(box.loVect(), box.hiVect());
+
+          ca_initdata(level, BL_TO_FORTRAN_BOX(box),
+		      BL_TO_FORTRAN_ANYD(S_new[mfi]), dx_f,
+		      rbx.loF(), rbx.hiF());
        }
 
        for (MFIter mfi(S_new); mfi.isValid(); ++mfi)
        {
-           const Box& box     = mfi.validbox();
+           const Box& box = mfi.validbox();
+
+           Device::prepare_for_launch(box.loVect(), box.hiVect());
 
            // Verify that the sum of (rho X)_i = rho at every cell
            ca_check_initial_species(BL_TO_FORTRAN_BOX(box), BL_TO_FORTRAN_ANYD(S_new[mfi]));
