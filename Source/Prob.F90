@@ -66,10 +66,28 @@ subroutine amrex_probinit (init,name,namlen,problo,probhi) bind(c)
 end subroutine amrex_probinit
 
 
+subroutine probinit_finalize() bind(c)
+
+  use probdata_module
+
+  deallocate(p_ambient)
+  deallocate(dens_ambient)
+  deallocate(e_ambient)
+  deallocate(exp_energy)
+  deallocate(r_init)
+  deallocate(nsub)
+
+end subroutine probinit_finalize
+
+
+
 module initdata_module
 
 contains
-  
+
+#ifdef CUDA
+attributes(global) &
+#endif
 subroutine initdata(level, lo, hi, state, s_lo, s_hi, dx, xlo, xhi)
 
   use probdata_module, only: r_init, exp_energy, nsub, p_ambient, dens_ambient, e_ambient
@@ -94,6 +112,10 @@ subroutine initdata(level, lo, hi, state, s_lo, s_hi, dx, xlo, xhi)
   integer :: i,j,k, ii, jj, kk
   integer :: npert, nambient
 
+  integer :: blo(3), bhi(3)
+
+  call get_loop_bounds(blo, bhi, lo, hi)
+
   ! Set explosion energy -- we will convert the point-explosion energy into
   ! a corresponding energy distributed throughout the perturbed volume.
   ! Note that this is done to avoid EOS calls in the initialization.
@@ -102,13 +124,13 @@ subroutine initdata(level, lo, hi, state, s_lo, s_hi, dx, xlo, xhi)
 
   e_exp = exp_energy / vctr / dens_ambient
 
-  do k = lo(3), hi(3)
+  do k = blo(3), bhi(3)
      zmin = xlo(3) + dx(3)*dble(k-lo(3))
 
-     do j = lo(2), hi(2)
+     do j = blo(2), bhi(2)
         ymin = xlo(2) + dx(2)*dble(j-lo(2))
 
-        do i = lo(1), hi(1)
+        do i = blo(1), bhi(1)
            xmin = xlo(1) + dx(1)*dble(i-lo(1))
 
            npert = 0

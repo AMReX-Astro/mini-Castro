@@ -10,9 +10,15 @@ extern "C"
 
   void ca_network_init();
 
-  void burner_init();
+  void eos_finalize();
+
+  void network_finalize();
 
   void ca_extern_init(const int* name, const int* namlen);
+
+  void ca_extern_finalize();
+
+  void probinit_finalize();
 
   void ca_get_num_spec(int* nspec);
 
@@ -42,7 +48,11 @@ extern "C"
      const int& FirstSpec, const int& FirstAux, 
      const int& NumAdv);
 
+  void ca_destroy_method_params();
+
   void ca_set_castro_method_params();
+
+  void ca_destroy_castro_method_params();
 
   void ca_init_godunov_indices();
 
@@ -56,11 +66,15 @@ extern "C"
      const amrex::Real* problo, const amrex::Real* probhi,
      const amrex::Real* center);
 
+  void ca_destroy_problem_params();
+
   void ca_set_grid_info
     (const int& max_level, const amrex::Real* dx_level,
      const int* domlo_level, const int* domhi_level,
      const int* ref_ratio, const int* n_error_buf,
      const int* blocking_factor);
+
+  void ca_destroy_grid_info();
 
   void ca_get_tagging_params(const int* name, const int* namlen);
 

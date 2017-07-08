@@ -438,6 +438,21 @@ subroutine ca_set_method_params(dm,Density,Xmom,Eden,Eint,Temp, &
 end subroutine ca_set_method_params
 
 
+
+subroutine ca_destroy_method_params() bind(C, name="ca_destroy_method_params")
+
+  use meth_params_module, only: qpass_map, upass_map, npassive
+
+  implicit none
+
+  deallocate(qpass_map)
+  deallocate(upass_map)
+  deallocate(npassive)
+
+end subroutine ca_destroy_method_params
+
+
+
 subroutine ca_init_godunov_indices() bind(C, name="ca_init_godunov_indices")
 
   use meth_params_module, only: GDRHO, GDU, GDV, GDW, GDPRES, GDGAME, NGDNV, &
@@ -578,6 +593,32 @@ subroutine ca_set_problem_params(dm,physbc_lo_in,physbc_hi_in,&
 
 end subroutine ca_set_problem_params
 
+
+
+subroutine ca_destroy_problem_params() bind(C, name="ca_destroy_problem_params")
+
+  use prob_params_module
+
+  deallocate(dim)
+
+  deallocate(physbc_lo)
+  deallocate(physbc_hi)
+
+  deallocate(Interior)
+  deallocate(Inflow)
+  deallocate(Outflow)
+  deallocate(Symmetry)
+  deallocate(SlipWall)
+  deallocate(NoSlipWall)
+
+  deallocate(center)
+  deallocate(problo)
+  deallocate(probhi)
+
+  deallocate(dg)
+
+end subroutine ca_destroy_problem_params
+
 ! :::
 ! ::: ----------------------------------------------------------------
 ! :::
@@ -645,6 +686,23 @@ subroutine ca_set_grid_info(max_level_in, dx_level_in, domlo_in, domhi_in, &
   enddo
 
 end subroutine ca_set_grid_info
+
+
+
+subroutine ca_destroy_grid_info() bind(c, name='ca_destroy_grid_info')
+
+  use prob_params_module, only: max_level, dx_level, domlo_level, domhi_level, n_error_buf, ref_ratio, blocking_factor
+
+  implicit none
+
+  deallocate(dx_level)
+  deallocate(domlo_level)
+  deallocate(domhi_level)
+  deallocate(ref_ratio)
+  deallocate(n_error_buf)
+  deallocate(blocking_factor)
+
+end subroutine ca_destroy_grid_info
 
 ! :::
 ! ::: ----------------------------------------------------------------
@@ -1167,7 +1225,7 @@ contains
   subroutine summass(lo,hi,rho,r_lo,r_hi,dx, &
                      vol,v_lo,v_hi,mass)
 
-    use amrex_fort_module, only: rt => amrex_real, get_loop_bounds
+    use amrex_fort_module, only: rt => amrex_real, get_loop_bounds, amrex_add
 
     implicit none
 
@@ -1188,12 +1246,11 @@ contains
     do k = blo(3), bhi(3)
        do j = blo(2), bhi(2)
           do i = blo(1), bhi(1)
+
              dm = rho(i,j,k) * vol(i,j,k)
-#ifdef CUDA
-             dm = atomicAdd(mass, dm)
-#else
-             mass = mass + dm
-#endif
+
+             call amrex_add(mass, dm)
+
           enddo
        enddo
     enddo
