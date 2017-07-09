@@ -26,7 +26,7 @@ contains
     use eos_type_module, only: mintemp, maxtemp, mindens, maxdens, minx, maxx, &
                                minye, maxye, mine, maxe, minp, maxp, minh, maxh, mins, maxs
     use actual_eos_module, only: actual_eos_init
-#ifdef CUDA
+#if (defined(CUDA) && !defined(NO_CUDA_8))
     use cudafor, only: cudaMemAdvise, cudaMemAdviseSetPreferredLocation
     use cuda_module, only: cuda_device_id
 #endif
@@ -117,7 +117,7 @@ contains
     !$acc device(mintemp, maxtemp, mindens, maxdens, minx, maxx, minye, maxye) &
     !$acc device(mine, maxe, minp, maxp, mins, maxs, minh, maxh)
 
-#ifdef CUDA
+#if (defined(CUDA) && !defined(NO_CUDA_8))
     cuda_result = cudaMemAdvise(mintemp, 1, cudaMemAdviseSetPreferredLocation, cuda_device_id)
     cuda_result = cudaMemAdvise(maxtemp, 1, cudaMemAdviseSetPreferredLocation, cuda_device_id)
     cuda_result = cudaMemAdvise(mindens, 1, cudaMemAdviseSetPreferredLocation, cuda_device_id)
