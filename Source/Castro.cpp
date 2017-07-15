@@ -567,7 +567,11 @@ Castro::estTimeStep (Real dt_old)
 	{
 	    const Box& box = mfi.tilebox();
 
+#ifdef CUDA
             Real* dt_f = mfi.add_reduce_value(&dt, MFIter::MIN);
+#else
+            Real* dt_f = &dt;
+#endif
 
             Device::prepare_for_launch(box.loVect(), box.hiVect());
 
@@ -996,7 +1000,11 @@ Castro::enforce_min_density (MultiFab& S_old, MultiFab& S_new)
 	FArrayBox& statenew = S_new[mfi];
 	FArrayBox& vol      = volume[mfi];
 
+#ifdef CUDA
         Real* dens_change_f = mfi.add_reduce_value(&dens_change, MFIter::MIN);
+#else
+        Real* dens_change_f = &dens_change;
+#endif
 
         Device::prepare_for_launch(bx.loVect(), bx.hiVect());
 

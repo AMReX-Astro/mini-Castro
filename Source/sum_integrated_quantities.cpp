@@ -139,7 +139,11 @@ Castro::volWgtSum (const std::string& name,
 
         Device::prepare_for_launch(box.loVect(), box.hiVect());
 
+#ifdef CUDA
         Real* s_f = mfi.add_reduce_value(&sum, MFIter::SUM);
+#else
+        Real* s_f = &sum;
+#endif
 
 	ca_summass(BL_TO_FORTRAN_BOX(box), BL_TO_FORTRAN_ANYD(fab), ZFILL(dx), BL_TO_FORTRAN_ANYD(volume[mfi]), s_f);
     }
