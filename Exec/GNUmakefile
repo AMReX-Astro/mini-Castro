@@ -5,12 +5,13 @@ DEBUG      = FALSE
 
 DIM        = 3
 
-COMP	   = gnu
+COMP	   = PGI
 
-USE_MPI    = TRUE
+USE_MPI    = FALSE
 USE_OMP    = FALSE
+USE_CUDA   = FALSE
 
-TINY_PROFILE = TRUE
+TINY_PROFILE = FALSE
 
 # define the location of the CASTRO top directory
 CASTRO_HOME  := ../
