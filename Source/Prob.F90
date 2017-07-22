@@ -51,6 +51,7 @@ subroutine amrex_probinit (init,name,namlen,problo,probhi) bind(c)
 
   eos_state % rho = dens_ambient
   eos_state % p = p_ambient
+  eos_state % T = 1.e4   ! an initial guess -- needed for iteration
   eos_state % xn(:) = 0.e0_rt
   eos_state % xn(1) = 1.e0_rt
 
