@@ -162,6 +162,8 @@ subroutine initdata(level, lo, hi, state, s_lo, s_hi, dx, xlo, xhi)
 
            state(i,j,k,UEINT) = state(i,j,k,URHO) * eint
 
+           ! initialize species
+           state(i,j,k,UFS:) = 0.e0_rt
            state(i,j,k,UFS) = state(i,j,k,URHO)
 
         enddo
