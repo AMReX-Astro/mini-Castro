@@ -4,7 +4,14 @@ module eos_module
 
   public eos_init, eos
 
-  logical, save :: initialized = .false.  
+  logical, save :: initialized = .false.
+
+  interface eos
+     module procedure eos_doit
+#ifdef CUDA
+     module procedure eos_host
+#endif
+  end interface eos
 
 contains
 
@@ -19,8 +26,9 @@ contains
     use eos_type_module, only: mintemp, maxtemp, mindens, maxdens, minx, maxx, &
                                minye, maxye, mine, maxe, minp, maxp, minh, maxh, mins, maxs
     use actual_eos_module, only: actual_eos_init
-#ifdef CUDA
-    use cudafor, only: cudaMemAdvise, cudaMemAdviseSetReadMostly, cudaCpuDeviceId
+#if (defined(CUDA) && !defined(NO_CUDA_8))
+    use cudafor, only: cudaMemAdvise, cudaMemAdviseSetPreferredLocation
+    use cuda_module, only: cuda_device_id
 #endif
 
     implicit none
@@ -109,23 +117,23 @@ contains
     !$acc device(mintemp, maxtemp, mindens, maxdens, minx, maxx, minye, maxye) &
     !$acc device(mine, maxe, minp, maxp, mins, maxs, minh, maxh)
 
-#ifdef CUDA
-    cuda_result = cudaMemAdvise(mintemp, 1, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
-    cuda_result = cudaMemAdvise(maxtemp, 1, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
-    cuda_result = cudaMemAdvise(mindens, 1, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
-    cuda_result = cudaMemAdvise(maxdens, 1, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
-    cuda_result = cudaMemAdvise(minx, 1, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
-    cuda_result = cudaMemAdvise(maxx, 1, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
-    cuda_result = cudaMemAdvise(minye, 1, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
-    cuda_result = cudaMemAdvise(maxye, 1, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
-    cuda_result = cudaMemAdvise(mine, 1, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
-    cuda_result = cudaMemAdvise(maxe, 1, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
-    cuda_result = cudaMemAdvise(minp, 1, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
-    cuda_result = cudaMemAdvise(maxp, 1, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
-    cuda_result = cudaMemAdvise(mins, 1, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
-    cuda_result = cudaMemAdvise(maxs, 1, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
-    cuda_result = cudaMemAdvise(minh, 1, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
-    cuda_result = cudaMemAdvise(maxh, 1, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
+#if (defined(CUDA) && !defined(NO_CUDA_8))
+    cuda_result = cudaMemAdvise(mintemp, 1, cudaMemAdviseSetPreferredLocation, cuda_device_id)
+    cuda_result = cudaMemAdvise(maxtemp, 1, cudaMemAdviseSetPreferredLocation, cuda_device_id)
+    cuda_result = cudaMemAdvise(mindens, 1, cudaMemAdviseSetPreferredLocation, cuda_device_id)
+    cuda_result = cudaMemAdvise(maxdens, 1, cudaMemAdviseSetPreferredLocation, cuda_device_id)
+    cuda_result = cudaMemAdvise(minx, 1, cudaMemAdviseSetPreferredLocation, cuda_device_id)
+    cuda_result = cudaMemAdvise(maxx, 1, cudaMemAdviseSetPreferredLocation, cuda_device_id)
+    cuda_result = cudaMemAdvise(minye, 1, cudaMemAdviseSetPreferredLocation, cuda_device_id)
+    cuda_result = cudaMemAdvise(maxye, 1, cudaMemAdviseSetPreferredLocation, cuda_device_id)
+    cuda_result = cudaMemAdvise(mine, 1, cudaMemAdviseSetPreferredLocation, cuda_device_id)
+    cuda_result = cudaMemAdvise(maxe, 1, cudaMemAdviseSetPreferredLocation, cuda_device_id)
+    cuda_result = cudaMemAdvise(minp, 1, cudaMemAdviseSetPreferredLocation, cuda_device_id)
+    cuda_result = cudaMemAdvise(maxp, 1, cudaMemAdviseSetPreferredLocation, cuda_device_id)
+    cuda_result = cudaMemAdvise(mins, 1, cudaMemAdviseSetPreferredLocation, cuda_device_id)
+    cuda_result = cudaMemAdvise(maxs, 1, cudaMemAdviseSetPreferredLocation, cuda_device_id)
+    cuda_result = cudaMemAdvise(minh, 1, cudaMemAdviseSetPreferredLocation, cuda_device_id)
+    cuda_result = cudaMemAdvise(maxh, 1, cudaMemAdviseSetPreferredLocation, cuda_device_id)
 #endif
 
   end subroutine eos_init
@@ -135,7 +143,7 @@ contains
 #ifdef CUDA
   attributes(device) &
 #endif
-  subroutine eos(input, state)
+  subroutine eos_doit(input, state)
 
     !$acc routine seq
 
@@ -179,7 +187,7 @@ contains
 
     call composition_derivatives(state)
 
-  end subroutine eos
+  end subroutine eos_doit
 
 
 
@@ -622,5 +630,79 @@ contains
 
   end subroutine check_p
 #endif
+
+
+#ifdef CUDA
+  subroutine eos_host(input, state)
+
+    use eos_type_module, only: eos_t
+    use cuda_module, only: gpu_synchronize
+
+    implicit none
+
+    ! Input arguments
+
+    integer,      intent(in   ) :: input
+    type (eos_t), intent(inout) :: state
+
+    integer,      device :: input_d
+    type (eos_t), device :: state_d
+
+    double precision :: e, rho, T
+
+    input_d = input
+    state_d = state
+
+    call eos_kernel_launch<<<1,1>>>(input_d, state_d)
+
+    state = state_d
+
+  end subroutine eos_host
+
+  attributes(global) &
+  subroutine eos_kernel_launch(input, state)
+
+    use eos_type_module, only: eos_t
+
+    implicit none
+
+    type(eos_t) :: state
+    integer :: input
+
+    call eos_doit(input, state)
+
+  end subroutine eos_kernel_launch
+#endif
+
+  subroutine eos_finalize() bind(c, name='eos_finalize')
+
+    use eos_type_module, only: mintemp, maxtemp, mindens, maxdens, &
+                               minx, maxx, minye, maxye, &
+                               mine, maxe, minp, maxp, &
+                               mins, maxs, minh, maxh
+    use actual_eos_module, only: actual_eos_finalize
+
+    implicit none
+
+    deallocate(mintemp)
+    deallocate(maxtemp)
+    deallocate(mindens)
+    deallocate(maxdens)
+    deallocate(minx)
+    deallocate(maxx)
+    deallocate(minye)
+    deallocate(maxye)
+    deallocate(mine)
+    deallocate(maxe)
+    deallocate(minp)
+    deallocate(maxp)
+    deallocate(mins)
+    deallocate(maxs)
+    deallocate(minh)
+    deallocate(maxh)
+
+    call actual_eos_finalize()
+
+  end subroutine eos_finalize
 
 end module eos_module

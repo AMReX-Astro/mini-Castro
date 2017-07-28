@@ -16,7 +16,7 @@ contains
 
     use network, only: nspec, naux
     use bl_constants_module, only: ZERO
-    use amrex_fort_module, only: rt => amrex_real, get_loop_bounds
+    use amrex_fort_module, only: rt => amrex_real, get_loop_bounds, amrex_min
     use meth_params_module, only: NVAR, URHO, UEINT, UEDEN, small_dens
 
     implicit none
@@ -66,11 +66,7 @@ contains
 
                    f_c = (uout(i,j,k,URHO) - uin(i,j,k,URHO)) / uin(i,j,k,URHO)
 
-#ifdef CUDA
-                   f_c = atomicmin(frac_change, f_c)
-#else
-                   frac_change = min(frac_change, f_c)
-#endif
+                   call amrex_min(frac_change, f_c)
 
                 endif
 
@@ -239,7 +235,7 @@ contains
                          bind(C, name = "compute_cfl")
 
     use bl_constants_module, only: ZERO, ONE
-    use amrex_fort_module, only: rt => amrex_real
+    use amrex_fort_module, only: rt => amrex_real, amrex_max
     use meth_params_module, only: NQ, QRHO, QU, QV, QW, QC, NQAUX
     use prob_params_module, only: dim
 
@@ -310,11 +306,7 @@ contains
              endif
 #endif
 
-#ifdef CUDA
-             courtmp = atomicmax(courno, courtmp)
-#else
-             courno = max(courno, courtmp)
-#endif
+             call amrex_max(courno, courtmp)
 
           enddo
        enddo

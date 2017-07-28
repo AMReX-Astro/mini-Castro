@@ -22,8 +22,9 @@ subroutine runtime_init(name,namlen)
 
   use extern_probin_module
 
-#ifdef CUDA
-  use cudafor, only: cudaMemAdvise, cudaMemAdviseSetReadMostly, cudaCpuDeviceId
+#if (defined(CUDA) && !defined(NO_CUDA_8))
+  use cudafor, only: cudaMemAdvise, cudaMemAdviseSetPreferredLocation
+  use cuda_module, only: cuda_device_id
 #endif
 
   implicit none
@@ -84,11 +85,23 @@ subroutine runtime_init(name,namlen)
   !$acc update &
   !$acc device(use_eos_coulomb, eos_input_is_constant, small_x)
 
-#ifdef CUDA
-!  cuda_result = cudaMemAdvise(eos_gamma, 1, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
-!  cuda_result = cudaMemAdvise(eos_assume_neutral, 1, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
-!  cuda_result = cudaMemAdvise(small_x, 1, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
+#if (defined(CUDA) && !defined(NO_CUDA_8))
+  cuda_result = cudaMemAdvise(use_eos_coulomb, 1, cudaMemAdviseSetPreferredLocation, cuda_device_id)
+  cuda_result = cudaMemAdvise(eos_input_is_constant, 1, cudaMemAdviseSetPreferredLocation, cuda_device_id)
+  cuda_result = cudaMemAdvise(small_x, 1, cudaMemAdviseSetPreferredLocation, cuda_device_id)
 #endif
 
 end subroutine runtime_init
 
+
+subroutine ca_extern_finalize() bind(c, name='ca_extern_finalize')
+
+  use extern_probin_module
+
+  implicit none
+
+  deallocate(use_eos_coulomb)
+  deallocate(eos_input_is_constant)
+  deallocate(small_x)
+
+end subroutine ca_extern_finalize

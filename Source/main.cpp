@@ -143,8 +143,7 @@ main (int   argc,
 	Real fom = Castro::num_zones_advanced / runtime_timestep / 1.e6;
 
 	std::cout << "\n";
-	std::cout << "  Figure of Merit (zones / usec / processor): " << std::fixed << std::setprecision(3) << (fom / nProcs) << "\n";
-	std::cout << "  Figure of Merit (zones / usec)            : " << std::fixed << std::setprecision(3) << fom << "\n";
+	std::cout << "  Figure of Merit (zones / usec): " << std::fixed << std::setprecision(3) << fom << "\n";
 	std::cout << "\n";
     }
 

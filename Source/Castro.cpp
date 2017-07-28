@@ -87,6 +87,22 @@ void
 Castro::variableCleanUp ()
 {
     desc_lst.clear();
+
+    eos_finalize();
+
+    network_finalize();
+
+    ca_extern_finalize();
+
+    ca_destroy_grid_info();
+
+    ca_destroy_method_params();
+
+    ca_destroy_castro_method_params();
+
+    ca_destroy_problem_params();
+
+    probinit_finalize();
 }
 
 void
@@ -368,7 +384,7 @@ Castro::setGridInfo ()
       }
 
       for (int lev = 0; lev <= max_level; lev++)
-	blocking_factor_to_f[lev] = parent->blockingFactor(lev);
+	blocking_factor_to_f[lev] = parent->blockingFactor(lev)[0];
 
       for (int lev = 1; lev <= max_level; lev++) {
 	IntVect ref_ratio = parent->refRatio(lev-1);
@@ -406,6 +422,7 @@ Castro::initData ()
     // Loop over grids, call FORTRAN function to init with data.
     //
     const Real* dx  = geom.CellSize();
+    const Real* dx_f = geom.CellSizeF();
     MultiFab& S_new = get_new_data(State_Type);
     Real cur_time   = state[State_Type].curTime();
 
@@ -422,25 +439,26 @@ Castro::initData ()
        std::cout << "Initializing the data at level " << level << std::endl;
 
     {
-       MFIter mfi(S_new);
-       RealBox rbx[mfi.length()];
-
-       for (; mfi.isValid(); ++mfi)
+       for (MFIter mfi(S_new); mfi.isValid(); ++mfi)
        {
-          rbx[mfi.tileIndex()] = RealBox(grids[mfi.index()],geom.CellSize(),geom.ProbLo());
+          const RealBox& rbx = mfi.registerRealBox(RealBox(grids[mfi.index()],geom.CellSize(),geom.ProbLo()));
           const Box& box     = mfi.validbox();
-	  const int idx      = mfi.tileIndex();
-          const int* lo      = box.loVect();
-          const int* hi      = box.hiVect();
 
-          ca_initdata(level, lo, hi,
-		      S_new[mfi].dataPtr(), S_new[mfi].loVect(), S_new[mfi].hiVect(), dx,
-		      rbx[mfi.tileIndex()].lo(), rbx[mfi.tileIndex()].hi());
+          Device::prepare_for_launch(box.loVect(), box.hiVect());
 
-          // Verify that the sum of (rho X)_i = rho at every cell
+          ca_initdata(level, BL_TO_FORTRAN_BOX(box),
+		      BL_TO_FORTRAN_ANYD(S_new[mfi]), dx_f,
+		      rbx.loF(), rbx.hiF());
+       }
 
-          ca_check_initial_species(ARLIM_3D(lo), ARLIM_3D(hi), 
-				   BL_TO_FORTRAN_3D(S_new[mfi]));
+       for (MFIter mfi(S_new); mfi.isValid(); ++mfi)
+       {
+           const Box& box = mfi.validbox();
+
+           Device::prepare_for_launch(box.loVect(), box.hiVect());
+
+           // Verify that the sum of (rho X)_i = rho at every cell
+           ca_check_initial_species(BL_TO_FORTRAN_BOX(box), BL_TO_FORTRAN_ANYD(S_new[mfi]));
        }
 
        enforce_consistent_e(S_new);
@@ -530,7 +548,7 @@ Castro::estTimeStep (Real dt_old)
 
     const MultiFab& stateMF = get_new_data(State_Type);
 
-    const Real* dx = geom.CellSize();
+    const Real* dx = geom.CellSizeF();
 
     // Start the hydro with the max_dt value, but divide by CFL
     // to account for the fact that we multiply by it at the end.
@@ -548,11 +566,19 @@ Castro::estTimeStep (Real dt_old)
 	for (MFIter mfi(stateMF,true); mfi.isValid(); ++mfi)
 	{
 	    const Box& box = mfi.tilebox();
-	    const int idx = mfi.tileIndex();
 
-	    ca_estdt(ARLIM_3D(box.loVect()), ARLIM_3D(box.hiVect()),
-		     BL_TO_FORTRAN_3D(stateMF[mfi]),
-		     ZFILL(dx),&dt);
+#ifdef CUDA
+            Real* dt_f = mfi.add_reduce_value(&dt, MFIter::MIN);
+#else
+            Real* dt_f = &dt;
+#endif
+
+            Device::prepare_for_launch(box.loVect(), box.hiVect());
+
+	    ca_estdt(BL_TO_FORTRAN_BOX(box),
+		     BL_TO_FORTRAN_ANYD(stateMF[mfi]),
+		     ZFILL(dx),dt_f);
+
 	}
 #ifdef _OPENMP
 #pragma omp critical (castro_estdt)
@@ -560,6 +586,7 @@ Castro::estTimeStep (Real dt_old)
 	{
 	    estdt_hydro = std::min(estdt_hydro,dt);
 	}
+
     }
 
     ParallelDescriptor::ReduceRealMin(estdt_hydro);
@@ -904,8 +931,6 @@ Castro::normalize_species (MultiFab& S_new)
 
     BL_PROFILE("Castro::normalize_species()");
 
-//    Device::beginDeviceLaunchRegion();
-
     int ng = S_new.nGrow();
 
 #ifdef _OPENMP
@@ -914,13 +939,12 @@ Castro::normalize_species (MultiFab& S_new)
     for (MFIter mfi(S_new,true); mfi.isValid(); ++mfi)
     {
        const Box& bx = mfi.growntilebox(ng);
-       const int idx = mfi.tileIndex();
 
-       ca_normalize_species(BL_TO_FORTRAN_3D(S_new[mfi]), 
-			    ARLIM_3D(bx.loVect()), ARLIM_3D(bx.hiVect()));
+       Device::prepare_for_launch(bx.loVect(), bx.hiVect());
+
+       ca_normalize_species(BL_TO_FORTRAN_ANYD(S_new[mfi]), 
+			    BL_TO_FORTRAN_BOX(bx));
     }
-
-//    Device::endDeviceLaunchRegion();
 
 }
 
@@ -929,8 +953,6 @@ Castro::enforce_consistent_e (MultiFab& S)
 {
 
   BL_PROFILE("Castro::enforce_consistent_e()");
-
-  // Device::beginDeviceLaunchRegion();
 
 #ifdef _OPENMP
 #pragma omp parallel
@@ -941,9 +963,9 @@ Castro::enforce_consistent_e (MultiFab& S)
         const int* lo      = box.loVect();
         const int* hi      = box.hiVect();
 
-	const int idx      = mfi.tileIndex();
+        Device::prepare_for_launch(lo, hi);
 
-        ca_enforce_consistent_e(ARLIM_3D(lo), ARLIM_3D(hi), BL_TO_FORTRAN_3D(S[mfi]));
+        ca_enforce_consistent_e(BL_TO_FORTRAN_BOX(box), BL_TO_FORTRAN_ANYD(S[mfi]));
     }
 
   // Device::endDeviceLaunchRegion();
@@ -977,13 +999,20 @@ Castro::enforce_min_density (MultiFab& S_old, MultiFab& S_new)
 	FArrayBox& stateold = S_old[mfi];
 	FArrayBox& statenew = S_new[mfi];
 	FArrayBox& vol      = volume[mfi];
-	const int idx = mfi.tileIndex();
 
-	ca_enforce_minimum_density(stateold.dataPtr(), ARLIM_3D(stateold.loVect()), ARLIM_3D(stateold.hiVect()),
-				   statenew.dataPtr(), ARLIM_3D(statenew.loVect()), ARLIM_3D(statenew.hiVect()),
-				   vol.dataPtr(), ARLIM_3D(vol.loVect()), ARLIM_3D(vol.hiVect()),
-				   ARLIM_3D(bx.loVect()), ARLIM_3D(bx.hiVect()),
-				   &dens_change, verbose);
+#ifdef CUDA
+        Real* dens_change_f = mfi.add_reduce_value(&dens_change, MFIter::MIN);
+#else
+        Real* dens_change_f = &dens_change;
+#endif
+
+        Device::prepare_for_launch(bx.loVect(), bx.hiVect());
+
+	ca_enforce_minimum_density(BL_TO_FORTRAN_ANYD(stateold),
+				   BL_TO_FORTRAN_ANYD(statenew),
+				   BL_TO_FORTRAN_ANYD(vol),
+				   BL_TO_FORTRAN_BOX(bx),
+				   dens_change_f, verbose);
 
     }
 
@@ -1076,7 +1105,7 @@ Castro::apply_tagging_func(TagBoxArray& tags, int clearval, int tagval, Real tim
 		const Box&  tilebx  = mfi.tilebox();
 
 		// physical tile box
-		const RealBox& pbx  = RealBox(tilebx,geom.CellSize(),geom.ProbLo());
+		const RealBox& pbx  = mfi.registerRealBox(RealBox(tilebx,geom.CellSize(),geom.ProbLo()));
 
 		//fab box
 		const Box&  datbox  = datfab.box();
@@ -1158,10 +1187,11 @@ Castro::reset_internal_energy(MultiFab& S_new)
     for (MFIter mfi(S_new,true); mfi.isValid(); ++mfi)
     {
         const Box& bx = mfi.growntilebox(ng);
-	const int idx = mfi.tileIndex();
 
-        ca_reset_internal_e(ARLIM_3D(bx.loVect()), ARLIM_3D(bx.hiVect()),
-			    BL_TO_FORTRAN_3D(S_new[mfi]),
+        Device::prepare_for_launch(bx.loVect(), bx.hiVect());
+
+        ca_reset_internal_e(BL_TO_FORTRAN_BOX(bx),
+			    BL_TO_FORTRAN_ANYD(S_new[mfi]),
 			    print_fortran_warnings);
     }
 
@@ -1187,9 +1217,9 @@ Castro::computeTemp(MultiFab& State)
     {
       const Box& bx = mfi.growntilebox();
 
-	const int idx = mfi.tileIndex();
-	ca_compute_temp(ARLIM_3D(bx.loVect()), ARLIM_3D(bx.hiVect()),
-			BL_TO_FORTRAN_3D(State[mfi]));
+        Device::prepare_for_launch(bx.loVect(), bx.hiVect());
+
+	ca_compute_temp(BL_TO_FORTRAN_BOX(bx), BL_TO_FORTRAN_3D(State[mfi]));
     }
 
 }
@@ -1280,8 +1310,7 @@ Castro::clean_state(MultiFab& state) {
 
     // Enforce a minimum density.
 
-//    Real frac_change = enforce_min_density(state, state);
-    Real frac_change = 0.0;
+    Real frac_change = enforce_min_density(state, state);
 
     // Ensure all species are normalized.
 

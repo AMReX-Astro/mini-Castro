@@ -1,8 +1,10 @@
 subroutine amrex_probinit (init,name,namlen,problo,probhi) bind(c)
 
-  use probdata_module, only: p_ambient, dens_ambient, exp_energy, r_init, nsub
+  use probdata_module, only: p_ambient, dens_ambient, exp_energy, r_init, nsub, e_ambient
   use prob_params_module, only: center
   use amrex_fort_module, only: rt => amrex_real
+  use eos_type_module, only : eos_t, eos_input_rp
+  use eos_module, only: eos
 
   implicit none
 
@@ -11,6 +13,8 @@ subroutine amrex_probinit (init,name,namlen,problo,probhi) bind(c)
   real(rt), intent(in) :: problo(3), probhi(3)
 
   integer :: untin, i
+
+  type(eos_t) :: eos_state
 
   namelist /fortin/ p_ambient, dens_ambient, exp_energy, r_init, nsub
   
@@ -24,6 +28,7 @@ subroutine amrex_probinit (init,name,namlen,problo,probhi) bind(c)
 
   allocate(p_ambient)
   allocate(dens_ambient)
+  allocate(e_ambient)
   allocate(exp_energy)
   allocate(r_init)
   allocate(nsub)
@@ -42,6 +47,18 @@ subroutine amrex_probinit (init,name,namlen,problo,probhi) bind(c)
   read(untin,fortin)
   close(unit=untin)
 
+  ! Convert the ambient pressure into an ambient energy
+
+  eos_state % rho = dens_ambient
+  eos_state % p = p_ambient
+  eos_state % T = 1.e4   ! an initial guess -- needed for iteration
+  eos_state % xn(:) = 0.e0_rt
+  eos_state % xn(1) = 1.e0_rt
+
+  call eos(eos_input_rp, eos_state)
+
+  e_ambient = eos_state % e
+
   ! set local variable defaults
   center(1) = (problo(1)+probhi(1))/2.e0_rt
   center(2) = (problo(2)+probhi(2))/2.e0_rt
@@ -50,22 +67,35 @@ subroutine amrex_probinit (init,name,namlen,problo,probhi) bind(c)
 end subroutine amrex_probinit
 
 
+subroutine probinit_finalize() bind(c)
+
+  use probdata_module
+
+  deallocate(p_ambient)
+  deallocate(dens_ambient)
+  deallocate(e_ambient)
+  deallocate(exp_energy)
+  deallocate(r_init)
+  deallocate(nsub)
+
+end subroutine probinit_finalize
+
+
+
 module initdata_module
 
 contains
-  
+
 #ifdef CUDA
 attributes(global) &
-#endif     
+#endif
 subroutine initdata(level, lo, hi, state, s_lo, s_hi, dx, xlo, xhi)
 
-  use probdata_module, only: r_init, exp_energy, nsub, p_ambient, dens_ambient
+  use probdata_module, only: r_init, exp_energy, nsub, p_ambient, dens_ambient, e_ambient
   use bl_constants_module, only: M_PI, FOUR3RD
   use meth_params_module , only: NVAR, URHO, UMX, UMY, UMZ, UTEMP, UEDEN, UEINT, UFS
   use prob_params_module, only: center
   use amrex_fort_module, only: rt => amrex_real, get_loop_bounds
-  use eos_type_module, only : eos_t, eos_input_rp, eos_input_re
-  use eos_module, only: eos
 
   implicit none
 
@@ -78,30 +108,22 @@ subroutine initdata(level, lo, hi, state, s_lo, s_hi, dx, xlo, xhi)
   real(rt) :: xmin, ymin, zmin
   real(rt) :: xx, yy, zz
   real(rt) :: dist
-  real(rt) :: eint, p_zone
-  real(rt) :: vctr, p_exp
-
-  type(eos_t) :: eos_state
+  real(rt) :: vctr, e_exp, eint
 
   integer :: i,j,k, ii, jj, kk
-  integer :: blo(3), bhi(3)
   integer :: npert, nambient
+
+  integer :: blo(3), bhi(3)
 
   call get_loop_bounds(blo, bhi, lo, hi)
 
-  ! set explosion pressure -- we will convert the point-explosion energy into
-  ! a corresponding pressure distributed throughout the perturbed volume
+  ! Set explosion energy -- we will convert the point-explosion energy into
+  ! a corresponding energy distributed throughout the perturbed volume.
+  ! Note that this is done to avoid EOS calls in the initialization.
+
   vctr  = FOUR3RD*M_PI*r_init**3
 
-  eos_state % e = exp_energy/vctr/dens_ambient
-  eos_state % rho = dens_ambient
-  eos_state % T = 1.0e7_rt
-  eos_state % xn(:) = 0.0
-  eos_state % xn(1) = 1.0
-
-  call eos(eos_input_re, eos_state)
-
-  p_exp = eos_state % p
+  e_exp = exp_energy / vctr / dens_ambient
 
   do k = blo(3), bhi(3)
      zmin = xlo(3) + dx(3)*dble(k-lo(3))
@@ -136,29 +158,16 @@ subroutine initdata(level, lo, hi, state, s_lo, s_hi, dx, xlo, xhi)
               enddo
            enddo
 
-           p_zone = (npert * p_exp + nambient * p_ambient) / nsub**3
-
-           eos_state % rho = dens_ambient
-           eos_state % xn(:) = 0.0
-           eos_state % xn(1) = 1.0
-           eos_state % p = p_zone
-           eos_state % T = 1.0e7_rt
-
-           call eos(eos_input_rp, eos_state)
-
-           eint = eos_state % e
+           eint = (npert * e_exp + nambient * e_ambient) / nsub**3
 
            state(i,j,k,URHO) = dens_ambient
            state(i,j,k,UMX) = 0.e0_rt
            state(i,j,k,UMY) = 0.e0_rt
            state(i,j,k,UMZ) = 0.e0_rt
 
-           state(i,j,k,UTEMP) = eos_state % T
+           state(i,j,k,UTEMP) = 1.d9 ! Arbitrary temperature that will be overwritten on a computeTemp call.
 
-           state(i,j,k,UEDEN) = state(i,j,k,URHO) * eint + &
-                0.5e0_rt*(state(i,j,k,UMX)**2/state(i,j,k,URHO) + &
-                state(i,j,k,UMY)**2/state(i,j,k,URHO) + &
-                state(i,j,k,UMZ)**2/state(i,j,k,URHO))
+           state(i,j,k,UEDEN) = state(i,j,k,URHO) * eint
 
            state(i,j,k,UEINT) = state(i,j,k,URHO) * eint
 

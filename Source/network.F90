@@ -30,7 +30,7 @@ module network
   logical :: network_initialized = .false.
 
   ! this will be computed here, not in the actual network
-  real(rt), allocatable, save :: aion_inv(:)
+  real(rt), allocatable :: aion_inv(:)
 
   !$acc declare create(aion_inv)
 
@@ -44,8 +44,9 @@ contains
 
     use bl_error_module, only: bl_error
     use bl_constants_module, only: ONE
-#ifdef CUDA
-    use cudafor, only: cudaMemAdvise, cudaMemAdviseSetReadMostly, cudaCpuDeviceId
+#if (defined(CUDA) && !defined(NO_CUDA_8))
+    use cudafor, only: cudaMemAdvise, cudaMemAdviseSetPreferredLocation
+    use cuda_module, only: cuda_device_id
 #endif
 
     implicit none
@@ -78,10 +79,10 @@ contains
 
     !$acc update device(aion_inv)
 
-#ifdef CUDA
-    cuda_result = cudaMemAdvise(aion_inv, nspec, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
-    cuda_result = cudaMemAdvise(aion, nspec, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
-    cuda_result = cudaMemAdvise(zion, nspec, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
+#if (defined(CUDA) && !defined(NO_CUDA_8))
+    cuda_result = cudaMemAdvise(aion_inv, nspec, cudaMemAdviseSetPreferredLocation, cuda_device_id)
+    cuda_result = cudaMemAdvise(aion, nspec, cudaMemAdviseSetPreferredLocation, cuda_device_id)
+    cuda_result = cudaMemAdvise(zion, nspec, cudaMemAdviseSetPreferredLocation, cuda_device_id)
 #endif
 
     network_initialized = .true.
@@ -104,5 +105,18 @@ contains
     enddo
 
   end function network_species_index
+
+
+  subroutine network_finalize() bind(c, name='network_finalize')
+
+    use actual_network, only: actual_network_finalize
+
+    implicit none
+
+    deallocate(aion_inv)
+
+    call actual_network_finalize()
+
+  end subroutine network_finalize
 
 end module network

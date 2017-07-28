@@ -4,13 +4,13 @@ module probdata_module
 
   implicit none
 
-  real(rt), allocatable, public :: p_ambient, dens_ambient, exp_energy
+  real(rt), allocatable, public :: p_ambient, dens_ambient, exp_energy, e_ambient
   real(rt), allocatable, public :: r_init
   integer,  allocatable, public :: nsub
 
 #ifdef CUDA
   attributes(managed) :: p_ambient, dens_ambient, exp_energy, &
-                         r_init, nsub
+                         r_init, nsub, e_ambient
 #endif
   
 end module probdata_module

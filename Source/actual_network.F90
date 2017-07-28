@@ -103,14 +103,13 @@ contains
   end subroutine actual_network_init
 
 
-
-  subroutine actual_network_finalize
+  subroutine actual_network_finalize()
 
     implicit none
 
     deallocate(aion)
     deallocate(zion)
-    
+
   end subroutine actual_network_finalize
 
 end module actual_network

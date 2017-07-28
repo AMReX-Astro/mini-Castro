@@ -328,8 +328,9 @@ subroutine ca_set_method_params(dm,Density,Xmom,Eden,Eint,Temp, &
   use eos_type_module, only: eos_get_small_dens, eos_get_small_temp
   use bl_constants_module, only: ZERO, ONE
   use amrex_fort_module, only: rt => amrex_real
-#ifdef CUDA
-  use cudafor, only: cudaMemAdvise, cudaMemAdviseSetReadMostly, cudaCpuDeviceId
+#if (defined(CUDA) && !defined(NO_CUDA_8))
+  use cudafor, only: cudaMemAdvise, cudaMemAdviseSetPreferredLocation
+  use cuda_module, only: cuda_device_id
 #endif
 
   implicit none
@@ -428,13 +429,28 @@ subroutine ca_set_method_params(dm,Density,Xmom,Eden,Eint,Temp, &
   !$acc update &
   !$acc device(small_dens, small_temp)
 
-#ifdef CUDA
-  cuda_result = cudaMemAdvise(qpass_map, QVAR, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
-  cuda_result = cudaMemAdvise(upass_map, NVAR, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
-  cuda_result = cudaMemAdvise(npassive, 1, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
+#if (defined(CUDA) && !defined(NO_CUDA_8))
+  cuda_result = cudaMemAdvise(qpass_map, QVAR, cudaMemAdviseSetPreferredLocation, cuda_device_id)
+  cuda_result = cudaMemAdvise(upass_map, NVAR, cudaMemAdviseSetPreferredLocation, cuda_device_id)
+  cuda_result = cudaMemAdvise(npassive, 1, cudaMemAdviseSetPreferredLocation, cuda_device_id)
 #endif
 
 end subroutine ca_set_method_params
+
+
+
+subroutine ca_destroy_method_params() bind(C, name="ca_destroy_method_params")
+
+  use meth_params_module, only: qpass_map, upass_map, npassive
+
+  implicit none
+
+  deallocate(qpass_map)
+  deallocate(upass_map)
+  deallocate(npassive)
+
+end subroutine ca_destroy_method_params
+
 
 
 subroutine ca_init_godunov_indices() bind(C, name="ca_init_godunov_indices")
@@ -442,9 +458,6 @@ subroutine ca_init_godunov_indices() bind(C, name="ca_init_godunov_indices")
   use meth_params_module, only: GDRHO, GDU, GDV, GDW, GDPRES, GDGAME, NGDNV, &
                                 QU, QV, QW
   use amrex_fort_module, only: rt => amrex_real
-#ifdef CUDA
-  use cudafor, only: cudaMemAdvise, cudaMemAdviseSetReadMostly, cudaCpuDeviceId
-#endif
 
   implicit none
 
@@ -473,7 +486,8 @@ subroutine ca_set_problem_params(dm,physbc_lo_in,physbc_hi_in,&
   use meth_params_module, only: UMX, UMY, UMZ
   use amrex_fort_module, only: rt => amrex_real
 #ifdef CUDA
-  use cudafor, only: cudaMemAdvise, cudaMemAdviseSetReadMostly, cudaCpuDeviceId
+  use cudafor, only: cudaMemAdvise, cudaMemAdviseSetPreferredLocation
+  use cuda_module, only: cuda_device_id
 #endif
 
   implicit none
@@ -560,20 +574,46 @@ subroutine ca_set_problem_params(dm,physbc_lo_in,physbc_hi_in,&
   mom_flux_has_p(3)%comp(UMY) = .false.
   mom_flux_has_p(3)%comp(UMZ) = .true.
 
-#ifdef CUDA
-  cuda_result = cudaMemAdvise(dim, 1, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
-  cuda_result = cudaMemAdvise(physbc_lo, 3, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
-  cuda_result = cudaMemAdvise(physbc_hi, 3, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
-  cuda_result = cudaMemAdvise(Interior, 1, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
-  cuda_result = cudaMemAdvise(Inflow, 1, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
-  cuda_result = cudaMemAdvise(Outflow, 1, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
-  cuda_result = cudaMemAdvise(Symmetry, 1, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
-  cuda_result = cudaMemAdvise(SlipWall, 1, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
-  cuda_result = cudaMemAdvise(NoSlipWall, 1, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
-  cuda_result = cudaMemAdvise(dg, 3, cudaMemAdviseSetReadMostly, cudaCpuDeviceId)
+#if (defined(CUDA) && !defined(NO_CUDA_8))
+  cuda_result = cudaMemAdvise(dim, 1, cudaMemAdviseSetPreferredLocation, cuda_device_id)
+  cuda_result = cudaMemAdvise(physbc_lo, 3, cudaMemAdviseSetPreferredLocation, cuda_device_id)
+  cuda_result = cudaMemAdvise(physbc_hi, 3, cudaMemAdviseSetPreferredLocation, cuda_device_id)
+  cuda_result = cudaMemAdvise(Interior, 1, cudaMemAdviseSetPreferredLocation, cuda_device_id)
+  cuda_result = cudaMemAdvise(Inflow, 1, cudaMemAdviseSetPreferredLocation, cuda_device_id)
+  cuda_result = cudaMemAdvise(Outflow, 1, cudaMemAdviseSetPreferredLocation, cuda_device_id)
+  cuda_result = cudaMemAdvise(Symmetry, 1, cudaMemAdviseSetPreferredLocation, cuda_device_id)
+  cuda_result = cudaMemAdvise(SlipWall, 1, cudaMemAdviseSetPreferredLocation, cuda_device_id)
+  cuda_result = cudaMemAdvise(NoSlipWall, 1, cudaMemAdviseSetPreferredLocation, cuda_device_id)
+  cuda_result = cudaMemAdvise(dg, 3, cudaMemAdviseSetPreferredLocation, cuda_device_id)
 #endif
 
 end subroutine ca_set_problem_params
+
+
+
+subroutine ca_destroy_problem_params() bind(C, name="ca_destroy_problem_params")
+
+  use prob_params_module
+
+  deallocate(dim)
+
+  deallocate(physbc_lo)
+  deallocate(physbc_hi)
+
+  deallocate(Interior)
+  deallocate(Inflow)
+  deallocate(Outflow)
+  deallocate(Symmetry)
+  deallocate(SlipWall)
+  deallocate(NoSlipWall)
+
+  deallocate(center)
+  deallocate(problo)
+  deallocate(probhi)
+
+  deallocate(dg)
+
+end subroutine ca_destroy_problem_params
 
 ! :::
 ! ::: ----------------------------------------------------------------
@@ -642,6 +682,23 @@ subroutine ca_set_grid_info(max_level_in, dx_level_in, domlo_in, domhi_in, &
   enddo
 
 end subroutine ca_set_grid_info
+
+
+
+subroutine ca_destroy_grid_info() bind(c, name='ca_destroy_grid_info')
+
+  use prob_params_module, only: max_level, dx_level, domlo_level, domhi_level, n_error_buf, ref_ratio, blocking_factor
+
+  implicit none
+
+  deallocate(dx_level)
+  deallocate(domlo_level)
+  deallocate(domhi_level)
+  deallocate(ref_ratio)
+  deallocate(n_error_buf)
+  deallocate(blocking_factor)
+
+end subroutine ca_destroy_grid_info
 
 ! :::
 ! ::: ----------------------------------------------------------------
@@ -1164,7 +1221,7 @@ contains
   subroutine summass(lo,hi,rho,r_lo,r_hi,dx, &
                      vol,v_lo,v_hi,mass)
 
-    use amrex_fort_module, only: rt => amrex_real, get_loop_bounds
+    use amrex_fort_module, only: rt => amrex_real, get_loop_bounds, amrex_add
 
     implicit none
 
@@ -1185,12 +1242,11 @@ contains
     do k = blo(3), bhi(3)
        do j = blo(2), bhi(2)
           do i = blo(1), bhi(1)
+
              dm = rho(i,j,k) * vol(i,j,k)
-#ifdef CUDA
-             dm = atomicAdd(mass, dm)
-#else
-             mass = mass + dm
-#endif
+
+             call amrex_add(mass, dm)
+
           enddo
        enddo
     enddo

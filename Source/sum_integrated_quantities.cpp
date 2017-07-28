@@ -112,7 +112,7 @@ Castro::volWgtSum (const std::string& name,
     BL_PROFILE("Castro::volWgtSum()");
 
     Real        sum     = 0.0;
-    const Real* dx      = geom.CellSize();
+    const Real* dx      = geom.CellSizeF();
     auto mf = derive(name,time,0);
 
     BL_ASSERT(mf);
@@ -130,21 +130,22 @@ Castro::volWgtSum (const std::string& name,
     {
         FArrayBox& fab = (*mf)[mfi];
 
-	Real s = 0.0;
         const Box& box  = mfi.tilebox();
-        const int* lo   = box.loVect();
-        const int* hi   = box.hiVect();
-	const int  idx  = mfi.tileIndex();
 
         //
         // Note that this routine will do a volume weighted sum of
         // whatever quantity is passed in, not strictly the "mass".
         //
 
-	ca_summass(ARLIM_3D(lo),ARLIM_3D(hi),BL_TO_FORTRAN_3D(fab),
-		   ZFILL(dx),BL_TO_FORTRAN_3D(volume[mfi]),&s);
+        Device::prepare_for_launch(box.loVect(), box.hiVect());
 
-        sum += s;
+#ifdef CUDA
+        Real* s_f = mfi.add_reduce_value(&sum, MFIter::SUM);
+#else
+        Real* s_f = &sum;
+#endif
+
+	ca_summass(BL_TO_FORTRAN_BOX(box), BL_TO_FORTRAN_ANYD(fab), ZFILL(dx), BL_TO_FORTRAN_ANYD(volume[mfi]), s_f);
     }
 
     if (!local)

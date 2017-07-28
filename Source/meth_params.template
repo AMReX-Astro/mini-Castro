@@ -77,8 +77,8 @@ module meth_params_module
   ! NQ will be the total number of primitive variables, hydro + radiation
   integer, parameter :: NQ = QVAR
 
-  integer, allocatable, save :: npassive
-  integer, allocatable, save :: qpass_map(:), upass_map(:)
+  integer, allocatable :: npassive
+  integer, allocatable :: qpass_map(:), upass_map(:)
 
   ! These are used for the Godunov state
   ! Note that the velocity indices here are picked to be the same value
