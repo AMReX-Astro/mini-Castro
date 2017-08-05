@@ -137,7 +137,9 @@ Castro::volWgtSum (const std::string& name,
         // whatever quantity is passed in, not strictly the "mass".
         //
 
+#ifdef AMREX_USE_DEVICE
         Device::prepare_for_launch(box.loVect(), box.hiVect());
+#endif
 
 #ifdef CUDA
         Real* s_f = mfi.add_reduce_value(&sum, MFIter::SUM);

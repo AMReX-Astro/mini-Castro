@@ -103,7 +103,7 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
 	// convert the conservative state to the primitive variable state.
 	// this fills both q and qaux.
 
-#ifdef CUDA
+#ifdef AMREX_USE_DEVICE
         Device::prepare_for_launch(qbx.loVect(), qbx.hiVect());
 #endif
 
@@ -115,7 +115,7 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
 
         const Box& obx = mfi.registerBox(amrex::grow(bx, 1));
 
-#ifdef CUDA
+#ifdef AMREX_USE_DEVICE
         Device::prepare_for_launch(obx.loVect(), obx.hiVect());
 #endif
 
@@ -151,7 +151,7 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
 
             const Box& ebx = mfi.registerBox(amrex::surroundingNodes(bx, idir));
 
-#ifdef CUDA
+#ifdef AMREX_USE_DEVICE
             Device::prepare_for_launch(ebx.loVect(), ebx.hiVect());
 #endif
 
@@ -171,7 +171,7 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
 
         }
 
-#ifdef CUDA
+#ifdef AMREX_USE_DEVICE
         Device::prepare_for_launch(bx.loVect(), bx.hiVect());
 #endif
 
