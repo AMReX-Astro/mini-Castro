@@ -44,9 +44,7 @@ contains
 
     call get_loop_bounds(blo, bhi, lo, hi)
 
-    do n = 1,NVAR
-       call filccn(blo, bhi, adv, lo, hi, NVAR, domlo, domhi, dx, xlo, bc, n)
-    enddo
+    call filccn(blo, bhi, adv, lo, hi, NVAR, domlo, domhi, dx, xlo, bc)
 
     ! The strategy here is to set Dirichlet condition for inflow and
     ! outflow boundaries, and let the Riemann solver sort out the proper
@@ -213,7 +211,7 @@ contains
     ! that the same function is called here and in hypfill where all the
     ! states are filled.
 
-    call filccn(blo, bhi, adv, lo, hi, 1, domlo, domhi, dx, xlo, bc, 1)
+    call filccn(blo, bhi, adv, lo, hi, 1, domlo, domhi, dx, xlo, bc)
 
     rho_only = .TRUE.
 
