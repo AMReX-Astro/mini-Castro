@@ -515,7 +515,7 @@ contains
 
     use bl_constants_module, only: FOURTH, ONE
     use amrex_fort_module, only: rt => amrex_real
-    use meth_params_module, only: QU, QV, QW, QVAR
+    use meth_params_module, only: QU, QV, QW, NQ
 
     implicit none
 
@@ -523,7 +523,7 @@ contains
     integer,  intent(in   ) :: q_lo(3), q_hi(3)
     integer,  intent(in   ) :: g_lo(3), g_hi(3)
     real(rt), intent(in   ) :: dx(3)
-    real(rt), intent(in   ) :: q(q_lo(1):q_hi(1),q_lo(2):q_hi(2),q_lo(3):q_hi(3),QVAR)
+    real(rt), intent(in   ) :: q(q_lo(1):q_hi(1),q_lo(2):q_hi(2),q_lo(3):q_hi(3),NQ)
     real(rt), intent(inout) :: div(g_lo(1):g_hi(1),g_lo(2):g_hi(2),g_lo(3):g_hi(3))
 
     integer  :: i, j, k
@@ -569,7 +569,7 @@ contains
   attributes(device) &
 #endif
     subroutine apply_av(lo, hi, idir, dx, &
-                        div, g_lo, g_hi, &
+                        div, div_lo, div_hi, &
                         uin, uin_lo, uin_hi, &
                         flux, f_lo, f_hi)
 
@@ -578,13 +578,14 @@ contains
 
     implicit none
 
-    integer,  intent(in   ) :: lo(3), hi(3), idir
-    integer,  intent(in   ) :: g_lo(3), g_hi(3)
+    integer,  intent(in   ) :: lo(3), hi(3)
+    integer,  intent(in   ) :: div_lo(3), div_hi(3)
     integer,  intent(in   ) :: uin_lo(3), uin_hi(3)
     integer,  intent(in   ) :: f_lo(3), f_hi(3)
     real(rt), intent(in   ) :: dx(3)
+    integer,  intent(in   ), value :: idir
 
-    real(rt), intent(in   ) :: div(g_lo(1):g_hi(1),g_lo(2):g_hi(2),g_lo(3):g_hi(3))
+    real(rt), intent(in   ) :: div(div_lo(1):div_hi(1),div_lo(2):div_hi(2),div_lo(3):div_hi(3))
     real(rt), intent(in   ) :: uin(uin_lo(1):uin_hi(1),uin_lo(2):uin_hi(2),uin_lo(3):uin_hi(3),NVAR)
     real(rt), intent(inout) :: flux(f_lo(1):f_hi(1),f_lo(2):f_hi(2),f_lo(3):f_hi(3),NVAR)
 
@@ -734,7 +735,7 @@ contains
     integer,  intent(in   ) :: lo(3), hi(3)
     integer,  intent(in   ) :: f_lo(3), f_hi(3)
     integer,  intent(in   ) :: a_lo(3), a_hi(3)
-    real(rt), intent(in   ) :: dt
+    real(rt), intent(in   ), value :: dt
 
     real(rt), intent(inout) :: flux(f_lo(1):f_hi(1),f_lo(2):f_hi(2),f_lo(3):f_hi(3),NVAR)
     real(rt), intent(in   ) :: area(a_lo(1):a_hi(1),a_lo(2):a_hi(2),a_lo(3):a_hi(3))

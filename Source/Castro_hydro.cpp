@@ -33,7 +33,7 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
   q_mf.define(grids, dmap, NQ, NUM_GROW);
 
   MultiFab flatn_mf;
-  flatn_mf.define(grids, dmap, NQ, NUM_GROW);
+  flatn_mf.define(grids, dmap, 1, NUM_GROW);
 
   MultiFab div_mf;
   div_mf.define(grids, dmap, 1, 1);

@@ -20,8 +20,10 @@ contains
   attributes(device) &
 #endif
   subroutine cmpflx(lo, hi, domlo, domhi, idir, &
-                    qm, qp, It_lo, It_hi, &
-                    flx, qint, flx_lo, flx_hi, &
+                    qm, qm_lo, qm_hi, &
+                    qp, qp_lo, qp_hi, &
+                    qint, qe_lo, qe_hi, &
+                    flx, flx_lo, flx_hi, &
                     qaux, qa_lo, qa_hi)
 
     use network, only: nspec, naux
@@ -29,27 +31,26 @@ contains
     use bl_constants_module, only: ZERO, HALF, ONE
     use prob_params_module, only: physbc_lo, physbc_hi, Symmetry, SlipWall, NoSlipWall
 
-    integer,  intent(in   ) :: It_lo(3), It_hi(3)
+    integer,  intent(in   ) :: qm_lo(3), qm_hi(3)
+    integer,  intent(in   ) :: qp_lo(3), qp_hi(3)
+    integer,  intent(in   ) :: qe_lo(3), qe_hi(3)
     integer,  intent(in   ) :: flx_lo(3), flx_hi(3)
     integer,  intent(in   ) :: qa_lo(3), qa_hi(3)
-    integer,  intent(in   ) :: lo(3), hi(3), idir
+    integer,  intent(in   ) :: lo(3), hi(3)
     integer,  intent(in   ) :: domlo(3), domhi(3)
+    integer,  intent(in   ), value :: idir
 
-    real(rt), intent(in   ) :: qm(It_lo(1):It_hi(1),It_lo(2):It_hi(2),It_lo(3):It_hi(3),NQ,3)
-    real(rt), intent(in   ) :: qp(It_lo(1):It_hi(1),It_lo(2):It_hi(2),It_lo(3):It_hi(3),NQ,3)
+    real(rt), intent(in   ) :: qm(qm_lo(1):qm_hi(1),qm_lo(2):qm_hi(2),qm_lo(3):qm_hi(3),NQ,3)
+    real(rt), intent(in   ) :: qp(qp_lo(1):qp_hi(1),qp_lo(2):qp_hi(2),qp_lo(3):qp_hi(3),NQ,3)
+    real(rt), intent(inout) :: qint(qe_lo(1):qe_hi(1),qe_lo(2):qe_hi(2),qe_lo(3):qe_hi(3),NGDNV)
     real(rt), intent(inout) :: flx(flx_lo(1):flx_hi(1),flx_lo(2):flx_hi(2),flx_lo(3):flx_hi(3),NVAR)
-    real(rt), intent(inout) :: qint(flx_lo(1):flx_hi(1),flx_lo(2):flx_hi(2),flx_lo(3):flx_hi(3),NGDNV)
-
-    ! qaux come in dimensioned as the full box, so we use k3d here to
-    ! index it in z
-
-    real(rt), intent(in) :: qaux(qa_lo(1):qa_hi(1),qa_lo(2):qa_hi(2),qa_lo(3):qa_hi(3),NQAUX)
+    real(rt), intent(in   ) :: qaux(qa_lo(1):qa_hi(1),qa_lo(2):qa_hi(2),qa_lo(3):qa_hi(3),NQAUX)
 
     ! local variables
 
-    integer      :: i, j, k
-    integer      :: is_shock
-    real(rt)     :: cl, cr
+    integer  :: i, j, k
+    integer  :: is_shock
+    real(rt) :: cl, cr
 
     integer :: n, nqp, ipassive
 

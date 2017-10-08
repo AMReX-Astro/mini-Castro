@@ -7,7 +7,7 @@ contains
 #ifdef CUDA
   attributes(device) &
 #endif
-  subroutine uflaten(lo, hi, q, flatn, q_lo, q_hi)
+  subroutine uflaten(lo, hi, q, q_lo, q_hi, flatn, f_lo, f_hi)
 
     use bl_constants_module, only: ZERO, ONE
     use amrex_fort_module, only: rt => amrex_real
@@ -18,8 +18,9 @@ contains
 
     integer,  intent(in   ) :: lo(3), hi(3)
     integer,  intent(in   ) :: q_lo(3), q_hi(3)
+    integer,  intent(in   ) :: f_lo(3), f_hi(3)
     real(rt), intent(in   ) :: q(q_lo(1):q_hi(1),q_lo(2):q_hi(2),q_lo(3):q_hi(3),NQ)
-    real(rt), intent(inout) :: flatn(q_lo(1):q_hi(1),q_lo(2):q_hi(2),q_lo(3):q_hi(3))
+    real(rt), intent(inout) :: flatn(f_lo(1):f_hi(1),f_lo(2):f_hi(2),f_lo(3):f_hi(3))
 
     integer :: i, j, k, ishft
 

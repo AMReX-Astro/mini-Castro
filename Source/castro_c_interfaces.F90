@@ -353,7 +353,7 @@ contains
 
     real(rt), intent(in   ) :: q(q_lo(1):q_hi(1), q_lo(2):q_hi(2), q_lo(3):q_hi(3), NQ)
     real(rt), intent(inout) :: qaux(qa_lo(1):qa_hi(1), qa_lo(2):qa_hi(2), qa_lo(3):qa_hi(3), NQAUX)
-    real(rt), intent(inout) :: flatn(flatn_lo(1):flatn_hi(1), flatn_lo(2):flatn_hi(2), flatn_lo(3):flatn_hi(3), NQ)
+    real(rt), intent(inout) :: flatn(flatn_lo(1):flatn_hi(1), flatn_lo(2):flatn_hi(2), flatn_lo(3):flatn_hi(3))
     real(rt), intent(inout) :: div(div_lo(1):div_hi(1), div_lo(2):div_hi(2), div_lo(3):div_hi(3))
     real(rt), intent(inout) :: sxm(sxm_lo(1):sxm_hi(1), sxm_lo(2):sxm_hi(2), sxm_lo(3):sxm_hi(3), NQ)
     real(rt), intent(inout) :: sxp(sxp_lo(1):sxp_hi(1), sxp_lo(2):sxp_hi(2), sxp_lo(3):sxp_hi(3), NQ)
@@ -453,8 +453,8 @@ contains
                                uin, uin_lo, uin_hi, &
                                div, div_lo, div_hi, &
                                qaux, qa_lo, qa_hi, &
-                               qm, qm_lo, qp_hi, &
-                               qp, qp_lo, qm_hi, &
+                               qm, qm_lo, qm_hi, &
+                               qp, qp_lo, qp_hi, &
                                qe, qe_lo, qe_hi, &
                                flux, f_lo, f_hi, &
                                area, a_lo, a_hi) bind(C, name="ca_construct_flux")
@@ -505,8 +505,10 @@ contains
          (lo, hi, domlo, domhi, dx, dt, idir, &
           div, div_lo, div_hi, &
           uin, uin_lo, uin_hi, &
-          qm, qp, qm_lo, qm_hi, &
-          flux, qe, f_lo, f_hi, &
+          qm, qm_lo, qm_hi, &
+          qp, qp_lo, qp_hi, &
+          qe, qe_lo, qe_hi, &
+          flux, f_lo, f_hi, &
           area, a_lo, a_hi, &
           qaux, qa_lo, qa_hi)
 
