@@ -37,11 +37,13 @@ include $(AMREX_HOME)/Tools/GNUMake/Make.defs
 # Castro uses a coarse grained OMP approach
 DEFINES += -DCRSEGRNDOMP
 
-# Limit the maximum number of registers available
+# Limit the maximum number of registers available.
+# Increase the maximum number of threads to compensate.
 ifeq ($(lowercase_comp),pgi)
   ifeq ($(USE_CUDA),TRUE)
     FFLAGS += -Mcuda=maxregcount:128
     F90FLAGS += -Mcuda=maxregcount:128
+    CUDA_MAX_THREADS := 512
   endif
 endif
 
