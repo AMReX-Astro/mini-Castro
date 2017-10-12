@@ -15,7 +15,7 @@ contains
 
     use meth_params_module, only: NVAR
     use amrex_fort_module, only: rt => amrex_real, get_loop_bounds
-    use filcc_module, only: filccn
+    use amrex_filcc_module, only: filccn
 
     implicit none
 
@@ -180,7 +180,7 @@ contains
   subroutine denfill(adv, adv_l1, adv_l2, adv_l3, adv_h1, adv_h2, adv_h3, domlo, domhi, dx, xlo, time, bc)
 
     use amrex_fort_module, only: rt => amrex_real, get_loop_bounds
-    use filcc_module, only: filccn
+    use amrex_filcc_module, only: filccn
 
     implicit none
 
