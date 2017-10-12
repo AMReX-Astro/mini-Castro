@@ -103,47 +103,39 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
 	// convert the conservative state to the primitive variable state.
 	// this fills both q and qaux.
 
-#ifdef AMREX_USE_DEVICE
-        Device::prepare_for_launch(qbx.loVect(), qbx.hiVect());
-#endif
-
-	ca_ctoprim
-          (BL_TO_FORTRAN_BOX(qbx),
-	   BL_TO_FORTRAN_ANYD(statein),
-           BL_TO_FORTRAN_ANYD(q),
-           BL_TO_FORTRAN_ANYD(qaux));
+	FORT_LAUNCH(qbx, ca_ctoprim,
+                    BL_TO_FORTRAN_BOX(qbx),
+                    BL_TO_FORTRAN_ANYD(statein),
+                    BL_TO_FORTRAN_ANYD(q),
+                    BL_TO_FORTRAN_ANYD(qaux));
 
         const Box& obx = mfi.registerBox(amrex::grow(bx, 1));
 
-#ifdef AMREX_USE_DEVICE
-        Device::prepare_for_launch(obx.loVect(), obx.hiVect());
-#endif
+        FORT_LAUNCH(obx, ca_prepare_for_fluxes,
+                    BL_TO_FORTRAN_BOX(obx),
+                    dx, dt,
+                    BL_TO_FORTRAN_ANYD(q),
+                    BL_TO_FORTRAN_ANYD(qaux),
+                    BL_TO_FORTRAN_ANYD(flatn),
+                    BL_TO_FORTRAN_ANYD(div),
+                    BL_TO_FORTRAN_ANYD(sxm),
+                    BL_TO_FORTRAN_ANYD(sxp),
+                    BL_TO_FORTRAN_ANYD(sym),
+                    BL_TO_FORTRAN_ANYD(syp),
+                    BL_TO_FORTRAN_ANYD(szm),
+                    BL_TO_FORTRAN_ANYD(szp));
 
-        ca_prepare_for_fluxes
-          (BL_TO_FORTRAN_BOX(obx),
-	   dx, dt,
-	   BL_TO_FORTRAN_ANYD(q),
-	   BL_TO_FORTRAN_ANYD(qaux),
-	   BL_TO_FORTRAN_ANYD(flatn),
-	   BL_TO_FORTRAN_ANYD(div),
-	   BL_TO_FORTRAN_ANYD(sxm),
-	   BL_TO_FORTRAN_ANYD(sxp),
-	   BL_TO_FORTRAN_ANYD(sym),
-	   BL_TO_FORTRAN_ANYD(syp),
-	   BL_TO_FORTRAN_ANYD(szm),
-	   BL_TO_FORTRAN_ANYD(szp));
-
-        ca_prepare_profile
-          (BL_TO_FORTRAN_BOX(obx),
-	   BL_TO_FORTRAN_ANYD(q),
-	   BL_TO_FORTRAN_ANYD(qm),
-	   BL_TO_FORTRAN_ANYD(qp),
-	   BL_TO_FORTRAN_ANYD(sxm),
-	   BL_TO_FORTRAN_ANYD(sxp),
-	   BL_TO_FORTRAN_ANYD(sym),
-	   BL_TO_FORTRAN_ANYD(syp),
-	   BL_TO_FORTRAN_ANYD(szm),
-	   BL_TO_FORTRAN_ANYD(szp));
+        FORT_LAUNCH(obx, ca_prepare_profile,
+                    BL_TO_FORTRAN_BOX(obx),
+                    BL_TO_FORTRAN_ANYD(q),
+                    BL_TO_FORTRAN_ANYD(sxm),
+                    BL_TO_FORTRAN_ANYD(sxp),
+                    BL_TO_FORTRAN_ANYD(sym),
+                    BL_TO_FORTRAN_ANYD(syp),
+                    BL_TO_FORTRAN_ANYD(szm),
+                    BL_TO_FORTRAN_ANYD(szp),
+                    BL_TO_FORTRAN_ANYD(qm),
+                    BL_TO_FORTRAN_ANYD(qp));
 
         for (int idir = 0; idir < BL_SPACEDIM; ++idir) {
 
@@ -151,45 +143,37 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
 
             const Box& ebx = mfi.registerBox(amrex::surroundingNodes(bx, idir));
 
-#ifdef AMREX_USE_DEVICE
-            Device::prepare_for_launch(ebx.loVect(), ebx.hiVect());
-#endif
-
-            ca_construct_flux
-              (BL_TO_FORTRAN_BOX(ebx),
-               domain_lo, domain_hi,
-               dx, dt,
-               idir_f,
-               BL_TO_FORTRAN_ANYD(statein),
-               BL_TO_FORTRAN_ANYD(div),
-               BL_TO_FORTRAN_ANYD(qaux),
-               BL_TO_FORTRAN_ANYD(qm),
-               BL_TO_FORTRAN_ANYD(qp),
-               BL_TO_FORTRAN_ANYD(qe[idir][mfi]),
-               BL_TO_FORTRAN_ANYD(flux_mf[idir][mfi]),
-               BL_TO_FORTRAN_ANYD(area[idir][mfi]));
+            FORT_LAUNCH(ebx, ca_construct_flux,
+                        BL_TO_FORTRAN_BOX(ebx),
+                        domain_lo, domain_hi,
+                        dx, dt,
+                        idir_f,
+                        BL_TO_FORTRAN_ANYD(statein),
+                        BL_TO_FORTRAN_ANYD(div),
+                        BL_TO_FORTRAN_ANYD(qaux),
+                        BL_TO_FORTRAN_ANYD(qm),
+                        BL_TO_FORTRAN_ANYD(qp),
+                        BL_TO_FORTRAN_ANYD(qe[idir][mfi]),
+                        BL_TO_FORTRAN_ANYD(flux_mf[idir][mfi]),
+                        BL_TO_FORTRAN_ANYD(area[idir][mfi]));
 
         }
 
-#ifdef AMREX_USE_DEVICE
-        Device::prepare_for_launch(bx.loVect(), bx.hiVect());
-#endif
-
-	ca_construct_hydro_update
-          (BL_TO_FORTRAN_BOX(bx),
-           dx, dt,
-	   b_mol[istage],
-           BL_TO_FORTRAN_ANYD(qe[0][mfi]),
-	   BL_TO_FORTRAN_ANYD(qe[1][mfi]),
-	   BL_TO_FORTRAN_ANYD(qe[2][mfi]),
-	   BL_TO_FORTRAN_ANYD(flux_mf[0][mfi]),
-	   BL_TO_FORTRAN_ANYD(flux_mf[1][mfi]),
-	   BL_TO_FORTRAN_ANYD(flux_mf[2][mfi]),
-	   BL_TO_FORTRAN_ANYD(area[0][mfi]),
-	   BL_TO_FORTRAN_ANYD(area[1][mfi]),
-	   BL_TO_FORTRAN_ANYD(area[2][mfi]),
-	   BL_TO_FORTRAN_ANYD(volume[mfi]),
-           BL_TO_FORTRAN_ANYD(source_out));
+	FORT_LAUNCH(bx, ca_construct_hydro_update,
+                    BL_TO_FORTRAN_BOX(bx),
+                    dx, dt,
+                    b_mol[istage],
+                    BL_TO_FORTRAN_ANYD(qe[0][mfi]),
+                    BL_TO_FORTRAN_ANYD(qe[1][mfi]),
+                    BL_TO_FORTRAN_ANYD(qe[2][mfi]),
+                    BL_TO_FORTRAN_ANYD(flux_mf[0][mfi]),
+                    BL_TO_FORTRAN_ANYD(flux_mf[1][mfi]),
+                    BL_TO_FORTRAN_ANYD(flux_mf[2][mfi]),
+                    BL_TO_FORTRAN_ANYD(area[0][mfi]),
+                    BL_TO_FORTRAN_ANYD(area[1][mfi]),
+                    BL_TO_FORTRAN_ANYD(area[2][mfi]),
+                    BL_TO_FORTRAN_ANYD(volume[mfi]),
+                    BL_TO_FORTRAN_ANYD(source_out));
 
 	// Store the fluxes from this advance -- we weight them by the
 	// integrator weight for this stage

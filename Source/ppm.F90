@@ -14,23 +14,36 @@ contains
 #ifdef CUDA
   attributes(device) &
 #endif
-  subroutine ppm_reconstruct(lo, hi, s, flatn, s_lo, s_hi, &
-                             sxm, sxp, sym, syp, szm, szp, st_lo, st_hi)
+  subroutine ppm_reconstruct(lo, hi, &
+                             s, s_lo, s_hi, &
+                             flatn, f_lo, f_hi, &
+                             sxm, sxm_lo, sxm_hi, &
+                             sxp, sxp_lo, sxp_hi, &
+                             sym, sym_lo, sym_hi, &
+                             syp, syp_lo, syp_hi, &
+                             szm, szm_lo, szm_hi, &
+                             szp, szp_lo, szp_hi)
 
     implicit none
 
-    integer,  intent(in   ) :: s_lo(3), s_hi(3)
     integer,  intent(in   ) :: lo(3), hi(3)
-    integer,  intent(in   ) :: st_lo(3), st_hi(3)
+    integer,  intent(in   ) :: s_lo(3), s_hi(3)
+    integer,  intent(in   ) :: f_lo(3), f_hi(3)
+    integer,  intent(in   ) :: sxm_lo(3), sxm_hi(3)
+    integer,  intent(in   ) :: sxp_lo(3), sxp_hi(3)
+    integer,  intent(in   ) :: sym_lo(3), sym_hi(3)
+    integer,  intent(in   ) :: syp_lo(3), syp_hi(3)
+    integer,  intent(in   ) :: szm_lo(3), szm_hi(3)
+    integer,  intent(in   ) :: szp_lo(3), szp_hi(3)
 
     real(rt), intent(in   ) :: s(s_lo(1):s_hi(1), s_lo(2):s_hi(2), s_lo(3):s_hi(3), NQ)
-    real(rt), intent(in   ) :: flatn(s_lo(1):s_hi(1), s_lo(2):s_hi(2), s_lo(3):s_hi(3))
-    real(rt), intent(inout) :: sxm(st_lo(1):st_hi(1),st_lo(2):st_hi(2),st_lo(3):st_hi(3),NQ)
-    real(rt), intent(inout) :: sxp(st_lo(1):st_hi(1),st_lo(2):st_hi(2),st_lo(3):st_hi(3),NQ)
-    real(rt), intent(inout) :: sym(st_lo(1):st_hi(1),st_lo(2):st_hi(2),st_lo(3):st_hi(3),NQ)
-    real(rt), intent(inout) :: syp(st_lo(1):st_hi(1),st_lo(2):st_hi(2),st_lo(3):st_hi(3),NQ)
-    real(rt), intent(inout) :: szm(st_lo(1):st_hi(1),st_lo(2):st_hi(2),st_lo(3):st_hi(3),NQ)
-    real(rt), intent(inout) :: szp(st_lo(1):st_hi(1),st_lo(2):st_hi(2),st_lo(3):st_hi(3),NQ)
+    real(rt), intent(in   ) :: flatn(f_lo(1):f_hi(1), f_lo(2):f_hi(2), f_lo(3):f_hi(3))
+    real(rt), intent(inout) :: sxm(sxm_lo(1):sxm_hi(1),sxm_lo(2):sxm_hi(2),sxm_lo(3):sxm_hi(3),NQ)
+    real(rt), intent(inout) :: sxp(sxp_lo(1):sxp_hi(1),sxp_lo(2):sxp_hi(2),sxp_lo(3):sxp_hi(3),NQ)
+    real(rt), intent(inout) :: sym(sym_lo(1):sym_hi(1),sym_lo(2):sym_hi(2),sym_lo(3):sym_hi(3),NQ)
+    real(rt), intent(inout) :: syp(syp_lo(1):syp_hi(1),syp_lo(2):syp_hi(2),syp_lo(3):syp_hi(3),NQ)
+    real(rt), intent(inout) :: szm(szm_lo(1):szm_hi(1),szm_lo(2):szm_hi(2),szm_lo(3):szm_hi(3),NQ)
+    real(rt), intent(inout) :: szp(szp_lo(1):szp_hi(1),szp_lo(2):szp_hi(2),szp_lo(3):szp_hi(3),NQ)
 
     ! local
     integer :: i, j, k, n
@@ -353,21 +366,35 @@ contains
 #ifdef CUDA
   attributes(device) &
 #endif
-  subroutine ppm_int_profile(lo, hi, sxm, sxp, sym, syp, szm, szp, st_lo, st_hi, qm, qp, It_lo, It_hi)
+  subroutine ppm_int_profile(lo, hi, &
+                             sxm, sxm_lo, sxm_hi, &
+                             sxp, sxp_lo, sxp_hi, &
+                             sym, sym_lo, sym_hi, &
+                             syp, syp_lo, syp_hi, &
+                             szm, szm_lo, szm_hi, &
+                             szp, szp_lo, szp_hi, &
+                             qm, qm_lo, qm_hi, &
+                             qp, qp_lo, qp_hi)
 
     implicit none
 
     integer,  intent(in   ) :: lo(3), hi(3)
-    integer,  intent(in   ) :: st_lo(3), st_hi(3)
-    integer,  intent(in   ) :: It_lo(3), It_hi(3)
-    real(rt), intent(in   ) :: sxm(st_lo(1):st_hi(1),st_lo(2):st_hi(2),st_lo(3):st_hi(3),NQ)
-    real(rt), intent(in   ) :: sxp(st_lo(1):st_hi(1),st_lo(2):st_hi(2),st_lo(3):st_hi(3),NQ)
-    real(rt), intent(in   ) :: sym(st_lo(1):st_hi(1),st_lo(2):st_hi(2),st_lo(3):st_hi(3),NQ)
-    real(rt), intent(in   ) :: syp(st_lo(1):st_hi(1),st_lo(2):st_hi(2),st_lo(3):st_hi(3),NQ)
-    real(rt), intent(in   ) :: szm(st_lo(1):st_hi(1),st_lo(2):st_hi(2),st_lo(3):st_hi(3),NQ)
-    real(rt), intent(in   ) :: szp(st_lo(1):st_hi(1),st_lo(2):st_hi(2),st_lo(3):st_hi(3),NQ)
-    real(rt), intent(inout) :: qm(It_lo(1):It_hi(1),It_lo(2):It_hi(2),It_lo(3):It_hi(3),NQ,3)
-    real(rt), intent(inout) :: qp(It_lo(1):It_hi(1),It_lo(2):It_hi(2),It_lo(3):It_hi(3),NQ,3)
+    integer,  intent(in   ) :: sxm_lo(3), sxm_hi(3)
+    integer,  intent(in   ) :: sxp_lo(3), sxp_hi(3)
+    integer,  intent(in   ) :: sym_lo(3), sym_hi(3)
+    integer,  intent(in   ) :: syp_lo(3), syp_hi(3)
+    integer,  intent(in   ) :: szm_lo(3), szm_hi(3)
+    integer,  intent(in   ) :: szp_lo(3), szp_hi(3)
+    integer,  intent(in   ) :: qm_lo(3), qm_hi(3)
+    integer,  intent(in   ) :: qp_lo(3), qp_hi(3)
+    real(rt), intent(in   ) :: sxm(sxm_lo(1):sxm_hi(1),sxm_lo(2):sxm_hi(2),sxm_lo(3):sxm_hi(3),NQ)
+    real(rt), intent(in   ) :: sxp(sxp_lo(1):sxp_hi(1),sxp_lo(2):sxp_hi(2),sxp_lo(3):sxp_hi(3),NQ)
+    real(rt), intent(in   ) :: sym(sym_lo(1):sym_hi(1),sym_lo(2):sym_hi(2),sym_lo(3):sym_hi(3),NQ)
+    real(rt), intent(in   ) :: syp(syp_lo(1):syp_hi(1),syp_lo(2):syp_hi(2),syp_lo(3):syp_hi(3),NQ)
+    real(rt), intent(in   ) :: szm(szm_lo(1):szm_hi(1),szm_lo(2):szm_hi(2),szm_lo(3):szm_hi(3),NQ)
+    real(rt), intent(in   ) :: szp(szp_lo(1):szp_hi(1),szp_lo(2):szp_hi(2),szp_lo(3):szp_hi(3),NQ)
+    real(rt), intent(inout) :: qm(qm_lo(1):qm_hi(1),qm_lo(2):qm_hi(2),qm_lo(3):qm_hi(3),NQ,3)
+    real(rt), intent(inout) :: qp(qp_lo(1):qp_hi(1),qp_lo(2):qp_hi(2),qp_lo(3):qp_hi(3),NQ,3)
 
     integer :: i, j, k, n
 

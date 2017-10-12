@@ -78,10 +78,10 @@ extern "C"
 
   void ca_get_tagging_params(const int* name, const int* namlen);
 
-  void ca_ctoprim(const int* lo, const int* hi,
-	          const amrex::Real* u, const int* u_lo, const int* u_hi,
-		  const amrex::Real* q, const int* q_lo, const int* q_hi,
-		  const amrex::Real* qaux, const int* qa_lo, const int* qa_hi);
+  FORT_LAUNCHABLE(void ca_ctoprim)(const int* lo, const int* hi,
+                                   const amrex::Real* u, const int* u_lo, const int* u_hi,
+                                   const amrex::Real* q, const int* q_lo, const int* q_hi,
+                                   const amrex::Real* qaux, const int* qa_lo, const int* qa_hi);
 
   void ca_check_initial_species
     (const int* lo, const int* hi, BL_FORT_FAB_ARG_3D(state));
@@ -102,7 +102,7 @@ extern "C"
   void ca_enforce_consistent_e
     (const int* lo, const int* hi, BL_FORT_FAB_ARG_3D(state));
 
-  void ca_reset_internal_e
+  FORT_LAUNCHABLE(void ca_reset_internal_e)
     (const int* lo, const int* hi, BL_FORT_FAB_ARG_3D(S_new),
      const int verbose);
 
@@ -147,7 +147,7 @@ extern "C"
      const int* lo, const int* hi,
      const amrex::Real* dx, const amrex::Real* dt_old, amrex::Real* dt);
 
-  void ca_prepare_for_fluxes
+  FORT_LAUNCHABLE(void ca_prepare_for_fluxes)
     (const int* lo, const int* hi,
      const amrex::Real* dx, const amrex::Real dt,
      BL_FORT_FAB_ARG_3D(q),
@@ -161,19 +161,19 @@ extern "C"
      BL_FORT_FAB_ARG_3D(szm),
      BL_FORT_FAB_ARG_3D(szp));
 
-  void ca_prepare_profile
+  FORT_LAUNCHABLE(void ca_prepare_profile)
     (const int* lo, const int* hi,
      BL_FORT_FAB_ARG_3D(q),
-     BL_FORT_FAB_ARG_3D(qm),
-     BL_FORT_FAB_ARG_3D(qp),
      BL_FORT_FAB_ARG_3D(sxm),
      BL_FORT_FAB_ARG_3D(sxp),
      BL_FORT_FAB_ARG_3D(sym),
      BL_FORT_FAB_ARG_3D(syp),
      BL_FORT_FAB_ARG_3D(szm),
-     BL_FORT_FAB_ARG_3D(szp));
+     BL_FORT_FAB_ARG_3D(szp),
+     BL_FORT_FAB_ARG_3D(qm),
+     BL_FORT_FAB_ARG_3D(qp));
 
-  void ca_construct_flux
+  FORT_LAUNCHABLE(void ca_construct_flux)
     (const int* lo, const int* hi,
      const int* domlo, const int* domhi,
      const amrex::Real* dx, const amrex::Real dt,
@@ -187,7 +187,7 @@ extern "C"
      BL_FORT_FAB_ARG_3D(flux),
      BL_FORT_FAB_ARG_3D(area));
 
-  void ca_construct_hydro_update
+  FORT_LAUNCHABLE(void ca_construct_hydro_update)
     (const int* lo, const int* hi,
      const amrex::Real* dx, const amrex::Real dt,
      const amrex::Real stage_weight,

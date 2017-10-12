@@ -855,10 +855,7 @@ contains
 
 
 
-#ifdef CUDA
-  attributes(global) &
-#endif
-  subroutine reset_internal_e(lo,hi,u,u_lo,u_hi,verbose)
+  AMREX_LAUNCH subroutine ca_reset_internal_e(lo,hi,u,u_lo,u_hi,verbose) bind(c,name='ca_reset_internal_e')
 
     use eos_module, only: eos
     use eos_type_module, only: eos_t, eos_input_re, eos_input_rt
@@ -952,7 +949,7 @@ contains
        enddo
     enddo
 
-  end subroutine reset_internal_e
+  end subroutine ca_reset_internal_e
 
 
 

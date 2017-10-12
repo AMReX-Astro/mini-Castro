@@ -316,13 +316,10 @@ contains
 
 
 
-#ifdef CUDA
-  attributes(global) &
-#endif
-  subroutine ctoprim(lo, hi, &
-                     uin, uin_lo, uin_hi, &
-                     q,     q_lo,   q_hi, &
-                     qaux, qa_lo,  qa_hi)
+  AMREX_LAUNCH subroutine ca_ctoprim(lo, hi, &
+                                     uin, uin_lo, uin_hi, &
+                                     q,     q_lo,   q_hi, &
+                                     qaux, qa_lo,  qa_hi) bind(c,name='ca_ctoprim')
 
     use actual_network, only: nspec, naux
     use eos_module, only: eos
@@ -450,7 +447,7 @@ contains
        enddo
     enddo
 
-  end subroutine ctoprim
+  end subroutine ca_ctoprim
 
 
 
@@ -638,18 +635,19 @@ contains
 
 
 
-#ifdef CUDA
-  attributes(global) &
-#endif
-  subroutine construct_hydro_update(lo, hi, dx, dt, stage_weight, &
-                                    f1, q1, f1_lo, f1_hi, &
-                                    f2, q2, f2_lo, f2_hi, &
-                                    f3, q3, f3_lo, f3_hi, &
-                                    a1, a1_lo, a1_hi, &
-                                    a2, a2_lo, a2_hi, &
-                                    a3, a3_lo, a3_hi, &
-                                    vol, vol_lo, vol_hi, &
-                                    update, u_lo, u_hi)
+  AMREX_LAUNCH subroutine ca_construct_hydro_update(lo, hi, dx, dt, stage_weight, &
+                                                    q1, q1_lo, q1_hi, &
+                                                    q2, q2_lo, q2_hi, &
+                                                    q3, q3_lo, q3_hi, &
+                                                    f1, f1_lo, f1_hi, &
+                                                    f2, f2_lo, f2_hi, &
+                                                    f3, f3_lo, f3_hi, &
+                                                    a1, a1_lo, a1_hi, &
+                                                    a2, a2_lo, a2_hi, &
+                                                    a3, a3_lo, a3_hi, &
+                                                    vol, vol_lo, vol_hi, &
+                                                    update, u_lo, u_hi) &
+                                                    bind(c,name='ca_construct_hydro_update')
 
     use bl_constants_module, only: HALF, ONE
     use meth_params_module, only: NVAR, UEINT, NGDNV, GDPRES, GDU, GDV, GDW
@@ -657,6 +655,9 @@ contains
     implicit none
 
     integer,  intent(in   ) :: lo(3), hi(3)
+    integer,  intent(in   ) :: q1_lo(3), q1_hi(3)
+    integer,  intent(in   ) :: q2_lo(3), q2_hi(3)
+    integer,  intent(in   ) :: q3_lo(3), q3_hi(3)
     integer,  intent(in   ) :: f1_lo(3), f1_hi(3)
     integer,  intent(in   ) :: f2_lo(3), f2_hi(3)
     integer,  intent(in   ) :: f3_lo(3), f3_hi(3)
@@ -668,9 +669,9 @@ contains
     real(rt), intent(in   ) :: dx(3)
     real(rt), intent(in   ), value :: dt, stage_weight
 
-    real(rt), intent(in   ) :: q1(f1_lo(1):f1_hi(1),f1_lo(2):f1_hi(2),f1_lo(3):f1_hi(3),NGDNV)
-    real(rt), intent(in   ) :: q2(f2_lo(1):f2_hi(1),f2_lo(2):f2_hi(2),f2_lo(3):f2_hi(3),NGDNV)
-    real(rt), intent(in   ) :: q3(f3_lo(1):f3_hi(1),f3_lo(2):f3_hi(2),f3_lo(3):f3_hi(3),NGDNV)
+    real(rt), intent(in   ) :: q1(q1_lo(1):q1_hi(1),q1_lo(2):q1_hi(2),q1_lo(3):q1_hi(3),NGDNV)
+    real(rt), intent(in   ) :: q2(q2_lo(1):q2_hi(1),q2_lo(2):q2_hi(2),q2_lo(3):q2_hi(3),NGDNV)
+    real(rt), intent(in   ) :: q3(q3_lo(1):q3_hi(1),q3_lo(2):q3_hi(2),q3_lo(3):q3_hi(3),NGDNV)
     real(rt), intent(in   ) :: f1(f1_lo(1):f1_hi(1),f1_lo(2):f1_hi(2),f1_lo(3):f1_hi(3),NVAR)
     real(rt), intent(in   ) :: f2(f2_lo(1):f2_hi(1),f2_lo(2):f2_hi(2),f2_lo(3):f2_hi(3),NVAR)
     real(rt), intent(in   ) :: f3(f3_lo(1):f3_hi(1),f3_lo(2):f3_hi(2),f3_lo(3):f3_hi(3),NVAR)
@@ -719,7 +720,7 @@ contains
        enddo
     enddo
 
-  end subroutine construct_hydro_update
+  end subroutine ca_construct_hydro_update
 
 
 

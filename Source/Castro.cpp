@@ -1202,13 +1202,10 @@ Castro::reset_internal_energy(MultiFab& S_new)
     {
         const Box& bx = mfi.growntilebox(ng);
 
-#ifdef AMREX_USE_DEVICE
-        Device::prepare_for_launch(bx.loVect(), bx.hiVect());
-#endif
-
-        ca_reset_internal_e(BL_TO_FORTRAN_BOX(bx),
-			    BL_TO_FORTRAN_ANYD(S_new[mfi]),
-			    print_fortran_warnings);
+        FORT_LAUNCH(bx, ca_reset_internal_e,
+                    BL_TO_FORTRAN_BOX(bx),
+                    BL_TO_FORTRAN_ANYD(S_new[mfi]),
+                    print_fortran_warnings);
     }
 
     // Flush Fortran output
