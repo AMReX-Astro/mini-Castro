@@ -21,16 +21,20 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
 
   MultiFab& k_stage = *k_mol[istage];
 
+#ifdef AMREX_USE_CUDA
   MultiFab flux_mf[BL_SPACEDIM];
-  MultiFab qe[BL_SPACEDIM];
+  MultiFab qe_mf[BL_SPACEDIM];
 
   for (int i = 0; i < BL_SPACEDIM; ++i) {
       flux_mf[i].define(getEdgeBoxArray(i), dmap, NUM_STATE, 0);
-      qe[i].define(getEdgeBoxArray(i), dmap, NGDNV, 0);
+      qe_mf[i].define(getEdgeBoxArray(i), dmap, NGDNV, 0);
   }
 
   MultiFab q_mf;
   q_mf.define(grids, dmap, NQ, NUM_GROW);
+
+  MultiFab qaux_mf;
+  qaux_mf.define(grids, dmap, NQAUX, NUM_GROW);
 
   MultiFab flatn_mf;
   flatn_mf.define(grids, dmap, 1, NUM_GROW);
@@ -43,9 +47,6 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
 
   MultiFab qp_mf;
   qp_mf.define(grids, dmap, 3*NQ, 1);
-
-  MultiFab qaux_mf;
-  qaux_mf.define(grids, dmap, NQAUX, NUM_GROW);
 
   MultiFab sxm_mf;
   sxm_mf.define(grids, dmap, NQ, 2);
@@ -64,6 +65,7 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
 
   MultiFab szp_mf;
   szp_mf.define(grids, dmap, NQ, 2);
+#endif
 
 #ifdef _OPENMP
 #pragma omp parallel
@@ -73,26 +75,64 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
     const int*  domain_lo = geom.Domain().loVect();
     const int*  domain_hi = geom.Domain().hiVect();
 
+#ifndef AMREX_USE_CUDA
+    FArrayBox q, flatn, div, qaux, qm, qp, sxm, sxp, sym, syp, szm, szp;
+    FArrayBox fx, fy, fz, qx, qy, qz;
+#endif
+
     for (MFIter mfi(S_new, hydro_tile_size); mfi.isValid(); ++mfi)
       {
 	const Box& bx  = mfi.tilebox();
 	const Box& qbx = mfi.registerBox(amrex::grow(bx, NUM_GROW));
+        const Box& obx = mfi.registerBox(amrex::grow(bx, 1));
+        const Box& tbx = mfi.registerBox(amrex::grow(bx, 2));
+        const Box& ebxx = mfi.registerBox(amrex::surroundingNodes(bx, 0));
+        const Box& ebxy = mfi.registerBox(amrex::surroundingNodes(bx, 1));
+        const Box& ebxz = mfi.registerBox(amrex::surroundingNodes(bx, 2));
 
 	const int* lo = bx.loVect();
 	const int* hi = bx.hiVect();
 
-	FArrayBox &q        = q_mf[mfi];
-	FArrayBox &flatn    = flatn_mf[mfi];
-	FArrayBox &div      = div_mf[mfi];
-	FArrayBox &qaux     = qaux_mf[mfi];
-	FArrayBox &qm       = qm_mf[mfi];
-	FArrayBox &qp       = qp_mf[mfi];
-	FArrayBox &sxm      = sxm_mf[mfi];
-	FArrayBox &sxp      = sxp_mf[mfi];
-	FArrayBox &sym      = sym_mf[mfi];
-	FArrayBox &syp      = syp_mf[mfi];
-	FArrayBox &szm      = szm_mf[mfi];
-	FArrayBox &szp      = szp_mf[mfi];
+#ifdef AMREX_USE_CUDA
+	FArrayBox &q     = q_mf[mfi];
+	FArrayBox &flatn = flatn_mf[mfi];
+	FArrayBox &div   = div_mf[mfi];
+	FArrayBox &qaux  = qaux_mf[mfi];
+	FArrayBox &qm    = qm_mf[mfi];
+	FArrayBox &qp    = qp_mf[mfi];
+	FArrayBox &sxm   = sxm_mf[mfi];
+	FArrayBox &sxp   = sxp_mf[mfi];
+	FArrayBox &sym   = sym_mf[mfi];
+	FArrayBox &syp   = syp_mf[mfi];
+	FArrayBox &szm   = szm_mf[mfi];
+	FArrayBox &szp   = szp_mf[mfi];
+        FArrayBox &fx    = flux_mf[0][mfi];
+        FArrayBox &fy    = flux_mf[1][mfi];
+        FArrayBox &fz    = flux_mf[2][mfi];
+        FArrayBox &qx    = qe_mf[0][mfi];
+        FArrayBox &qy    = qe_mf[1][mfi];
+        FArrayBox &qz    = qe_mf[2][mfi];
+#else
+        q.resize(qbx, NQ);
+        qaux.resize(qbx, NQAUX);
+        flatn.resize(qbx, NQ);
+        div.resize(obx, 1);
+        qm.resize(obx, 3*NQ);
+        qp.resize(obx, 3*NQ);
+        sxm.resize(tbx, NQ);
+        sxp.resize(tbx, NQ);
+        sym.resize(tbx, NQ);
+        syp.resize(tbx, NQ);
+        szm.resize(tbx, NQ);
+        szp.resize(tbx, NQ);
+        fx.resize(ebxx, NUM_STATE);
+        fy.resize(ebxy, NUM_STATE);
+        fz.resize(ebxz, NUM_STATE);
+        qx.resize(ebxx, NGDNV);
+        qy.resize(ebxy, NGDNV);
+        qz.resize(ebxz, NGDNV);
+#endif
+
 	FArrayBox &statein  = Sborder[mfi];
 	FArrayBox &stateout = S_new[mfi];
 
@@ -108,8 +148,6 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
                     BL_TO_FORTRAN_ANYD(statein),
                     BL_TO_FORTRAN_ANYD(q),
                     BL_TO_FORTRAN_ANYD(qaux));
-
-        const Box& obx = mfi.registerBox(amrex::grow(bx, 1));
 
         FORT_LAUNCH(obx, ca_prepare_for_fluxes,
                     BL_TO_FORTRAN_BOX(obx),
@@ -137,38 +175,64 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
                     BL_TO_FORTRAN_ANYD(qm),
                     BL_TO_FORTRAN_ANYD(qp));
 
-        for (int idir = 0; idir < BL_SPACEDIM; ++idir) {
+        int idir_f = 1;
 
-            int idir_f = idir + 1;
+        FORT_LAUNCH(ebxx, ca_construct_flux,
+                    BL_TO_FORTRAN_BOX(ebxx),
+                    domain_lo, domain_hi,
+                    dx, dt,
+                    idir_f,
+                    BL_TO_FORTRAN_ANYD(statein),
+                    BL_TO_FORTRAN_ANYD(div),
+                    BL_TO_FORTRAN_ANYD(qaux),
+                    BL_TO_FORTRAN_ANYD(qm),
+                    BL_TO_FORTRAN_ANYD(qp),
+                    BL_TO_FORTRAN_ANYD(qx),
+                    BL_TO_FORTRAN_ANYD(fx),
+                    BL_TO_FORTRAN_ANYD(area[0][mfi]));
 
-            const Box& ebx = mfi.registerBox(amrex::surroundingNodes(bx, idir));
+        idir_f = 2;
 
-            FORT_LAUNCH(ebx, ca_construct_flux,
-                        BL_TO_FORTRAN_BOX(ebx),
-                        domain_lo, domain_hi,
-                        dx, dt,
-                        idir_f,
-                        BL_TO_FORTRAN_ANYD(statein),
-                        BL_TO_FORTRAN_ANYD(div),
-                        BL_TO_FORTRAN_ANYD(qaux),
-                        BL_TO_FORTRAN_ANYD(qm),
-                        BL_TO_FORTRAN_ANYD(qp),
-                        BL_TO_FORTRAN_ANYD(qe[idir][mfi]),
-                        BL_TO_FORTRAN_ANYD(flux_mf[idir][mfi]),
-                        BL_TO_FORTRAN_ANYD(area[idir][mfi]));
+        FORT_LAUNCH(ebxy, ca_construct_flux,
+                    BL_TO_FORTRAN_BOX(ebxy),
+                    domain_lo, domain_hi,
+                    dx, dt,
+                    idir_f,
+                    BL_TO_FORTRAN_ANYD(statein),
+                    BL_TO_FORTRAN_ANYD(div),
+                    BL_TO_FORTRAN_ANYD(qaux),
+                    BL_TO_FORTRAN_ANYD(qm),
+                    BL_TO_FORTRAN_ANYD(qp),
+                    BL_TO_FORTRAN_ANYD(qy),
+                    BL_TO_FORTRAN_ANYD(fy),
+                    BL_TO_FORTRAN_ANYD(area[1][mfi]));
 
-        }
+        idir_f = 3;
+
+        FORT_LAUNCH(ebxz, ca_construct_flux,
+                    BL_TO_FORTRAN_BOX(ebxz),
+                    domain_lo, domain_hi,
+                    dx, dt,
+                    idir_f,
+                    BL_TO_FORTRAN_ANYD(statein),
+                    BL_TO_FORTRAN_ANYD(div),
+                    BL_TO_FORTRAN_ANYD(qaux),
+                    BL_TO_FORTRAN_ANYD(qm),
+                    BL_TO_FORTRAN_ANYD(qp),
+                    BL_TO_FORTRAN_ANYD(qz),
+                    BL_TO_FORTRAN_ANYD(fz),
+                    BL_TO_FORTRAN_ANYD(area[2][mfi]));
 
 	FORT_LAUNCH(bx, ca_construct_hydro_update,
                     BL_TO_FORTRAN_BOX(bx),
                     dx, dt,
                     b_mol[istage],
-                    BL_TO_FORTRAN_ANYD(qe[0][mfi]),
-                    BL_TO_FORTRAN_ANYD(qe[1][mfi]),
-                    BL_TO_FORTRAN_ANYD(qe[2][mfi]),
-                    BL_TO_FORTRAN_ANYD(flux_mf[0][mfi]),
-                    BL_TO_FORTRAN_ANYD(flux_mf[1][mfi]),
-                    BL_TO_FORTRAN_ANYD(flux_mf[2][mfi]),
+                    BL_TO_FORTRAN_ANYD(qx),
+                    BL_TO_FORTRAN_ANYD(qy),
+                    BL_TO_FORTRAN_ANYD(qz),
+                    BL_TO_FORTRAN_ANYD(fx),
+                    BL_TO_FORTRAN_ANYD(fy),
+                    BL_TO_FORTRAN_ANYD(fz),
                     BL_TO_FORTRAN_ANYD(area[0][mfi]),
                     BL_TO_FORTRAN_ANYD(area[1][mfi]),
                     BL_TO_FORTRAN_ANYD(area[2][mfi]),
@@ -177,10 +241,13 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
 
 	// Store the fluxes from this advance -- we weight them by the
 	// integrator weight for this stage
-	for (int i = 0; i < BL_SPACEDIM ; i++) {
-	  (*fluxes    [i])[mfi].saxpy(b_mol[istage], flux_mf[i][mfi], 
-				      mfi.nodaltilebox(i), mfi.nodaltilebox(i), 0, 0, NUM_STATE);
-	}
+        (*fluxes    [0])[mfi].saxpy(b_mol[istage], fx,
+                                    mfi.nodaltilebox(0), mfi.nodaltilebox(0), 0, 0, NUM_STATE);
+        (*fluxes    [1])[mfi].saxpy(b_mol[istage], fy,
+                                    mfi.nodaltilebox(1), mfi.nodaltilebox(1), 0, 0, NUM_STATE);
+        (*fluxes    [2])[mfi].saxpy(b_mol[istage], fz,
+                                    mfi.nodaltilebox(2), mfi.nodaltilebox(2), 0, 0, NUM_STATE);
+
 
       } // MFIter loop
 
