@@ -8,49 +8,6 @@ module mol_module
 
 contains
 
-  AMREX_LAUNCH subroutine ca_prepare_for_fluxes(lo, hi, dx, dt, &
-                                                q, q_lo, q_hi, &
-                                                qaux, qa_lo, qa_hi, &
-                                                flatn, f_lo, f_hi, &
-                                                qm, qm_lo, qm_hi, &
-                                                qp, qp_lo, qp_hi) &
-                                                bind(c,name='ca_prepare_for_fluxes')
-
-    use meth_params_module, only: NQ, NQAUX
-    use ppm_module, only: ppm_reconstruct
-
-    implicit none
-
-    integer,  intent(in   ) :: lo(3), hi(3)
-    integer,  intent(in   ) :: q_lo(3), q_hi(3)
-    integer,  intent(in   ) :: qa_lo(3), qa_hi(3)
-    integer,  intent(in   ) :: f_lo(3), f_hi(3)
-    integer,  intent(in   ) :: qm_lo(3), qm_hi(3)
-    integer,  intent(in   ) :: qp_lo(3), qp_hi(3)
-
-    real(rt), intent(in   ) :: q(q_lo(1):q_hi(1), q_lo(2):q_hi(2), q_lo(3):q_hi(3), NQ)
-    real(rt), intent(in   ) :: qaux(qa_lo(1):qa_hi(1), qa_lo(2):qa_hi(2), qa_lo(3):qa_hi(3), NQAUX)
-    real(rt), intent(inout) :: flatn(f_lo(1):f_hi(1), f_lo(2):f_hi(2), f_lo(3):f_hi(3))
-    real(rt), intent(inout) :: qm(qm_lo(1):qm_hi(1),qm_lo(2):qm_hi(2),qm_lo(3):qm_hi(3),NQ,3)
-    real(rt), intent(inout) :: qp(qp_lo(1):qp_hi(1),qp_lo(2):qp_hi(2),qp_lo(3):qp_hi(3),NQ,3)
-    real(rt), intent(in   ) :: dx(3)
-    real(rt), intent(in   ), value :: dt
-
-    integer :: blo(3), bhi(3)
-
-    call get_loop_bounds(blo, bhi, lo, hi)
-
-    ! Create polynomial interpolation of fluid state.
-    call ppm_reconstruct(blo, bhi, &
-                         q, q_lo, q_hi, &
-                         flatn, f_lo, f_hi, &
-                         qm, qm_lo, qm_hi, &
-                         qp, qp_lo, qp_hi)
-
-  end subroutine ca_prepare_for_fluxes
-
-
-
   AMREX_LAUNCH subroutine ca_construct_flux(lo, hi, domlo, domhi, dx, dt, idir, &
                                             uin, uin_lo, uin_hi, &
                                             div, div_lo, div_hi, &
