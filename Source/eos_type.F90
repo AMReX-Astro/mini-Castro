@@ -168,10 +168,7 @@ contains
   ! Given a set of mass fractions, calculate quantities that depend
   ! on the composition like abar and zbar.
 
-#ifdef CUDA
-  attributes(device) &
-#endif
-  subroutine composition(state)
+  AMREX_DEVICE subroutine composition(state)
 
     !$acc routine seq
 
@@ -198,10 +195,7 @@ contains
 
   ! Compute thermodynamic derivatives with respect to xn(:)
 
-#ifdef CUDA
-  attributes(device) &
-#endif
-  subroutine composition_derivatives(state)
+  AMREX_DEVICE subroutine composition_derivatives(state)
 
     !$acc routine seq
 
@@ -237,10 +231,7 @@ contains
   ! Normalize the mass fractions: they must be individually positive
   ! and less than one, and they must all sum to unity.
 
-#ifdef CUDA
-  attributes(device) &
-#endif
-  subroutine normalize_abundances(state)
+  AMREX_DEVICE subroutine normalize_abundances(state)
 
     !$acc routine seq
 
@@ -261,10 +252,7 @@ contains
 
   ! Ensure that inputs are within reasonable limits.
 
-#ifdef CUDA
-  attributes(device) &
-#endif
-  subroutine clean_state(state)
+  AMREX_DEVICE subroutine clean_state(state)
 
     !$acc routine seq
 
@@ -295,10 +283,7 @@ contains
   end subroutine print_state
 
 
-#ifdef CUDA  
-  attributes(device) &
-#endif
-  subroutine eos_get_small_temp(small_temp_out)
+  AMREX_DEVICE subroutine eos_get_small_temp(small_temp_out)
 
     !$acc routine seq
 
@@ -311,10 +296,7 @@ contains
   end subroutine eos_get_small_temp
 
 
-#ifdef CUDA  
-  attributes(device) &
-#endif
-  subroutine eos_get_small_dens(small_dens_out)
+  AMREX_DEVICE subroutine eos_get_small_dens(small_dens_out)
 
     !$acc routine seq
 
@@ -328,10 +310,7 @@ contains
 
 
 
-#ifdef CUDA  
-  attributes(device) &
-#endif
-  subroutine eos_get_max_temp(max_temp_out)
+  AMREX_DEVICE subroutine eos_get_max_temp(max_temp_out)
 
     !$acc routine seq
 
@@ -345,10 +324,7 @@ contains
 
 
 
-#ifdef CUDA  
-  attributes(device) &
-#endif
-  subroutine eos_get_max_dens(max_dens_out)
+  AMREX_DEVICE subroutine eos_get_max_dens(max_dens_out)
 
     !$acc routine seq
 

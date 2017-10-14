@@ -147,10 +147,7 @@ contains
     !..all other derivatives are analytic.
     !..
     !..references: cox & giuli chapter 24 ; timmes & swesty apj 1999
-#ifdef CUDA  
-  attributes(device) &
-#endif
-  subroutine actual_eos(input, state)
+  AMREX_DEVICE subroutine actual_eos(input, state)
 
         !$acc routine seq
 
@@ -1268,94 +1265,64 @@ contains
 
     ! quintic hermite polynomial functions
     ! psi0 and its derivatives
-#ifdef CUDA  
-  attributes(device) &
-#endif    
-    function psi0(z)
+    AMREX_DEVICE function psi0(z)
     !$acc routine seq
         double precision :: z, psi0
         psi0 = z**3 * ( z * (-6.0d0*z + 15.0d0) -10.0d0) + 1.0d0
     end function
 
-#ifdef CUDA  
-  attributes(device) &
-#endif    
-    function dpsi0(z)
+    AMREX_DEVICE function dpsi0(z)
     !$acc routine seq
         double precision :: z, dpsi0
         dpsi0 = z**2 * ( z * (-30.0d0*z + 60.0d0) - 30.0d0)
     end function
 
-#ifdef CUDA  
-  attributes(device) &
-#endif    
-    function ddpsi0(z)
+    AMREX_DEVICE function ddpsi0(z)
     !$acc routine seq
         double precision :: z, ddpsi0
         ddpsi0 = z* ( z*( -120.0d0*z + 180.0d0) -60.0d0)
     end function
 
     ! psi1 and its derivatives
-#ifdef CUDA  
-  attributes(device) &
-#endif    
-    function psi1(z)
+    AMREX_DEVICE function psi1(z)
     !$acc routine seq
         double precision :: z, psi1
         psi1 = z* ( z**2 * ( z * (-3.0d0*z + 8.0d0) - 6.0d0) + 1.0d0)
     end function
 
-#ifdef CUDA  
-  attributes(device) &
-#endif    
-    function dpsi1(z)
+    AMREX_DEVICE function dpsi1(z)
     !$acc routine seq
         double precision :: z, dpsi1
         dpsi1 = z*z * ( z * (-15.0d0*z + 32.0d0) - 18.0d0) +1.0d0
     end function
 
-#ifdef CUDA  
-  attributes(device) &
-#endif    
-    function ddpsi1(z)
+    AMREX_DEVICE function ddpsi1(z)
     !$acc routine seq
         double precision :: z, ddpsi1
         ddpsi1 = z * (z * (-60.0d0*z + 96.0d0) -36.0d0)
     end function
 
     ! psi2  and its derivatives
-#ifdef CUDA  
-  attributes(device) &
-#endif    
-    function psi2(z)
+    AMREX_DEVICE function psi2(z)
     !$acc routine seq
         double precision :: z, psi2
         psi2 = 0.5d0*z*z*( z* ( z * (-z + 3.0d0) - 3.0d0) + 1.0d0)
     end function
 
-#ifdef CUDA  
-  attributes(device) &
-#endif    
-    function dpsi2(z)
+    AMREX_DEVICE function dpsi2(z)
     !$acc routine seq
         double precision :: z, dpsi2
         dpsi2 = 0.5d0*z*( z*(z*(-5.0d0*z + 12.0d0) - 9.0d0) + 2.0d0)
     end function
 
-#ifdef CUDA  
-  attributes(device) &
-#endif    
-    function ddpsi2(z)
+    AMREX_DEVICE function ddpsi2(z)
     !$acc routine seq
         double precision :: z, ddpsi2
         ddpsi2 = 0.5d0*(z*( z * (-20.0d0*z + 36.0d0) - 18.0d0) + 2.0d0)
     end function
 
     ! biquintic hermite polynomial function
-#ifdef CUDA  
-  attributes(device) &
-#endif    
-    function h5(fi,w0t,w1t,w2t,w0mt,w1mt,w2mt,w0d,w1d,w2d,w0md,w1md,w2md)
+    AMREX_DEVICE function h5(fi,w0t,w1t,w2t,w0mt,w1mt,w2mt,w0d,w1d,w2d,w0md,w1md,w2md)
     !$acc routine seq
         double precision :: fi(36)
         double precision :: w0t,w1t,w2t,w0mt,w1mt,w2mt,w0d,w1d,w2d,w0md,w1md,w2md,h5
@@ -1382,48 +1349,33 @@ contains
 
     ! cubic hermite polynomial functions
     ! psi0 & derivatives
-#ifdef CUDA  
-  attributes(device) &
-#endif    
-    function xpsi0(z)
+    AMREX_DEVICE function xpsi0(z)
     !$acc routine seq
         double precision :: z, xpsi0
         xpsi0 = z * z * (2.0d0*z - 3.0d0) + 1.0
     end function
 
-#ifdef CUDA  
-  attributes(device) &
-#endif    
-    function xdpsi0(z)
+    AMREX_DEVICE function xdpsi0(z)
     !$acc routine seq
         double precision :: z, xdpsi0
         xdpsi0 = z * (6.0d0*z - 6.0d0)
     end function
 
     ! psi1 & derivatives
-#ifdef CUDA  
-  attributes(device) &
-#endif    
-    function xpsi1(z)
+    AMREX_DEVICE function xpsi1(z)
     !$acc routine seq
         double precision :: z, xpsi1
         xpsi1 = z * ( z * (z - 2.0d0) + 1.0d0)
     end function
 
-#ifdef CUDA  
-  attributes(device) &
-#endif    
-    function xdpsi1(z)
+    AMREX_DEVICE function xdpsi1(z)
     !$acc routine seq
         double precision :: z, xdpsi1
         xdpsi1 = z * (3.0d0*z - 4.0d0) + 1.0d0
     end function
 
     ! bicubic hermite polynomial function
-#ifdef CUDA  
-  attributes(device) &
-#endif    
-    function h3(fi,w0t,w1t,w0mt,w1mt,w0d,w1d,w0md,w1md)
+    AMREX_DEVICE function h3(fi,w0t,w1t,w0mt,w1mt,w0d,w1d,w0md,w1md)
     !$acc routine seq
         double precision :: fi(36)
         double precision :: w0t,w1t,w0mt,w1mt,w0d,w1d,w0md,w1md,h3

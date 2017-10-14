@@ -60,10 +60,7 @@ contains
 
 
 
-#ifdef CUDA
-  attributes(device) &
-#endif
-  subroutine actual_eos(input, state)
+  AMREX_DEVICE subroutine actual_eos(input, state)
 
     use eos_type_module, only: eos_t, &
                                eos_input_rt, eos_input_re, eos_input_rh, eos_input_rp, &

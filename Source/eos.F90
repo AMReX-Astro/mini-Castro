@@ -140,10 +140,7 @@ contains
 
 
 
-#ifdef CUDA
-  attributes(device) &
-#endif
-  subroutine eos_doit(input, state)
+  AMREX_DEVICE subroutine eos_doit(input, state)
 
     !$acc routine seq
 
@@ -191,10 +188,7 @@ contains
 
 
 
-#ifdef CUDA
-  attributes(device) &
-#endif
-  subroutine reset_inputs(input, state, has_been_reset)
+  AMREX_DEVICE subroutine reset_inputs(input, state, has_been_reset)
 
     !$acc routine seq
 
@@ -259,10 +253,7 @@ contains
 
   ! For density, just ensure that it is within mindens and maxdens.
 
-#ifdef CUDA
-  attributes(device) &
-#endif
-  subroutine reset_rho(state, has_been_reset)
+  AMREX_DEVICE subroutine reset_rho(state, has_been_reset)
 
     !$acc routine seq
 
@@ -281,10 +272,7 @@ contains
 
   ! For temperature, just ensure that it is within mintemp and maxtemp.
 
-#ifdef CUDA
-  attributes(device) &
-#endif
-  subroutine reset_T(state, has_been_reset)
+  AMREX_DEVICE subroutine reset_T(state, has_been_reset)
 
     !$acc routine seq
 
@@ -301,10 +289,7 @@ contains
 
 
 
-#ifdef CUDA
-  attributes(device) &
-#endif
-  subroutine reset_e(state, has_been_reset)
+  AMREX_DEVICE subroutine reset_e(state, has_been_reset)
 
     !$acc routine seq
 
@@ -323,10 +308,7 @@ contains
 
 
 
-#ifdef CUDA
-  attributes(device) &
-#endif
-  subroutine reset_h(state, has_been_reset)
+  AMREX_DEVICE subroutine reset_h(state, has_been_reset)
 
     !$acc routine seq
 
@@ -345,10 +327,7 @@ contains
 
 
 
-#ifdef CUDA
-  attributes(device) &
-#endif
-  subroutine reset_s(state, has_been_reset)
+  AMREX_DEVICE subroutine reset_s(state, has_been_reset)
 
     !$acc routine seq
 
@@ -366,10 +345,7 @@ contains
   end subroutine reset_s
 
 
-#ifdef CUDA
-  attributes(device) &
-#endif
-  subroutine reset_p(state, has_been_reset)
+  AMREX_DEVICE subroutine reset_p(state, has_been_reset)
 
     !$acc routine seq
 
@@ -391,10 +367,7 @@ contains
   ! Given an EOS state, ensure that rho and T are
   ! valid, then call with eos_input_rt.
 
-#ifdef CUDA
-  attributes(device) &
-#endif
-  subroutine eos_reset(state, has_been_reset)
+  AMREX_DEVICE subroutine eos_reset(state, has_been_reset)
 
     !$acc routine seq
 
@@ -659,8 +632,7 @@ contains
 
   end subroutine eos_host
 
-  attributes(global) &
-  subroutine eos_kernel_launch(input, state)
+  AMREX_LAUNCH subroutine eos_kernel_launch(input, state)
 
     use eos_type_module, only: eos_t
 

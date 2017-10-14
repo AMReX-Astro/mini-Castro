@@ -16,15 +16,12 @@ module riemann_module
 
 contains
 
-#ifdef CUDA
-  attributes(device) &
-#endif
-  subroutine cmpflx(lo, hi, domlo, domhi, idir, &
-                    qm, qm_lo, qm_hi, &
-                    qp, qp_lo, qp_hi, &
-                    qint, qe_lo, qe_hi, &
-                    flx, flx_lo, flx_hi, &
-                    qaux, qa_lo, qa_hi)
+  AMREX_DEVICE subroutine cmpflx(lo, hi, domlo, domhi, idir, &
+                                 qm, qm_lo, qm_hi, &
+                                 qp, qp_lo, qp_hi, &
+                                 qint, qe_lo, qe_hi, &
+                                 flx, flx_lo, flx_hi, &
+                                 qaux, qa_lo, qa_hi)
 
     use network, only: nspec, naux
     use amrex_fort_module, only: rt => amrex_real

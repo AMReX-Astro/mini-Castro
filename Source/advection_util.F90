@@ -6,13 +6,10 @@ module advection_util_module
 
 contains
 
-#ifdef CUDA
-  attributes(global) &
-#endif
-  subroutine enforce_minimum_density(uin,uin_lo,uin_hi, &
-                                     uout,uout_lo,uout_hi, &
-                                     vol,vol_lo,vol_hi, &
-                                     lo,hi,frac_change,verbose)
+  AMREX_LAUNCH subroutine enforce_minimum_density(uin,uin_lo,uin_hi, &
+                                                  uout,uout_lo,uout_hi, &
+                                                  vol,vol_lo,vol_hi, &
+                                                  lo,hi,frac_change,verbose)
 
     use network, only: nspec, naux
     use bl_constants_module, only: ZERO
@@ -118,10 +115,7 @@ contains
 
 
 
-#ifdef CUDA
-  attributes(device) &
-#endif
-  subroutine reset_to_small_state(old_state, new_state, idx, lo, hi, verbose)
+  AMREX_DEVICE subroutine reset_to_small_state(old_state, new_state, idx, lo, hi, verbose)
 
     use bl_constants_module, only: ZERO
     use network, only: nspec, naux
@@ -185,10 +179,7 @@ contains
 
 
 
-#ifdef CUDA
-  attributes(device) &
-#endif
-  subroutine reset_to_zone_state(old_state, new_state, input_state, idx, lo, hi, verbose)
+  AMREX_DEVICE subroutine reset_to_zone_state(old_state, new_state, input_state, idx, lo, hi, verbose)
 
     use bl_constants_module, only: ZERO
     use amrex_fort_module, only: rt => amrex_real
@@ -226,13 +217,10 @@ contains
 
 
 
-#ifdef CUDA
-  attributes(device) &
-#endif
-  subroutine compute_cfl(lo, hi, dt, dx, courno, &
-                         q, q_lo, q_hi, &
-                         qaux, qa_lo, qa_hi) &
-                         bind(C, name = "compute_cfl")
+  AMREX_DEVICE subroutine compute_cfl(lo, hi, dt, dx, courno, &
+                                      q, q_lo, q_hi, &
+                                      qaux, qa_lo, qa_hi) &
+                                      bind(C, name = "compute_cfl")
 
     use bl_constants_module, only: ZERO, ONE
     use amrex_fort_module, only: rt => amrex_real, amrex_max
@@ -451,10 +439,7 @@ contains
 
 
 
-#ifdef CUDA
-  attributes(device) &
-#endif
-  subroutine normalize_species_fluxes(lo, hi, flux, f_lo, f_hi)
+  AMREX_DEVICE subroutine normalize_species_fluxes(lo, hi, flux, f_lo, f_hi)
 
     ! Normalize the fluxes of the mass fractions so that
     ! they sum to 0.  This is essentially the CMA procedure that is
@@ -563,13 +548,10 @@ contains
 
 
 
-#ifdef CUDA
-  attributes(device) &
-#endif
-    subroutine apply_av(lo, hi, idir, dx, &
-                        div, div_lo, div_hi, &
-                        uin, uin_lo, uin_hi, &
-                        flux, f_lo, f_hi)
+  AMREX_DEVICE subroutine apply_av(lo, hi, idir, dx, &
+                                   div, div_lo, div_hi, &
+                                   uin, uin_lo, uin_hi, &
+                                   flux, f_lo, f_hi)
 
     use bl_constants_module, only: ZERO, FOURTH
     use meth_params_module, only: NVAR, UTEMP
@@ -725,10 +707,7 @@ contains
 
 
 
-#ifdef CUDA
-  attributes(device) &
-#endif
-  subroutine scale_flux(lo, hi, flux, f_lo, f_hi, area, a_lo, a_hi, dt)
+  AMREX_DEVICE subroutine scale_flux(lo, hi, flux, f_lo, f_hi, area, a_lo, a_hi, dt)
 
     use meth_params_module, only: NVAR
 
