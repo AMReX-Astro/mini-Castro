@@ -17,33 +17,21 @@ contains
   subroutine ppm_reconstruct(lo, hi, &
                              s, s_lo, s_hi, &
                              flatn, f_lo, f_hi, &
-                             sxm, sxm_lo, sxm_hi, &
-                             sxp, sxp_lo, sxp_hi, &
-                             sym, sym_lo, sym_hi, &
-                             syp, syp_lo, syp_hi, &
-                             szm, szm_lo, szm_hi, &
-                             szp, szp_lo, szp_hi)
+                             qm, qm_lo, qm_hi, &
+                             qp, qp_lo, qp_hi)
 
     implicit none
 
     integer,  intent(in   ) :: lo(3), hi(3)
     integer,  intent(in   ) :: s_lo(3), s_hi(3)
     integer,  intent(in   ) :: f_lo(3), f_hi(3)
-    integer,  intent(in   ) :: sxm_lo(3), sxm_hi(3)
-    integer,  intent(in   ) :: sxp_lo(3), sxp_hi(3)
-    integer,  intent(in   ) :: sym_lo(3), sym_hi(3)
-    integer,  intent(in   ) :: syp_lo(3), syp_hi(3)
-    integer,  intent(in   ) :: szm_lo(3), szm_hi(3)
-    integer,  intent(in   ) :: szp_lo(3), szp_hi(3)
+    integer,  intent(in   ) :: qm_lo(3), qm_hi(3)
+    integer,  intent(in   ) :: qp_lo(3), qp_hi(3)
 
     real(rt), intent(in   ) :: s(s_lo(1):s_hi(1), s_lo(2):s_hi(2), s_lo(3):s_hi(3), NQ)
     real(rt), intent(in   ) :: flatn(f_lo(1):f_hi(1), f_lo(2):f_hi(2), f_lo(3):f_hi(3))
-    real(rt), intent(inout) :: sxm(sxm_lo(1):sxm_hi(1),sxm_lo(2):sxm_hi(2),sxm_lo(3):sxm_hi(3),NQ)
-    real(rt), intent(inout) :: sxp(sxp_lo(1):sxp_hi(1),sxp_lo(2):sxp_hi(2),sxp_lo(3):sxp_hi(3),NQ)
-    real(rt), intent(inout) :: sym(sym_lo(1):sym_hi(1),sym_lo(2):sym_hi(2),sym_lo(3):sym_hi(3),NQ)
-    real(rt), intent(inout) :: syp(syp_lo(1):syp_hi(1),syp_lo(2):syp_hi(2),syp_lo(3):syp_hi(3),NQ)
-    real(rt), intent(inout) :: szm(szm_lo(1):szm_hi(1),szm_lo(2):szm_hi(2),szm_lo(3):szm_hi(3),NQ)
-    real(rt), intent(inout) :: szp(szp_lo(1):szp_hi(1),szp_lo(2):szp_hi(2),szp_lo(3):szp_hi(3),NQ)
+    real(rt), intent(inout) :: qm(qm_lo(1):qm_hi(1),qm_lo(2):qm_hi(2),qm_lo(3):qm_hi(3),NQ,3)
+    real(rt), intent(inout) :: qp(qp_lo(1):qp_hi(1),qp_lo(2):qp_hi(2),qp_lo(3):qp_hi(3),NQ,3)
 
     ! local
     integer :: i, j, k, n
@@ -157,8 +145,8 @@ contains
 
                 end if
 
-                sxp(i,j,k,n) = sp
-                sxm(i,j,k,n) = sm
+                qp(i  ,j,k,n,1) = sp
+                qm(i+1,j,k,n,1) = sm
 
              end do
           end do
@@ -254,8 +242,8 @@ contains
 
                 end if
 
-                syp(i,j,k,n) = sp
-                sym(i,j,k,n) = sm
+                qp(i,j  ,k,n,2) = sp
+                qm(i,j+1,k,n,2) = sm
 
              end do
           end do
@@ -351,8 +339,8 @@ contains
 
                 end if
 
-                szp(i,j,k,n) = sp
-                szm(i,j,k,n) = sm
+                qp(i,j,k  ,n,3) = sp
+                qm(i,j,k+1,n,3) = sm
 
              end do
           end do
@@ -360,82 +348,5 @@ contains
     end do
 
   end subroutine ppm_reconstruct
-
-
-
-#ifdef CUDA
-  attributes(device) &
-#endif
-  subroutine ppm_int_profile(lo, hi, &
-                             sxm, sxm_lo, sxm_hi, &
-                             sxp, sxp_lo, sxp_hi, &
-                             sym, sym_lo, sym_hi, &
-                             syp, syp_lo, syp_hi, &
-                             szm, szm_lo, szm_hi, &
-                             szp, szp_lo, szp_hi, &
-                             qm, qm_lo, qm_hi, &
-                             qp, qp_lo, qp_hi)
-
-    implicit none
-
-    integer,  intent(in   ) :: lo(3), hi(3)
-    integer,  intent(in   ) :: sxm_lo(3), sxm_hi(3)
-    integer,  intent(in   ) :: sxp_lo(3), sxp_hi(3)
-    integer,  intent(in   ) :: sym_lo(3), sym_hi(3)
-    integer,  intent(in   ) :: syp_lo(3), syp_hi(3)
-    integer,  intent(in   ) :: szm_lo(3), szm_hi(3)
-    integer,  intent(in   ) :: szp_lo(3), szp_hi(3)
-    integer,  intent(in   ) :: qm_lo(3), qm_hi(3)
-    integer,  intent(in   ) :: qp_lo(3), qp_hi(3)
-    real(rt), intent(in   ) :: sxm(sxm_lo(1):sxm_hi(1),sxm_lo(2):sxm_hi(2),sxm_lo(3):sxm_hi(3),NQ)
-    real(rt), intent(in   ) :: sxp(sxp_lo(1):sxp_hi(1),sxp_lo(2):sxp_hi(2),sxp_lo(3):sxp_hi(3),NQ)
-    real(rt), intent(in   ) :: sym(sym_lo(1):sym_hi(1),sym_lo(2):sym_hi(2),sym_lo(3):sym_hi(3),NQ)
-    real(rt), intent(in   ) :: syp(syp_lo(1):syp_hi(1),syp_lo(2):syp_hi(2),syp_lo(3):syp_hi(3),NQ)
-    real(rt), intent(in   ) :: szm(szm_lo(1):szm_hi(1),szm_lo(2):szm_hi(2),szm_lo(3):szm_hi(3),NQ)
-    real(rt), intent(in   ) :: szp(szp_lo(1):szp_hi(1),szp_lo(2):szp_hi(2),szp_lo(3):szp_hi(3),NQ)
-    real(rt), intent(inout) :: qm(qm_lo(1):qm_hi(1),qm_lo(2):qm_hi(2),qm_lo(3):qm_hi(3),NQ,3)
-    real(rt), intent(inout) :: qp(qp_lo(1):qp_hi(1),qp_lo(2):qp_hi(2),qp_lo(3):qp_hi(3),NQ,3)
-
-    integer :: i, j, k, n
-
-    ! Construct the interface states -- this is essentially just a
-    ! reshuffling of interface states from zone-center indexing to
-    ! edge-centered indexing
-
-    do n = 1, NQ
-       do k = lo(3), hi(3)
-          do j = lo(2), hi(2)
-             do i = lo(1), hi(1)
-
-                ! x-edges
-
-                ! left state at i-1/2 interface
-                qm(i,j,k,n,1) = sxp(i-1,j,k,n)
-
-                ! right state at i-1/2 interface
-                qp(i,j,k,n,1) = sxm(i,j,k,n)
-
-                ! y-edges
-
-                ! left state at j-1/2 interface
-                qm(i,j,k,n,2) = syp(i,j-1,k,n)
-
-                ! right state at j-1/2 interface
-                qp(i,j,k,n,2) = sym(i,j,k,n)
-
-                ! z-edges
-
-                ! left state at k3d-1/2 interface
-                qm(i,j,k,n,3) = szp(i,j,k-1,n)
-
-                ! right state at k3d-1/2 interface
-                qp(i,j,k,n,3) = szm(i,j,k,n)
-
-             end do
-          end do
-       end do
-    end do
-
-  end subroutine ppm_int_profile
 
 end module ppm_module

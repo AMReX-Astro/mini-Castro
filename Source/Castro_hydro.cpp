@@ -34,28 +34,10 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
   div.define(grids, dmap, 1, 1);
 
   MultiFab qm;
-  qm.define(grids, dmap, 3*NQ, 1);
+  qm.define(grids, dmap, 3*NQ, 2);
 
   MultiFab qp;
-  qp.define(grids, dmap, 3*NQ, 1);
-
-  MultiFab sxm;
-  sxm.define(grids, dmap, NQ, 2);
-
-  MultiFab sxp;
-  sxp.define(grids, dmap, NQ, 2);
-
-  MultiFab sym;
-  sym.define(grids, dmap, NQ, 2);
-
-  MultiFab syp;
-  syp.define(grids, dmap, NQ, 2);
-
-  MultiFab szm;
-  szm.define(grids, dmap, NQ, 2);
-
-  MultiFab szp;
-  szp.define(grids, dmap, NQ, 2);
+  qp.define(grids, dmap, 3*NQ, 2);
 
   MultiFab flux[BL_SPACEDIM];
   MultiFab qe[BL_SPACEDIM];
@@ -100,36 +82,11 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
                   BL_TO_FORTRAN_ANYD(qaux[mfi]),
                   BL_TO_FORTRAN_ANYD(flatn[mfi]),
                   BL_TO_FORTRAN_ANYD(div[mfi]),
-                  BL_TO_FORTRAN_ANYD(sxm[mfi]),
-                  BL_TO_FORTRAN_ANYD(sxp[mfi]),
-                  BL_TO_FORTRAN_ANYD(sym[mfi]),
-                  BL_TO_FORTRAN_ANYD(syp[mfi]),
-                  BL_TO_FORTRAN_ANYD(szm[mfi]),
-                  BL_TO_FORTRAN_ANYD(szp[mfi]));
-
-  } // MFIter loop
-
-
-#ifdef _OPENMP
-#pragma omp parallel
-#endif
-  for (MFIter mfi(S_new, hydro_tile_size); mfi.isValid(); ++mfi) {
-
-      const Box& obx = mfi.growntilebox(1);
-
-      FORT_LAUNCH(obx, ca_prepare_profile,
-                  BL_TO_FORTRAN_BOX(obx),
-                  BL_TO_FORTRAN_ANYD(q[mfi]),
-                  BL_TO_FORTRAN_ANYD(sxm[mfi]),
-                  BL_TO_FORTRAN_ANYD(sxp[mfi]),
-                  BL_TO_FORTRAN_ANYD(sym[mfi]),
-                  BL_TO_FORTRAN_ANYD(syp[mfi]),
-                  BL_TO_FORTRAN_ANYD(szm[mfi]),
-                  BL_TO_FORTRAN_ANYD(szp[mfi]),
                   BL_TO_FORTRAN_ANYD(qm[mfi]),
                   BL_TO_FORTRAN_ANYD(qp[mfi]));
 
   } // MFIter loop
+
 
 
 #ifdef _OPENMP
@@ -159,7 +116,7 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
 
           // Store the fluxes from this advance -- we weight them by the
           // integrator weight for this stage
-          (*fluxes    [idir])[mfi].saxpy(b_mol[istage], flux[idir][mfi], ebx, ebx, 0, 0, NUM_STATE);
+          (*fluxes[idir])[mfi].saxpy(b_mol[istage], flux[idir][mfi], ebx, ebx, 0, 0, NUM_STATE);
 
       }
 

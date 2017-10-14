@@ -154,22 +154,6 @@ extern "C"
      BL_FORT_FAB_ARG_3D(qaux),
      BL_FORT_FAB_ARG_3D(flatn),
      BL_FORT_FAB_ARG_3D(div),
-     BL_FORT_FAB_ARG_3D(sxm),
-     BL_FORT_FAB_ARG_3D(sxp),
-     BL_FORT_FAB_ARG_3D(sym),
-     BL_FORT_FAB_ARG_3D(syp),
-     BL_FORT_FAB_ARG_3D(szm),
-     BL_FORT_FAB_ARG_3D(szp));
-
-  FORT_LAUNCHABLE(void ca_prepare_profile)
-    (const int* lo, const int* hi,
-     BL_FORT_FAB_ARG_3D(q),
-     BL_FORT_FAB_ARG_3D(sxm),
-     BL_FORT_FAB_ARG_3D(sxp),
-     BL_FORT_FAB_ARG_3D(sym),
-     BL_FORT_FAB_ARG_3D(syp),
-     BL_FORT_FAB_ARG_3D(szm),
-     BL_FORT_FAB_ARG_3D(szp),
      BL_FORT_FAB_ARG_3D(qm),
      BL_FORT_FAB_ARG_3D(qp));
 
