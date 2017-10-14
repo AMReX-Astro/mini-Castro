@@ -57,8 +57,8 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
 
       const Box& qbx = mfi.growntilebox(NUM_GROW);
 
-      // convert the conservative state to the primitive variable state.
-      // this fills both q and qaux.
+      // Convert the conservative state to the primitive variable state.
+      // This fills both q and qaux.
 
       FORT_LAUNCH(qbx, ca_ctoprim,
                   BL_TO_FORTRAN_BOX(qbx),
@@ -73,7 +73,15 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
 #endif
   for (MFIter mfi(S_new, hydro_tile_size); mfi.isValid(); ++mfi) {
 
-      const Box& obx  = mfi.growntilebox(1);
+      const Box& obx = mfi.growntilebox(1);
+
+      // Compute divergence of velocity field.
+
+      FORT_LAUNCH(obx, ca_divu,
+                  BL_TO_FORTRAN_BOX(obx),
+                  dx,
+                  BL_TO_FORTRAN_ANYD(q[mfi]),
+                  BL_TO_FORTRAN_ANYD(div[mfi]));
 
       FORT_LAUNCH(obx, ca_prepare_for_fluxes,
                   BL_TO_FORTRAN_BOX(obx),
@@ -81,7 +89,6 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
                   BL_TO_FORTRAN_ANYD(q[mfi]),
                   BL_TO_FORTRAN_ANYD(qaux[mfi]),
                   BL_TO_FORTRAN_ANYD(flatn[mfi]),
-                  BL_TO_FORTRAN_ANYD(div[mfi]),
                   BL_TO_FORTRAN_ANYD(qm[mfi]),
                   BL_TO_FORTRAN_ANYD(qp[mfi]));
 

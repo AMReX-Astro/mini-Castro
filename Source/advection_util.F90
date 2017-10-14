@@ -505,10 +505,7 @@ contains
 ! ::: ------------------------------------------------------------------
 ! :::
 
-#ifdef CUDA
-  attributes(device) &
-#endif
-  subroutine divu(lo, hi, dx, q, q_lo, q_hi, div, g_lo, g_hi)
+  AMREX_LAUNCH subroutine ca_divu(lo, hi, dx, q, q_lo, q_hi, div, d_lo, d_hi) bind(c,name='ca_divu')
 
     use bl_constants_module, only: FOURTH, ONE
     use amrex_fort_module, only: rt => amrex_real
@@ -518,21 +515,25 @@ contains
 
     integer,  intent(in   ) :: lo(3), hi(3)
     integer,  intent(in   ) :: q_lo(3), q_hi(3)
-    integer,  intent(in   ) :: g_lo(3), g_hi(3)
+    integer,  intent(in   ) :: d_lo(3), d_hi(3)
     real(rt), intent(in   ) :: dx(3)
     real(rt), intent(in   ) :: q(q_lo(1):q_hi(1),q_lo(2):q_hi(2),q_lo(3):q_hi(3),NQ)
-    real(rt), intent(inout) :: div(g_lo(1):g_hi(1),g_lo(2):g_hi(2),g_lo(3):g_hi(3))
+    real(rt), intent(inout) :: div(d_lo(1):d_hi(1),d_lo(2):d_hi(2),d_lo(3):d_hi(3))
 
     integer  :: i, j, k
     real(rt) :: ux, vy, wz, dxinv, dyinv, dzinv
+
+    integer :: blo(3), bhi(3)
+
+    call get_loop_bounds(blo, bhi, lo, hi)
 
     dxinv = ONE/dx(1)
     dyinv = ONE/dx(2)
     dzinv = ONE/dx(3)
 
-    do k = lo(3), hi(3)
-       do j = lo(2), hi(2)
-          do i = lo(1), hi(1)
+    do k = blo(3), bhi(3)
+       do j = blo(2), bhi(2)
+          do i = blo(1), bhi(1)
 
              ux = FOURTH*( &
                     + q(i  ,j  ,k  ,QU) - q(i-1,j  ,k  ,QU) &
@@ -558,7 +559,7 @@ contains
        enddo
     enddo
 
-  end subroutine divu
+  end subroutine ca_divu
 
 
 
