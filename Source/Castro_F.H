@@ -153,6 +153,11 @@ extern "C"
      BL_FORT_FAB_ARG_3D(q),
      BL_FORT_FAB_ARG_3D(div));
 
+  FORT_LAUNCHABLE(void ca_uflaten)
+    (const int* lo, const int* hi,
+     BL_FORT_FAB_ARG_3D(q),
+     BL_FORT_FAB_ARG_3D(flatn));
+
   FORT_LAUNCHABLE(void ca_prepare_for_fluxes)
     (const int* lo, const int* hi,
      const amrex::Real* dx, const amrex::Real dt,

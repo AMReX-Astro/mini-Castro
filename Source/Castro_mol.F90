@@ -17,7 +17,6 @@ contains
                                                 bind(c,name='ca_prepare_for_fluxes')
 
     use meth_params_module, only: NQ, NQAUX
-    use flatten_module, only: uflaten
     use ppm_module, only: ppm_reconstruct
 
     implicit none
@@ -40,9 +39,6 @@ contains
     integer :: blo(3), bhi(3)
 
     call get_loop_bounds(blo, bhi, lo, hi)
-
-    ! Compute flattening coefficient for slope calculations.
-    call uflaten(blo, bhi, q, q_lo, q_hi, flatn, f_lo, f_hi)
 
     ! Create polynomial interpolation of fluid state.
     call ppm_reconstruct(blo, bhi, &

@@ -83,6 +83,12 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
                   BL_TO_FORTRAN_ANYD(q[mfi]),
                   BL_TO_FORTRAN_ANYD(div[mfi]));
 
+      // Compute flattening coefficient for slope calculations.
+      FORT_LAUNCH(obx, ca_uflaten,
+                  BL_TO_FORTRAN_BOX(obx),
+                  BL_TO_FORTRAN_ANYD(q[mfi]),
+                  BL_TO_FORTRAN_ANYD(flatn[mfi]));
+
       FORT_LAUNCH(obx, ca_prepare_for_fluxes,
                   BL_TO_FORTRAN_BOX(obx),
                   dx, dt,
