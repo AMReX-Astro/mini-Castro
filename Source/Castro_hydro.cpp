@@ -21,237 +21,175 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
 
   MultiFab& k_stage = *k_mol[istage];
 
-#ifdef AMREX_USE_CUDA
-  MultiFab flux_mf[BL_SPACEDIM];
-  MultiFab qe_mf[BL_SPACEDIM];
+  MultiFab q;
+  q.define(grids, dmap, NQ, NUM_GROW);
+
+  MultiFab qaux;
+  qaux.define(grids, dmap, NQAUX, NUM_GROW);
+
+  MultiFab flatn;
+  flatn.define(grids, dmap, 1, 1);
+
+  MultiFab div;
+  div.define(grids, dmap, 1, 1);
+
+  MultiFab qm;
+  qm.define(grids, dmap, 3*NQ, 1);
+
+  MultiFab qp;
+  qp.define(grids, dmap, 3*NQ, 1);
+
+  MultiFab sxm;
+  sxm.define(grids, dmap, NQ, 2);
+
+  MultiFab sxp;
+  sxp.define(grids, dmap, NQ, 2);
+
+  MultiFab sym;
+  sym.define(grids, dmap, NQ, 2);
+
+  MultiFab syp;
+  syp.define(grids, dmap, NQ, 2);
+
+  MultiFab szm;
+  szm.define(grids, dmap, NQ, 2);
+
+  MultiFab szp;
+  szp.define(grids, dmap, NQ, 2);
+
+  MultiFab flux[BL_SPACEDIM];
+  MultiFab qe[BL_SPACEDIM];
 
   for (int i = 0; i < BL_SPACEDIM; ++i) {
-      flux_mf[i].define(getEdgeBoxArray(i), dmap, NUM_STATE, 0);
-      qe_mf[i].define(getEdgeBoxArray(i), dmap, NGDNV, 0);
+      flux[i].define(getEdgeBoxArray(i), dmap, NUM_STATE, 0);
+      qe[i].define(getEdgeBoxArray(i), dmap, NGDNV, 0);
   }
 
-  MultiFab q_mf;
-  q_mf.define(grids, dmap, NQ, NUM_GROW);
-
-  MultiFab qaux_mf;
-  qaux_mf.define(grids, dmap, NQAUX, NUM_GROW);
-
-  MultiFab flatn_mf;
-  flatn_mf.define(grids, dmap, 1, NUM_GROW);
-
-  MultiFab div_mf;
-  div_mf.define(grids, dmap, 1, 1);
-
-  MultiFab qm_mf;
-  qm_mf.define(grids, dmap, 3*NQ, 1);
-
-  MultiFab qp_mf;
-  qp_mf.define(grids, dmap, 3*NQ, 1);
-
-  MultiFab sxm_mf;
-  sxm_mf.define(grids, dmap, NQ, 2);
-
-  MultiFab sxp_mf;
-  sxp_mf.define(grids, dmap, NQ, 2);
-
-  MultiFab sym_mf;
-  sym_mf.define(grids, dmap, NQ, 2);
-
-  MultiFab syp_mf;
-  syp_mf.define(grids, dmap, NQ, 2);
-
-  MultiFab szm_mf;
-  szm_mf.define(grids, dmap, NQ, 2);
-
-  MultiFab szp_mf;
-  szp_mf.define(grids, dmap, NQ, 2);
-#endif
+  const int*  domain_lo = geom.Domain().loVect();
+  const int*  domain_hi = geom.Domain().hiVect();
 
 #ifdef _OPENMP
 #pragma omp parallel
 #endif
-  {
+  for (MFIter mfi(S_new, hydro_tile_size); mfi.isValid(); ++mfi) {
 
-    const int*  domain_lo = geom.Domain().loVect();
-    const int*  domain_hi = geom.Domain().hiVect();
+      const Box& qbx = mfi.growntilebox(NUM_GROW);
 
-#ifndef AMREX_USE_CUDA
-    FArrayBox q, flatn, div, qaux, qm, qp, sxm, sxp, sym, syp, szm, szp;
-    FArrayBox fx, fy, fz, qx, qy, qz;
+      // convert the conservative state to the primitive variable state.
+      // this fills both q and qaux.
+
+      FORT_LAUNCH(qbx, ca_ctoprim,
+                  BL_TO_FORTRAN_BOX(qbx),
+                  BL_TO_FORTRAN_ANYD(Sborder[mfi]),
+                  BL_TO_FORTRAN_ANYD(q[mfi]),
+                  BL_TO_FORTRAN_ANYD(qaux[mfi]));
+
+  } // MFIter loop
+
+#ifdef _OPENMP
+#pragma omp parallel
 #endif
+  for (MFIter mfi(S_new, hydro_tile_size); mfi.isValid(); ++mfi) {
 
-    for (MFIter mfi(S_new, hydro_tile_size); mfi.isValid(); ++mfi)
-      {
-	const Box& bx  = mfi.tilebox();
-	const Box& qbx = mfi.registerBox(amrex::grow(bx, NUM_GROW));
-        const Box& obx = mfi.registerBox(amrex::grow(bx, 1));
-        const Box& tbx = mfi.registerBox(amrex::grow(bx, 2));
-        const Box& ebxx = mfi.registerBox(amrex::surroundingNodes(bx, 0));
-        const Box& ebxy = mfi.registerBox(amrex::surroundingNodes(bx, 1));
-        const Box& ebxz = mfi.registerBox(amrex::surroundingNodes(bx, 2));
+      const Box& obx  = mfi.growntilebox(1);
 
-	const int* lo = bx.loVect();
-	const int* hi = bx.hiVect();
+      FORT_LAUNCH(obx, ca_prepare_for_fluxes,
+                  BL_TO_FORTRAN_BOX(obx),
+                  dx, dt,
+                  BL_TO_FORTRAN_ANYD(q[mfi]),
+                  BL_TO_FORTRAN_ANYD(qaux[mfi]),
+                  BL_TO_FORTRAN_ANYD(flatn[mfi]),
+                  BL_TO_FORTRAN_ANYD(div[mfi]),
+                  BL_TO_FORTRAN_ANYD(sxm[mfi]),
+                  BL_TO_FORTRAN_ANYD(sxp[mfi]),
+                  BL_TO_FORTRAN_ANYD(sym[mfi]),
+                  BL_TO_FORTRAN_ANYD(syp[mfi]),
+                  BL_TO_FORTRAN_ANYD(szm[mfi]),
+                  BL_TO_FORTRAN_ANYD(szp[mfi]));
 
-#ifdef AMREX_USE_CUDA
-	FArrayBox &q     = q_mf[mfi];
-	FArrayBox &flatn = flatn_mf[mfi];
-	FArrayBox &div   = div_mf[mfi];
-	FArrayBox &qaux  = qaux_mf[mfi];
-	FArrayBox &qm    = qm_mf[mfi];
-	FArrayBox &qp    = qp_mf[mfi];
-	FArrayBox &sxm   = sxm_mf[mfi];
-	FArrayBox &sxp   = sxp_mf[mfi];
-	FArrayBox &sym   = sym_mf[mfi];
-	FArrayBox &syp   = syp_mf[mfi];
-	FArrayBox &szm   = szm_mf[mfi];
-	FArrayBox &szp   = szp_mf[mfi];
-        FArrayBox &fx    = flux_mf[0][mfi];
-        FArrayBox &fy    = flux_mf[1][mfi];
-        FArrayBox &fz    = flux_mf[2][mfi];
-        FArrayBox &qx    = qe_mf[0][mfi];
-        FArrayBox &qy    = qe_mf[1][mfi];
-        FArrayBox &qz    = qe_mf[2][mfi];
-#else
-        q.resize(qbx, NQ);
-        qaux.resize(qbx, NQAUX);
-        flatn.resize(qbx, NQ);
-        div.resize(obx, 1);
-        qm.resize(obx, 3*NQ);
-        qp.resize(obx, 3*NQ);
-        sxm.resize(tbx, NQ);
-        sxp.resize(tbx, NQ);
-        sym.resize(tbx, NQ);
-        syp.resize(tbx, NQ);
-        szm.resize(tbx, NQ);
-        szp.resize(tbx, NQ);
-        fx.resize(ebxx, NUM_STATE);
-        fy.resize(ebxy, NUM_STATE);
-        fz.resize(ebxz, NUM_STATE);
-        qx.resize(ebxx, NGDNV);
-        qy.resize(ebxy, NGDNV);
-        qz.resize(ebxz, NGDNV);
+  } // MFIter loop
+
+
+#ifdef _OPENMP
+#pragma omp parallel
 #endif
+  for (MFIter mfi(S_new, hydro_tile_size); mfi.isValid(); ++mfi) {
 
-	FArrayBox &statein  = Sborder[mfi];
-	FArrayBox &stateout = S_new[mfi];
+      const Box& obx = mfi.growntilebox(1);
 
-	FArrayBox &source_out = hydro_source[mfi];
+      FORT_LAUNCH(obx, ca_prepare_profile,
+                  BL_TO_FORTRAN_BOX(obx),
+                  BL_TO_FORTRAN_ANYD(q[mfi]),
+                  BL_TO_FORTRAN_ANYD(sxm[mfi]),
+                  BL_TO_FORTRAN_ANYD(sxp[mfi]),
+                  BL_TO_FORTRAN_ANYD(sym[mfi]),
+                  BL_TO_FORTRAN_ANYD(syp[mfi]),
+                  BL_TO_FORTRAN_ANYD(szm[mfi]),
+                  BL_TO_FORTRAN_ANYD(szp[mfi]),
+                  BL_TO_FORTRAN_ANYD(qm[mfi]),
+                  BL_TO_FORTRAN_ANYD(qp[mfi]));
 
-	FArrayBox& vol = volume[mfi];
-
-	// convert the conservative state to the primitive variable state.
-	// this fills both q and qaux.
-
-	FORT_LAUNCH(qbx, ca_ctoprim,
-                    BL_TO_FORTRAN_BOX(qbx),
-                    BL_TO_FORTRAN_ANYD(statein),
-                    BL_TO_FORTRAN_ANYD(q),
-                    BL_TO_FORTRAN_ANYD(qaux));
-
-        FORT_LAUNCH(obx, ca_prepare_for_fluxes,
-                    BL_TO_FORTRAN_BOX(obx),
-                    dx, dt,
-                    BL_TO_FORTRAN_ANYD(q),
-                    BL_TO_FORTRAN_ANYD(qaux),
-                    BL_TO_FORTRAN_ANYD(flatn),
-                    BL_TO_FORTRAN_ANYD(div),
-                    BL_TO_FORTRAN_ANYD(sxm),
-                    BL_TO_FORTRAN_ANYD(sxp),
-                    BL_TO_FORTRAN_ANYD(sym),
-                    BL_TO_FORTRAN_ANYD(syp),
-                    BL_TO_FORTRAN_ANYD(szm),
-                    BL_TO_FORTRAN_ANYD(szp));
-
-        FORT_LAUNCH(obx, ca_prepare_profile,
-                    BL_TO_FORTRAN_BOX(obx),
-                    BL_TO_FORTRAN_ANYD(q),
-                    BL_TO_FORTRAN_ANYD(sxm),
-                    BL_TO_FORTRAN_ANYD(sxp),
-                    BL_TO_FORTRAN_ANYD(sym),
-                    BL_TO_FORTRAN_ANYD(syp),
-                    BL_TO_FORTRAN_ANYD(szm),
-                    BL_TO_FORTRAN_ANYD(szp),
-                    BL_TO_FORTRAN_ANYD(qm),
-                    BL_TO_FORTRAN_ANYD(qp));
-
-        int idir_f = 1;
-
-        FORT_LAUNCH(ebxx, ca_construct_flux,
-                    BL_TO_FORTRAN_BOX(ebxx),
-                    domain_lo, domain_hi,
-                    dx, dt,
-                    idir_f,
-                    BL_TO_FORTRAN_ANYD(statein),
-                    BL_TO_FORTRAN_ANYD(div),
-                    BL_TO_FORTRAN_ANYD(qaux),
-                    BL_TO_FORTRAN_ANYD(qm),
-                    BL_TO_FORTRAN_ANYD(qp),
-                    BL_TO_FORTRAN_ANYD(qx),
-                    BL_TO_FORTRAN_ANYD(fx),
-                    BL_TO_FORTRAN_ANYD(area[0][mfi]));
-
-        idir_f = 2;
-
-        FORT_LAUNCH(ebxy, ca_construct_flux,
-                    BL_TO_FORTRAN_BOX(ebxy),
-                    domain_lo, domain_hi,
-                    dx, dt,
-                    idir_f,
-                    BL_TO_FORTRAN_ANYD(statein),
-                    BL_TO_FORTRAN_ANYD(div),
-                    BL_TO_FORTRAN_ANYD(qaux),
-                    BL_TO_FORTRAN_ANYD(qm),
-                    BL_TO_FORTRAN_ANYD(qp),
-                    BL_TO_FORTRAN_ANYD(qy),
-                    BL_TO_FORTRAN_ANYD(fy),
-                    BL_TO_FORTRAN_ANYD(area[1][mfi]));
-
-        idir_f = 3;
-
-        FORT_LAUNCH(ebxz, ca_construct_flux,
-                    BL_TO_FORTRAN_BOX(ebxz),
-                    domain_lo, domain_hi,
-                    dx, dt,
-                    idir_f,
-                    BL_TO_FORTRAN_ANYD(statein),
-                    BL_TO_FORTRAN_ANYD(div),
-                    BL_TO_FORTRAN_ANYD(qaux),
-                    BL_TO_FORTRAN_ANYD(qm),
-                    BL_TO_FORTRAN_ANYD(qp),
-                    BL_TO_FORTRAN_ANYD(qz),
-                    BL_TO_FORTRAN_ANYD(fz),
-                    BL_TO_FORTRAN_ANYD(area[2][mfi]));
-
-	FORT_LAUNCH(bx, ca_construct_hydro_update,
-                    BL_TO_FORTRAN_BOX(bx),
-                    dx, dt,
-                    b_mol[istage],
-                    BL_TO_FORTRAN_ANYD(qx),
-                    BL_TO_FORTRAN_ANYD(qy),
-                    BL_TO_FORTRAN_ANYD(qz),
-                    BL_TO_FORTRAN_ANYD(fx),
-                    BL_TO_FORTRAN_ANYD(fy),
-                    BL_TO_FORTRAN_ANYD(fz),
-                    BL_TO_FORTRAN_ANYD(area[0][mfi]),
-                    BL_TO_FORTRAN_ANYD(area[1][mfi]),
-                    BL_TO_FORTRAN_ANYD(area[2][mfi]),
-                    BL_TO_FORTRAN_ANYD(volume[mfi]),
-                    BL_TO_FORTRAN_ANYD(source_out));
-
-	// Store the fluxes from this advance -- we weight them by the
-	// integrator weight for this stage
-        (*fluxes    [0])[mfi].saxpy(b_mol[istage], fx,
-                                    mfi.nodaltilebox(0), mfi.nodaltilebox(0), 0, 0, NUM_STATE);
-        (*fluxes    [1])[mfi].saxpy(b_mol[istage], fy,
-                                    mfi.nodaltilebox(1), mfi.nodaltilebox(1), 0, 0, NUM_STATE);
-        (*fluxes    [2])[mfi].saxpy(b_mol[istage], fz,
-                                    mfi.nodaltilebox(2), mfi.nodaltilebox(2), 0, 0, NUM_STATE);
+  } // MFIter loop
 
 
-      } // MFIter loop
+#ifdef _OPENMP
+#pragma omp parallel
+#endif
+  for (MFIter mfi(S_new, hydro_tile_size); mfi.isValid(); ++mfi) {
 
-  }  // end of omp parallel region
+      for (int idir = 0; idir < BL_SPACEDIM; ++idir) {
+
+          const Box& ebx = mfi.nodaltilebox(idir);
+
+          int idir_f = idir + 1;
+
+          FORT_LAUNCH(ebx, ca_construct_flux,
+                      BL_TO_FORTRAN_BOX(ebx),
+                      domain_lo, domain_hi,
+                      dx, dt,
+                      idir_f,
+                      BL_TO_FORTRAN_ANYD(Sborder[mfi]),
+                      BL_TO_FORTRAN_ANYD(div[mfi]),
+                      BL_TO_FORTRAN_ANYD(qaux[mfi]),
+                      BL_TO_FORTRAN_ANYD(qm[mfi]),
+                      BL_TO_FORTRAN_ANYD(qp[mfi]),
+                      BL_TO_FORTRAN_ANYD(qe[idir][mfi]),
+                      BL_TO_FORTRAN_ANYD(flux[idir][mfi]),
+                      BL_TO_FORTRAN_ANYD(area[idir][mfi]));
+
+          // Store the fluxes from this advance -- we weight them by the
+          // integrator weight for this stage
+          (*fluxes    [idir])[mfi].saxpy(b_mol[istage], flux[idir][mfi], ebx, ebx, 0, 0, NUM_STATE);
+
+      }
+
+  } // MFIter loop
+
+
+#ifdef _OPENMP
+#pragma omp parallel
+#endif
+  for (MFIter mfi(S_new, hydro_tile_size); mfi.isValid(); ++mfi) {
+
+      const Box& bx = mfi.tilebox();
+
+      FORT_LAUNCH(bx, ca_construct_hydro_update,
+                  BL_TO_FORTRAN_BOX(bx),
+                  dx, dt,
+                  b_mol[istage],
+                  BL_TO_FORTRAN_ANYD(qe[0][mfi]),
+                  BL_TO_FORTRAN_ANYD(qe[1][mfi]),
+                  BL_TO_FORTRAN_ANYD(qe[2][mfi]),
+                  BL_TO_FORTRAN_ANYD(flux[0][mfi]),
+                  BL_TO_FORTRAN_ANYD(flux[1][mfi]),
+                  BL_TO_FORTRAN_ANYD(flux[2][mfi]),
+                  BL_TO_FORTRAN_ANYD(area[0][mfi]),
+                  BL_TO_FORTRAN_ANYD(area[1][mfi]),
+                  BL_TO_FORTRAN_ANYD(area[2][mfi]),
+                  BL_TO_FORTRAN_ANYD(volume[mfi]),
+                  BL_TO_FORTRAN_ANYD(hydro_source[mfi]));
+
+  } // MFIter loop
 
   BL_PROFILE_VAR_STOP(CA_HYDRO);
 
