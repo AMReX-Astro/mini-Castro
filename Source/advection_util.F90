@@ -6,10 +6,11 @@ module advection_util_module
 
 contains
 
-  AMREX_LAUNCH subroutine enforce_minimum_density(uin,uin_lo,uin_hi, &
-                                                  uout,uout_lo,uout_hi, &
-                                                  vol,vol_lo,vol_hi, &
-                                                  lo,hi,frac_change,verbose)
+  AMREX_LAUNCH subroutine ca_enforce_minimum_density(uin,uin_lo,uin_hi, &
+                                                     uout,uout_lo,uout_hi, &
+                                                     vol,vol_lo,vol_hi, &
+                                                     lo,hi,frac_change,verbose) &
+                                                     bind(c,name='ca_enforce_minimum_density')
 
     use network, only: nspec, naux
     use bl_constants_module, only: ZERO
@@ -111,7 +112,7 @@ contains
        enddo
     enddo
 
-  end subroutine enforce_minimum_density
+  end subroutine ca_enforce_minimum_density
 
 
 

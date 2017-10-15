@@ -810,10 +810,7 @@ module castro_util_module
 
 contains
 
-#ifdef CUDA
-  attributes(global) &
-#endif
-  subroutine enforce_consistent_e(lo,hi,state,s_lo,s_hi)
+  AMREX_LAUNCH subroutine ca_enforce_consistent_e(lo,hi,state,s_lo,s_hi) bind(c,name='ca_enforce_consistent_e')
 
     use bl_constants_module, only: HALF, ONE
     use amrex_fort_module, only: rt => amrex_real, get_loop_bounds
@@ -851,7 +848,7 @@ contains
        end do
     end do
 
-  end subroutine enforce_consistent_e
+  end subroutine ca_enforce_consistent_e
 
 
 
@@ -953,10 +950,7 @@ contains
 
 
 
-#ifdef CUDA
-  attributes(global) &
-#endif
-  subroutine compute_temp(lo,hi,state,s_lo,s_hi)
+  AMREX_LAUNCH subroutine ca_compute_temp(lo,hi,state,s_lo,s_hi) bind(c,name='ca_compute_temp')
 
     use network, only: nspec, naux
     use eos_module, only: eos
@@ -1023,14 +1017,12 @@ contains
        enddo
     enddo
 
-  end subroutine compute_temp
+  end subroutine ca_compute_temp
   
 
 
-#ifdef CUDA
-  attributes(global) &
-#endif
-  subroutine check_initial_species(lo, hi, state, state_lo, state_hi)
+  AMREX_LAUNCH subroutine ca_check_initial_species(lo, hi, &
+                                                   state, state_lo, state_hi) bind(c,name='ca_check_initial_species')
 
     use network           , only: nspec
     use meth_params_module, only: NVAR, URHO, UFS
@@ -1068,14 +1060,11 @@ contains
        enddo
     enddo
 
-  end subroutine check_initial_species
+  end subroutine ca_check_initial_species
 
 
 
-#ifdef CUDA
-  attributes(global) &
-#endif
-  subroutine normalize_species(u, u_lo, u_hi, lo, hi)
+  AMREX_LAUNCH subroutine ca_normalize_species(u, u_lo, u_hi, lo, hi) bind(c,name='ca_normalize_species')
 
     use network, only: nspec
     use bl_constants_module, only: ONE
@@ -1112,7 +1101,7 @@ contains
        enddo
     enddo
 
-  end subroutine normalize_species
+  end subroutine ca_normalize_species
 
 
 #ifdef CUDA

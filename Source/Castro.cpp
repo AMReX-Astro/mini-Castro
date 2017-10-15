@@ -444,11 +444,8 @@ Castro::initData ()
           const RealBox& rbx = mfi.registerRealBox(RealBox(grids[mfi.index()],geom.CellSize(),geom.ProbLo()));
           const Box& box     = mfi.validbox();
 
-#ifdef AMREX_USE_DEVICE
-          Device::prepare_for_launch(box.loVect(), box.hiVect());
-#endif
-
-          ca_initdata(level, BL_TO_FORTRAN_BOX(box),
+          FORT_LAUNCH(box, ca_initdata,
+                      level, BL_TO_FORTRAN_BOX(box),
 		      BL_TO_FORTRAN_ANYD(S_new[mfi]), dx_f,
 		      rbx.loF(), rbx.hiF());
        }
@@ -457,12 +454,9 @@ Castro::initData ()
        {
            const Box& box = mfi.validbox();
 
-#ifdef AMREX_USE_DEVICE
-           Device::prepare_for_launch(box.loVect(), box.hiVect());
-#endif
-
            // Verify that the sum of (rho X)_i = rho at every cell
-           ca_check_initial_species(BL_TO_FORTRAN_BOX(box), BL_TO_FORTRAN_ANYD(S_new[mfi]));
+           FORT_LAUNCH(box, ca_check_initial_species,
+                       BL_TO_FORTRAN_BOX(box), BL_TO_FORTRAN_ANYD(S_new[mfi]));
        }
 
        enforce_consistent_e(S_new);
@@ -581,10 +575,9 @@ Castro::estTimeStep (Real dt_old)
             Device::prepare_for_launch(box.loVect(), box.hiVect());
 #endif
 
-	    ca_estdt(BL_TO_FORTRAN_BOX(box),
-		     BL_TO_FORTRAN_ANYD(stateMF[mfi]),
-		     ZFILL(dx),dt_f);
-
+            ca_estdt(BL_TO_FORTRAN_BOX(box),
+                     BL_TO_FORTRAN_ANYD(stateMF[mfi]),
+                     ZFILL(dx),dt_f);
 	}
 #ifdef _OPENMP
 #pragma omp critical (castro_estdt)
@@ -946,12 +939,9 @@ Castro::normalize_species (MultiFab& S_new)
     {
        const Box& bx = mfi.growntilebox(ng);
 
-#ifdef AMREX_USE_DEVICE
-       Device::prepare_for_launch(bx.loVect(), bx.hiVect());
-#endif
-
-       ca_normalize_species(BL_TO_FORTRAN_ANYD(S_new[mfi]), 
-			    BL_TO_FORTRAN_BOX(bx));
+       FORT_LAUNCH(bx, ca_normalize_species,
+                   BL_TO_FORTRAN_ANYD(S_new[mfi]), 
+                   BL_TO_FORTRAN_BOX(bx));
     }
 
 }
@@ -971,11 +961,8 @@ Castro::enforce_consistent_e (MultiFab& S)
         const int* lo      = box.loVect();
         const int* hi      = box.hiVect();
 
-#ifdef AMREX_USE_DEVICE
-        Device::prepare_for_launch(lo, hi);
-#endif
-
-        ca_enforce_consistent_e(BL_TO_FORTRAN_BOX(box), BL_TO_FORTRAN_ANYD(S[mfi]));
+        FORT_LAUNCH(box, ca_enforce_consistent_e,
+                    BL_TO_FORTRAN_BOX(box), BL_TO_FORTRAN_ANYD(S[mfi]));
     }
 
 #ifdef AMREX_USE_DEVICE
@@ -1018,15 +1005,12 @@ Castro::enforce_min_density (MultiFab& S_old, MultiFab& S_new)
         Real* dens_change_f = &dens_change;
 #endif
 
-#ifdef AMREX_USE_DEVICE
-        Device::prepare_for_launch(bx.loVect(), bx.hiVect());
-#endif
-
-	ca_enforce_minimum_density(BL_TO_FORTRAN_ANYD(stateold),
-				   BL_TO_FORTRAN_ANYD(statenew),
-				   BL_TO_FORTRAN_ANYD(vol),
-				   BL_TO_FORTRAN_BOX(bx),
-				   dens_change_f, verbose);
+	FORT_LAUNCH(bx, ca_enforce_minimum_density,
+                    BL_TO_FORTRAN_ANYD(stateold),
+                    BL_TO_FORTRAN_ANYD(statenew),
+                    BL_TO_FORTRAN_ANYD(vol),
+                    BL_TO_FORTRAN_BOX(bx),
+                    dens_change_f, verbose);
 
     }
 
@@ -1230,11 +1214,8 @@ Castro::computeTemp(MultiFab& State)
     {
       const Box& bx = mfi.growntilebox();
 
-#ifdef AMREX_USE_DEVICE
-        Device::prepare_for_launch(bx.loVect(), bx.hiVect());
-#endif
-
-	ca_compute_temp(BL_TO_FORTRAN_BOX(bx), BL_TO_FORTRAN_3D(State[mfi]));
+	FORT_LAUNCH(bx, ca_compute_temp,
+                    BL_TO_FORTRAN_BOX(bx), BL_TO_FORTRAN_3D(State[mfi]));
     }
 
 }

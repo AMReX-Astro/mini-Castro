@@ -83,23 +83,23 @@ extern "C"
                                    const amrex::Real* q, const int* q_lo, const int* q_hi,
                                    const amrex::Real* qaux, const int* qa_lo, const int* qa_hi);
 
-  void ca_check_initial_species
+  FORT_LAUNCHABLE(void ca_check_initial_species)
     (const int* lo, const int* hi, BL_FORT_FAB_ARG_3D(state));
 
-  void ca_enforce_minimum_density
+  FORT_LAUNCHABLE(void ca_enforce_minimum_density)
     (const amrex::Real* S_old, const int* s_old_lo, const int* s_old_hi,
      const amrex::Real* S_new, const int* s_new_lo, const int* s_new_hi,
      const amrex::Real* vol, const int* vol_lo, const int* vol_hi,
      const int* lo, const int* hi,
      const amrex::Real* frac_change, const int verbose);
 
-  void ca_normalize_species
+  FORT_LAUNCHABLE(void ca_normalize_species)
     (BL_FORT_FAB_ARG_3D(S_new), const int* lo, const int* hi);
 
-  void ca_compute_temp
+  FORT_LAUNCHABLE(void ca_compute_temp)
     (const int* lo, const int* hi, const BL_FORT_FAB_ARG_3D(state));
 
-  void ca_enforce_consistent_e
+  FORT_LAUNCHABLE(void ca_enforce_consistent_e)
     (const int* lo, const int* hi, BL_FORT_FAB_ARG_3D(state));
 
   FORT_LAUNCHABLE(void ca_reset_internal_e)
@@ -140,12 +140,6 @@ extern "C"
     (const int* lo, const int* hi,
      const BL_FORT_FAB_ARG_3D(state),
      const amrex::Real* dx, amrex::Real* dt);
-
-  void ca_check_timestep
-    (const BL_FORT_FAB_ARG_3D(state_old),
-     const BL_FORT_FAB_ARG_3D(state_new),
-     const int* lo, const int* hi,
-     const amrex::Real* dx, const amrex::Real* dt_old, amrex::Real* dt);
 
   FORT_LAUNCHABLE(void ca_divu)
     (const int* lo, const int* hi,
@@ -219,7 +213,7 @@ extern "C"
      const amrex::Real* time, const amrex::Real* dt, const int* bcrec, 
      const int* level, const int* grid_no);
 
-  void ca_initdata
+  FORT_LAUNCHABLE(void ca_initdata)
     (const int level, const int* lo, const int* hi,
      BL_FORT_FAB_ARG_3D(state),
      const amrex::Real* dx, const amrex::Real* xlo, const amrex::Real* xhi);
