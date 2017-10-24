@@ -64,9 +64,9 @@ int          Castro::NQ            = -1;
 int          Castro::NGDNV         = -1;
 
 int          Castro::MOL_STAGES;
-Array< Array<Real> > Castro::a_mol;
-Array<Real> Castro::b_mol;
-Array<Real> Castro::c_mol;
+Vector< Vector<Real> > Castro::a_mol;
+Vector<Real> Castro::b_mol;
+Vector<Real> Castro::c_mol;
 
 
 #include <castro_defaults.H>
@@ -123,7 +123,7 @@ Castro::read_params ()
     pp.query("sum_interval",sum_interval);
 
     // Get boundary conditions
-    Array<int> lo_bc(BL_SPACEDIM), hi_bc(BL_SPACEDIM);
+    Vector<int> lo_bc(BL_SPACEDIM), hi_bc(BL_SPACEDIM);
     pp.getarr("lo_bc",lo_bc,0,BL_SPACEDIM);
     pp.getarr("hi_bc",hi_bc,0,BL_SPACEDIM);
     for (int i = 0; i < BL_SPACEDIM; i++)
@@ -211,7 +211,7 @@ Castro::read_params ()
     ParmParse ppa("amr");
     ppa.query("probin_file",probin_file);
 
-    Array<int> tilesize(BL_SPACEDIM);
+    Vector<int> tilesize(BL_SPACEDIM);
     if (pp.queryarr("hydro_tile_size", tilesize, 0, BL_SPACEDIM))
     {
 	for (int i=0; i<BL_SPACEDIM; i++) hydro_tile_size[i] = tilesize[i];
@@ -602,10 +602,10 @@ Castro::estTimeStep (Real dt_old)
 void
 Castro::computeNewDt (int                   finest_level,
                       int                   sub_cycle,
-                      Array<int>&           n_cycle,
-                      const Array<IntVect>& ref_ratio,
-                      Array<Real>&          dt_min,
-                      Array<Real>&          dt_level,
+                      Vector<int>&           n_cycle,
+                      const Vector<IntVect>& ref_ratio,
+                      Vector<Real>&          dt_min,
+                      Vector<Real>&          dt_level,
                       Real                  stop_time,
                       int                   post_regrid_flag)
 {
@@ -695,9 +695,9 @@ Castro::computeNewDt (int                   finest_level,
 void
 Castro::computeInitialDt (int                   finest_level,
                           int                   sub_cycle,
-                          Array<int>&           n_cycle,
-                          const Array<IntVect>& ref_ratio,
-                          Array<Real>&          dt_level,
+                          Vector<int>&           n_cycle,
+                          const Vector<IntVect>& ref_ratio,
+                          Vector<Real>&          dt_level,
                           Real                  stop_time)
 {
     BL_PROFILE("Castro::computeInitialDt()");
@@ -1091,7 +1091,7 @@ Castro::apply_tagging_func(TagBoxArray& tags, int clearval, int tagval, Real tim
 #pragma omp parallel
 #endif
 	{
-	    Array<int>  itags;
+	    Vector<int>  itags;
 
 	    for (MFIter mfi(*mf,true); mfi.isValid(); ++mfi)
 	    {
@@ -1158,7 +1158,7 @@ Castro::extern_init ()
   }
 
   int probin_file_length = probin_file.length();
-  Array<int> probin_file_name(probin_file_length);
+  Vector<int> probin_file_name(probin_file_length);
 
   for (int i = 0; i < probin_file_length; i++)
     probin_file_name[i] = probin_file[i];
