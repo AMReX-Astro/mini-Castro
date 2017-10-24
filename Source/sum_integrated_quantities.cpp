@@ -112,7 +112,7 @@ Castro::volWgtSum (const std::string& name,
     BL_PROFILE("Castro::volWgtSum()");
 
     Real        sum     = 0.0;
-    const Real* dx      = geom.CellSizeF();
+    const Real* dx      = geom.CellSize();
     auto mf = derive(name,time,0);
 
     BL_ASSERT(mf);

@@ -422,7 +422,6 @@ Castro::initData ()
     // Loop over grids, call FORTRAN function to init with data.
     //
     const Real* dx  = geom.CellSize();
-    const Real* dx_f = geom.CellSizeF();
     MultiFab& S_new = get_new_data(State_Type);
     Real cur_time   = state[State_Type].curTime();
 
@@ -446,8 +445,8 @@ Castro::initData ()
 
           FORT_LAUNCH(box, ca_initdata,
                       level, BL_TO_FORTRAN_BOX(box),
-		      BL_TO_FORTRAN_ANYD(S_new[mfi]), dx_f,
-		      rbx.loF(), rbx.hiF());
+		      BL_TO_FORTRAN_ANYD(S_new[mfi]), dx,
+		      rbx.lo(), rbx.hi());
        }
 
        for (MFIter mfi(S_new); mfi.isValid(); ++mfi)
@@ -546,7 +545,7 @@ Castro::estTimeStep (Real dt_old)
 
     const MultiFab& stateMF = get_new_data(State_Type);
 
-    const Real* dx = geom.CellSizeF();
+    const Real* dx = geom.CellSize();
 
     // Start the hydro with the max_dt value, but divide by CFL
     // to account for the fact that we multiply by it at the end.

@@ -15,7 +15,7 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
 
   int finest_level = parent->finestLevel();
 
-  const Real *dx = geom.CellSizeF();
+  const Real *dx = geom.CellSize();
 
   MultiFab& S_new = get_new_data(State_Type);
 
