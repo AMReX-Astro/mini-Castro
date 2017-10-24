@@ -15,11 +15,9 @@ TINY_PROFILE = FALSE
 
 # define the location of the CASTRO top directory
 CASTRO_HOME  := ../
+TOP := $(CASTRO_HOME)
 
 AMREX_HOME ?= /path/to/amrex
-CASTRO_HOME ?= /path/to/Castro
-
-TOP := $(CASTRO_HOME)
 
 EBASE = Castro
 
