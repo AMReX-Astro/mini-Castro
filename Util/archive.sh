@@ -10,6 +10,7 @@ mkdir $INSTALL_DIR/Exec
 cp -r ../Source/* $INSTALL_DIR/Source/
 cp ../Exec/inputs* $INSTALL_DIR/Exec/
 cp ../Exec/probin* $INSTALL_DIR/Exec/
+cp ../Exec/helm_table.dat $INSTALL_DIR/Exec/
 cp ../Exec/GNUmakefile $INSTALL_DIR/Exec/
 sed -i "s/AMREX_HOME ?= \/path\/to\/amrex/AMREX_HOME := ..\/amrex/" $INSTALL_DIR/Exec/GNUmakefile
 
