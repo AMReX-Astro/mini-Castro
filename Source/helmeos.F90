@@ -9,7 +9,7 @@ module actual_eos_module
     logical, allocatable :: input_is_constant
 
     !..for the tables, in general
-    integer, parameter, private :: imax = 541, jmax = 101
+    integer, parameter, private :: imax = 541, jmax = 201
     integer, allocatable :: itmax, jtmax
     double precision, allocatable :: d(:),t(:)
 
