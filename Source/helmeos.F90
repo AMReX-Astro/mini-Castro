@@ -1046,7 +1046,7 @@ contains
 
         use bl_error_module
         use extern_probin_module, only: eos_input_is_constant, use_eos_coulomb
-        use parallel, only: parallel_IOProcessor
+        use parallel, only: parallel_IOProcessor, parallel_bcast
 
         implicit none
 
@@ -1057,6 +1057,7 @@ contains
         integer :: status
 
         ! Allocate managed module variables
+
         allocate(do_coulomb)
         allocate(input_is_constant)
         allocate(itmax)
@@ -1100,7 +1101,7 @@ contains
         allocate(dd2_sav(imax))
         allocate(ddi_sav(imax))
         allocate(dd2i_sav(imax))
-        
+
         ! Read in the runtime parameters
 
         input_is_constant = eos_input_is_constant
@@ -1115,19 +1116,10 @@ contains
            endif
            print *, ''
         endif
-        
-        ! Read in the table
-
-        !..   open the table
-        open(unit=2,file='helm_table.dat',status='old',iostat=status)
-        if (status > 0) then
-           call bl_error('actual_eos_init: Failed to open helm_table.dat')
-        endif
-
-        itmax = imax
-        jtmax = jmax
 
         !..   read the helmholtz free energy table
+        itmax = imax
+        jtmax = jmax
         tlo   = 3.0d0
         thi   = 13.0d0
         tstp  = (thi - tlo)/float(jmax-1)
@@ -1136,37 +1128,76 @@ contains
         dhi   = 15.0d0
         dstp  = (dhi - dlo)/float(imax-1)
         dstpi = 1.0d0/dstp
+
         do j=1,jmax
            tsav = tlo + (j-1)*tstp
            t(j) = 10.0d0**(tsav)
            do i=1,imax
               dsav = dlo + (i-1)*dstp
               d(i) = 10.0d0**(dsav)
-              read(2,*) f(i,j),fd(i,j),ft(i,j),fdd(i,j),ftt(i,j),fdt(i,j), &
-                   fddt(i,j),fdtt(i,j),fddtt(i,j)
            end do
         end do
 
-        !..   read the pressure derivative with density table
-        do j = 1, jmax
-           do i = 1, imax
-              read(2,*) dpdf(i,j),dpdfd(i,j),dpdft(i,j),dpdfdt(i,j)
-           end do
-        end do
+        if (parallel_IOProcessor()) then
 
-        !..   read the electron chemical potential table
-        do j = 1, jmax
-           do i = 1, imax
-              read(2,*) ef(i,j),efd(i,j),eft(i,j),efdt(i,j)
-           end do
-        end do
+           !..   open the table
+           open(unit=2,file='helm_table.dat',status='old',iostat=status,action='read')
+           if (status > 0) then
+              call bl_error('actual_eos_init: Failed to open helm_table.dat')
+           endif
 
-        !..   read the number density table
-        do j = 1, jmax
-           do i = 1, imax
-              read(2,*) xf(i,j),xfd(i,j),xft(i,j),xfdt(i,j)
+           !...  read in the free energy table
+           do j=1,jmax
+              do i=1,imax
+                 read(2,*) f(i,j),fd(i,j),ft(i,j),fdd(i,j),ftt(i,j),fdt(i,j), &
+                      fddt(i,j),fdtt(i,j),fddtt(i,j)
+              end do
            end do
-        end do
+
+           !..   read the pressure derivative with density table
+           do j = 1, jmax
+              do i = 1, imax
+                 read(2,*) dpdf(i,j),dpdfd(i,j),dpdft(i,j),dpdfdt(i,j)
+              end do
+           end do
+
+           !..   read the electron chemical potential table
+           do j = 1, jmax
+              do i = 1, imax
+                 read(2,*) ef(i,j),efd(i,j),eft(i,j),efdt(i,j)
+              end do
+           end do
+
+           !..   read the number density table
+           do j = 1, jmax
+              do i = 1, imax
+                 read(2,*) xf(i,j),xfd(i,j),xft(i,j),xfdt(i,j)
+              end do
+           end do
+
+        end if
+
+        call parallel_bcast(f)
+        call parallel_bcast(fd)
+        call parallel_bcast(ft)
+        call parallel_bcast(fdd)
+        call parallel_bcast(ftt)
+        call parallel_bcast(fdt)
+        call parallel_bcast(fddt)
+        call parallel_bcast(fdtt)
+        call parallel_bcast(fddtt)
+        call parallel_bcast(dpdf)
+        call parallel_bcast(dpdfd)
+        call parallel_bcast(dpdft)
+        call parallel_bcast(dpdfdt)
+        call parallel_bcast(ef)
+        call parallel_bcast(efd)
+        call parallel_bcast(eft)
+        call parallel_bcast(efdt)
+        call parallel_bcast(xf)
+        call parallel_bcast(xfd)
+        call parallel_bcast(xft)
+        call parallel_bcast(xfdt)
 
         !..   construct the temperature and density deltas and their inverses
         do j = 1, jmax-1
@@ -1190,7 +1221,9 @@ contains
            dd2i_sav(i) = dd2i
         end do
 
-        close(unit=2)
+        if (parallel_IOProcessor()) then
+           close(unit=2)
+        endif
 
         ! Set up the minimum and maximum possible densities.
 
