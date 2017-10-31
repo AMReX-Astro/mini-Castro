@@ -118,7 +118,7 @@ private
     !$acc create(itmax, jtmax, d, t) &
     !$acc create(f, fd, ft, fdd, ftt, fdt, fddt, fdtt, fddtt) &
     !$acc create(dpdf, dpdfd, dpdft, dpdfdt) &
-    !$acc create(ef, efd, eft, efdt, xf, xfd, xft, xfdt)  &
+    !$acc create(ef, efd, eft, efdt, xf, xfd, xft, xfdt) &
     !$acc create(dt_sav, dt2_sav, dti_sav, dt2i_sav) &
     !$acc create(dd_sav, dd2_sav, ddi_sav, dd2i_sav) &
     !$acc create(do_coulomb, input_is_constant)
@@ -1233,16 +1233,15 @@ contains
         maxdens = 10.d0**dhi
 
         !$acc update &
-        !$acc device(ttol, dtol, tlo, thi, dlo, dhi) &
+        !$acc device(tlo, thi, dlo, dhi) &
         !$acc device(tstp, tstpi, dstp, dstpi) &
         !$acc device(itmax, jtmax, d, t) &
         !$acc device(f, fd, ft, fdd, ftt, fdt, fddt, fdtt, fddtt) &
         !$acc device(dpdf, dpdfd, dpdft, dpdfdt) &
         !$acc device(ef, efd, eft, efdt, xf, xfd, xft, xfdt) &
         !$acc device(dt_sav, dt2_sav, dti_sav, dt2i_sav) &
-        !$acc device(dd_sav, dd2_sav, ddi_sav, dd2i_sav), &
-        !$acc device(do_coulomb, input_is_constant) &
-        !$acc device(max_newton)
+        !$acc device(dd_sav, dd2_sav, ddi_sav, dd2i_sav) &
+        !$acc device(do_coulomb, input_is_constant)
 
     end subroutine actual_eos_init
 
