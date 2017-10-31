@@ -11,34 +11,34 @@ module actual_eos_module
     !..for the tables, in general
     integer, parameter, private :: imax = 541, jmax = 201
     integer, allocatable :: itmax, jtmax
-    double precision, allocatable :: d(:),t(:)
+    double precision, allocatable :: d(:), t(:)
 
     double precision, allocatable :: tlo, thi, tstp, tstpi
     double precision, allocatable :: dlo, dhi, dstp, dstpi
 
     !..for the helmholtz free energy tables
-    double precision, allocatable :: f(:,:),fd(:,:),               &
-                                     ft(:,:),fdd(:,:),ftt(:,:),    &
-                                     fdt(:,:),fddt(:,:),fdtt(:,:), &
+    double precision, allocatable :: f(:,:), fd(:,:),                &
+                                     ft(:,:), fdd(:,:), ftt(:,:),    &
+                                     fdt(:,:), fddt(:,:), fdtt(:,:), &
                                      fddtt(:,:)
 
     !..for the pressure derivative with density ables
-    double precision, allocatable :: dpdf(:,:),dpdfd(:,:),         &
-                                     dpdft(:,:),dpdfdt(:,:)
+    double precision, allocatable :: dpdf(:,:), dpdfd(:,:),          &
+                                     dpdft(:,:), dpdfdt(:,:)
 
     !..for chemical potential tables
-    double precision, allocatable :: ef(:,:),efd(:,:), &
-                                     eft(:,:),efdt(:,:)
+    double precision, allocatable :: ef(:,:), efd(:,:),              &
+                                     eft(:,:), efdt(:,:)
  
     !..for the number density tables
-    double precision, allocatable :: xf(:,:),xfd(:,:), &
-                                     xft(:,:),xfdt(:,:)
+    double precision, allocatable :: xf(:,:), xfd(:,:),              &
+                                     xft(:,:), xfdt(:,:)
 
     !..for storing the differences
-    double precision, allocatable :: dt_sav(:),dt2_sav(:),   &
-                                     dti_sav(:),dt2i_sav(:), &
-                                     dd_sav(:),dd2_sav(:),   &
-                                     ddi_sav(:),dd2i_sav(:)
+    double precision, allocatable :: dt_sav(:), dt2_sav(:),          &
+                                     dti_sav(:), dt2i_sav(:),        &
+                                     dd_sav(:), dd2_sav(:),          &
+                                     ddi_sav(:), dd2i_sav(:)
 
 #ifdef CUDA
     attributes(managed) :: do_coulomb, input_is_constant
@@ -147,7 +147,10 @@ contains
     !..all other derivatives are analytic.
     !..
     !..references: cox & giuli chapter 24 ; timmes & swesty apj 1999
-  AMREX_DEVICE subroutine actual_eos(input, state)
+#ifdef CUDA
+    attributes(device) &
+#endif
+    subroutine actual_eos(input, state)
 
         !$acc routine seq
 
