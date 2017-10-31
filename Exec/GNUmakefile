@@ -19,6 +19,31 @@ TOP := $(CASTRO_HOME)
 
 AMREX_HOME ?= /path/to/amrex
 
+EOS_DIR ?= helmholtz
+
+ifdef MICROPHYSICS_HOME
+   EOS_PATH := $(MICROPHYSICS_HOME)/EOS/$(strip $(EOS_DIR))
+else
+   $(error StarLord requires Microphysics, and the MICROPHYSICS_HOME environment variable to be set)
+endif
+
+EXTERN_CORE += $(EOS_HOME)
+EXTERN_CORE += $(EOS_PATH)
+
+EXTERN_CORE += $(MICROPHYSICS_HOME)/EOS
+
+# the helmholtz EOS has an include file -- also add a target to link
+# the table into the problem directory.
+ifeq ($(findstring helmholtz, $(EOS_DIR)), helmholtz)
+   all: table
+endif
+
+table:
+	@if [ ! -f helm_table.dat ]; then echo Linking helm_table.dat; ln -s $(EOS_PATH)/helm_table.dat .;  fi
+
+Bpack += $(foreach dir, $(EXTERN_CORE), $(dir)/Make.package)
+Blocs += $(foreach dir, $(EXTERN_CORE), $(dir))
+
 EBASE = Castro
 
 # This application only supports 3D.
