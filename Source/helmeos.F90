@@ -183,8 +183,7 @@ contains
                             dhd_row, &
                             dht_row, &
                             dpe_row, &
-                            dpdr_e_row, &
-                            cs_row
+                            dpdr_e_row
 
         !..declare local variables
 
@@ -328,7 +327,6 @@ contains
 
         cv_row = 0.0d0
         cp_row = 0.0d0
-        cs_row = 0.0d0
 
         converged = .false.
 
