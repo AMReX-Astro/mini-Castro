@@ -1246,53 +1246,6 @@ contains
 
     end subroutine actual_eos_init
 
-    subroutine actual_eos_finalize()
-      !Deallocate managed module variables
-      deallocate(do_coulomb)
-      deallocate(input_is_constant)
-      deallocate(itmax)
-      deallocate(jtmax)
-      deallocate(d)
-      deallocate(t)
-      deallocate(tlo)
-      deallocate(thi)
-      deallocate(tstp)
-      deallocate(tstpi)
-      deallocate(dlo)
-      deallocate(dhi)
-      deallocate(dstp)
-      deallocate(dstpi)
-      deallocate(f)
-      deallocate(fd)
-      deallocate(ft)
-      deallocate(fdd)
-      deallocate(ftt)
-      deallocate(fdt)
-      deallocate(fddt)
-      deallocate(fdtt)
-      deallocate(fddtt)
-      deallocate(dpdf)
-      deallocate(dpdfd)
-      deallocate(dpdft)
-      deallocate(dpdfdt)
-      deallocate(ef)
-      deallocate(efd)
-      deallocate(eft)
-      deallocate(efdt)
-      deallocate(xf)
-      deallocate(xfd)
-      deallocate(xft)
-      deallocate(xfdt)
-      deallocate(dt_sav)
-      deallocate(dt2_sav)
-      deallocate(dti_sav)
-      deallocate(dt2i_sav)
-      deallocate(dd_sav)
-      deallocate(dd2_sav)
-      deallocate(ddi_sav)
-      deallocate(dd2i_sav)
-    end subroutine actual_eos_finalize
-
     ! quintic hermite polynomial functions
     ! psi0 and its derivatives
 #ifdef CUDA
@@ -1481,5 +1434,57 @@ contains
            + fi(13) *w1d*w1t   +  fi(14) *w1md*w1t &
            + fi(15) *w1d*w1mt  +  fi(16) *w1md*w1mt
     end function h3
+
+    subroutine actual_eos_finalize
+
+      implicit none
+
+      ! Deallocate managed module variables
+
+      deallocate(do_coulomb)
+      deallocate(input_is_constant)
+      deallocate(itmax)
+      deallocate(jtmax)
+      deallocate(d)
+      deallocate(t)
+      deallocate(tlo)
+      deallocate(thi)
+      deallocate(tstp)
+      deallocate(tstpi)
+      deallocate(dlo)
+      deallocate(dhi)
+      deallocate(dstp)
+      deallocate(dstpi)
+      deallocate(f)
+      deallocate(fd)
+      deallocate(ft)
+      deallocate(fdd)
+      deallocate(ftt)
+      deallocate(fdt)
+      deallocate(fddt)
+      deallocate(fdtt)
+      deallocate(fddtt)
+      deallocate(dpdf)
+      deallocate(dpdfd)
+      deallocate(dpdft)
+      deallocate(dpdfdt)
+      deallocate(ef)
+      deallocate(efd)
+      deallocate(eft)
+      deallocate(efdt)
+      deallocate(xf)
+      deallocate(xfd)
+      deallocate(xft)
+      deallocate(xfdt)
+      deallocate(dt_sav)
+      deallocate(dt2_sav)
+      deallocate(dti_sav)
+      deallocate(dt2i_sav)
+      deallocate(dd_sav)
+      deallocate(dd2_sav)
+      deallocate(ddi_sav)
+      deallocate(dd2i_sav)
+
+    end subroutine actual_eos_finalize
 
 end module actual_eos_module
