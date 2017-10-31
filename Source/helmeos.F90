@@ -782,7 +782,6 @@ contains
            x     = zz * chit/(temp * cv)
            state%gam1  = chit*x + chid
            cp    = cv * state%gam1/chid
-           z     = 1.0d0 + (ener + light2)*zzi
 
            ptot_row = pres
            dpt_row = dpresdt
