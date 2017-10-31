@@ -147,9 +147,6 @@ module eos_type_module
     real(dp_t) :: mu
     real(dp_t) :: mu_e
     real(dp_t) :: y_e
-    real(dp_t) :: dedX(nspec)
-    real(dp_t) :: dpdX(nspec)
-    real(dp_t) :: dhdX(nspec)
     real(dp_t) :: gam1
     real(dp_t) :: cs
 
@@ -192,39 +189,6 @@ contains
     state % zbar = state % abar / state % mu_e
 
   end subroutine composition
-
-  ! Compute thermodynamic derivatives with respect to xn(:)
-
-  AMREX_DEVICE subroutine composition_derivatives(state)
-
-    !$acc routine seq
-
-    use bl_constants_module, only: ZERO
-    use network, only: aion, aion_inv, zion
-
-    implicit none
-
-    type (eos_t), intent(inout) :: state
-
-    state % dpdX(:) = state % dpdA * (state % abar * aion_inv(:))   &
-                                   * (aion(:) - state % abar) &
-                    + state % dpdZ * (state % abar * aion_inv(:))   &
-                                   * (zion(:) - state % zbar)
-
-    state % dEdX(:) = state % dedA * (state % abar * aion_inv(:))   &
-                                   * (aion(:) - state % abar) &
-                    + state % dedZ * (state % abar * aion_inv(:))   &
-                                   * (zion(:) - state % zbar)
-
-    if (state % dPdr .ne. ZERO) then
-
-       state % dhdX(:) = state % dedX(:) &
-                       + (state % p / state % rho**2 - state % dedr) &
-                       *  state % dPdX(:) / state % dPdr
-
-    endif
-
-  end subroutine composition_derivatives
 
 
 

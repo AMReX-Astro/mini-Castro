@@ -144,7 +144,7 @@ contains
 
     !$acc routine seq
 
-    use eos_type_module, only: eos_t, composition, composition_derivatives
+    use eos_type_module, only: eos_t, composition
     use actual_eos_module, only: actual_eos
 #if !(defined(ACC) || defined(CUDA))
     use bl_error_module, only: bl_error
@@ -179,10 +179,6 @@ contains
     if (.not. has_been_reset) then
        call actual_eos(input, state)
     endif
-
-    ! Get dpdX, dedX, dhdX.
-
-    call composition_derivatives(state)
 
   end subroutine eos_doit
 
