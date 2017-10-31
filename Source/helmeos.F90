@@ -29,7 +29,7 @@ module actual_eos_module
     !..for chemical potential tables
     double precision, allocatable :: ef(:,:), efd(:,:),              &
                                      eft(:,:), efdt(:,:)
- 
+
     !..for the number density tables
     double precision, allocatable :: xf(:,:), xfd(:,:),              &
                                      xft(:,:), xfdt(:,:)
@@ -147,6 +147,7 @@ contains
     !..all other derivatives are analytic.
     !..
     !..references: cox & giuli chapter 24 ; timmes & swesty apj 1999
+
 #ifdef CUDA
     attributes(device) &
 #endif
@@ -205,16 +206,6 @@ contains
                             sion,pele,eele,sele,pres,ener,entr,dpresdd, &
                             dpresdt,denerdd,denerdt,dentrdd,dentrdt,cv,cp, &
                             chit,chid,s,temp,den,ytot1
-
-        !..for the abar derivatives
-        double precision :: dpionda,deionda,dsionda, &
-                            dpepda,deepda,dsepda,    &
-                            dpresda,denerda,dentrda
-
-
-        !..for the zbar derivatives
-        double precision :: dpepdz,deepdz,dsepdz,    &
-                            dpresdz,denerdz,dentrdz
 
         !..for the interpolations
         integer          :: iat,jat
@@ -369,12 +360,10 @@ contains
            pion    = xni * kt
            dpiondd = dxnidd * kt
            dpiondt = xni * kerg
-           dpionda = dxnida * kt
 
            eion    = 1.5d0 * pion*deni
            deiondd = (1.5d0 * dpiondd - eion)*deni
            deiondt = 1.5d0 * dpiondt*deni
-           deionda = 1.5d0 * dpionda*deni
 
            x       = state%abar*state%abar*sqrt(state%abar) * deni/avo_eos
            s       = sioncon * temp
@@ -387,10 +376,6 @@ contains
                 (pion*deni + eion) * tempi*tempi  &
                 + 1.5d0 * kergavo * tempi*ytot1
            x       = avo_eos*kerg/state%abar
-           dsionda = (dpionda*deni + deionda)*tempi  &
-                + kergavo*ytot1*ytot1* (2.5d0 - y)
-
-           !..electron-positron section:
 
            !..enter the table with ye*den
            din = state%y_e*den
@@ -487,6 +472,8 @@ contains
            ddsi0mt =  ddpsi0(mxt)*dt2i_sav(jat)
            ddsi1mt = -ddpsi1(mxt)*dti_sav(jat)
            ddsi2mt =  ddpsi2(mxt)
+
+
 
            !..the free energy
            free  = h5( fi, &
@@ -603,25 +590,23 @@ contains
 
            !..the desired electron-positron thermodynamic quantities
 
+           !..dpepdd at high temperatures and low densities is below the
+           !..floating point limit of the subtraction of two large terms.
+           !..since dpresdd doesn't enter the maxwell relations at all, use the
+           !..bicubic interpolation done above instead of this one
            x       = din * din
            pele    = x * df_d
            dpepdt  = x * df_dt
            s       = dpepdd/state%y_e - 2.0d0 * din * df_d
-           dpepda  = -ytot1 * (2.0d0 * pele + s * din)
-           dpepdz  = den*ytot1*(2.0d0 * din * df_d  +  s)
 
            x       = state%y_e * state%y_e
            sele    = -df_t * state%y_e
            dsepdt  = -df_tt * state%y_e
            dsepdd  = -df_dt * x
-           dsepda  = ytot1 * (state%y_e * df_dt * din - sele)
-           dsepdz  = -ytot1 * (state%y_e * df_dt * den  + df_t)
 
            eele    = state%y_e*free + temp * sele
            deepdt  = temp * dsepdt
            deepdd  = x * df_d + temp * dsepdd
-           deepda  = -state%y_e * ytot1 * (free +  df_d * din) + temp * dsepda
-           deepdz  = ytot1* (free + state%y_e * df_d * den) + temp * dsepdz
 
            !..coulomb section:
            !..initialize
@@ -705,8 +690,6 @@ contains
                  s        = 1.5d0*c2*x/plasg - onethird*a2*b2*y/plasg
                  dpcouldd = -dpiondd*z - pion*s*plasgdd
                  dpcouldt = -dpiondt*z - pion*s*plasgdt
-                 dpcoulda = -dpionda*z - pion*s*plasgda
-                 dpcouldz = -pion*s*plasgdz
 
                  s        = 3.0d0/den
                  decouldd = s * dpcouldd - ecoul/den
@@ -756,18 +739,11 @@ contains
 
            dpresdd = dpiondd + dpepdd + dpcouldd
            dpresdt = dpraddt + dpiondt + dpepdt + dpcouldt
-           dpresda = dpionda + dpepda + dpcoulda
-           dpresdz = dpepdz + dpcouldz
-
            denerdd = deraddd + deiondd + deepdd + decouldd
            denerdt = deraddt + deiondt + deepdt + decouldt
-           denerda = deionda + deepda + decoulda
-           denerdz = deepdz + decouldz
 
            dentrdd = dsraddd + dsiondd + dsepdd + dscouldd
            dentrdt = dsraddt + dsiondt + dsepdt + dscouldt
-           dentrda = dsionda + dsepda + dscoulda
-           dentrdz = dsepdz + dscouldz
 
            !..the temperature and density exponents (c&g 9.81 9.82)
            !..the specific heat at constant volume (c&g 9.92)
@@ -787,16 +763,12 @@ contains
            ptot_row = pres
            dpt_row = dpresdt
            dpd_row = dpresdd
-           dpa_row = dpresda
-           dpz_row = dpresdz
            dpe_row = dpresdt / denerdt
            dpdr_e_row = dpresdd - dpresdt * denerdd / denerdt
 
            etot_row = ener
            det_row = denerdt
            ded_row = denerdd
-           dea_row = denerda
-           dez_row = denerdz
 
            stot_row = entr
            dst_row = dentrdt
@@ -978,16 +950,12 @@ contains
         state % dpdT = dpt_row
         state % dpdr = dpd_row
 
-        state % dpdA = dpa_row
-        state % dpdZ = dpz_row
         state % dpde = dpe_row
         state % dpdr_e = dpdr_e_row
 
         state % e    = etot_row
         state % dedT = det_row
         state % dedr = ded_row
-        state % dedA = dea_row
-        state % dedZ = dez_row
 
         state % s    = stot_row
         state % dsdT = dst_row
@@ -999,6 +967,8 @@ contains
 
         state % cv   = cv_row
         state % cp   = cp_row
+
+        ! Take care of final housekeeping.
 
         ! Use the non-relativistic version of the sound speed, cs = sqrt(gam_1 * P / rho).
         ! This replaces the relativistic version that comes out of helmeos.
@@ -1247,6 +1217,8 @@ contains
         !$acc device(do_coulomb, input_is_constant)
 
     end subroutine actual_eos_init
+
+
 
     ! quintic hermite polynomial functions
     ! psi0 and its derivatives
