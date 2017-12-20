@@ -19,10 +19,12 @@ TOP := $(CASTRO_HOME)
 
 AMREX_HOME ?= /path/to/amrex
 
+NETWORK_DIR ?= aprox13
 EOS_DIR ?= helmholtz
 
 ifdef MICROPHYSICS_HOME
    EOS_PATH := $(MICROPHYSICS_HOME)/EOS/$(strip $(EOS_DIR))
+   NETWORK_PATH := $(MICROPHYSICS_HOME)/networks/$(strip $(NETWORK_DIR))
 else
    $(error StarLord requires Microphysics, and the MICROPHYSICS_HOME environment variable to be set)
 endif
@@ -30,7 +32,11 @@ endif
 EXTERN_CORE += $(EOS_HOME)
 EXTERN_CORE += $(EOS_PATH)
 
+EXTERN_CORE += $(NETWORK_HOME)
+EXTERN_CORE += $(NETWORK_PATH)
+
 EXTERN_CORE += $(MICROPHYSICS_HOME)/EOS
+EXTERN_CORE += $(MICROPHYSICS_HOME)/networks
 
 # the helmholtz EOS has an include file -- also add a target to link
 # the table into the problem directory.

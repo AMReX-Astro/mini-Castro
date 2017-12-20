@@ -49,6 +49,5 @@ ca_F90EXE_sources += eos.F90
 ca_F90EXE_sources += eos_type.F90
 
 ca_F90EXE_sources += network.F90
-ca_F90EXE_sources += actual_network.F90
 
 ca_F90EXE_sources += extern.F90
