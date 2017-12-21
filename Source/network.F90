@@ -20,10 +20,7 @@
 module network
 
   use amrex_fort_module, only: rt => amrex_real
-  use actual_network, only: nspec, naux, aion, zion, &
-                            spec_names, short_spec_names, &
-                            aux_names, short_aux_names, &
-                            actual_network_init
+  use actual_network
 
   implicit none
 
