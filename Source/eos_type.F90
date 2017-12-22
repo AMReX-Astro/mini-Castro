@@ -172,12 +172,12 @@ contains
 
   AMREX_DEVICE subroutine composition(state)
 
-    !$acc routine seq
-
     use bl_constants_module, only: ONE
     use network, only: aion, aion_inv, zion
 
     implicit none
+
+    !$acc routine seq
 
     type (eos_t), intent(inout) :: state
 
@@ -202,12 +202,12 @@ contains
 
   AMREX_DEVICE subroutine normalize_abundances(state)
 
-    !$acc routine seq
-
     use bl_constants_module, only: ONE
     use extern_probin_module, only: small_x
 
     implicit none
+
+    !$acc routine seq
 
     type (eos_t), intent(inout) :: state
 
@@ -223,9 +223,9 @@ contains
 
   AMREX_DEVICE subroutine clean_state(state)
 
-    !$acc routine seq
-
     implicit none
+
+    !$acc routine seq
 
     type (eos_t), intent(inout) :: state
 
@@ -254,9 +254,9 @@ contains
 
   AMREX_DEVICE subroutine eos_get_small_temp(small_temp_out)
 
-    !$acc routine seq
-
     implicit none
+
+    !$acc routine seq
 
     real(dp_t), intent(out) :: small_temp_out
 
@@ -267,9 +267,9 @@ contains
 
   AMREX_DEVICE subroutine eos_get_small_dens(small_dens_out)
 
-    !$acc routine seq
-
     implicit none
+
+    !$acc routine seq
 
     real(dp_t), intent(out) :: small_dens_out
 
@@ -281,9 +281,9 @@ contains
 
   AMREX_DEVICE subroutine eos_get_max_temp(max_temp_out)
 
-    !$acc routine seq
-
     implicit none
+
+    !$acc routine seq
 
     real(dp_t), intent(out) :: max_temp_out
 
@@ -295,9 +295,9 @@ contains
 
   AMREX_DEVICE subroutine eos_get_max_dens(max_dens_out)
 
-    !$acc routine seq
-
     implicit none
+
+    !$acc routine seq
 
     real(dp_t), intent(out) :: max_dens_out
 
