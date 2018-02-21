@@ -40,3 +40,38 @@ CUDA 8, it will likely encounter an error on summitdev. This is an MPI
 bug in CUDA 8, which is fixed in CUDA 9. To work around this problem,
 compile the code with CUDA 8, but before running, swap the CUDA 8
 module with CUDA 9. Now the code should run with `nvprof`.
+
+## Running StarLord on a single GPU
+
+On summitdev, first request a job. The following `bsub` command
+requests an interactive job for 30 minutes on one node.
+
+`bsub -P [project ID] -XF -nnodes 1 -W 30 -Is $SHELL`
+
+Then launch StarLord using a `jsrun` command similar to the following:
+
+`jsrun -n 1 -a 1 -g 1 ./Castro3d.pgi.CUDA.ex inputs.64`
+
+## Running StarLord on multiple GPUs on a single node
+
+First build StarLord with MPI support by building using the following command:
+
+`make -j USE_MPI=TRUE`
+
+Then to run on 4 GPUs on a single node, use the `bsub` command above with the following `jsrun` command:
+
+`jsrun -n 4 -a 1 -g 1 ./Castro3d.pgi.MPI.CUDA.ex inputs.256`
+
+## Running StarLord on multiple GPUs on multiple nodes
+
+Build StarLord with MPI support as above.
+
+Request multiple nodes using the `-nnodes` option to `bsub`.
+
+For 1 MPI task per GPU, and e.g. 4 nodes with 4 GPUs per node, launch
+StarLord via a jsrun command like:
+
+`jsrun -n 16 -a 1 -g 1 -r 4 ./Castro3d.pgi.MPI.CUDA.ex inputs.256`
+
+Where the '-r' option specifies the number of 1 MPI task/1 GPU
+pairings (i.e. resource sets) per node.
