@@ -35,7 +35,7 @@ sig_re = re.compile("(DEVICE_LAUNCHABLE)(\\()(.*)(\\))(;)", re.IGNORECASE|re.DOT
 # for finding just the variable definitions in the function signature (between the ())
 decls_re = re.compile("(.*?)(\\()(.*)(\\))", re.IGNORECASE|re.DOTALL)
 
-def doit(headers):
+def doit(headers, cuda_file):
 
     # keep track of the functions we need to CUDA-ize
     needs_cuda = []
@@ -94,40 +94,42 @@ def doit(headers):
 
     # we are done with all the headers now -- the only thing left is
     # to write out the CUDA version of the file
-    for sig in needs_cuda:
+    with open(cuda_file, "w") as of:
+        for sig in needs_cuda:
 
-        # we need to call the cuda_ version of the routine, which
-        # means getting rid of the data type definitions and also
-        # replacing the _first_ lo and hi with blo and bhi
-        dd = decls_re.search(sig)
-        vars = []
-        for n, v in enumerate(dd.group(3).split(",")):
+            # we need to call the cuda_ version of the routine, which
+            # means getting rid of the data type definitions and also
+            # replacing the _first_ lo and hi with blo and bhi
+            dd = decls_re.search(sig)
+            vars = []
+            for n, v in enumerate(dd.group(3).split(",")):
 
-            # we will assume that our function signatures _always_ include
-            # the name of the variable
-            _tmp = v.split()
-            var = _tmp[-1].replace("*","").replace("&","").strip()
+                # we will assume that our function signatures _always_ include
+                # the name of the variable
+                _tmp = v.split()
+                var = _tmp[-1].replace("*","").replace("&","").strip()
 
-            if n == 0:
-                if var == "lo":
-                    var = "blo"
-                else:
-                    sys.exit("ERROR: function signatures need to start with lo")
+                if n == 0:
+                    if var == "lo":
+                        var = "blo"
+                    else:
+                        sys.exit("ERROR: function signatures need to start with lo")
 
-            if n == 1:
-                if var == "hi":
-                    var = "bhi"
-                else:
-                    sys.exit("ERROR: function signatures need hi as the second argument")
+                if n == 1:
+                    if var == "hi":
+                        var = "bhi"
+                    else:
+                        sys.exit("ERROR: function signatures need hi as the second argument")
 
-            vars.append(var)
+                vars.append(var)
 
-        # reassemble the function sig
-        all_vars = ", ".join(vars)
-        new_call = "{}({})".format(dd.group(1), all_vars)
+            # reassemble the function sig
+            all_vars = ", ".join(vars)
+            new_call = "{}({})".format(dd.group(1), all_vars)
 
-        print(TEMPLATE.format(sig, new_call))
+            of.write(TEMPLATE.format(sig, new_call))
 
 if __name__ == "__main__":
     HEADERS = ["driver/Castro_F.H"]
-    doit(HEADERS)
+    CUDA_FILE = "cuda_interfaces.cpp"
+    doit(HEADERS, CUDA_FILE)
