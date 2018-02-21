@@ -15,11 +15,40 @@ TINY_PROFILE = FALSE
 
 # define the location of the CASTRO top directory
 CASTRO_HOME  := ../
+TOP := $(CASTRO_HOME)
 
 AMREX_HOME ?= /path/to/amrex
-CASTRO_HOME ?= /path/to/Castro
 
-TOP := $(CASTRO_HOME)
+NETWORK_DIR ?= aprox13
+EOS_DIR ?= helmholtz
+
+ifdef MICROPHYSICS_HOME
+   EOS_PATH := $(MICROPHYSICS_HOME)/EOS/$(strip $(EOS_DIR))
+   NETWORK_PATH := $(MICROPHYSICS_HOME)/networks/$(strip $(NETWORK_DIR))
+else
+   $(error StarLord requires Microphysics, and the MICROPHYSICS_HOME environment variable to be set)
+endif
+
+EXTERN_CORE += $(EOS_HOME)
+EXTERN_CORE += $(EOS_PATH)
+
+EXTERN_CORE += $(NETWORK_HOME)
+EXTERN_CORE += $(NETWORK_PATH)
+
+EXTERN_CORE += $(MICROPHYSICS_HOME)/EOS
+EXTERN_CORE += $(MICROPHYSICS_HOME)/networks
+
+# the helmholtz EOS has an include file -- also add a target to link
+# the table into the problem directory.
+ifeq ($(findstring helmholtz, $(EOS_DIR)), helmholtz)
+   all: table
+endif
+
+table:
+	@if [ ! -f helm_table.dat ]; then echo Linking helm_table.dat; ln -s $(EOS_PATH)/helm_table.dat .;  fi
+
+Bpack += $(foreach dir, $(EXTERN_CORE), $(dir)/Make.package)
+Blocs += $(foreach dir, $(EXTERN_CORE), $(dir))
 
 EBASE = Castro
 
@@ -37,11 +66,13 @@ include $(AMREX_HOME)/Tools/GNUMake/Make.defs
 # Castro uses a coarse grained OMP approach
 DEFINES += -DCRSEGRNDOMP
 
-# Limit the maximum number of registers available
+# Limit the maximum number of registers available.
+# Increase the maximum number of threads to compensate.
 ifeq ($(lowercase_comp),pgi)
   ifeq ($(USE_CUDA),TRUE)
     FFLAGS += -Mcuda=maxregcount:128
     F90FLAGS += -Mcuda=maxregcount:128
+    CUDA_MAX_THREADS := 512
   endif
 endif
 

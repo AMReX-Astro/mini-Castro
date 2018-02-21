@@ -6,13 +6,11 @@ module advection_util_module
 
 contains
 
-#ifdef CUDA
-  attributes(global) &
-#endif
-  subroutine enforce_minimum_density(uin,uin_lo,uin_hi, &
-                                     uout,uout_lo,uout_hi, &
-                                     vol,vol_lo,vol_hi, &
-                                     lo,hi,frac_change,verbose)
+  AMREX_LAUNCH subroutine ca_enforce_minimum_density(uin,uin_lo,uin_hi, &
+                                                     uout,uout_lo,uout_hi, &
+                                                     vol,vol_lo,vol_hi, &
+                                                     lo,hi,frac_change,verbose) &
+                                                     bind(c,name='ca_enforce_minimum_density')
 
     use network, only: nspec, naux
     use bl_constants_module, only: ZERO
@@ -114,14 +112,11 @@ contains
        enddo
     enddo
 
-  end subroutine enforce_minimum_density
+  end subroutine ca_enforce_minimum_density
 
 
 
-#ifdef CUDA
-  attributes(device) &
-#endif
-  subroutine reset_to_small_state(old_state, new_state, idx, lo, hi, verbose)
+  AMREX_DEVICE subroutine reset_to_small_state(old_state, new_state, idx, lo, hi, verbose)
 
     use bl_constants_module, only: ZERO
     use network, only: nspec, naux
@@ -185,10 +180,7 @@ contains
 
 
 
-#ifdef CUDA
-  attributes(device) &
-#endif
-  subroutine reset_to_zone_state(old_state, new_state, input_state, idx, lo, hi, verbose)
+  AMREX_DEVICE subroutine reset_to_zone_state(old_state, new_state, input_state, idx, lo, hi, verbose)
 
     use bl_constants_module, only: ZERO
     use amrex_fort_module, only: rt => amrex_real
@@ -226,13 +218,10 @@ contains
 
 
 
-#ifdef CUDA
-  attributes(device) &
-#endif
-  subroutine compute_cfl(lo, hi, dt, dx, courno, &
-                         q, q_lo, q_hi, &
-                         qaux, qa_lo, qa_hi) &
-                         bind(C, name = "compute_cfl")
+  AMREX_DEVICE subroutine compute_cfl(lo, hi, dt, dx, courno, &
+                                      q, q_lo, q_hi, &
+                                      qaux, qa_lo, qa_hi) &
+                                      bind(C, name = "compute_cfl")
 
     use bl_constants_module, only: ZERO, ONE
     use amrex_fort_module, only: rt => amrex_real, amrex_max
@@ -316,13 +305,10 @@ contains
 
 
 
-#ifdef CUDA
-  attributes(global) &
-#endif
-  subroutine ctoprim(lo, hi, &
-                     uin, uin_lo, uin_hi, &
-                     q,     q_lo,   q_hi, &
-                     qaux, qa_lo,  qa_hi)
+  AMREX_LAUNCH subroutine ca_ctoprim(lo, hi, &
+                                     uin, uin_lo, uin_hi, &
+                                     q,     q_lo,   q_hi, &
+                                     qaux, qa_lo,  qa_hi) bind(c,name='ca_ctoprim')
 
     use actual_network, only: nspec, naux
     use eos_module, only: eos
@@ -450,14 +436,11 @@ contains
        enddo
     enddo
 
-  end subroutine ctoprim
+  end subroutine ca_ctoprim
 
 
 
-#ifdef CUDA
-  attributes(device) &
-#endif
-  subroutine normalize_species_fluxes(lo, hi, flux, f_lo, f_hi)
+  AMREX_DEVICE subroutine normalize_species_fluxes(lo, hi, flux, f_lo, f_hi)
 
     ! Normalize the fluxes of the mass fractions so that
     ! they sum to 0.  This is essentially the CMA procedure that is
@@ -508,34 +491,35 @@ contains
 ! ::: ------------------------------------------------------------------
 ! :::
 
-#ifdef CUDA
-  attributes(device) &
-#endif
-  subroutine divu(lo, hi, dx, q, q_lo, q_hi, div, g_lo, g_hi)
+  AMREX_LAUNCH subroutine ca_divu(lo, hi, dx, q, q_lo, q_hi, div, d_lo, d_hi) bind(c,name='ca_divu')
 
     use bl_constants_module, only: FOURTH, ONE
     use amrex_fort_module, only: rt => amrex_real
-    use meth_params_module, only: QU, QV, QW, QVAR
+    use meth_params_module, only: QU, QV, QW, NQ
 
     implicit none
 
     integer,  intent(in   ) :: lo(3), hi(3)
     integer,  intent(in   ) :: q_lo(3), q_hi(3)
-    integer,  intent(in   ) :: g_lo(3), g_hi(3)
+    integer,  intent(in   ) :: d_lo(3), d_hi(3)
     real(rt), intent(in   ) :: dx(3)
-    real(rt), intent(in   ) :: q(q_lo(1):q_hi(1),q_lo(2):q_hi(2),q_lo(3):q_hi(3),QVAR)
-    real(rt), intent(inout) :: div(g_lo(1):g_hi(1),g_lo(2):g_hi(2),g_lo(3):g_hi(3))
+    real(rt), intent(in   ) :: q(q_lo(1):q_hi(1),q_lo(2):q_hi(2),q_lo(3):q_hi(3),NQ)
+    real(rt), intent(inout) :: div(d_lo(1):d_hi(1),d_lo(2):d_hi(2),d_lo(3):d_hi(3))
 
     integer  :: i, j, k
     real(rt) :: ux, vy, wz, dxinv, dyinv, dzinv
+
+    integer :: blo(3), bhi(3)
+
+    call get_loop_bounds(blo, bhi, lo, hi)
 
     dxinv = ONE/dx(1)
     dyinv = ONE/dx(2)
     dzinv = ONE/dx(3)
 
-    do k = lo(3), hi(3)
-       do j = lo(2), hi(2)
-          do i = lo(1), hi(1)
+    do k = blo(3), bhi(3)
+       do j = blo(2), bhi(2)
+          do i = blo(1), bhi(1)
 
              ux = FOURTH*( &
                     + q(i  ,j  ,k  ,QU) - q(i-1,j  ,k  ,QU) &
@@ -561,30 +545,28 @@ contains
        enddo
     enddo
 
-  end subroutine divu
+  end subroutine ca_divu
 
 
 
-#ifdef CUDA
-  attributes(device) &
-#endif
-    subroutine apply_av(lo, hi, idir, dx, &
-                        div, g_lo, g_hi, &
-                        uin, uin_lo, uin_hi, &
-                        flux, f_lo, f_hi)
+  AMREX_DEVICE subroutine apply_av(lo, hi, idir, dx, &
+                                   div, div_lo, div_hi, &
+                                   uin, uin_lo, uin_hi, &
+                                   flux, f_lo, f_hi)
 
     use bl_constants_module, only: ZERO, FOURTH
     use meth_params_module, only: NVAR, UTEMP
 
     implicit none
 
-    integer,  intent(in   ) :: lo(3), hi(3), idir
-    integer,  intent(in   ) :: g_lo(3), g_hi(3)
+    integer,  intent(in   ) :: lo(3), hi(3)
+    integer,  intent(in   ) :: div_lo(3), div_hi(3)
     integer,  intent(in   ) :: uin_lo(3), uin_hi(3)
     integer,  intent(in   ) :: f_lo(3), f_hi(3)
     real(rt), intent(in   ) :: dx(3)
+    integer,  intent(in   ), value :: idir
 
-    real(rt), intent(in   ) :: div(g_lo(1):g_hi(1),g_lo(2):g_hi(2),g_lo(3):g_hi(3))
+    real(rt), intent(in   ) :: div(div_lo(1):div_hi(1),div_lo(2):div_hi(2),div_lo(3):div_hi(3))
     real(rt), intent(in   ) :: uin(uin_lo(1):uin_hi(1),uin_lo(2):uin_hi(2),uin_lo(3):uin_hi(3),NVAR)
     real(rt), intent(inout) :: flux(f_lo(1):f_hi(1),f_lo(2):f_hi(2),f_lo(3):f_hi(3),NVAR)
 
@@ -637,18 +619,19 @@ contains
 
 
 
-#ifdef CUDA
-  attributes(global) &
-#endif
-  subroutine construct_hydro_update(lo, hi, dx, dt, stage_weight, &
-                                    f1, q1, f1_lo, f1_hi, &
-                                    f2, q2, f2_lo, f2_hi, &
-                                    f3, q3, f3_lo, f3_hi, &
-                                    a1, a1_lo, a1_hi, &
-                                    a2, a2_lo, a2_hi, &
-                                    a3, a3_lo, a3_hi, &
-                                    vol, vol_lo, vol_hi, &
-                                    update, u_lo, u_hi)
+  AMREX_LAUNCH subroutine ca_construct_hydro_update(lo, hi, dx, dt, stage_weight, &
+                                                    q1, q1_lo, q1_hi, &
+                                                    q2, q2_lo, q2_hi, &
+                                                    q3, q3_lo, q3_hi, &
+                                                    f1, f1_lo, f1_hi, &
+                                                    f2, f2_lo, f2_hi, &
+                                                    f3, f3_lo, f3_hi, &
+                                                    a1, a1_lo, a1_hi, &
+                                                    a2, a2_lo, a2_hi, &
+                                                    a3, a3_lo, a3_hi, &
+                                                    vol, vol_lo, vol_hi, &
+                                                    update, u_lo, u_hi) &
+                                                    bind(c,name='ca_construct_hydro_update')
 
     use bl_constants_module, only: HALF, ONE
     use meth_params_module, only: NVAR, UEINT, NGDNV, GDPRES, GDU, GDV, GDW
@@ -656,6 +639,9 @@ contains
     implicit none
 
     integer,  intent(in   ) :: lo(3), hi(3)
+    integer,  intent(in   ) :: q1_lo(3), q1_hi(3)
+    integer,  intent(in   ) :: q2_lo(3), q2_hi(3)
+    integer,  intent(in   ) :: q3_lo(3), q3_hi(3)
     integer,  intent(in   ) :: f1_lo(3), f1_hi(3)
     integer,  intent(in   ) :: f2_lo(3), f2_hi(3)
     integer,  intent(in   ) :: f3_lo(3), f3_hi(3)
@@ -667,9 +653,9 @@ contains
     real(rt), intent(in   ) :: dx(3)
     real(rt), intent(in   ), value :: dt, stage_weight
 
-    real(rt), intent(in   ) :: q1(f1_lo(1):f1_hi(1),f1_lo(2):f1_hi(2),f1_lo(3):f1_hi(3),NGDNV)
-    real(rt), intent(in   ) :: q2(f2_lo(1):f2_hi(1),f2_lo(2):f2_hi(2),f2_lo(3):f2_hi(3),NGDNV)
-    real(rt), intent(in   ) :: q3(f3_lo(1):f3_hi(1),f3_lo(2):f3_hi(2),f3_lo(3):f3_hi(3),NGDNV)
+    real(rt), intent(in   ) :: q1(q1_lo(1):q1_hi(1),q1_lo(2):q1_hi(2),q1_lo(3):q1_hi(3),NGDNV)
+    real(rt), intent(in   ) :: q2(q2_lo(1):q2_hi(1),q2_lo(2):q2_hi(2),q2_lo(3):q2_hi(3),NGDNV)
+    real(rt), intent(in   ) :: q3(q3_lo(1):q3_hi(1),q3_lo(2):q3_hi(2),q3_lo(3):q3_hi(3),NGDNV)
     real(rt), intent(in   ) :: f1(f1_lo(1):f1_hi(1),f1_lo(2):f1_hi(2),f1_lo(3):f1_hi(3),NVAR)
     real(rt), intent(in   ) :: f2(f2_lo(1):f2_hi(1),f2_lo(2):f2_hi(2),f2_lo(3):f2_hi(3),NVAR)
     real(rt), intent(in   ) :: f3(f3_lo(1):f3_hi(1),f3_lo(2):f3_hi(2),f3_lo(3):f3_hi(3),NVAR)
@@ -718,14 +704,11 @@ contains
        enddo
     enddo
 
-  end subroutine construct_hydro_update
+  end subroutine ca_construct_hydro_update
 
 
 
-#ifdef CUDA
-  attributes(device) &
-#endif
-  subroutine scale_flux(lo, hi, flux, f_lo, f_hi, area, a_lo, a_hi, dt)
+  AMREX_DEVICE subroutine scale_flux(lo, hi, flux, f_lo, f_hi, area, a_lo, a_hi, dt)
 
     use meth_params_module, only: NVAR
 
@@ -734,7 +717,7 @@ contains
     integer,  intent(in   ) :: lo(3), hi(3)
     integer,  intent(in   ) :: f_lo(3), f_hi(3)
     integer,  intent(in   ) :: a_lo(3), a_hi(3)
-    real(rt), intent(in   ) :: dt
+    real(rt), intent(in   ), value :: dt
 
     real(rt), intent(inout) :: flux(f_lo(1):f_hi(1),f_lo(2):f_hi(2),f_lo(3):f_hi(3),NVAR)
     real(rt), intent(in   ) :: area(a_lo(1):a_hi(1),a_lo(2):a_hi(2),a_lo(3):a_hi(3))

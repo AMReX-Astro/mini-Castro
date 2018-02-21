@@ -16,6 +16,8 @@ module extern_probin_module
   attributes(managed) :: use_eos_coulomb
 #endif
 
+  !$acc declare create(use_eos_coulomb, eos_input_is_constant, small_x)
+
 end module extern_probin_module
 
 subroutine runtime_init(name,namlen)

@@ -144,12 +144,14 @@ module eos_type_module
 
     real(dp_t) :: cv
     real(dp_t) :: cp
+    real(dp_t) :: xne
+    real(dp_t) :: xnp
+    real(dp_t) :: eta
+    real(dp_t) :: pele
+    real(dp_t) :: ppos
     real(dp_t) :: mu
     real(dp_t) :: mu_e
     real(dp_t) :: y_e
-    real(dp_t) :: dedX(nspec)
-    real(dp_t) :: dpdX(nspec)
-    real(dp_t) :: dhdX(nspec)
     real(dp_t) :: gam1
     real(dp_t) :: cs
 
@@ -168,17 +170,14 @@ contains
   ! Given a set of mass fractions, calculate quantities that depend
   ! on the composition like abar and zbar.
 
-#ifdef CUDA
-  attributes(device) &
-#endif
-  subroutine composition(state)
-
-    !$acc routine seq
+  AMREX_DEVICE subroutine composition(state)
 
     use bl_constants_module, only: ONE
     use network, only: aion, aion_inv, zion
 
     implicit none
+
+    !$acc routine seq
 
     type (eos_t), intent(inout) :: state
 
@@ -196,58 +195,19 @@ contains
 
   end subroutine composition
 
-  ! Compute thermodynamic derivatives with respect to xn(:)
-
-#ifdef CUDA
-  attributes(device) &
-#endif
-  subroutine composition_derivatives(state)
-
-    !$acc routine seq
-
-    use bl_constants_module, only: ZERO
-    use network, only: aion, aion_inv, zion
-
-    implicit none
-
-    type (eos_t), intent(inout) :: state
-
-    state % dpdX(:) = state % dpdA * (state % abar * aion_inv(:))   &
-                                   * (aion(:) - state % abar) &
-                    + state % dpdZ * (state % abar * aion_inv(:))   &
-                                   * (zion(:) - state % zbar)
-
-    state % dEdX(:) = state % dedA * (state % abar * aion_inv(:))   &
-                                   * (aion(:) - state % abar) &
-                    + state % dedZ * (state % abar * aion_inv(:))   &
-                                   * (zion(:) - state % zbar)
-
-    if (state % dPdr .ne. ZERO) then
-
-       state % dhdX(:) = state % dedX(:) &
-                       + (state % p / state % rho**2 - state % dedr) &
-                       *  state % dPdX(:) / state % dPdr
-
-    endif
-
-  end subroutine composition_derivatives
-
 
 
   ! Normalize the mass fractions: they must be individually positive
   ! and less than one, and they must all sum to unity.
 
-#ifdef CUDA
-  attributes(device) &
-#endif
-  subroutine normalize_abundances(state)
-
-    !$acc routine seq
+  AMREX_DEVICE subroutine normalize_abundances(state)
 
     use bl_constants_module, only: ONE
     use extern_probin_module, only: small_x
 
     implicit none
+
+    !$acc routine seq
 
     type (eos_t), intent(inout) :: state
 
@@ -261,14 +221,11 @@ contains
 
   ! Ensure that inputs are within reasonable limits.
 
-#ifdef CUDA
-  attributes(device) &
-#endif
-  subroutine clean_state(state)
-
-    !$acc routine seq
+  AMREX_DEVICE subroutine clean_state(state)
 
     implicit none
+
+    !$acc routine seq
 
     type (eos_t), intent(inout) :: state
 
@@ -295,14 +252,11 @@ contains
   end subroutine print_state
 
 
-#ifdef CUDA  
-  attributes(device) &
-#endif
-  subroutine eos_get_small_temp(small_temp_out)
-
-    !$acc routine seq
+  AMREX_DEVICE subroutine eos_get_small_temp(small_temp_out)
 
     implicit none
+
+    !$acc routine seq
 
     real(dp_t), intent(out) :: small_temp_out
 
@@ -311,14 +265,11 @@ contains
   end subroutine eos_get_small_temp
 
 
-#ifdef CUDA  
-  attributes(device) &
-#endif
-  subroutine eos_get_small_dens(small_dens_out)
-
-    !$acc routine seq
+  AMREX_DEVICE subroutine eos_get_small_dens(small_dens_out)
 
     implicit none
+
+    !$acc routine seq
 
     real(dp_t), intent(out) :: small_dens_out
 
@@ -328,14 +279,11 @@ contains
 
 
 
-#ifdef CUDA  
-  attributes(device) &
-#endif
-  subroutine eos_get_max_temp(max_temp_out)
-
-    !$acc routine seq
+  AMREX_DEVICE subroutine eos_get_max_temp(max_temp_out)
 
     implicit none
+
+    !$acc routine seq
 
     real(dp_t), intent(out) :: max_temp_out
 
@@ -345,14 +293,11 @@ contains
 
 
 
-#ifdef CUDA  
-  attributes(device) &
-#endif
-  subroutine eos_get_max_dens(max_dens_out)
-
-    !$acc routine seq
+  AMREX_DEVICE subroutine eos_get_max_dens(max_dens_out)
 
     implicit none
+
+    !$acc routine seq
 
     real(dp_t), intent(out) :: max_dens_out
 

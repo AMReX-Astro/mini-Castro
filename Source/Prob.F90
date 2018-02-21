@@ -86,10 +86,7 @@ module initdata_module
 
 contains
 
-#ifdef CUDA
-attributes(global) &
-#endif
-subroutine initdata(level, lo, hi, state, s_lo, s_hi, dx, xlo, xhi)
+AMREX_LAUNCH subroutine ca_initdata(level, lo, hi, state, s_lo, s_hi, dx, xlo, xhi) bind(c,name='ca_initdata')
 
   use probdata_module, only: r_init, exp_energy, nsub, p_ambient, dens_ambient, e_ambient
   use bl_constants_module, only: M_PI, FOUR3RD
@@ -179,6 +176,6 @@ subroutine initdata(level, lo, hi, state, s_lo, s_hi, dx, xlo, xhi)
      enddo
   enddo
   
-end subroutine initdata
+end subroutine ca_initdata
 
 end module initdata_module

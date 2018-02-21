@@ -153,19 +153,19 @@ public:
     //
     virtual void computeInitialDt (int                   finest_level,
                                    int                   sub_cycle,
-                                   amrex::Array<int>&           n_cycle,
-                                   const amrex::Array<amrex::IntVect>& ref_ratio,
-                                   amrex::Array<amrex::Real>&          dt_level,
+                                   amrex::Vector<int>&           n_cycle,
+                                   const amrex::Vector<amrex::IntVect>& ref_ratio,
+                                   amrex::Vector<amrex::Real>&          dt_level,
                                    amrex::Real                  stop_time) override;
     //
     // Compute new `dt'.
     //
     virtual void computeNewDt (int                   finest_level,
                                int                   sub_cycle,
-                               amrex::Array<int>&           n_cycle,
-                               const amrex::Array<amrex::IntVect>& ref_ratio,
-                               amrex::Array<amrex::Real>&          dt_min,
-                               amrex::Array<amrex::Real>&          dt_level,
+                               amrex::Vector<int>&           n_cycle,
+                               const amrex::Vector<amrex::IntVect>& ref_ratio,
+                               amrex::Vector<amrex::Real>&          dt_min,
+                               amrex::Vector<amrex::Real>&          dt_level,
                                amrex::Real                  stop_time,
                                int                   post_regrid_flag) override;
     //
@@ -245,7 +245,7 @@ public:
     //
     // A record of how many cells we have advanced throughout the simulation
     //
-    static int num_zones_advanced;
+    static long num_zones_advanced;
 
 protected:
 
@@ -253,7 +253,7 @@ protected:
     // Build a mask that ghost cells overlapping with interior cells in the same multifab
     // are set to 0, whereas others are set to 1.
     //
-    amrex::Array<std::unique_ptr<amrex::iMultiFab> > ib_mask;
+    amrex::Vector<std::unique_ptr<amrex::iMultiFab> > ib_mask;
     amrex::iMultiFab& build_interior_boundary_mask (int ng);
 
     //
@@ -274,7 +274,7 @@ protected:
     //
     // Hydrodynamic (and radiation) fluxes.
     //
-    amrex::Array<std::unique_ptr<amrex::MultiFab> > fluxes;
+    amrex::Vector<std::unique_ptr<amrex::MultiFab> > fluxes;
     amrex::FluxRegister flux_reg;
 
     // Scalings for the flux registers.
@@ -283,15 +283,15 @@ protected:
 
     //
     // Storage for the method of lines stages
-    amrex::Array<std::unique_ptr<amrex::MultiFab> > k_mol;
+    amrex::Vector<std::unique_ptr<amrex::MultiFab> > k_mol;
     //
 
     // MOL Butcher tableau
     static int MOL_STAGES;
   
-    static amrex::Array< amrex::Array<amrex::Real> > a_mol;
-    static amrex::Array<amrex::Real> b_mol;
-    static amrex::Array<amrex::Real> c_mol;
+    static amrex::Vector< amrex::Vector<amrex::Real> > a_mol;
+    static amrex::Vector<amrex::Real> b_mol;
+    static amrex::Vector<amrex::Real> c_mol;
 
     static void extern_init ();
 
@@ -331,7 +331,7 @@ protected:
     //
     amrex::MultiFab             volume;
     amrex::MultiFab             area[BL_SPACEDIM];
-    amrex::Array< amrex::Array<amrex::Real> > radius;
+    amrex::Vector< amrex::Vector<amrex::Real> > radius;
 
     //
     // Keep track of which AMR iteration we're on.

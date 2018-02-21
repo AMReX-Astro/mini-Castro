@@ -4,13 +4,10 @@ module flatten_module
 
 contains
 
-#ifdef CUDA
-  attributes(device) &
-#endif
-  subroutine uflaten(lo, hi, q, flatn, q_lo, q_hi)
+  AMREX_LAUNCH subroutine ca_uflaten(lo, hi, q, q_lo, q_hi, flatn, f_lo, f_hi) bind(c,name='ca_uflaten')
 
     use bl_constants_module, only: ZERO, ONE
-    use amrex_fort_module, only: rt => amrex_real
+    use amrex_fort_module, only: rt => amrex_real, get_loop_bounds
     use prob_params_module, only: dg
     use meth_params_module, only: NQ, QU, QV, QW, QPRES
 
@@ -18,8 +15,9 @@ contains
 
     integer,  intent(in   ) :: lo(3), hi(3)
     integer,  intent(in   ) :: q_lo(3), q_hi(3)
+    integer,  intent(in   ) :: f_lo(3), f_hi(3)
     real(rt), intent(in   ) :: q(q_lo(1):q_hi(1),q_lo(2):q_hi(2),q_lo(3):q_hi(3),NQ)
-    real(rt), intent(inout) :: flatn(q_lo(1):q_hi(1),q_lo(2):q_hi(2),q_lo(3):q_hi(3))
+    real(rt), intent(inout) :: flatn(f_lo(1):f_hi(1),f_lo(2):f_hi(2),f_lo(3):f_hi(3))
 
     integer :: i, j, k, ishft
 
@@ -31,10 +29,14 @@ contains
     ! Knobs for detection of strong shock
     real(rt), parameter :: shktst = 0.33e0_rt, zcut1 = 0.75e0_rt, zcut2 = 0.85e0_rt, dzcut = ONE/(zcut2-zcut1)
 
+    integer :: blo(3), bhi(3)
+
+    call get_loop_bounds(blo, bhi, lo, hi)
+
     ! x-direction flattening coef
-    do k = lo(3), hi(3)
-       do j = lo(2), hi(2)
-          do i = lo(1), hi(1)
+    do k = blo(3), bhi(3)
+       do j = blo(2), bhi(2)
+          do i = blo(1), bhi(1)
 
              dp = q(i+1,j,k,QPRES) - q(i-1,j,k,QPRES)
 
@@ -89,9 +91,9 @@ contains
     end do
 
     ! y-direction flattening coef
-    do k = lo(3), hi(3)
-       do j = lo(2), hi(2)
-          do i = lo(1), hi(1)
+    do k = blo(3), bhi(3)
+       do j = blo(2), bhi(2)
+          do i = blo(1), bhi(1)
 
              dp = q(i,j+1,k,QPRES) - q(i,j-1,k,QPRES)
 
@@ -145,9 +147,9 @@ contains
     end do
 
     ! z-direction flattening coef
-    do k = lo(3), hi(3)
-       do j = lo(2), hi(2)
-          do i = lo(1), hi(1)
+    do k = blo(3), bhi(3)
+       do j = blo(2), bhi(2)
+          do i = blo(1), bhi(1)
 
              dp = q(i,j,k+1,QPRES) - q(i,j,k-1,QPRES)
 
@@ -199,6 +201,6 @@ contains
        enddo
     enddo
 
-  end subroutine uflaten
+  end subroutine ca_uflaten
 
 end module flatten_module

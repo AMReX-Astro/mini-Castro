@@ -169,7 +169,7 @@ Castro::variableSetUp ()
   int coord_type = Geometry::Coord();
 
   // Get the center variable from the inputs and pass it directly to Fortran.
-  Array<Real> center(BL_SPACEDIM, 0.0);
+  Vector<Real> center(BL_SPACEDIM, 0.0);
   ParmParse ppc("castro");
   ppc.queryarr("center",center,0,BL_SPACEDIM);
 
@@ -181,7 +181,7 @@ Castro::variableSetUp ()
   // and store them in the Fortran module.
 
   int probin_file_length = probin_file.length();
-  Array<int> probin_file_name(probin_file_length);
+  Vector<int> probin_file_name(probin_file_length);
 
   for (int i = 0; i < probin_file_length; i++)
     probin_file_name[i] = probin_file[i];
@@ -202,8 +202,8 @@ Castro::variableSetUp ()
 
 //  desc_lst.setDeviceCopy(State_Type, true);
 
-  Array<BCRec>       bcs(NUM_STATE);
-  Array<std::string> name(NUM_STATE);
+  Vector<BCRec>       bcs(NUM_STATE);
+  Vector<std::string> name(NUM_STATE);
 
   BCRec bc;
   cnt=0; set_scalar_bc(bc,phys_bc); bcs[cnt] = bc; name[cnt] = "density";
@@ -218,7 +218,7 @@ Castro::variableSetUp ()
   std::vector<std::string> spec_names;
   for (int i = 0; i < NumSpec; i++) {
     int len = 20;
-    Array<int> int_spec_names(len);
+    Vector<int> int_spec_names(len);
     // This call return the actual length of each string in "len"
     ca_get_spec_names(int_spec_names.dataPtr(),&i,&len);
     char char_spec_names[len+1];

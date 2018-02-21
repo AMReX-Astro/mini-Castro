@@ -37,7 +37,7 @@ BCRec        Castro::phys_bc;
 int          Castro::NUM_STATE     = -1;
 int          Castro::NUM_GROW      = -1;
 
-int          Castro::num_zones_advanced = 0;
+long         Castro::num_zones_advanced = 0;
 
 Real         Castro::frac_change   = 1.e200;
 
@@ -64,9 +64,9 @@ int          Castro::NQ            = -1;
 int          Castro::NGDNV         = -1;
 
 int          Castro::MOL_STAGES;
-Array< Array<Real> > Castro::a_mol;
-Array<Real> Castro::b_mol;
-Array<Real> Castro::c_mol;
+Vector< Vector<Real> > Castro::a_mol;
+Vector<Real> Castro::b_mol;
+Vector<Real> Castro::c_mol;
 
 
 #include <castro_defaults.H>
@@ -123,7 +123,7 @@ Castro::read_params ()
     pp.query("sum_interval",sum_interval);
 
     // Get boundary conditions
-    Array<int> lo_bc(BL_SPACEDIM), hi_bc(BL_SPACEDIM);
+    Vector<int> lo_bc(BL_SPACEDIM), hi_bc(BL_SPACEDIM);
     pp.getarr("lo_bc",lo_bc,0,BL_SPACEDIM);
     pp.getarr("hi_bc",hi_bc,0,BL_SPACEDIM);
     for (int i = 0; i < BL_SPACEDIM; i++)
@@ -211,7 +211,7 @@ Castro::read_params ()
     ParmParse ppa("amr");
     ppa.query("probin_file",probin_file);
 
-    Array<int> tilesize(BL_SPACEDIM);
+    Vector<int> tilesize(BL_SPACEDIM);
     if (pp.queryarr("hydro_tile_size", tilesize, 0, BL_SPACEDIM))
     {
 	for (int i=0; i<BL_SPACEDIM; i++) hydro_tile_size[i] = tilesize[i];
@@ -422,7 +422,6 @@ Castro::initData ()
     // Loop over grids, call FORTRAN function to init with data.
     //
     const Real* dx  = geom.CellSize();
-    const Real* dx_f = geom.CellSizeF();
     MultiFab& S_new = get_new_data(State_Type);
     Real cur_time   = state[State_Type].curTime();
 
@@ -444,25 +443,19 @@ Castro::initData ()
           const RealBox& rbx = mfi.registerRealBox(RealBox(grids[mfi.index()],geom.CellSize(),geom.ProbLo()));
           const Box& box     = mfi.validbox();
 
-#ifdef AMREX_USE_DEVICE
-          Device::prepare_for_launch(box.loVect(), box.hiVect());
-#endif
-
-          ca_initdata(level, BL_TO_FORTRAN_BOX(box),
-		      BL_TO_FORTRAN_ANYD(S_new[mfi]), dx_f,
-		      rbx.loF(), rbx.hiF());
+          FORT_LAUNCH(box, ca_initdata,
+                      level, BL_TO_FORTRAN_BOX(box),
+		      BL_TO_FORTRAN_ANYD(S_new[mfi]), dx,
+		      rbx.lo(), rbx.hi());
        }
 
        for (MFIter mfi(S_new); mfi.isValid(); ++mfi)
        {
            const Box& box = mfi.validbox();
 
-#ifdef AMREX_USE_DEVICE
-           Device::prepare_for_launch(box.loVect(), box.hiVect());
-#endif
-
            // Verify that the sum of (rho X)_i = rho at every cell
-           ca_check_initial_species(BL_TO_FORTRAN_BOX(box), BL_TO_FORTRAN_ANYD(S_new[mfi]));
+           FORT_LAUNCH(box, ca_check_initial_species,
+                       BL_TO_FORTRAN_BOX(box), BL_TO_FORTRAN_ANYD(S_new[mfi]));
        }
 
        enforce_consistent_e(S_new);
@@ -552,7 +545,7 @@ Castro::estTimeStep (Real dt_old)
 
     const MultiFab& stateMF = get_new_data(State_Type);
 
-    const Real* dx = geom.CellSizeF();
+    const Real* dx = geom.CellSize();
 
     // Start the hydro with the max_dt value, but divide by CFL
     // to account for the fact that we multiply by it at the end.
@@ -581,10 +574,9 @@ Castro::estTimeStep (Real dt_old)
             Device::prepare_for_launch(box.loVect(), box.hiVect());
 #endif
 
-	    ca_estdt(BL_TO_FORTRAN_BOX(box),
-		     BL_TO_FORTRAN_ANYD(stateMF[mfi]),
-		     ZFILL(dx),dt_f);
-
+            ca_estdt(BL_TO_FORTRAN_BOX(box),
+                     BL_TO_FORTRAN_ANYD(stateMF[mfi]),
+                     ZFILL(dx),dt_f);
 	}
 #ifdef _OPENMP
 #pragma omp critical (castro_estdt)
@@ -609,10 +601,10 @@ Castro::estTimeStep (Real dt_old)
 void
 Castro::computeNewDt (int                   finest_level,
                       int                   sub_cycle,
-                      Array<int>&           n_cycle,
-                      const Array<IntVect>& ref_ratio,
-                      Array<Real>&          dt_min,
-                      Array<Real>&          dt_level,
+                      Vector<int>&           n_cycle,
+                      const Vector<IntVect>& ref_ratio,
+                      Vector<Real>&          dt_min,
+                      Vector<Real>&          dt_level,
                       Real                  stop_time,
                       int                   post_regrid_flag)
 {
@@ -702,9 +694,9 @@ Castro::computeNewDt (int                   finest_level,
 void
 Castro::computeInitialDt (int                   finest_level,
                           int                   sub_cycle,
-                          Array<int>&           n_cycle,
-                          const Array<IntVect>& ref_ratio,
-                          Array<Real>&          dt_level,
+                          Vector<int>&           n_cycle,
+                          const Vector<IntVect>& ref_ratio,
+                          Vector<Real>&          dt_level,
                           Real                  stop_time)
 {
     BL_PROFILE("Castro::computeInitialDt()");
@@ -946,12 +938,9 @@ Castro::normalize_species (MultiFab& S_new)
     {
        const Box& bx = mfi.growntilebox(ng);
 
-#ifdef AMREX_USE_DEVICE
-       Device::prepare_for_launch(bx.loVect(), bx.hiVect());
-#endif
-
-       ca_normalize_species(BL_TO_FORTRAN_ANYD(S_new[mfi]), 
-			    BL_TO_FORTRAN_BOX(bx));
+       FORT_LAUNCH(bx, ca_normalize_species,
+                   BL_TO_FORTRAN_ANYD(S_new[mfi]), 
+                   BL_TO_FORTRAN_BOX(bx));
     }
 
 }
@@ -971,11 +960,8 @@ Castro::enforce_consistent_e (MultiFab& S)
         const int* lo      = box.loVect();
         const int* hi      = box.hiVect();
 
-#ifdef AMREX_USE_DEVICE
-        Device::prepare_for_launch(lo, hi);
-#endif
-
-        ca_enforce_consistent_e(BL_TO_FORTRAN_BOX(box), BL_TO_FORTRAN_ANYD(S[mfi]));
+        FORT_LAUNCH(box, ca_enforce_consistent_e,
+                    BL_TO_FORTRAN_BOX(box), BL_TO_FORTRAN_ANYD(S[mfi]));
     }
 
 #ifdef AMREX_USE_DEVICE
@@ -1018,15 +1004,12 @@ Castro::enforce_min_density (MultiFab& S_old, MultiFab& S_new)
         Real* dens_change_f = &dens_change;
 #endif
 
-#ifdef AMREX_USE_DEVICE
-        Device::prepare_for_launch(bx.loVect(), bx.hiVect());
-#endif
-
-	ca_enforce_minimum_density(BL_TO_FORTRAN_ANYD(stateold),
-				   BL_TO_FORTRAN_ANYD(statenew),
-				   BL_TO_FORTRAN_ANYD(vol),
-				   BL_TO_FORTRAN_BOX(bx),
-				   dens_change_f, verbose);
+	FORT_LAUNCH(bx, ca_enforce_minimum_density,
+                    BL_TO_FORTRAN_ANYD(stateold),
+                    BL_TO_FORTRAN_ANYD(statenew),
+                    BL_TO_FORTRAN_ANYD(vol),
+                    BL_TO_FORTRAN_BOX(bx),
+                    dens_change_f, verbose);
 
     }
 
@@ -1107,7 +1090,7 @@ Castro::apply_tagging_func(TagBoxArray& tags, int clearval, int tagval, Real tim
 #pragma omp parallel
 #endif
 	{
-	    Array<int>  itags;
+	    Vector<int>  itags;
 
 	    for (MFIter mfi(*mf,true); mfi.isValid(); ++mfi)
 	    {
@@ -1174,7 +1157,7 @@ Castro::extern_init ()
   }
 
   int probin_file_length = probin_file.length();
-  Array<int> probin_file_name(probin_file_length);
+  Vector<int> probin_file_name(probin_file_length);
 
   for (int i = 0; i < probin_file_length; i++)
     probin_file_name[i] = probin_file[i];
@@ -1202,13 +1185,10 @@ Castro::reset_internal_energy(MultiFab& S_new)
     {
         const Box& bx = mfi.growntilebox(ng);
 
-#ifdef AMREX_USE_DEVICE
-        Device::prepare_for_launch(bx.loVect(), bx.hiVect());
-#endif
-
-        ca_reset_internal_e(BL_TO_FORTRAN_BOX(bx),
-			    BL_TO_FORTRAN_ANYD(S_new[mfi]),
-			    print_fortran_warnings);
+        FORT_LAUNCH(bx, ca_reset_internal_e,
+                    BL_TO_FORTRAN_BOX(bx),
+                    BL_TO_FORTRAN_ANYD(S_new[mfi]),
+                    print_fortran_warnings);
     }
 
     // Flush Fortran output
@@ -1233,11 +1213,8 @@ Castro::computeTemp(MultiFab& State)
     {
       const Box& bx = mfi.growntilebox();
 
-#ifdef AMREX_USE_DEVICE
-        Device::prepare_for_launch(bx.loVect(), bx.hiVect());
-#endif
-
-	ca_compute_temp(BL_TO_FORTRAN_BOX(bx), BL_TO_FORTRAN_3D(State[mfi]));
+	FORT_LAUNCH(bx, ca_compute_temp,
+                    BL_TO_FORTRAN_BOX(bx), BL_TO_FORTRAN_3D(State[mfi]));
     }
 
 }
