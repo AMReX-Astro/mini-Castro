@@ -19,8 +19,8 @@ Nothing works.
 
 ## Compiling CUDA Fortran on summitdev (OLCF)
 
-First, swap the `xl` module for `pgi`. Only the PGI Fortran compiler
-supports CUDA Fortran. Then load the CUDA 9 module. The latest
+First, swap the `xl` module for `pgi`. StarLord currently only
+supports CUDA Fortran with the PGI compiler. Then load the CUDA 9 module. The latest
 versions of these modules tested on summitdev are:
 
 - pgi/17.10
