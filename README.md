@@ -26,7 +26,8 @@ versions of these modules tested on summitdev are:
 - pgi/17.10
 - cuda/9.0.69
 
-To compile with CUDA 8, use the following modules:
+To compile with CUDA 8, use the following modules and also set
+`CUDA_VERSION=8.0` when running `make`:
 
 - pgi/17.9
 - cuda/8.0.61-1
