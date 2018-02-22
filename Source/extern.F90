@@ -24,11 +24,6 @@ subroutine runtime_init(name,namlen)
 
   use extern_probin_module
 
-#if (defined(CUDA) && !defined(NO_CUDA_8))
-  use cudafor, only: cudaMemAdvise, cudaMemAdviseSetPreferredLocation
-  use cuda_module, only: cuda_device_id
-#endif
-
   implicit none
 
 #ifdef CUDA
@@ -86,12 +81,6 @@ subroutine runtime_init(name,namlen)
 
   !$acc update &
   !$acc device(use_eos_coulomb, eos_input_is_constant, small_x)
-
-#if (defined(CUDA) && !defined(NO_CUDA_8))
-  cuda_result = cudaMemAdvise(use_eos_coulomb, 1, cudaMemAdviseSetPreferredLocation, cuda_device_id)
-  cuda_result = cudaMemAdvise(eos_input_is_constant, 1, cudaMemAdviseSetPreferredLocation, cuda_device_id)
-  cuda_result = cudaMemAdvise(small_x, 1, cudaMemAdviseSetPreferredLocation, cuda_device_id)
-#endif
 
 end subroutine runtime_init
 

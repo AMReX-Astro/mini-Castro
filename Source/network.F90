@@ -41,10 +41,6 @@ contains
 
     use bl_error_module, only: bl_error
     use bl_constants_module, only: ONE
-#if (defined(CUDA) && !defined(NO_CUDA_8))
-    use cudafor, only: cudaMemAdvise, cudaMemAdviseSetPreferredLocation
-    use cuda_module, only: cuda_device_id
-#endif
 
     implicit none
 
@@ -75,12 +71,6 @@ contains
     aion_inv(:) = ONE/aion(:)
 
     !$acc update device(aion_inv)
-
-#if (defined(CUDA) && !defined(NO_CUDA_8))
-    cuda_result = cudaMemAdvise(aion_inv, nspec, cudaMemAdviseSetPreferredLocation, cuda_device_id)
-    cuda_result = cudaMemAdvise(aion, nspec, cudaMemAdviseSetPreferredLocation, cuda_device_id)
-    cuda_result = cudaMemAdvise(zion, nspec, cudaMemAdviseSetPreferredLocation, cuda_device_id)
-#endif
 
     network_initialized = .true.
 
