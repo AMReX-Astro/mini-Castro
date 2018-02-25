@@ -19,7 +19,7 @@ import re
 import sys
 
 TEMPLATE = """
-__global__ void {}
+__global__ cuda_{}
 {{
 
    int blo[3];
@@ -130,6 +130,6 @@ def doit(headers, cuda_file):
             of.write(TEMPLATE.format(sig, new_call))
 
 if __name__ == "__main__":
-    HEADERS = ["driver/Castro_F.H"]
+    HEADERS = ["Castro_F.H"]
     CUDA_FILE = "cuda_interfaces.cpp"
     doit(HEADERS, CUDA_FILE)
