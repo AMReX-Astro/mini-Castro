@@ -147,7 +147,8 @@ Castro::volWgtSum (const std::string& name,
         Real* s_f = &sum;
 #endif
 
-	ca_summass(BL_TO_FORTRAN_BOX(box), BL_TO_FORTRAN_ANYD(fab), ZFILL(dx), BL_TO_FORTRAN_ANYD(volume[mfi]), s_f);
+	FORT_LAUNCH(box, ca_summass,
+                    BL_TO_FORTRAN_BOX(box), BL_TO_FORTRAN_ANYD(fab), ZFILL(dx), BL_TO_FORTRAN_ANYD(volume[mfi]), s_f);
     }
 
     if (!local)

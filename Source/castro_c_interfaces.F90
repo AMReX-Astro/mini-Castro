@@ -80,60 +80,6 @@ contains
   end subroutine ca_derpres
 
 
-  subroutine ca_estdt(lo,hi,u,u_lo,u_hi,dx,dt) bind(C, name="ca_estdt")
-    
-    use timestep_module, only: estdt
-    
-    implicit none
-    
-    integer,  intent(in   ) :: lo(3), hi(3)
-    integer,  intent(in   ) :: u_lo(3), u_hi(3)
-    real(rt), intent(in   ) :: u(u_lo(1):u_hi(1),u_lo(2):u_hi(2),u_lo(3):u_hi(3),NVAR)
-    real(rt), intent(in   ) :: dx(3)
-    real(rt), intent(inout) :: dt
-    
-#ifdef CUDA
-    attributes(device) :: u, lo, hi, u_lo, u_hi, dx, dt
-#endif
-    
-    call estdt &
-#ifdef CUDA
-         <<<numBlocks, numThreads, 0, cuda_stream>>> &
-#endif
-         (lo, hi, u, u_lo, u_hi, dx, dt)
-    
-  end subroutine ca_estdt
-
-
-
-  subroutine ca_summass(lo,hi,rho,r_lo,r_hi,dx, &
-                        vol,v_lo,v_hi,mass) bind(c, name='ca_summass')
-
-    use castro_util_module, only: summass
-
-    implicit none
-
-    integer,  intent(in   ) :: lo(3), hi(3)
-    integer,  intent(in   ) :: r_lo(3), r_hi(3)
-    integer,  intent(in   ) :: v_lo(3), v_hi(3)
-    real(rt), intent(in   ) :: dx(3)
-    real(rt), intent(in   ) :: rho(r_lo(1):r_hi(1),r_lo(2):r_hi(2),r_lo(3):r_hi(3))
-    real(rt), intent(in   ) :: vol(v_lo(1):v_hi(1),v_lo(2):v_hi(2),v_lo(3):v_hi(3))
-    real(rt), intent(inout) :: mass
-
-#ifdef CUDA
-    attributes(device) :: rho, vol, lo, hi, r_lo, r_hi, v_lo, v_hi, dx, mass
-#endif
-
-    call summass &
-#ifdef CUDA
-         <<<numBlocks, numThreads, 0, cuda_stream>>> &
-#endif
-         (lo, hi, rho, r_lo, r_hi, dx, vol, v_lo, v_hi, mass)
-
-  end subroutine ca_summass
-
-
 
   subroutine ca_hypfill(adv,adv_l1,adv_l2,adv_l3,adv_h1,adv_h2, &
                         adv_h3,domlo,domhi,dx,xlo,time,bc) bind(C, name="ca_hypfill")

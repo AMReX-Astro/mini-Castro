@@ -574,9 +574,10 @@ Castro::estTimeStep (Real dt_old)
             Device::prepare_for_launch(box.loVect(), box.hiVect());
 #endif
 
-            ca_estdt(BL_TO_FORTRAN_BOX(box),
-                     BL_TO_FORTRAN_ANYD(stateMF[mfi]),
-                     ZFILL(dx),dt_f);
+            FORT_LAUNCH(box, ca_estdt,
+                        BL_TO_FORTRAN_BOX(box),
+                        BL_TO_FORTRAN_ANYD(stateMF[mfi]),
+                        ZFILL(dx),dt_f);
 	}
 #ifdef _OPENMP
 #pragma omp critical (castro_estdt)

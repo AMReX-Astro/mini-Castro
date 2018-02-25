@@ -1177,8 +1177,8 @@ contains
 #ifdef CUDA
   attributes(global) &
 #endif
-  subroutine summass(lo,hi,rho,r_lo,r_hi,dx, &
-                     vol,v_lo,v_hi,mass)
+  subroutine ca_summass(lo,hi,rho,r_lo,r_hi,dx, &
+                        vol,v_lo,v_hi,mass) bind(c,name='ca_summass')
 
     use amrex_fort_module, only: rt => amrex_real, get_loop_bounds, amrex_add
 
@@ -1210,6 +1210,6 @@ contains
        enddo
     enddo
 
-  end subroutine summass
+  end subroutine ca_summass
 
 end module castro_util_module

@@ -136,7 +136,7 @@ extern "C"
      const amrex::Real dx[], const amrex::Real glo[],
      const amrex::Real* time, const int bc[]);
 
-  void ca_estdt
+  FORT_LAUNCHABLE(void ca_estdt)
     (const int* lo, const int* hi,
      const BL_FORT_FAB_ARG_3D(state),
      const amrex::Real* dx, amrex::Real* dt);
@@ -191,7 +191,7 @@ extern "C"
 
   void flush_output();
 
-  void ca_summass
+  FORT_LAUNCHABLE(void ca_summass)
     (const int* lo, const int* hi, const BL_FORT_FAB_ARG_3D(rho),
      const amrex::Real* dx, BL_FORT_FAB_ARG_3D(vol), amrex::Real* mass);
 

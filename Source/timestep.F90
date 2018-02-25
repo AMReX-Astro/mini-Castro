@@ -11,7 +11,7 @@ contains
 #ifdef CUDA
   attributes(global) &
 #endif
-  subroutine estdt(lo,hi,u,u_lo,u_hi,dx,dt)
+  subroutine ca_estdt(lo,hi,u,u_lo,u_hi,dx,dt) bind(c,name='ca_estdt')
 
     use network, only: nspec, naux
     use eos_module, only: eos
@@ -86,6 +86,6 @@ contains
        enddo
     enddo
 
-  end subroutine estdt
+  end subroutine ca_estdt
 
 end module timestep_module
