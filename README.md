@@ -13,6 +13,12 @@ StarLord can run some algorithms on GPUs. Some algorithms are ported using CUDA
 Fortran (supported only on the PGI Fortran compiler), and others are ported
 using OpenACC. Below are instructions for compiling for each:
 
+## Compiling on bender
+
+module load gcc/4.9.4
+make USE_CUDA=TRUE -j 4 CUDA_VERSION=9.1
+
+
 ## Compiling on Titan (OLCF)
 
 Nothing works.
