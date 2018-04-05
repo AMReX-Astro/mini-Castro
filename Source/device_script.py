@@ -2,7 +2,7 @@
 
 # Search the code for function signatures wrapped in
 #
-#   DEVICE_LAUNCHABLE(ca_func(const int* lo, ...));
+#   void DEVICE_LAUNCHABLE(ca_func(const int* lo, ...));
 #
 # This should be expanded to two function signatures
 #
