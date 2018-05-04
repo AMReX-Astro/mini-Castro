@@ -19,7 +19,7 @@ import re
 import sys
 
 TEMPLATE = """
-__global__ cuda_{}
+__global__ void cuda_{}
 {{
 
    int blo[3];
@@ -95,6 +95,9 @@ def doit(headers, cuda_file):
     # we are done with all the headers now -- the only thing left is
     # to write out the CUDA version of the file
     with open(cuda_file, "w") as of:
+        of.write("#include <Castro.H>\n")
+        of.write("#include <cuda_Castro_F.H>\n")
+        of.write("#include <AMReX_BLFort.H>\n")
         for sig in needs_cuda:
 
             # we need to call the cuda_ version of the routine, which

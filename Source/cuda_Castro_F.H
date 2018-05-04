@@ -96,8 +96,12 @@ extern "C"
   FORT_LAUNCHABLE(void ca_normalize_species)
     (BL_FORT_FAB_ARG_3D(S_new), const int* lo, const int* hi);
 
-  void DEVICE_LAUNCHABLE(ca_compute_temp
-    (const int* lo, const int* hi, const BL_FORT_FAB_ARG_3D(state)));
+void ca_compute_temp
+    (const int* lo, const int* hi, const BL_FORT_FAB_ARG_3D(state));
+
+__global__ void cuda_ca_compute_temp
+    (const int* lo, const int* hi, const BL_FORT_FAB_ARG_3D(state));
+
 
   FORT_LAUNCHABLE(void ca_enforce_consistent_e)
     (const int* lo, const int* hi, BL_FORT_FAB_ARG_3D(state));

@@ -15,7 +15,7 @@
 #include <AMReX_Utility.H>
 #include <AMReX_CONSTANTS.H>
 #include <Castro.H>
-#include <Castro_F.H>
+#include <cuda_Castro_F.H>
 #include <AMReX_VisMF.H>
 #include <AMReX_TagBox.H>
 #include <AMReX_FillPatchUtil.H>
@@ -1214,7 +1214,7 @@ Castro::computeTemp(MultiFab& State)
     {
       const Box& bx = mfi.growntilebox();
 
-	FORT_LAUNCH(bx, ca_compute_temp,
+	FORT_LAUNCH(bx, cuda_ca_compute_temp,
                     BL_TO_FORTRAN_BOX(bx), BL_TO_FORTRAN_3D(State[mfi]));
     }
 
