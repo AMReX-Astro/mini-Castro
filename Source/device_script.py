@@ -55,6 +55,10 @@ def doit(headers, cuda_file):
         except IOError:
             sys.exit("Cannot open output file {}".format(ofile))
 
+        # Wrap the device declarations in extern "C"
+        hout.write("#ifdef AMREX_USE_CUDA\n")
+        hout.write("extern \"C\" {\n")
+
         line = hin.readline()
         while line:
 
@@ -86,6 +90,10 @@ def doit(headers, cuda_file):
 
         # done with this header
         hin.close()
+
+        # Close out the extern "C" region
+        hout.write("}\n")
+        hout.write("#endif\n")
         hout.close()
 
     # we are done with all the headers now -- the only thing left is
