@@ -76,7 +76,7 @@ def doit(headers, cuda_file):
                 needs_cuda.append(func_sig)
 
                 # duplicate the signature, once for device and once for global and write these out
-                orig_sig = "void {};\n\n".format(func_sig)
+                orig_sig = "__device__ void {};\n\n".format(func_sig)
                 global_sig = "__global__ void cuda_{};\n\n".format(func_sig)
 
                 hout.write(orig_sig)
@@ -98,6 +98,7 @@ def doit(headers, cuda_file):
         of.write("#include <Castro.H>\n")
         of.write("#include <cuda_Castro_F.H>\n")
         of.write("#include <AMReX_BLFort.H>\n")
+        of.write("#include <AMReX_Device.H>\n")
         for sig in needs_cuda:
 
             # we need to call the cuda_ version of the routine, which
