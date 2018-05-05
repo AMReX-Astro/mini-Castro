@@ -1,5 +1,5 @@
 #include "Castro.H"
-#include "Castro_F.H"
+#include "cuda_Castro_F.H"
 
 using namespace amrex;
 
@@ -60,7 +60,7 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
       // Convert the conservative state to the primitive variable state.
       // This fills both q and qaux.
 
-      FORT_LAUNCH(qbx, ca_ctoprim,
+      FORT_LAUNCH(qbx, cuda_ca_ctoprim,
                   BL_TO_FORTRAN_BOX(qbx),
                   BL_TO_FORTRAN_ANYD(Sborder[mfi]),
                   BL_TO_FORTRAN_ANYD(q[mfi]),
