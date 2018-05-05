@@ -113,6 +113,9 @@ def doit(headers, cuda_file):
                 _tmp = v.split()
                 var = _tmp[-1].replace("*","").replace("&","").strip()
 
+                # Replace AMReX Fortran macros
+                var = var.replace("BL_FORT_FAB_ARG_3D", "BL_FORT_FAB_VAL_3D")
+
                 if n == 0:
                     if var == "lo":
                         var = "blo"

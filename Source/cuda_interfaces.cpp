@@ -11,5 +11,5 @@ __global__ void cuda_ca_compute_temp
    int bhi[3];
    get_loop_bounds(blo, bhi, lo, hi);
    ca_compute_temp
-    (blo, bhi, BL_FORT_FAB_ARG_3D(state));
+    (blo, bhi, BL_FORT_FAB_VAL_3D(state));
 }
