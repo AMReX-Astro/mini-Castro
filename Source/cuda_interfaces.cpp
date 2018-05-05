@@ -1,5 +1,5 @@
 #include <Castro.H>
-#include <cuda_Castro_F.H>
+#include <Castro_F.H>
 #include <AMReX_BLFort.H>
 #include <AMReX_Device.H>
 

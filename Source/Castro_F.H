@@ -217,6 +217,10 @@ extern "C"
     (const int level, const int* lo, const int* hi,
      BL_FORT_FAB_ARG_3D(state),
      const amrex::Real* dx, const amrex::Real* xlo, const amrex::Real* xhi);
+
+#ifdef AMREX_USE_CUDA
+#include "cuda_Castro_F.H"
+#endif
   
 #ifdef __cplusplus
 }

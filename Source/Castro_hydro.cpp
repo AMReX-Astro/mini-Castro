@@ -1,5 +1,5 @@
 #include "Castro.H"
-#include "cuda_Castro_F.H"
+#include "Castro_F.H"
 
 using namespace amrex;
 

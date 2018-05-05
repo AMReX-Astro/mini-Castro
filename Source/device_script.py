@@ -58,7 +58,7 @@ def doit(headers, cuda_file):
         line = hin.readline()
         while line:
 
-            # if the line doesn't have DEVICE_LAUNCHABLE, then output it to the new header
+            # if the line doesn't have DEVICE_LAUNCHABLE, then skip it.
             # otherwise, we need to capture the function signature
             if "DEVICE_LAUNCHABLE" in line:
                 launch_sig = "" + line
@@ -82,10 +82,6 @@ def doit(headers, cuda_file):
                 hout.write(orig_sig)
                 hout.write(global_sig)
 
-            else:
-                # we just need to output the line unmodified
-                hout.write(line)
-
             line = hin.readline()
 
         # done with this header
@@ -96,7 +92,7 @@ def doit(headers, cuda_file):
     # to write out the CUDA version of the file
     with open(cuda_file, "w") as of:
         of.write("#include <Castro.H>\n")
-        of.write("#include <cuda_Castro_F.H>\n")
+        of.write("#include <Castro_F.H>\n")
         of.write("#include <AMReX_BLFort.H>\n")
         of.write("#include <AMReX_Device.H>\n")
         for sig in needs_cuda:

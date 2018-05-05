@@ -15,7 +15,7 @@ CEXE_headers += Castro_io.H
 
 CEXE_sources += sum_integrated_quantities.cpp
 
-FEXE_headers += cuda_Castro_F.H
+FEXE_headers += Castro_F.H
 FEXE_headers += Problem_F.H
 FEXE_headers += Castro_error_F.H
 
