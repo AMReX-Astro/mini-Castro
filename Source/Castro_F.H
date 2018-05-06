@@ -79,9 +79,9 @@ extern "C"
   void ca_get_tagging_params(const int* name, const int* namlen);
 
   void DEVICE_LAUNCHABLE(ca_ctoprim(const int* lo, const int* hi,
-                                            const amrex::Real* u, const int* u_lo, const int* u_hi,
-                                            const amrex::Real* q, const int* q_lo, const int* q_hi,
-                                            const amrex::Real* qaux, const int* qa_lo, const int* qa_hi));
+                                    const amrex::Real* u, const int* u_lo, const int* u_hi,
+                                    const amrex::Real* q, const int* q_lo, const int* q_hi,
+                                    const amrex::Real* qaux, const int* qa_lo, const int* qa_hi));
 
   FORT_LAUNCHABLE(void ca_check_initial_species)
     (const int* lo, const int* hi, BL_FORT_FAB_ARG_3D(state));

@@ -104,9 +104,13 @@ def doit(headers):
 
                 # Now write out the global signature. This involves getting
                 # rid of the data type definitions and also replacing the
-                # _first_ lo and hi with blo and bhi
+                # lo and hi (which must be in the function definition) with blo and bhi.
                 dd = decls_re.search(func_sig)
                 vars = []
+
+                has_lo = False
+                has_hi = False
+
                 for n, v in enumerate(dd.group(3).split(",")):
 
                     # we will assume that our function signatures _always_ include
@@ -117,19 +121,18 @@ def doit(headers):
                     # Replace AMReX Fortran macros
                     var = var.replace("BL_FORT_FAB_ARG_3D", "BL_FORT_FAB_VAL_3D")
 
-                    if n == 0:
-                        if var == "lo":
-                            var = "blo"
-                        else:
-                            sys.exit("ERROR: function signatures need to start with lo")
+                    if var == "lo":
+                        var = "blo"
+                        has_lo = True
 
-                    if n == 1:
-                        if var == "hi":
-                            var = "bhi"
-                        else:
-                            sys.exit("ERROR: function signatures need hi as the second argument")
+                    if var == "hi":
+                        var = "bhi"
+                        has_hi = True
 
                     vars.append(var)
+
+                if not has_lo or not has_hi:
+                    sys.exit("ERROR: function signature must have variables lo and hi defined.")
 
                 # reassemble the function sig
                 all_vars = ", ".join(vars)
