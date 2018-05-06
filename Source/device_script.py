@@ -30,8 +30,30 @@ __global__ static void cuda_{}
 }}
 """
 
+STRIDED_TEMPLATE = """
+__global__ static void cuda_{}
+{{
+   int blo[3];
+   int bhi[3];
+   for (int k = lo[2] + blockIdx.z * blockDim.z + threadIdx.z; k <= hi[2]; k += blockDim.z * gridDim.z) {{
+     blo[2] = k;
+     bhi[2] = k;
+     for (int j = lo[1] + blockIdx.y * blockDim.y + threadIdx.y; j <= hi[1]; j += blockDim.y * gridDim.y) {{
+       blo[1] = j;
+       bhi[1] = j;
+       for (int i = lo[0] + blockIdx.x * blockDim.x + threadIdx.x; i <= hi[0]; i += blockDim.x * gridDim.x) {{
+         blo[0] = i;
+         bhi[0] = i;
+         {};
+       }}
+     }}
+   }}
+}}
+"""
+
 # for finding a function signature that starts with DEVICE_LAUNCHABLE
 sig_re = re.compile("(DEVICE_LAUNCHABLE)(\\()(.*)(\\))(;)", re.IGNORECASE|re.DOTALL)
+sig_re_strided = re.compile("(DEVICE_LAUNCHABLE_STRIDED)(\\()(.*)(\\))(;)", re.IGNORECASE|re.DOTALL)
 
 # for finding just the variable definitions in the function signature (between the ())
 decls_re = re.compile("(.*?)(\\()(.*)(\\))", re.IGNORECASE|re.DOTALL)
@@ -75,6 +97,11 @@ def doit(headers):
             # if the line doesn't have DEVICE_LAUNCHABLE, then skip it.
             # otherwise, we need to capture the function signature
             if "DEVICE_LAUNCHABLE" in line:
+
+                strided = False
+                if "STRIDED" in line:
+                    strided = True
+
                 launch_sig = "" + line
                 sig_end = False
                 while not sig_end:
@@ -84,7 +111,10 @@ def doit(headers):
                         sig_end = True
 
                 # now get just the actual signature
-                m = sig_re.search(launch_sig)
+                if strided:
+                    m = sig_re_strided.search(launch_sig)
+                else:
+                    m = sig_re.search(launch_sig)
                 func_sig = m.group(3)
 
                 # First write out the device signature
@@ -124,7 +154,10 @@ def doit(headers):
                 all_vars = ", ".join(vars)
                 new_call = "{}({})".format(dd.group(1), all_vars)
 
-                hout.write(TEMPLATE.format(func_sig, new_call))
+                if strided:
+                    hout.write(STRIDED_TEMPLATE.format(func_sig, new_call))
+                else:
+                    hout.write(TEMPLATE.format(func_sig, new_call))
                 hout.write("\n")
 
             line = hin.readline()
