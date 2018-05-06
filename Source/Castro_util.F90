@@ -923,7 +923,7 @@ contains
 
 
 
-  AMREX_LAUNCH subroutine ca_compute_temp(lo,hi,state,s_lo,s_hi) bind(c,name='ca_compute_temp')
+  AMREX_DEVICE subroutine ca_compute_temp(lo,hi,state,s_lo,s_hi) bind(c,name='ca_compute_temp')
 
     use network, only: nspec, naux
     use eos_module, only: eos
@@ -939,16 +939,13 @@ contains
     real(rt), intent(inout) :: state(s_lo(1):s_hi(1),s_lo(2):s_hi(2),s_lo(3):s_hi(3),NVAR)
 
     integer  :: i,j,k
-    integer  :: blo(3), bhi(3)
     real(rt) :: rhoInv
 
     type (eos_t) :: eos_state
 
-    call get_loop_bounds(blo, bhi, lo, hi)
-
-    do k = blo(3), bhi(3)
-       do j = blo(2), bhi(2)
-          do i = blo(1), bhi(1)
+    do k = lo(3), hi(3)
+       do j = lo(2), hi(2)
+          do i = lo(1), hi(1)
 
              ! First check the inputs for validity.
 

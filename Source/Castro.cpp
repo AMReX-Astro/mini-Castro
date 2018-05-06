@@ -1214,8 +1214,7 @@ Castro::computeTemp(MultiFab& State)
     {
       const Box& bx = mfi.growntilebox();
 
-	FORT_LAUNCH(bx, cuda_ca_compute_temp,
-                    BL_TO_FORTRAN_BOX(bx), BL_TO_FORTRAN_3D(State[mfi]));
+	DEVICE_LAUNCH(ca_compute_temp)(BL_TO_FORTRAN_BOX(bx), BL_TO_FORTRAN_3D(State[mfi]));
     }
 
 }

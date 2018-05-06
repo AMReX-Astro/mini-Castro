@@ -305,7 +305,7 @@ contains
 
 
 
-  AMREX_LAUNCH subroutine ca_ctoprim(lo, hi, &
+  AMREX_DEVICE subroutine ca_ctoprim(lo, hi, &
                                      uin, uin_lo, uin_hi, &
                                      q,     q_lo,   q_hi, &
                                      qaux, qa_lo,  qa_hi) bind(c,name='ca_ctoprim')
@@ -337,18 +337,15 @@ contains
     real(rt), parameter :: dual_energy_eta1 = 1.e0_rt
 
     integer  :: i, j, k, g
-    integer  :: blo(3), bhi(3)
     integer  :: n, iq, ipassive
     real(rt) :: kineng, rhoinv
     real(rt) :: vel(3)
 
     type (eos_t) :: eos_state
 
-    call get_loop_bounds(blo, bhi, lo, hi)
-
-    do k = blo(3), bhi(3)
-       do j = blo(2), bhi(2)
-          do i = blo(1), bhi(1)
+    do k = lo(3), hi(3)
+       do j = lo(2), hi(2)
+          do i = lo(1), hi(1)
 
 #ifndef CUDA
              if (uin(i,j,k,URHO) .le. ZERO) then
@@ -399,9 +396,9 @@ contains
     do ipassive = 1, npassive
        n  = upass_map(ipassive)
        iq = qpass_map(ipassive)
-       do k = blo(3), bhi(3)
-          do j = blo(2), bhi(2)
-             do i = blo(1), bhi(1)
+       do k = lo(3), hi(3)
+          do j = lo(2), hi(2)
+             do i = lo(1), hi(1)
                 q(i,j,k,iq) = uin(i,j,k,n)/q(i,j,k,QRHO)
              enddo
           enddo
@@ -409,9 +406,9 @@ contains
     enddo
 
     ! get gamc, p, T, c, csml using q state
-    do k = blo(3), bhi(3)
-       do j = blo(2), bhi(2)
-          do i = blo(1), bhi(1)
+    do k = lo(3), hi(3)
+       do j = lo(2), hi(2)
+          do i = lo(1), hi(1)
 
              eos_state % T   = q(i,j,k,QTEMP )
              eos_state % rho = q(i,j,k,QRHO  )
@@ -491,7 +488,7 @@ contains
 ! ::: ------------------------------------------------------------------
 ! :::
 
-  AMREX_LAUNCH subroutine ca_divu(lo, hi, dx, q, q_lo, q_hi, div, d_lo, d_hi) bind(c,name='ca_divu')
+  AMREX_DEVICE subroutine ca_divu(lo, hi, dx, q, q_lo, q_hi, div, d_lo, d_hi) bind(c,name='ca_divu')
 
     use bl_constants_module, only: FOURTH, ONE
     use amrex_fort_module, only: rt => amrex_real
@@ -509,17 +506,13 @@ contains
     integer  :: i, j, k
     real(rt) :: ux, vy, wz, dxinv, dyinv, dzinv
 
-    integer :: blo(3), bhi(3)
-
-    call get_loop_bounds(blo, bhi, lo, hi)
-
     dxinv = ONE/dx(1)
     dyinv = ONE/dx(2)
     dzinv = ONE/dx(3)
 
-    do k = blo(3), bhi(3)
-       do j = blo(2), bhi(2)
-          do i = blo(1), bhi(1)
+    do k = lo(3), hi(3)
+       do j = lo(2), hi(2)
+          do i = lo(1), hi(1)
 
              ux = FOURTH*( &
                     + q(i  ,j  ,k  ,QU) - q(i-1,j  ,k  ,QU) &

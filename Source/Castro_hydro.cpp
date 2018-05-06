@@ -60,11 +60,10 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
       // Convert the conservative state to the primitive variable state.
       // This fills both q and qaux.
 
-      FORT_LAUNCH(qbx, cuda_ca_ctoprim,
-                  BL_TO_FORTRAN_BOX(qbx),
-                  BL_TO_FORTRAN_ANYD(Sborder[mfi]),
-                  BL_TO_FORTRAN_ANYD(q[mfi]),
-                  BL_TO_FORTRAN_ANYD(qaux[mfi]));
+      DEVICE_LAUNCH(ca_ctoprim)(BL_TO_FORTRAN_BOX(qbx),
+                                BL_TO_FORTRAN_ANYD(Sborder[mfi]),
+                                BL_TO_FORTRAN_ANYD(q[mfi]),
+                                BL_TO_FORTRAN_ANYD(qaux[mfi]));
 
   } // MFIter loop
 
@@ -77,11 +76,10 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
 
       // Compute divergence of velocity field.
 
-      FORT_LAUNCH(obx, ca_divu,
-                  BL_TO_FORTRAN_BOX(obx),
-                  dx,
-                  BL_TO_FORTRAN_ANYD(q[mfi]),
-                  BL_TO_FORTRAN_ANYD(div[mfi]));
+      DEVICE_LAUNCH(ca_divu)(BL_TO_FORTRAN_BOX(obx),
+                             dx,
+                             BL_TO_FORTRAN_ANYD(q[mfi]),
+                             BL_TO_FORTRAN_ANYD(div[mfi]));
 
       // Compute flattening coefficient for slope calculations.
       FORT_LAUNCH(obx, ca_uflaten,
