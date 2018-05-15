@@ -38,15 +38,6 @@ EXTERN_CORE += $(NETWORK_PATH)
 EXTERN_CORE += $(MICROPHYSICS_HOME)/EOS
 EXTERN_CORE += $(MICROPHYSICS_HOME)/networks
 
-# the helmholtz EOS has an include file -- also add a target to link
-# the table into the problem directory.
-ifeq ($(findstring helmholtz, $(EOS_DIR)), helmholtz)
-   all: table
-endif
-
-table:
-	@if [ ! -f helm_table.dat ]; then echo Linking helm_table.dat; ln -s $(EOS_PATH)/helm_table.dat .;  fi
-
 Bpack += $(foreach dir, $(EXTERN_CORE), $(dir)/Make.package)
 Blocs += $(foreach dir, $(EXTERN_CORE), $(dir))
 
@@ -72,6 +63,15 @@ endif
 
 all: $(executable)
 	@echo SUCCESS
+
+# the helmholtz EOS has an include file -- also add a target to link
+# the table into the problem directory.
+ifeq ($(findstring helmholtz, $(EOS_DIR)), helmholtz)
+   all: table
+endif
+
+table:
+	@if [ ! -f helm_table.dat ]; then echo Linking helm_table.dat; ln -s $(EOS_PATH)/helm_table.dat .;  fi
 
 # AMReX directories -- note the Make.package for these adds these
 # directories into VPATH_LOCATIONS and INCLUDE_LOCATIONS for us, so we
