@@ -17,7 +17,7 @@
 import os
 import re
 import sys
-
+import argparse
 
 TEMPLATE = """
 __global__ static void cuda_{}
@@ -155,5 +155,12 @@ def doit(headers):
         hout.close()
 
 if __name__ == "__main__":
+
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument("--output_dir",
+                        help="where to write the new header files",
+                        default="")
+
     HEADERS = ["Castro_F.H"]
     doit(HEADERS)
