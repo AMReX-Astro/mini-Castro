@@ -60,7 +60,7 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
       // Convert the conservative state to the primitive variable state.
       // This fills both q and qaux.
 
-      DEVICE_LAUNCH(ca_ctoprim)(BL_TO_FORTRAN_BOX(qbx),
+      DEVICE_LAUNCH(ca_ctoprim)(ARLIM_ARG(qbx.loVect()), ARLIM_ARG(qbx.hiVect()),
                                 BL_TO_FORTRAN_ANYD(Sborder[mfi]),
                                 BL_TO_FORTRAN_ANYD(q[mfi]),
                                 BL_TO_FORTRAN_ANYD(qaux[mfi]));
@@ -76,7 +76,7 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
 
       // Compute divergence of velocity field.
 
-      DEVICE_LAUNCH(ca_divu)(BL_TO_FORTRAN_BOX(obx),
+      DEVICE_LAUNCH(ca_divu)(ARLIM_ARG(obx.loVect()), ARLIM_ARG(obx.hiVect()),
                              dx,
                              BL_TO_FORTRAN_ANYD(q[mfi]),
                              BL_TO_FORTRAN_ANYD(div[mfi]));

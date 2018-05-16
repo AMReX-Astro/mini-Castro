@@ -24,13 +24,13 @@ __global__ static void cuda_{}
 {{
    int blo[3];
    int bhi[3];
-   for (int k = lo[2] + blockIdx.z * blockDim.z + threadIdx.z; k <= hi[2]; k += blockDim.z * gridDim.z) {{
+   for (int k = lo_3 + blockIdx.z * blockDim.z + threadIdx.z; k <= hi_3; k += blockDim.z * gridDim.z) {{
      blo[2] = k;
      bhi[2] = k;
-     for (int j = lo[1] + blockIdx.y * blockDim.y + threadIdx.y; j <= hi[1]; j += blockDim.y * gridDim.y) {{
+     for (int j = lo_2 + blockIdx.y * blockDim.y + threadIdx.y; j <= hi_2; j += blockDim.y * gridDim.y) {{
        blo[1] = j;
        bhi[1] = j;
-       for (int i = lo[0] + blockIdx.x * blockDim.x + threadIdx.x; i <= hi[0]; i += blockDim.x * gridDim.x) {{
+       for (int i = lo_1 + blockIdx.x * blockDim.x + threadIdx.x; i <= hi_1; i += blockDim.x * gridDim.x) {{
          blo[0] = i;
          bhi[0] = i;
          {};
@@ -65,6 +65,7 @@ def doit(headers):
 
         # Now write out the CUDA kernels
         hout.write("\n")
+        hout.write("#include <AMReX_ArrayLim.H>\n")
         hout.write("#include <AMReX_BLFort.H>\n")
         hout.write("#include <AMReX_Device.H>\n")
         hout.write("\n")
@@ -100,6 +101,7 @@ def doit(headers):
 
                 # First write out the device signature
                 device_sig = "__device__ void {};\n\n".format(func_sig)
+                device_sig = device_sig.replace("ARLIM_VAL", "ARLIM_REP")
                 hout.write(device_sig)
 
                 # Now write out the global signature. This involves getting
@@ -121,11 +123,11 @@ def doit(headers):
                     # Replace AMReX Fortran macros
                     var = var.replace("BL_FORT_FAB_ARG_3D", "BL_FORT_FAB_VAL_3D")
 
-                    if var == "lo":
+                    if var == "ARLIM_VAL(lo)":
                         var = "blo"
                         has_lo = True
 
-                    if var == "hi":
+                    if var == "ARLIM_VAL(hi)":
                         var = "bhi"
                         has_hi = True
 
