@@ -68,6 +68,8 @@ from __future__ import print_function
 import argparse
 import re
 import sys
+import find_files_vpath as ffv
+
 
 FWARNING = """
 ! This file is automatically created by parse_castro_params.py.  To update
@@ -360,7 +362,7 @@ def write_meth_module(plist, meth_template):
 
             for p in params:
                 mo.write(p.get_query_string("F90"))
-            
+
             # Now do the OpenACC device updates
             mo.write("\n")
             mo.write("    !$acc update &\n")

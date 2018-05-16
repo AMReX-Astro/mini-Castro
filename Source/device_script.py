@@ -18,6 +18,7 @@ import os
 import re
 import sys
 import argparse
+import find_files_vpath as ffv
 
 TEMPLATE = """
 __global__ static void cuda_{}
@@ -46,9 +47,13 @@ sig_re = re.compile("(DEVICE_LAUNCHABLE)(\\()(.*)(\\))(;)", re.IGNORECASE|re.DOT
 # for finding just the variable definitions in the function signature (between the ())
 decls_re = re.compile("(.*?)(\\()(.*)(\\))", re.IGNORECASE|re.DOTALL)
 
-def doit(headers):
+def doit(outdir, headers):
 
-    for hdr in headers:
+    for h in headers:
+        hdr = "/".join([h[1], h[0]])
+        print("h = ", h)
+        print("hdr = ", hdr)
+
         # open the header file
         try:
             hin = open(hdr, "r")
@@ -57,7 +62,7 @@ def doit(headers):
 
         # open the CUDA header for output
         head, tail = os.path.split(hdr)
-        ofile = os.path.join(head, "cuda_" + tail)
+        ofile = os.path.join(outdir, tail)
         try:
             hout = open(ofile, "w")
         except IOError:
@@ -160,9 +165,16 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
 
+    parser.add_argument("--vpath",
+                        help="the VPATH to search for files")
+    parser.add_argument("--headers",
+                        help="the names of the header files to convert")
     parser.add_argument("--output_dir",
                         help="where to write the new header files",
                         default="")
+    args = parser.parse_args()
 
-    HEADERS = ["Castro_F.H"]
-    doit(HEADERS)
+    # find the location of the headers
+    headers, _ = ffv.find_files(args.vpath, args.headers)
+
+    doit(args.output_dir, headers)
