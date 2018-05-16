@@ -225,8 +225,3 @@ extern "C"
 
 
 #endif
-
-#ifdef AMREX_USE_CUDA
-#include "cuda_Castro_F.H"
-#endif
-
