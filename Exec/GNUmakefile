@@ -61,8 +61,12 @@ ifeq ($(USE_ACC), TRUE)
    DEFINES += -DACC
 endif
 
-all: $(executable)
+all: cuda_headers $(executable)
 	@echo SUCCESS
+
+cuda_headers: $(CEXE_headers)
+	@if [ ! -d header_temp_dir ]; then mkdir header_temp_dir; fi
+	$(TOP)/Source/device_script.py --output_dir header_temp_dir --vpath "$(VPATH_LOCATIONS)" --headers "$(CEXE_headers)"
 
 # the helmholtz EOS has an include file -- also add a target to link
 # the table into the problem directory.
