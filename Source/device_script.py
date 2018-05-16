@@ -148,6 +148,11 @@ def doit(outdir, headers):
                 hout.write(TEMPLATE.format(func_sig, new_call))
                 hout.write("\n")
 
+            else:
+                # this wasn't a device header
+                hout.write(line)
+
+
             line = hin.readline()
 
         # Close out the extern "C" region
