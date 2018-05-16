@@ -29,6 +29,7 @@ ca_F90EXE_sources += riemann.F90
 
 ca_F90EXE_sources += bc_fill.F90
 ca_F90EXE_sources += Prob.F90
+
 ca_F90EXE_sources += probdata.F90
 
 ca_F90EXE_sources += Castro_util.F90
@@ -51,3 +52,5 @@ ca_F90EXE_sources += eos_type.F90
 ca_F90EXE_sources += network.F90
 
 ca_F90EXE_sources += extern.F90
+
+ca_F90EXE_sources += constants_cgs.F90
