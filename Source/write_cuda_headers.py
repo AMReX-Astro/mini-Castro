@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
 
-# Search the Fortran source code for subroutines marked as:
-#
-# AMREX_DEVICE subroutine name(...)
-#
-# and maintain a list of these.
-#
-# Then copy the C++ headers for Fortran files (typically *_F.H) into a
-# temp directory, modifying any of the marked subroutines to have both a
-# device and host signature.
+"""
+Search the Fortran source code for subroutines marked as:
+
+AMREX_DEVICE subroutine name(...)
+
+and maintain a list of these.
+
+Then copy the C++ headers for Fortran files (typically *_F.H) into a
+temp directory, modifying any of the marked subroutines to have both a
+device and host signature.
+"""
 
 import os
 import re
@@ -36,9 +38,6 @@ __global__ static void cuda_{}
    }}
 }}
 """
-
-# for finding a function signature that starts with DEVICE_LAUNCHABLE
-sig_re = re.compile("(DEVICE_LAUNCHABLE)(\\()(.*)(\\))(;)", re.IGNORECASE|re.DOTALL)
 
 # for finding just the variable definitions in the function signature (between the ())
 decls_re = re.compile("(.*?)(\\()(.*)(\\))", re.IGNORECASE|re.DOTALL)
@@ -78,6 +77,7 @@ def find_fortran_targets(fortran_names):
 
 
 def doit(outdir, fortran_targets, header_files):
+    """rewrite the headers"""
 
     for h in header_files:
         hdr = "/".join([h[1], h[0]])
@@ -89,7 +89,7 @@ def doit(outdir, fortran_targets, header_files):
             sys.exit("Cannot open header {}".format(hdr))
 
         # open the CUDA header for output
-        head, tail = os.path.split(hdr)
+        _, tail = os.path.split(hdr)
         ofile = os.path.join(outdir, tail)
         try:
             hout = open(ofile, "w")
@@ -98,7 +98,7 @@ def doit(outdir, fortran_targets, header_files):
 
 
         # we'll keep track of the signatures that we need to mangle
-        signatures = []
+        signatures = {}
 
         line = hin.readline()
         while line:
@@ -127,7 +127,7 @@ def doit(outdir, fortran_targets, header_files):
                     if line.strip().endswith(";"):
                         sig_end = True
 
-                signatures.append(launch_sig)
+                signatures[found] = launch_sig
 
             else:
                 # this wasn't a device header
@@ -155,10 +155,10 @@ def doit(outdir, fortran_targets, header_files):
         hout.write("#ifdef AMREX_USE_CUDA\n")
         hout.write("extern \"C\" {\n\n")
 
-        for func_sig in signatures:
+        for name, func_sig in signatures.items():
 
             # First write out the device signature
-            device_sig = "__device__ void {};\n\n".format(func_sig)
+            device_sig = "__device__ {};\n\n".format(func_sig)
             device_sig = device_sig.replace("ARLIM_VAL", "ARLIM_REP")
             hout.write(device_sig)
 
@@ -177,7 +177,7 @@ def doit(outdir, fortran_targets, header_files):
                 # we will assume that our function signatures _always_ include
                 # the name of the variable
                 _tmp = v.split()
-                var = _tmp[-1].replace("*","").replace("&","").strip()
+                var = _tmp[-1].replace("*", "").replace("&", "").strip()
 
                 # Replace AMReX Fortran macros
                 var = var.replace("BL_FORT_FAB_ARG_3D", "BL_FORT_FAB_VAL_3D")
@@ -195,11 +195,18 @@ def doit(outdir, fortran_targets, header_files):
             if not has_lo or not has_hi:
                 sys.exit("ERROR: function signature must have variables lo and hi defined.")
 
+            # now we need to remove any vode stuff before the function name
+            idx = func_sig.lower().find(name)
+
+            # here's the case-sensitive name
+            case_name = func_sig[idx:idx+len(name)]
+
             # reassemble the function sig
             all_vars = ", ".join(vars)
-            new_call = "{}({})".format(dd.group(1), all_vars)
+            new_call = "{}({})".format(case_name, all_vars)
 
-            hout.write(TEMPLATE.format(func_sig, new_call))
+
+            hout.write(TEMPLATE.format(func_sig[idx:], new_call))
             hout.write("\n")
 
 
