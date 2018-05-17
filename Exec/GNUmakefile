@@ -66,7 +66,7 @@ all: header_temp_dir/cuda_headers $(executable)
 
 header_temp_dir/cuda_headers: $(CEXE_headers)
 	@if [ ! -d header_temp_dir ]; then mkdir header_temp_dir; fi
-	$(TOP)/Source/device_script.py --output_dir header_temp_dir --vpath "$(VPATH_LOCATIONS)" --headers "$(FEXE_headers)" #> header_temp_dir/cuda_headers
+	$(TOP)/Source/write_cuda_headers.py --output_dir header_temp_dir --vpath "$(VPATH_LOCATIONS)" --headers "$(FEXE_headers)" --fortran "$(ca_F90EXE_sources)"
 
 
 # the helmholtz EOS has an include file -- also add a target to link
