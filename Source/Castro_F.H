@@ -83,26 +83,26 @@ extern "C"
                   const amrex::Real* q, const int* q_lo, const int* q_hi,
                   const amrex::Real* qaux, const int* qa_lo, const int* qa_hi);
 
-  FORT_LAUNCHABLE(void ca_check_initial_species)
+  AMREX_FORT_LAUNCHABLE(void ca_check_initial_species)
     (const int* lo, const int* hi, BL_FORT_FAB_ARG_3D(state));
 
-  FORT_LAUNCHABLE(void ca_enforce_minimum_density)
+  AMREX_FORT_LAUNCHABLE(void ca_enforce_minimum_density)
     (const amrex::Real* S_old, const int* s_old_lo, const int* s_old_hi,
      const amrex::Real* S_new, const int* s_new_lo, const int* s_new_hi,
      const amrex::Real* vol, const int* vol_lo, const int* vol_hi,
      const int* lo, const int* hi,
      const amrex::Real* frac_change, const int verbose);
 
-  FORT_LAUNCHABLE(void ca_normalize_species)
+  AMREX_FORT_LAUNCHABLE(void ca_normalize_species)
     (BL_FORT_FAB_ARG_3D(S_new), const int* lo, const int* hi);
 
   void ca_compute_temp
     (ARLIM_VAL(lo), ARLIM_VAL(hi), const BL_FORT_FAB_ARG_3D(state));
 
-  FORT_LAUNCHABLE(void ca_enforce_consistent_e)
+  AMREX_FORT_LAUNCHABLE(void ca_enforce_consistent_e)
     (const int* lo, const int* hi, BL_FORT_FAB_ARG_3D(state));
 
-  FORT_LAUNCHABLE(void ca_reset_internal_e)
+  AMREX_FORT_LAUNCHABLE(void ca_reset_internal_e)
     (const int* lo, const int* hi, BL_FORT_FAB_ARG_3D(S_new),
      const int verbose);
 
@@ -136,7 +136,7 @@ extern "C"
      const amrex::Real dx[], const amrex::Real glo[],
      const amrex::Real* time, const int bc[]);
 
-  FORT_LAUNCHABLE(void ca_estdt)
+  AMREX_FORT_LAUNCHABLE(void ca_estdt)
     (const int* lo, const int* hi,
      const BL_FORT_FAB_ARG_3D(state),
      const amrex::Real* dx, amrex::Real* dt);
@@ -147,19 +147,19 @@ extern "C"
      BL_FORT_FAB_ARG_3D(q),
      BL_FORT_FAB_ARG_3D(div));
 
-  FORT_LAUNCHABLE(void ca_uflaten)
+  AMREX_FORT_LAUNCHABLE(void ca_uflaten)
     (const int* lo, const int* hi,
      BL_FORT_FAB_ARG_3D(q),
      BL_FORT_FAB_ARG_3D(flatn));
 
-  FORT_LAUNCHABLE(void ca_ppm_reconstruct)
+  AMREX_FORT_LAUNCHABLE(void ca_ppm_reconstruct)
     (const int* lo, const int* hi,
      BL_FORT_FAB_ARG_3D(q),
      BL_FORT_FAB_ARG_3D(flatn),
      BL_FORT_FAB_ARG_3D(qm),
      BL_FORT_FAB_ARG_3D(qp));
 
-  FORT_LAUNCHABLE(void ca_construct_flux)
+  AMREX_FORT_LAUNCHABLE(void ca_construct_flux)
     (const int* lo, const int* hi,
      const int* domlo, const int* domhi,
      const amrex::Real* dx, const amrex::Real dt,
@@ -173,7 +173,7 @@ extern "C"
      BL_FORT_FAB_ARG_3D(flux),
      BL_FORT_FAB_ARG_3D(area));
 
-  FORT_LAUNCHABLE(void ca_construct_hydro_update)
+  AMREX_FORT_LAUNCHABLE(void ca_construct_hydro_update)
     (const int* lo, const int* hi,
      const amrex::Real* dx, const amrex::Real dt,
      const amrex::Real stage_weight,
@@ -191,7 +191,7 @@ extern "C"
 
   void flush_output();
 
-  FORT_LAUNCHABLE(void ca_summass)
+  AMREX_FORT_LAUNCHABLE(void ca_summass)
     (const int* lo, const int* hi, const BL_FORT_FAB_ARG_3D(rho),
      const amrex::Real* dx, BL_FORT_FAB_ARG_3D(vol), amrex::Real* mass);
 
@@ -213,7 +213,7 @@ extern "C"
      const amrex::Real* time, const amrex::Real* dt, const int* bcrec, 
      const int* level, const int* grid_no);
 
-  FORT_LAUNCHABLE(void ca_initdata)
+  AMREX_FORT_LAUNCHABLE(void ca_initdata)
     (const int level, const int* lo, const int* hi,
      BL_FORT_FAB_ARG_3D(state),
      const amrex::Real* dx, const amrex::Real* xlo, const amrex::Real* xhi);

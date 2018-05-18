@@ -60,10 +60,10 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
       // Convert the conservative state to the primitive variable state.
       // This fills both q and qaux.
 
-      DEVICE_LAUNCH(ca_ctoprim)(ARLIM_ARG(qbx.loVect()), ARLIM_ARG(qbx.hiVect()),
-                                BL_TO_FORTRAN_ANYD(Sborder[mfi]),
-                                BL_TO_FORTRAN_ANYD(q[mfi]),
-                                BL_TO_FORTRAN_ANYD(qaux[mfi]));
+      AMREX_DEVICE_LAUNCH(ca_ctoprim)(ARLIM_ARG(qbx.loVect()), ARLIM_ARG(qbx.hiVect()),
+                                      BL_TO_FORTRAN_ANYD(Sborder[mfi]),
+                                      BL_TO_FORTRAN_ANYD(q[mfi]),
+                                      BL_TO_FORTRAN_ANYD(qaux[mfi]));
 
   } // MFIter loop
 
@@ -76,24 +76,24 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
 
       // Compute divergence of velocity field.
 
-      DEVICE_LAUNCH(ca_divu)(ARLIM_ARG(obx.loVect()), ARLIM_ARG(obx.hiVect()),
-                             dx,
-                             BL_TO_FORTRAN_ANYD(q[mfi]),
-                             BL_TO_FORTRAN_ANYD(div[mfi]));
+      AMREX_DEVICE_LAUNCH(ca_divu)(ARLIM_ARG(obx.loVect()), ARLIM_ARG(obx.hiVect()),
+                                   dx,
+                                   BL_TO_FORTRAN_ANYD(q[mfi]),
+                                   BL_TO_FORTRAN_ANYD(div[mfi]));
 
       // Compute flattening coefficient for slope calculations.
-      FORT_LAUNCH(obx, ca_uflaten,
-                  BL_TO_FORTRAN_BOX(obx),
-                  BL_TO_FORTRAN_ANYD(q[mfi]),
-                  BL_TO_FORTRAN_ANYD(flatn[mfi]));
+      AMREX_FORT_LAUNCH(obx, ca_uflaten,
+                        BL_TO_FORTRAN_BOX(obx),
+                        BL_TO_FORTRAN_ANYD(q[mfi]),
+                        BL_TO_FORTRAN_ANYD(flatn[mfi]));
 
       // Do PPM reconstruction to the zone edges.
-      FORT_LAUNCH(obx, ca_ppm_reconstruct,
-                  BL_TO_FORTRAN_BOX(obx),
-                  BL_TO_FORTRAN_ANYD(q[mfi]),
-                  BL_TO_FORTRAN_ANYD(flatn[mfi]),
-                  BL_TO_FORTRAN_ANYD(qm[mfi]),
-                  BL_TO_FORTRAN_ANYD(qp[mfi]));
+      AMREX_FORT_LAUNCH(obx, ca_ppm_reconstruct,
+                        BL_TO_FORTRAN_BOX(obx),
+                        BL_TO_FORTRAN_ANYD(q[mfi]),
+                        BL_TO_FORTRAN_ANYD(flatn[mfi]),
+                        BL_TO_FORTRAN_ANYD(qm[mfi]),
+                        BL_TO_FORTRAN_ANYD(qp[mfi]));
 
   } // MFIter loop
 
@@ -110,19 +110,19 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
 
           int idir_f = idir + 1;
 
-          FORT_LAUNCH(ebx, ca_construct_flux,
-                      BL_TO_FORTRAN_BOX(ebx),
-                      domain_lo, domain_hi,
-                      dx, dt,
-                      idir_f,
-                      BL_TO_FORTRAN_ANYD(Sborder[mfi]),
-                      BL_TO_FORTRAN_ANYD(div[mfi]),
-                      BL_TO_FORTRAN_ANYD(qaux[mfi]),
-                      BL_TO_FORTRAN_ANYD(qm[mfi]),
-                      BL_TO_FORTRAN_ANYD(qp[mfi]),
-                      BL_TO_FORTRAN_ANYD(qe[idir][mfi]),
-                      BL_TO_FORTRAN_ANYD(flux[idir][mfi]),
-                      BL_TO_FORTRAN_ANYD(area[idir][mfi]));
+          AMREX_FORT_LAUNCH(ebx, ca_construct_flux,
+                            BL_TO_FORTRAN_BOX(ebx),
+                            domain_lo, domain_hi,
+                            dx, dt,
+                            idir_f,
+                            BL_TO_FORTRAN_ANYD(Sborder[mfi]),
+                            BL_TO_FORTRAN_ANYD(div[mfi]),
+                            BL_TO_FORTRAN_ANYD(qaux[mfi]),
+                            BL_TO_FORTRAN_ANYD(qm[mfi]),
+                            BL_TO_FORTRAN_ANYD(qp[mfi]),
+                            BL_TO_FORTRAN_ANYD(qe[idir][mfi]),
+                            BL_TO_FORTRAN_ANYD(flux[idir][mfi]),
+                            BL_TO_FORTRAN_ANYD(area[idir][mfi]));
 
           // Store the fluxes from this advance -- we weight them by the
           // integrator weight for this stage
@@ -140,21 +140,21 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
 
       const Box& bx = mfi.tilebox();
 
-      FORT_LAUNCH(bx, ca_construct_hydro_update,
-                  BL_TO_FORTRAN_BOX(bx),
-                  dx, dt,
-                  b_mol[istage],
-                  BL_TO_FORTRAN_ANYD(qe[0][mfi]),
-                  BL_TO_FORTRAN_ANYD(qe[1][mfi]),
-                  BL_TO_FORTRAN_ANYD(qe[2][mfi]),
-                  BL_TO_FORTRAN_ANYD(flux[0][mfi]),
-                  BL_TO_FORTRAN_ANYD(flux[1][mfi]),
-                  BL_TO_FORTRAN_ANYD(flux[2][mfi]),
-                  BL_TO_FORTRAN_ANYD(area[0][mfi]),
-                  BL_TO_FORTRAN_ANYD(area[1][mfi]),
-                  BL_TO_FORTRAN_ANYD(area[2][mfi]),
-                  BL_TO_FORTRAN_ANYD(volume[mfi]),
-                  BL_TO_FORTRAN_ANYD(hydro_source[mfi]));
+      AMREX_FORT_LAUNCH(bx, ca_construct_hydro_update,
+                        BL_TO_FORTRAN_BOX(bx),
+                        dx, dt,
+                        b_mol[istage],
+                        BL_TO_FORTRAN_ANYD(qe[0][mfi]),
+                        BL_TO_FORTRAN_ANYD(qe[1][mfi]),
+                        BL_TO_FORTRAN_ANYD(qe[2][mfi]),
+                        BL_TO_FORTRAN_ANYD(flux[0][mfi]),
+                        BL_TO_FORTRAN_ANYD(flux[1][mfi]),
+                        BL_TO_FORTRAN_ANYD(flux[2][mfi]),
+                        BL_TO_FORTRAN_ANYD(area[0][mfi]),
+                        BL_TO_FORTRAN_ANYD(area[1][mfi]),
+                        BL_TO_FORTRAN_ANYD(area[2][mfi]),
+                        BL_TO_FORTRAN_ANYD(volume[mfi]),
+                        BL_TO_FORTRAN_ANYD(hydro_source[mfi]));
 
   } // MFIter loop
 
