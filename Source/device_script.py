@@ -2,7 +2,7 @@
 
 # Search the code for function signatures wrapped in
 #
-#   DEVICE_LAUNCHABLE(ca_func(const int* lo, ...));
+#   AMREX_DEVICE_LAUNCHABLE(ca_func(const int* lo, ...));
 #
 # This should be expanded to two function signatures
 #
@@ -29,8 +29,8 @@ __global__ cuda_{}
 }}
 """
 
-# for finding a function signature that starts with DEVICE_LAUNCHABLE
-sig_re = re.compile("(DEVICE_LAUNCHABLE)(\\()(.*)(\\))(;)", re.IGNORECASE|re.DOTALL)
+# for finding a function signature that starts with AMREX_DEVICE_LAUNCHABLE
+sig_re = re.compile("(AMREX_DEVICE_LAUNCHABLE)(\\()(.*)(\\))(;)", re.IGNORECASE|re.DOTALL)
 
 # for finding just the variable definitions in the function signature (between the ())
 decls_re = re.compile("(.*?)(\\()(.*)(\\))", re.IGNORECASE|re.DOTALL)
@@ -58,9 +58,9 @@ def doit(headers, cuda_file):
         line = hin.readline()
         while line:
 
-            # if the line doesn't have DEVICE_LAUNCHABLE, then output it to the new header
+            # if the line doesn't have AMREX_DEVICE_LAUNCHABLE, then output it to the new header
             # otherwise, we need to capture the function signature
-            if "DEVICE_LAUNCHABLE" in line:
+            if "AMREX_DEVICE_LAUNCHABLE" in line:
                 launch_sig = "" + line
                 sig_end = False
                 while not sig_end:
