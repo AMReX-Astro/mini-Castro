@@ -206,7 +206,7 @@ def doit(outdir, fortran_targets, header_files):
             new_call = "{}({})".format(case_name, all_vars)
 
 
-            hout.write(TEMPLATE.format(func_sig[idx:], new_call))
+            hout.write(TEMPLATE.format(func_sig[idx:].replace(';',''), new_call))
             hout.write("\n")
 
 
