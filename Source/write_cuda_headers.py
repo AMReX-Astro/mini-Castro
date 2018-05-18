@@ -145,7 +145,7 @@ def doit(outdir, fortran_targets, header_files):
         hout.write("#include <AMReX_Device.H>\n")
         hout.write("\n")
 
-        hdrmh = hdr.strip(".H")
+        hdrmh = os.path.basename(hdr).strip(".H")
 
         # Add an include guard -- do we still need this?
         hout.write("#ifndef _cuda_" + hdrmh + "_\n")
