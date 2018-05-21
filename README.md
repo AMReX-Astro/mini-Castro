@@ -15,9 +15,7 @@ using OpenACC. Below are instructions for compiling for each:
 
 ## Compiling on bender
 
-module load gcc/4.9.4
-make USE_CUDA=TRUE -j 4 CUDA_VERSION=9.1
-
+make CUDA_VERSION=cc60 COMPILE_CUDA_PATH=/usr/local/cuda-9.2 USE_CUDA=TRUE COMP=PGI -j 4
 
 ## Compiling on Titan (OLCF)
 
