@@ -18,6 +18,9 @@ import sys
 import argparse
 import find_files_vpath as ffv
 
+if sys.version_info[0] == 2:
+    sys.exit("python 3 is required")
+
 TEMPLATE = """
 __global__ static void cuda_{}
 {{
