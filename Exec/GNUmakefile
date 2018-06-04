@@ -61,13 +61,8 @@ ifeq ($(USE_ACC), TRUE)
    DEFINES += -DACC
 endif
 
-all: header_temp_dir/cuda_headers $(executable)
+all: $(executable)
 	@echo SUCCESS
-
-header_temp_dir/cuda_headers: $(CEXE_headers)
-	@if [ ! -d header_temp_dir ]; then mkdir header_temp_dir; fi
-	$(TOP)/Source/write_cuda_headers.py --output_dir header_temp_dir --vpath "$(VPATH_LOCATIONS)" --headers "$(FEXE_headers)" --fortran "$(ca_F90EXE_sources)"
-
 
 # the helmholtz EOS has an include file -- also add a target to link
 # the table into the problem directory.
@@ -106,8 +101,6 @@ mega_f.F90: $(ca_F90EXE_sources)
 	$(AMREX_HOME)/Tools/F_scripts/f90cat.py $^
 
 include $(AMREX_HOME)/Src/F_BaseLib/FParallelMG.mak
-
-INCLUDE_LOCATIONS := header_temp_dir $(INCLUDE_LOCATIONS)
 
 # runtime parameter support for extern/ routines
 
