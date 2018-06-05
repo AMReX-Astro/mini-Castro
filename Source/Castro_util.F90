@@ -1034,7 +1034,7 @@ contains
 
 
 
-  AMREX_LAUNCH subroutine ca_normalize_species(u, u_lo, u_hi, lo, hi) bind(c,name='ca_normalize_species')
+  AMREX_DEVICE subroutine ca_normalize_species(u, u_lo, u_hi, lo, hi) bind(c,name='ca_normalize_species')
 
     use network, only: nspec
     use bl_constants_module, only: ONE

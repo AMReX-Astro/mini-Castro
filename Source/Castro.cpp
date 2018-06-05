@@ -938,9 +938,9 @@ Castro::normalize_species (MultiFab& S_new)
     {
        const Box& bx = mfi.growntilebox(ng);
 
-       AMREX_FORT_LAUNCH(bx, ca_normalize_species,
-                         BL_TO_FORTRAN_ANYD(S_new[mfi]), 
-                         BL_TO_FORTRAN_BOX(bx));
+       AMREX_DEVICE_LAUNCH(ca_normalize_species)
+           (BL_TO_FORTRAN_ANYD(S_new[mfi]), 
+            ARLIM_ARG(bx.loVect()), ARLIM_ARG(bx.hiVect()));
     }
 
 }
@@ -999,12 +999,12 @@ Castro::enforce_min_density (MultiFab& S_old, MultiFab& S_new)
         Real* dens_change_f = &dens_change;
 #endif
 
-	AMREX_FORT_LAUNCH(bx, ca_enforce_minimum_density,
-                          BL_TO_FORTRAN_ANYD(stateold),
-                          BL_TO_FORTRAN_ANYD(statenew),
-                          BL_TO_FORTRAN_ANYD(vol),
-                          BL_TO_FORTRAN_BOX(bx),
-                          dens_change_f, verbose);
+	AMREX_DEVICE_LAUNCH(ca_enforce_minimum_density)
+            (BL_TO_FORTRAN_ANYD(stateold),
+             BL_TO_FORTRAN_ANYD(statenew),
+             BL_TO_FORTRAN_ANYD(vol),
+             ARLIM_ARG(bx.loVect()), ARLIM_ARG(bx.hiVect()),
+             dens_change_f, verbose);
 
     }
 
