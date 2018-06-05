@@ -783,7 +783,7 @@ module castro_util_module
 
 contains
 
-  AMREX_LAUNCH subroutine ca_enforce_consistent_e(lo,hi,state,s_lo,s_hi) bind(c,name='ca_enforce_consistent_e')
+  AMREX_DEVICE subroutine ca_enforce_consistent_e(lo,hi,state,s_lo,s_hi) bind(c,name='ca_enforce_consistent_e')
 
     use bl_constants_module, only: HALF, ONE
     use amrex_fort_module, only: rt => amrex_real, get_loop_bounds
@@ -825,7 +825,7 @@ contains
 
 
 
-  AMREX_LAUNCH subroutine ca_reset_internal_e(lo,hi,u,u_lo,u_hi,verbose) bind(c,name='ca_reset_internal_e')
+  AMREX_DEVICE subroutine ca_reset_internal_e(lo,hi,u,u_lo,u_hi,verbose) bind(c,name='ca_reset_internal_e')
 
     use eos_module, only: eos
     use eos_type_module, only: eos_t, eos_input_re, eos_input_rt
@@ -991,7 +991,7 @@ contains
   
 
 
-  AMREX_LAUNCH subroutine ca_check_initial_species(lo, hi, &
+  AMREX_DEVICE subroutine ca_check_initial_species(lo, hi, &
                                                    state, state_lo, state_hi) bind(c,name='ca_check_initial_species')
 
     use network           , only: nspec

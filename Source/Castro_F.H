@@ -83,8 +83,8 @@ extern "C"
                   const amrex::Real* q, const int* q_lo, const int* q_hi,
                   const amrex::Real* qaux, const int* qa_lo, const int* qa_hi);
 
-  AMREX_FORT_LAUNCHABLE(void ca_check_initial_species)
-    (const int* lo, const int* hi, BL_FORT_FAB_ARG_3D(state));
+  void ca_check_initial_species
+    (ARLIM_VAL(lo), ARLIM_VAL(hi), BL_FORT_FAB_ARG_3D(state));
 
   AMREX_FORT_LAUNCHABLE(void ca_enforce_minimum_density)
     (const amrex::Real* S_old, const int* s_old_lo, const int* s_old_hi,
@@ -99,11 +99,11 @@ extern "C"
   void ca_compute_temp
     (ARLIM_VAL(lo), ARLIM_VAL(hi), const BL_FORT_FAB_ARG_3D(state));
 
-  AMREX_FORT_LAUNCHABLE(void ca_enforce_consistent_e)
-    (const int* lo, const int* hi, BL_FORT_FAB_ARG_3D(state));
+  void ca_enforce_consistent_e
+    (ARLIM_VAL(lo), ARLIM_VAL(hi), BL_FORT_FAB_ARG_3D(state));
 
-  AMREX_FORT_LAUNCHABLE(void ca_reset_internal_e)
-    (const int* lo, const int* hi, BL_FORT_FAB_ARG_3D(S_new),
+  void ca_reset_internal_e
+    (ARLIM_VAL(lo), ARLIM_VAL(hi), BL_FORT_FAB_ARG_3D(S_new),
      const int verbose);
 
   void ca_hypfill
