@@ -786,7 +786,7 @@ contains
   AMREX_DEVICE subroutine ca_enforce_consistent_e(lo,hi,state,s_lo,s_hi) bind(c,name='ca_enforce_consistent_e')
 
     use bl_constants_module, only: HALF, ONE
-    use amrex_fort_module, only: rt => amrex_real, get_loop_bounds
+    use amrex_fort_module, only: rt => amrex_real
     use meth_params_module, only: NVAR, URHO, UMX, UMY, UMZ, UEDEN, UEINT
 
     implicit none
@@ -800,14 +800,12 @@ contains
     integer  :: blo(3), bhi(3)
     real(rt) :: u, v, w, rhoInv
 
-    call get_loop_bounds(blo, bhi, lo, hi)
-
     !
     ! Enforces (rho E) = (rho e) + 1/2 rho (u^2 + v^2 + w^2)
     !
-    do k = blo(3), bhi(3)
-       do j = blo(2), bhi(2)
-          do i = blo(1), bhi(1)
+    do k = lo(3), hi(3)
+       do j = lo(2), hi(2)
+          do i = lo(1), hi(1)
 
              rhoInv = ONE / state(i,j,k,URHO)
              u = state(i,j,k,UMX) * rhoInv
@@ -831,7 +829,7 @@ contains
     use eos_type_module, only: eos_t, eos_input_re, eos_input_rt
     use network, only: nspec, naux
     use bl_constants_module, only: ZERO, HALF, ONE
-    use amrex_fort_module, only: rt => amrex_real, get_loop_bounds
+    use amrex_fort_module, only: rt => amrex_real
     use meth_params_module, only: NVAR, URHO, UMX, UMY, UMZ, UEDEN, UEINT, UFS, UFX, UTEMP, small_temp
 
     implicit none
@@ -843,20 +841,17 @@ contains
 
     ! Local variables
     integer  :: i,j,k
-    integer  :: blo(3), bhi(3)
     real(rt) :: Up, Vp, Wp, ke, rho_eint, eden, small_e, eint_new, rhoInv
 
     real(rt), parameter :: dual_energy_eta2 = 1.e-4_rt
 
     type (eos_t) :: eos_state
 
-    call get_loop_bounds(blo, bhi, lo, hi)
-
     ! Reset internal energy
 
-    do k = blo(3), bhi(3)
-       do j = blo(2), bhi(2)
-          do i = blo(1), bhi(1)
+    do k = lo(3), hi(3)
+       do j = lo(2), hi(2)
+          do i = lo(1), hi(1)
 
              rhoInv = ONE/u(i,j,k,URHO)
              Up = u(i,j,k,UMX) * rhoInv
@@ -929,7 +924,7 @@ contains
     use eos_module, only: eos
     use eos_type_module, only: eos_input_re, eos_t
     use bl_constants_module, only: ZERO, ONE
-    use amrex_fort_module, only: rt => amrex_real, get_loop_bounds
+    use amrex_fort_module, only: rt => amrex_real
     use meth_params_module, only: NVAR, URHO, UEDEN, UEINT, UTEMP, UFS, UFX
 
     implicit none
@@ -1006,14 +1001,11 @@ contains
 
     ! Local variables
     integer  :: i, j, k
-    integer  :: blo(3), bhi(3)
     real(rt) :: spec_sum
 
-    call get_loop_bounds(blo, bhi, lo, hi)
-
-    do k = blo(3), bhi(3)
-       do j = blo(2), bhi(2)
-          do i = blo(1), bhi(1)
+    do k = lo(3), hi(3)
+       do j = lo(2), hi(2)
+          do i = lo(1), hi(1)
 
              spec_sum = sum(state(i,j,k,UFS:UFS+nspec-1))
 
