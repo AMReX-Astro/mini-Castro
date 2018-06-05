@@ -86,15 +86,15 @@ extern "C"
   void ca_check_initial_species
     (ARLIM_VAL(lo), ARLIM_VAL(hi), BL_FORT_FAB_ARG_3D(state));
 
-  void ca_enforce_minimum_density
+  AMREX_FORT_LAUNCHABLE(void ca_enforce_minimum_density)
     (const amrex::Real* S_old, const int* s_old_lo, const int* s_old_hi,
      const amrex::Real* S_new, const int* s_new_lo, const int* s_new_hi,
      const amrex::Real* vol, const int* vol_lo, const int* vol_hi,
-     ARLIM_VAL(lo), ARLIM_VAL(hi),
+     const int* lo, const int* hi,
      const amrex::Real* frac_change, const int verbose);
 
-  void ca_normalize_species
-    (BL_FORT_FAB_ARG_3D(S_new), ARLIM_VAL(lo), ARLIM_VAL(hi));
+  AMREX_FORT_LAUNCHABLE(void ca_normalize_species)
+    (BL_FORT_FAB_ARG_3D(S_new), const int* lo, const int* hi);
 
   void ca_compute_temp
     (ARLIM_VAL(lo), ARLIM_VAL(hi), const BL_FORT_FAB_ARG_3D(state));
