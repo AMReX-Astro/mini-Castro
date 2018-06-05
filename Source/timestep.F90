@@ -8,16 +8,13 @@ contains
 
   ! Courant-condition limited timestep
 
-#ifdef CUDA
-  attributes(global) &
-#endif
-  subroutine ca_estdt(lo,hi,u,u_lo,u_hi,dx,dt) bind(c,name='ca_estdt')
+  AMREX_DEVICE subroutine ca_estdt(lo,hi,u,u_lo,u_hi,dx,dt) bind(c,name='ca_estdt')
 
     use network, only: nspec, naux
     use eos_module, only: eos
     use eos_type_module, only: eos_t, eos_input_re
     use bl_constants_module, only: ONE
-    use amrex_fort_module, only: rt => amrex_real, get_loop_bounds, amrex_min
+    use amrex_fort_module, only: rt => amrex_real, amrex_min
     use meth_params_module, only: NVAR, URHO, UMX, UMY, UMZ, UEINT, UTEMP, UFS, UFX
     use prob_params_module, only: dim
 
@@ -31,17 +28,14 @@ contains
 
     real(rt) :: rhoInv, ux, uy, uz, c, dt1, dt2, dt3, dt_tmp
     integer  :: i, j, k
-    integer  :: blo(3), bhi(3)
 
     type (eos_t) :: eos_state
 
-    call get_loop_bounds(blo, bhi, lo, hi)
-
     ! Call EOS for the purpose of computing sound speed
 
-    do k = blo(3), bhi(3)
-       do j = blo(2), bhi(2)
-          do i = blo(1), bhi(1)
+    do k = lo(3), hi(3)
+       do j = lo(2), hi(2)
+          do i = lo(1), hi(1)
              rhoInv = ONE / u(i,j,k,URHO)
 
              eos_state % rho = u(i,j,k,URHO )
