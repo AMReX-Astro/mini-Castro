@@ -13,7 +13,7 @@ contains
 
     use meth_params_module, only: NVAR
     use amrex_fort_module, only: rt => amrex_real, get_loop_bounds
-    use amrex_filcc_module, only: filccn
+    use amrex_filcc_module, only: amrex_filccn
 
     implicit none
 
@@ -42,7 +42,7 @@ contains
 
     call get_loop_bounds(blo, bhi, lo, hi)
 
-    call filccn(blo, bhi, adv, lo, hi, NVAR, domlo, domhi, dx, xlo, bc)
+    call amrex_filccn(blo, bhi, adv, lo, hi, NVAR, domlo, domhi, dx, xlo, bc)
 
   end subroutine hypfill
 
@@ -52,7 +52,7 @@ contains
                                   domlo, domhi, dx, xlo, time, bc)
 
     use amrex_fort_module, only: rt => amrex_real, get_loop_bounds
-    use amrex_filcc_module, only: filccn
+    use amrex_filcc_module, only: amrex_filccn
 
     implicit none
 
@@ -77,7 +77,7 @@ contains
 
     call get_loop_bounds(blo, bhi, lo, hi)
 
-    call filccn(blo, bhi, adv, lo, hi, 1, domlo, domhi, dx, xlo, bc)
+    call amrex_filccn(blo, bhi, adv, lo, hi, 1, domlo, domhi, dx, xlo, bc)
 
   end subroutine denfill
 
