@@ -372,8 +372,8 @@ Castro::setGridInfo ()
       for (int dir = 0; dir < 3; dir++) {
 	dx_level[dir] = (ZFILL(dx_coarse))[dir];
 
-	domlo_level[dir] = (ARLIM_3D(domlo_coarse))[dir];
-	domhi_level[dir] = (ARLIM_3D(domhi_coarse))[dir];
+	domlo_level[dir] = (AMREX_ARLIM_3D(domlo_coarse))[dir];
+	domhi_level[dir] = (AMREX_ARLIM_3D(domhi_coarse))[dir];
 
 	// Refinement ratio and error buffer on finest level are meaningless,
 	// and we want them to be zero on the finest level because some
@@ -454,7 +454,7 @@ Castro::initData ()
            const Box& box = mfi.validbox();
 
            // Verify that the sum of (rho X)_i = rho at every cell
-           AMREX_DEVICE_LAUNCH(ca_check_initial_species)(ARLIM_ARG(box.loVect()), ARLIM_ARG(box.hiVect()), BL_TO_FORTRAN_ANYD(S_new[mfi]));
+           AMREX_DEVICE_LAUNCH(ca_check_initial_species)(AMREX_ARLIM_ARG(box.loVect()), AMREX_ARLIM_ARG(box.hiVect()), BL_TO_FORTRAN_ANYD(S_new[mfi]));
        }
 
        enforce_consistent_e(S_new);
@@ -960,7 +960,7 @@ Castro::enforce_consistent_e (MultiFab& S)
         const int* lo      = box.loVect();
         const int* hi      = box.hiVect();
 
-        AMREX_DEVICE_LAUNCH(ca_enforce_consistent_e)(ARLIM_ARG(box.loVect()), ARLIM_ARG(box.hiVect()), BL_TO_FORTRAN_ANYD(S[mfi]));
+        AMREX_DEVICE_LAUNCH(ca_enforce_consistent_e)(AMREX_ARLIM_ARG(box.loVect()), AMREX_ARLIM_ARG(box.hiVect()), BL_TO_FORTRAN_ANYD(S[mfi]));
     }
 
 }
@@ -1181,7 +1181,7 @@ Castro::reset_internal_energy(MultiFab& S_new)
         const Box& bx = mfi.growntilebox(ng);
 
         AMREX_DEVICE_LAUNCH(ca_reset_internal_e)
-            (ARLIM_ARG(bx.loVect()), ARLIM_ARG(bx.hiVect()),
+            (AMREX_ARLIM_ARG(bx.loVect()), AMREX_ARLIM_ARG(bx.hiVect()),
              BL_TO_FORTRAN_ANYD(S_new[mfi]),
              print_fortran_warnings);
     }
@@ -1208,7 +1208,7 @@ Castro::computeTemp(MultiFab& State)
     {
       const Box& bx = mfi.growntilebox();
 
-      AMREX_DEVICE_LAUNCH(ca_compute_temp)(ARLIM_ARG(bx.loVect()), ARLIM_ARG(bx.hiVect()), BL_TO_FORTRAN_3D(State[mfi]));
+      AMREX_DEVICE_LAUNCH(ca_compute_temp)(AMREX_ARLIM_ARG(bx.loVect()), AMREX_ARLIM_ARG(bx.hiVect()), BL_TO_FORTRAN_3D(State[mfi]));
     }
 
 }

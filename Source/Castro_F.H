@@ -78,13 +78,13 @@ extern "C"
 
   void ca_get_tagging_params(const int* name, const int* namlen);
 
-  void ca_ctoprim(ARLIM_VAL(lo), ARLIM_VAL(hi),
+  void ca_ctoprim(AMREX_ARLIM_VAL(lo), AMREX_ARLIM_VAL(hi),
                   const amrex::Real* u, const int* u_lo, const int* u_hi,
                   const amrex::Real* q, const int* q_lo, const int* q_hi,
                   const amrex::Real* qaux, const int* qa_lo, const int* qa_hi);
 
   void ca_check_initial_species
-    (ARLIM_VAL(lo), ARLIM_VAL(hi), BL_FORT_FAB_ARG_3D(state));
+    (AMREX_ARLIM_VAL(lo), AMREX_ARLIM_VAL(hi), BL_FORT_FAB_ARG_3D(state));
 
   AMREX_FORT_LAUNCHABLE(void ca_enforce_minimum_density)
     (const amrex::Real* S_old, const int* s_old_lo, const int* s_old_hi,
@@ -97,13 +97,13 @@ extern "C"
     (BL_FORT_FAB_ARG_3D(S_new), const int* lo, const int* hi);
 
   void ca_compute_temp
-    (ARLIM_VAL(lo), ARLIM_VAL(hi), const BL_FORT_FAB_ARG_3D(state));
+    (AMREX_ARLIM_VAL(lo), AMREX_ARLIM_VAL(hi), const BL_FORT_FAB_ARG_3D(state));
 
   void ca_enforce_consistent_e
-    (ARLIM_VAL(lo), ARLIM_VAL(hi), BL_FORT_FAB_ARG_3D(state));
+    (AMREX_ARLIM_VAL(lo), AMREX_ARLIM_VAL(hi), BL_FORT_FAB_ARG_3D(state));
 
   void ca_reset_internal_e
-    (ARLIM_VAL(lo), ARLIM_VAL(hi), BL_FORT_FAB_ARG_3D(S_new),
+    (AMREX_ARLIM_VAL(lo), AMREX_ARLIM_VAL(hi), BL_FORT_FAB_ARG_3D(S_new),
      const int verbose);
 
   void ca_hypfill
@@ -142,7 +142,7 @@ extern "C"
      const amrex::Real* dx, amrex::Real* dt);
 
   void ca_divu
-    (ARLIM_VAL(lo), ARLIM_VAL(hi),
+    (AMREX_ARLIM_VAL(lo), AMREX_ARLIM_VAL(hi),
      const amrex::Real* dx,
      BL_FORT_FAB_ARG_3D(q),
      BL_FORT_FAB_ARG_3D(div));
