@@ -6,7 +6,7 @@ module advection_util_module
 
 contains
 
-  AMREX_DEVICE subroutine ca_enforce_minimum_density(uin,uin_lo,uin_hi, &
+  AMREX_LAUNCH subroutine ca_enforce_minimum_density(uin,uin_lo,uin_hi, &
                                                      uout,uout_lo,uout_hi, &
                                                      vol,vol_lo,vol_hi, &
                                                      lo,hi,frac_change,verbose) &
@@ -32,17 +32,20 @@ contains
 
     ! Local variables
     integer  :: i,ii,j,jj,k,kk
+    integer  :: blo(3), bhi(3)
     integer  :: i_set, j_set, k_set
     real(rt) :: max_dens
     real(rt) :: f_c
     real(rt) :: old_state(NVAR), new_state(NVAR), unew(NVAR)
     integer  :: num_positive_zones
 
+    call get_loop_bounds(blo, bhi, lo, hi)
+
     max_dens = ZERO
 
-    do k = lo(3), hi(3)
-       do j = lo(2), hi(2)
-          do i = lo(1), hi(1)
+    do k = blo(3), bhi(3)
+       do j = blo(2), bhi(2)
+          do i = blo(1), bhi(1)
 
              if (uout(i,j,k,URHO) .eq. ZERO) then
 

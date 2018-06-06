@@ -573,10 +573,10 @@ Castro::estTimeStep (Real dt_old)
             Device::prepare_for_launch(box.loVect(), box.hiVect());
 #endif
 
-            AMREX_DEVICE_LAUNCH(ca_estdt)
-                (ARLIM_ARG(box.loVect()), ARLIM_ARG(box.hiVect()),
-                 BL_TO_FORTRAN_ANYD(stateMF[mfi]),
-                 ZFILL(dx),dt_f);
+            AMREX_FORT_LAUNCH(box, ca_estdt,
+                              BL_TO_FORTRAN_BOX(box),
+                              BL_TO_FORTRAN_ANYD(stateMF[mfi]),
+                              ZFILL(dx),dt_f);
 	}
 #ifdef _OPENMP
 #pragma omp critical (castro_estdt)
@@ -938,9 +938,9 @@ Castro::normalize_species (MultiFab& S_new)
     {
        const Box& bx = mfi.growntilebox(ng);
 
-       AMREX_DEVICE_LAUNCH(ca_normalize_species)
-           (BL_TO_FORTRAN_ANYD(S_new[mfi]),
-            ARLIM_ARG(bx.loVect()), ARLIM_ARG(bx.hiVect()));
+       AMREX_FORT_LAUNCH(bx, ca_normalize_species,
+                         BL_TO_FORTRAN_ANYD(S_new[mfi]), 
+                         BL_TO_FORTRAN_BOX(bx));
     }
 
 }
@@ -999,12 +999,12 @@ Castro::enforce_min_density (MultiFab& S_old, MultiFab& S_new)
         Real* dens_change_f = &dens_change;
 #endif
 
-	AMREX_DEVICE_LAUNCH(ca_enforce_minimum_density)
-            (BL_TO_FORTRAN_ANYD(stateold),
-             BL_TO_FORTRAN_ANYD(statenew),
-             BL_TO_FORTRAN_ANYD(vol),
-             ARLIM_ARG(bx.loVect()), ARLIM_ARG(bx.hiVect()),
-             dens_change_f, verbose);
+	AMREX_FORT_LAUNCH(bx, ca_enforce_minimum_density,
+                          BL_TO_FORTRAN_ANYD(stateold),
+                          BL_TO_FORTRAN_ANYD(statenew),
+                          BL_TO_FORTRAN_ANYD(vol),
+                          BL_TO_FORTRAN_BOX(bx),
+                          dens_change_f, verbose);
 
     }
 
