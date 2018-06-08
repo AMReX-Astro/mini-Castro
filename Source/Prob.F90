@@ -86,13 +86,13 @@ module initdata_module
 
 contains
 
-AMREX_LAUNCH subroutine ca_initdata(level, lo, hi, state, s_lo, s_hi, dx, xlo, xhi) bind(c,name='ca_initdata')
+AMREX_DEVICE subroutine ca_initdata(level, lo, hi, state, s_lo, s_hi, dx, xlo, xhi) bind(c,name='ca_initdata')
 
   use probdata_module, only: r_init, exp_energy, nsub, p_ambient, dens_ambient, e_ambient
   use bl_constants_module, only: M_PI, FOUR3RD
   use meth_params_module , only: NVAR, URHO, UMX, UMY, UMZ, UTEMP, UEDEN, UEINT, UFS
-  use prob_params_module, only: center
-  use amrex_fort_module, only: rt => amrex_real, get_loop_bounds
+  use prob_params_module, only: center, problo, domlo_level
+  use amrex_fort_module, only: rt => amrex_real
 
   implicit none
 
@@ -110,10 +110,6 @@ AMREX_LAUNCH subroutine ca_initdata(level, lo, hi, state, s_lo, s_hi, dx, xlo, x
   integer :: i,j,k, ii, jj, kk
   integer :: npert, nambient
 
-  integer :: blo(3), bhi(3)
-
-  call get_loop_bounds(blo, bhi, lo, hi)
-
   ! Set explosion energy -- we will convert the point-explosion energy into
   ! a corresponding energy distributed throughout the perturbed volume.
   ! Note that this is done to avoid EOS calls in the initialization.
@@ -122,14 +118,14 @@ AMREX_LAUNCH subroutine ca_initdata(level, lo, hi, state, s_lo, s_hi, dx, xlo, x
 
   e_exp = exp_energy / vctr / dens_ambient
 
-  do k = blo(3), bhi(3)
-     zmin = xlo(3) + dx(3)*dble(k-lo(3))
+  do k = lo(3), hi(3)
+     zmin = problo(3) + dx(3)*dble(k-domlo_level(level,3))
 
-     do j = blo(2), bhi(2)
-        ymin = xlo(2) + dx(2)*dble(j-lo(2))
+     do j = lo(2), hi(2)
+        ymin = problo(2) + dx(2)*dble(j-domlo_level(level, 2))
 
-        do i = blo(1), bhi(1)
-           xmin = xlo(1) + dx(1)*dble(i-lo(1))
+        do i = lo(1), hi(1)
+           xmin = problo(1) + dx(1)*dble(i-domlo_level(level, 1))
 
            npert = 0
            nambient = 0

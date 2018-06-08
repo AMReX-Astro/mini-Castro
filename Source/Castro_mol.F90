@@ -2,13 +2,13 @@
 
 module mol_module
 
-  use amrex_fort_module, only: rt => amrex_real, get_loop_bounds
+  use amrex_fort_module, only: rt => amrex_real
 
   implicit none
 
 contains
 
-  AMREX_LAUNCH subroutine ca_construct_flux(lo, hi, domlo, domhi, dx, dt, idir, &
+  AMREX_DEVICE subroutine ca_construct_flux(lo, hi, domlo, domhi, dx, dt, idir, &
                                             uin, uin_lo, uin_hi, &
                                             div, div_lo, div_hi, &
                                             qaux, qa_lo, qa_hi, &
@@ -49,15 +49,11 @@ contains
     real(rt), intent(in   ) :: dx(3)
     real(rt), intent(in   ), value :: dt
 
-    integer :: blo(3), bhi(3)
-
-    call get_loop_bounds(blo, bhi, lo, hi)
-
-    call cmpflx(blo, bhi, domlo, domhi, idir, qm, qm_lo, qm_hi, qp, qp_lo, qp_hi, &
+    call cmpflx(lo, hi, domlo, domhi, idir, qm, qm_lo, qm_hi, qp, qp_lo, qp_hi, &
                 qint, qe_lo, qe_hi, flux, f_lo, f_hi, qaux, qa_lo, qa_hi)
-    call apply_av(blo, bhi, idir, dx, div, div_lo, div_hi, uin, uin_lo, uin_hi, flux, f_lo, f_hi)
-    call normalize_species_fluxes(blo, bhi, flux, f_lo, f_hi)
-    call scale_flux(blo, bhi, flux, f_lo, f_hi, area, a_lo, a_hi, dt)
+    call apply_av(lo, hi, idir, dx, div, div_lo, div_hi, uin, uin_lo, uin_hi, flux, f_lo, f_hi)
+    call normalize_species_fluxes(lo, hi, flux, f_lo, f_hi)
+    call scale_flux(lo, hi, flux, f_lo, f_hi, area, a_lo, a_hi, dt)
 
   end subroutine ca_construct_flux
 

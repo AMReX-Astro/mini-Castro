@@ -443,10 +443,10 @@ Castro::initData ()
           const RealBox& rbx = mfi.registerRealBox(RealBox(grids[mfi.index()],geom.CellSize(),geom.ProbLo()));
           const Box& box     = mfi.validbox();
 
-          AMREX_FORT_LAUNCH(box, ca_initdata,
-                            level, BL_TO_FORTRAN_BOX(box),
-                            BL_TO_FORTRAN_ANYD(S_new[mfi]), dx,
-                            rbx.lo(), rbx.hi());
+          AMREX_DEVICE_LAUNCH(ca_initdata)
+              (level, AMREX_ARLIM_ARG(box.loVect()), AMREX_ARLIM_ARG(box.hiVect()),
+               BL_TO_FORTRAN_ANYD(S_new[mfi]), dx,
+               rbx.lo(), rbx.hi());
        }
 
        for (MFIter mfi(S_new); mfi.isValid(); ++mfi)
@@ -569,14 +569,10 @@ Castro::estTimeStep (Real dt_old)
             Real* dt_f = &dt;
 #endif
 
-#ifdef AMREX_USE_DEVICE
-            Device::prepare_for_launch(box.loVect(), box.hiVect());
-#endif
-
-            AMREX_FORT_LAUNCH(box, ca_estdt,
-                              BL_TO_FORTRAN_BOX(box),
-                              BL_TO_FORTRAN_ANYD(stateMF[mfi]),
-                              ZFILL(dx),dt_f);
+            AMREX_DEVICE_LAUNCH(ca_estdt)
+                (AMREX_ARLIM_ARG(box.loVect()), AMREX_ARLIM_ARG(box.hiVect()),
+                 BL_TO_FORTRAN_ANYD(stateMF[mfi]),
+                 ZFILL(dx),dt_f);
 	}
 #ifdef _OPENMP
 #pragma omp critical (castro_estdt)
@@ -938,9 +934,9 @@ Castro::normalize_species (MultiFab& S_new)
     {
        const Box& bx = mfi.growntilebox(ng);
 
-       AMREX_FORT_LAUNCH(bx, ca_normalize_species,
-                         BL_TO_FORTRAN_ANYD(S_new[mfi]), 
-                         BL_TO_FORTRAN_BOX(bx));
+       AMREX_DEVICE_LAUNCH(ca_normalize_species)
+           (BL_TO_FORTRAN_ANYD(S_new[mfi]), 
+            AMREX_ARLIM_ARG(bx.loVect()), AMREX_ARLIM_ARG(bx.hiVect()));
     }
 
 }
@@ -999,12 +995,12 @@ Castro::enforce_min_density (MultiFab& S_old, MultiFab& S_new)
         Real* dens_change_f = &dens_change;
 #endif
 
-	AMREX_FORT_LAUNCH(bx, ca_enforce_minimum_density,
-                          BL_TO_FORTRAN_ANYD(stateold),
-                          BL_TO_FORTRAN_ANYD(statenew),
-                          BL_TO_FORTRAN_ANYD(vol),
-                          BL_TO_FORTRAN_BOX(bx),
-                          dens_change_f, verbose);
+	AMREX_DEVICE_LAUNCH(ca_enforce_minimum_density)
+            (BL_TO_FORTRAN_ANYD(stateold),
+             BL_TO_FORTRAN_ANYD(statenew),
+             BL_TO_FORTRAN_ANYD(vol),
+             AMREX_ARLIM_ARG(bx.loVect()), AMREX_ARLIM_ARG(bx.hiVect()),
+             dens_change_f, verbose);
 
     }
 

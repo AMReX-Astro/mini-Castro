@@ -4,14 +4,14 @@ module ppm_module
   ! integration under the characteristic domain of the parabola
 
   use bl_constants_module, only: ZERO, SIXTH, HALF, ONE, TWO, THREE
-  use amrex_fort_module, only: rt => amrex_real, get_loop_bounds
+  use amrex_fort_module, only: rt => amrex_real
   use meth_params_module, only: NQ
 
   implicit none
 
 contains
 
-  AMREX_LAUNCH subroutine ca_ppm_reconstruct(lo, hi, &
+  AMREX_DEVICE subroutine ca_ppm_reconstruct(lo, hi, &
                                              s, s_lo, s_hi, &
                                              flatn, f_lo, f_hi, &
                                              qm, qm_lo, qm_hi, &
@@ -40,10 +40,6 @@ contains
     ! s_{\ib,+}, s_{\ib,-}
     real(rt) :: sm, sp
 
-    integer :: blo(3), bhi(3)
-
-    call get_loop_bounds(blo, bhi, lo, hi)
-
 #ifndef CUDA
     if (s_lo(1) .gt. lo(1)-3 .or. s_lo(2) .gt. lo(2)-3 .or. s_lo(3) .gt. lo(3)-3) then
          print *,'Low bounds of array: ',s_lo(1), s_lo(2),s_lo(3)
@@ -63,9 +59,9 @@ contains
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     do n = 1, NQ
-       do k = blo(3), bhi(3)
-          do j = blo(2), bhi(2)
-             do i = blo(1), bhi(1)
+       do k = lo(3), hi(3)
+          do j = lo(2), hi(2)
+             do i = lo(1), hi(1)
 
                 ! Compute van Leer slopes
 
@@ -159,9 +155,9 @@ contains
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     do n = 1, NQ
-       do k = blo(3), bhi(3)
-          do j = blo(2), bhi(2)
-             do i = blo(1), bhi(1)
+       do k = lo(3), hi(3)
+          do j = lo(2), hi(2)
+             do i = lo(1), hi(1)
 
                 ! Compute van Leer slopes
 
@@ -256,9 +252,9 @@ contains
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     do n = 1, NQ
-       do k = blo(3), bhi(3)
-          do j = blo(2), bhi(2)
-             do i = blo(1), bhi(1)
+       do k = lo(3), hi(3)
+          do j = lo(2), hi(2)
+             do i = lo(1), hi(1)
 
                 ! Compute van Leer slopes
 

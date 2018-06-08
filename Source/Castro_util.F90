@@ -797,7 +797,6 @@ contains
 
     ! Local variables
     integer  :: i,j,k
-    integer  :: blo(3), bhi(3)
     real(rt) :: u, v, w, rhoInv
 
     !
@@ -991,7 +990,7 @@ contains
 
     use network           , only: nspec
     use meth_params_module, only: NVAR, URHO, UFS
-    use amrex_fort_module, only: rt => amrex_real, get_loop_bounds
+    use amrex_fort_module, only: rt => amrex_real
 
     implicit none
 
@@ -1026,11 +1025,11 @@ contains
 
 
 
-  AMREX_LAUNCH subroutine ca_normalize_species(u, u_lo, u_hi, lo, hi) bind(c,name='ca_normalize_species')
+  AMREX_DEVICE subroutine ca_normalize_species(u, u_lo, u_hi, lo, hi) bind(c,name='ca_normalize_species')
 
     use network, only: nspec
     use bl_constants_module, only: ONE
-    use amrex_fort_module, only: rt => amrex_real, get_loop_bounds
+    use amrex_fort_module, only: rt => amrex_real
     use extern_probin_module, only: small_x
     use meth_params_module, only: NVAR, URHO, UFS
 
@@ -1042,14 +1041,11 @@ contains
 
     ! Local variables
     integer  :: i, j, k
-    integer  :: blo(3), bhi(3)
     real(rt) :: xn(nspec)
 
-    call get_loop_bounds(blo, bhi, lo, hi)
-
-    do k = blo(3), bhi(3)
-       do j = blo(2), bhi(2)
-          do i = blo(1), bhi(1)
+    do k = lo(3), hi(3)
+       do j = lo(2), hi(2)
+          do i = lo(1), hi(1)
 
              xn = u(i,j,k,UFS:UFS+nspec-1)
 
@@ -1066,12 +1062,10 @@ contains
   end subroutine ca_normalize_species
 
 
-#ifdef CUDA
-  attributes(global) &
-#endif
-  subroutine dervel(vel,v_lo,v_hi,nv, &
-                    dat,d_lo,d_hi,nc,lo,hi,domlo, &
-                    domhi,delta,xlo,time,dt,bc,level,grid_no)
+
+  AMREX_LAUNCH subroutine dervel(vel,v_lo,v_hi,nv, &
+                                 dat,d_lo,d_hi,nc,lo,hi,domlo, &
+                                 domhi,delta,xlo,time,dt,bc,level,grid_no)
 
     !
     ! This routine will derive the velocity from the momentum.
@@ -1108,12 +1102,9 @@ contains
 
 
 
-#ifdef CUDA
-  attributes(global) &
-#endif
-  subroutine derpres(p,p_lo,p_hi,ncomp_p, &
-                     u,u_lo,u_hi,ncomp_u,lo,hi,domlo, &
-                     domhi,dx,xlo,time,dt,bc,level,grid_no)
+  AMREX_LAUNCH subroutine derpres(p,p_lo,p_hi,ncomp_p, &
+                                  u,u_lo,u_hi,ncomp_u,lo,hi,domlo, &
+                                  domhi,dx,xlo,time,dt,bc,level,grid_no)
 
     use network, only: nspec, naux
     use eos_module, only: eos
@@ -1163,13 +1154,10 @@ contains
 
 
 
-#ifdef CUDA
-  attributes(global) &
-#endif
-  subroutine ca_summass(lo,hi,rho,r_lo,r_hi,dx, &
-                        vol,v_lo,v_hi,mass) bind(c,name='ca_summass')
+  AMREX_DEVICE subroutine ca_summass(lo,hi,rho,r_lo,r_hi,dx, &
+                                     vol,v_lo,v_hi,mass) bind(c,name='ca_summass')
 
-    use amrex_fort_module, only: rt => amrex_real, get_loop_bounds, amrex_add
+    use amrex_fort_module, only: rt => amrex_real, amrex_add
 
     implicit none
 
@@ -1182,14 +1170,11 @@ contains
     real(rt), intent(inout) :: mass
 
     integer  :: i, j, k
-    integer  :: blo(3), bhi(3)
     real(rt) :: dm
 
-    call get_loop_bounds(blo, bhi, lo, hi)
-
-    do k = blo(3), bhi(3)
-       do j = blo(2), bhi(2)
-          do i = blo(1), bhi(1)
+    do k = lo(3), hi(3)
+       do j = lo(2), hi(2)
+          do i = lo(1), hi(1)
 
              dm = rho(i,j,k) * vol(i,j,k)
 

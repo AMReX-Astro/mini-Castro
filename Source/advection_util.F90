@@ -1,12 +1,12 @@
 module advection_util_module
 
-  use amrex_fort_module, only: rt => amrex_real, get_loop_bounds
+  use amrex_fort_module, only: rt => amrex_real
 
   implicit none
 
 contains
 
-  AMREX_LAUNCH subroutine ca_enforce_minimum_density(uin,uin_lo,uin_hi, &
+  AMREX_DEVICE subroutine ca_enforce_minimum_density(uin,uin_lo,uin_hi, &
                                                      uout,uout_lo,uout_hi, &
                                                      vol,vol_lo,vol_hi, &
                                                      lo,hi,frac_change,verbose) &
@@ -14,7 +14,7 @@ contains
 
     use network, only: nspec, naux
     use bl_constants_module, only: ZERO
-    use amrex_fort_module, only: rt => amrex_real, get_loop_bounds, amrex_min
+    use amrex_fort_module, only: rt => amrex_real, amrex_min
     use meth_params_module, only: NVAR, URHO, UEINT, UEDEN, small_dens
 
     implicit none
@@ -32,20 +32,17 @@ contains
 
     ! Local variables
     integer  :: i,ii,j,jj,k,kk
-    integer  :: blo(3), bhi(3)
     integer  :: i_set, j_set, k_set
     real(rt) :: max_dens
     real(rt) :: f_c
     real(rt) :: old_state(NVAR), new_state(NVAR), unew(NVAR)
     integer  :: num_positive_zones
 
-    call get_loop_bounds(blo, bhi, lo, hi)
-
     max_dens = ZERO
 
-    do k = blo(3), bhi(3)
-       do j = blo(2), bhi(2)
-          do i = blo(1), bhi(1)
+    do k = lo(3), hi(3)
+       do j = lo(2), hi(2)
+          do i = lo(1), hi(1)
 
              if (uout(i,j,k,URHO) .eq. ZERO) then
 
@@ -314,7 +311,7 @@ contains
     use eos_module, only: eos
     use eos_type_module, only: eos_t, eos_input_re
     use bl_constants_module, only: ZERO, HALF, ONE
-    use amrex_fort_module, only: rt => amrex_real, get_loop_bounds
+    use amrex_fort_module, only: rt => amrex_real
     use meth_params_module, only: NVAR, URHO, UMX, UMZ, &
                                   UEDEN, UEINT, UTEMP, &
                                   QRHO, QU, QV, QW, &
@@ -612,7 +609,7 @@ contains
 
 
 
-  AMREX_LAUNCH subroutine ca_construct_hydro_update(lo, hi, dx, dt, stage_weight, &
+  AMREX_DEVICE subroutine ca_construct_hydro_update(lo, hi, dx, dt, stage_weight, &
                                                     q1, q1_lo, q1_hi, &
                                                     q2, q2_lo, q2_hi, &
                                                     q3, q3_lo, q3_hi, &
@@ -659,18 +656,15 @@ contains
     real(rt), intent(inout) :: update(u_lo(1):u_hi(1),u_lo(2):u_hi(2),u_lo(3):u_hi(3),NVAR)
 
     integer  :: i, j, k, n
-    integer  :: blo(3), bhi(3)
     real(rt) :: pdivu, dxinv(3), dtinv
-
-    call get_loop_bounds(blo, bhi, lo, hi)
 
     dtinv = ONE / dt
     dxinv = ONE / dx
 
     do n = 1, NVAR
-       do k = blo(3), bhi(3)
-          do j = blo(2), bhi(2)
-             do i = blo(1), bhi(1)
+       do k = lo(3), hi(3)
+          do j = lo(2), hi(2)
+             do i = lo(1), hi(1)
 
                 ! Note that the fluxes have already been scaled by dt * dA.
 

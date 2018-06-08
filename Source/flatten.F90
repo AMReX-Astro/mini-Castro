@@ -4,10 +4,10 @@ module flatten_module
 
 contains
 
-  AMREX_LAUNCH subroutine ca_uflaten(lo, hi, q, q_lo, q_hi, flatn, f_lo, f_hi) bind(c,name='ca_uflaten')
+  AMREX_DEVICE subroutine ca_uflaten(lo, hi, q, q_lo, q_hi, flatn, f_lo, f_hi) bind(c,name='ca_uflaten')
 
     use bl_constants_module, only: ZERO, ONE
-    use amrex_fort_module, only: rt => amrex_real, get_loop_bounds
+    use amrex_fort_module, only: rt => amrex_real
     use prob_params_module, only: dg
     use meth_params_module, only: NQ, QU, QV, QW, QPRES
 
@@ -29,14 +29,10 @@ contains
     ! Knobs for detection of strong shock
     real(rt), parameter :: shktst = 0.33e0_rt, zcut1 = 0.75e0_rt, zcut2 = 0.85e0_rt, dzcut = ONE/(zcut2-zcut1)
 
-    integer :: blo(3), bhi(3)
-
-    call get_loop_bounds(blo, bhi, lo, hi)
-
     ! x-direction flattening coef
-    do k = blo(3), bhi(3)
-       do j = blo(2), bhi(2)
-          do i = blo(1), bhi(1)
+    do k = lo(3), hi(3)
+       do j = lo(2), hi(2)
+          do i = lo(1), hi(1)
 
              dp = q(i+1,j,k,QPRES) - q(i-1,j,k,QPRES)
 
@@ -91,9 +87,9 @@ contains
     end do
 
     ! y-direction flattening coef
-    do k = blo(3), bhi(3)
-       do j = blo(2), bhi(2)
-          do i = blo(1), bhi(1)
+    do k = lo(3), hi(3)
+       do j = lo(2), hi(2)
+          do i = lo(1), hi(1)
 
              dp = q(i,j+1,k,QPRES) - q(i,j-1,k,QPRES)
 
@@ -147,9 +143,9 @@ contains
     end do
 
     ! z-direction flattening coef
-    do k = blo(3), bhi(3)
-       do j = blo(2), bhi(2)
-          do i = blo(1), bhi(1)
+    do k = lo(3), hi(3)
+       do j = lo(2), hi(2)
+          do i = lo(1), hi(1)
 
              dp = q(i,j,k+1,QPRES) - q(i,j,k-1,QPRES)
 
