@@ -119,13 +119,13 @@ AMREX_DEVICE subroutine ca_initdata(level, lo, hi, state, s_lo, s_hi, dx, xlo, x
   e_exp = exp_energy / vctr / dens_ambient
 
   do k = lo(3), hi(3)
-     zmin = problo(3) + dx(3)*dble(k-domlo_level(level,3))
+     zmin = problo(3) + dx(3)*dble(k-domlo_level(3, level))
 
      do j = lo(2), hi(2)
-        ymin = problo(2) + dx(2)*dble(j-domlo_level(level, 2))
+        ymin = problo(2) + dx(2)*dble(j-domlo_level(2, level))
 
         do i = lo(1), hi(1)
-           xmin = problo(1) + dx(1)*dble(i-domlo_level(level, 1))
+           xmin = problo(1) + dx(1)*dble(i-domlo_level(1, level))
 
            npert = 0
            nambient = 0
