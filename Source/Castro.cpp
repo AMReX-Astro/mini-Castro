@@ -443,7 +443,8 @@ Castro::initData ()
           const RealBox& rbx = mfi.registerRealBox(RealBox(grids[mfi.index()],geom.CellSize(),geom.ProbLo()));
           const Box& box     = mfi.validbox();
 
-          AMREX_DEVICE_LAUNCH(ca_initdata)
+#pragma gpu
+          ca_initdata
               (level, AMREX_ARLIM_ARG(box.loVect()), AMREX_ARLIM_ARG(box.hiVect()),
                BL_TO_FORTRAN_ANYD(S_new[mfi]), dx,
                rbx.lo(), rbx.hi());
@@ -454,7 +455,8 @@ Castro::initData ()
            const Box& box = mfi.validbox();
 
            // Verify that the sum of (rho X)_i = rho at every cell
-           AMREX_DEVICE_LAUNCH(ca_check_initial_species)(AMREX_ARLIM_ARG(box.loVect()), AMREX_ARLIM_ARG(box.hiVect()), BL_TO_FORTRAN_ANYD(S_new[mfi]));
+#pragma gpu
+           ca_check_initial_species(AMREX_ARLIM_ARG(box.loVect()), AMREX_ARLIM_ARG(box.hiVect()), BL_TO_FORTRAN_ANYD(S_new[mfi]));
        }
 
        enforce_consistent_e(S_new);
@@ -569,7 +571,8 @@ Castro::estTimeStep (Real dt_old)
             Real* dt_f = &dt;
 #endif
 
-            AMREX_DEVICE_LAUNCH(ca_estdt)
+#pragma gpu
+            ca_estdt
                 (AMREX_ARLIM_ARG(box.loVect()), AMREX_ARLIM_ARG(box.hiVect()),
                  BL_TO_FORTRAN_ANYD(stateMF[mfi]),
                  ZFILL(dx),dt_f);
@@ -934,7 +937,8 @@ Castro::normalize_species (MultiFab& S_new)
     {
        const Box& bx = mfi.growntilebox(ng);
 
-       AMREX_DEVICE_LAUNCH(ca_normalize_species)
+#pragma gpu
+       ca_normalize_species
            (BL_TO_FORTRAN_ANYD(S_new[mfi]), 
             AMREX_ARLIM_ARG(bx.loVect()), AMREX_ARLIM_ARG(bx.hiVect()));
     }
@@ -956,7 +960,8 @@ Castro::enforce_consistent_e (MultiFab& S)
         const int* lo      = box.loVect();
         const int* hi      = box.hiVect();
 
-        AMREX_DEVICE_LAUNCH(ca_enforce_consistent_e)(AMREX_ARLIM_ARG(box.loVect()), AMREX_ARLIM_ARG(box.hiVect()), BL_TO_FORTRAN_ANYD(S[mfi]));
+#pragma gpu
+        ca_enforce_consistent_e(AMREX_ARLIM_ARG(box.loVect()), AMREX_ARLIM_ARG(box.hiVect()), BL_TO_FORTRAN_ANYD(S[mfi]));
     }
 
 }
@@ -995,7 +1000,8 @@ Castro::enforce_min_density (MultiFab& S_old, MultiFab& S_new)
         Real* dens_change_f = &dens_change;
 #endif
 
-	AMREX_DEVICE_LAUNCH(ca_enforce_minimum_density)
+#pragma gpu
+	ca_enforce_minimum_density
             (BL_TO_FORTRAN_ANYD(stateold),
              BL_TO_FORTRAN_ANYD(statenew),
              BL_TO_FORTRAN_ANYD(vol),
@@ -1176,7 +1182,8 @@ Castro::reset_internal_energy(MultiFab& S_new)
     {
         const Box& bx = mfi.growntilebox(ng);
 
-        AMREX_DEVICE_LAUNCH(ca_reset_internal_e)
+#pragma gpu
+        ca_reset_internal_e
             (AMREX_ARLIM_ARG(bx.loVect()), AMREX_ARLIM_ARG(bx.hiVect()),
              BL_TO_FORTRAN_ANYD(S_new[mfi]),
              print_fortran_warnings);
@@ -1204,7 +1211,8 @@ Castro::computeTemp(MultiFab& State)
     {
       const Box& bx = mfi.growntilebox();
 
-      AMREX_DEVICE_LAUNCH(ca_compute_temp)(AMREX_ARLIM_ARG(bx.loVect()), AMREX_ARLIM_ARG(bx.hiVect()), BL_TO_FORTRAN_3D(State[mfi]));
+#pragma gpu
+      ca_compute_temp(AMREX_ARLIM_ARG(bx.loVect()), AMREX_ARLIM_ARG(bx.hiVect()), BL_TO_FORTRAN_3D(State[mfi]));
     }
 
 }

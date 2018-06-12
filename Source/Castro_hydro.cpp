@@ -60,10 +60,11 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
       // Convert the conservative state to the primitive variable state.
       // This fills both q and qaux.
 
-      AMREX_DEVICE_LAUNCH(ca_ctoprim)(AMREX_ARLIM_ARG(qbx.loVect()), AMREX_ARLIM_ARG(qbx.hiVect()),
-                                      BL_TO_FORTRAN_ANYD(Sborder[mfi]),
-                                      BL_TO_FORTRAN_ANYD(q[mfi]),
-                                      BL_TO_FORTRAN_ANYD(qaux[mfi]));
+#pragma gpu
+      ca_ctoprim(AMREX_ARLIM_ARG(qbx.loVect()), AMREX_ARLIM_ARG(qbx.hiVect()),
+                 BL_TO_FORTRAN_ANYD(Sborder[mfi]),
+                 BL_TO_FORTRAN_ANYD(q[mfi]),
+                 BL_TO_FORTRAN_ANYD(qaux[mfi]));
 
   } // MFIter loop
 
@@ -76,19 +77,22 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
 
       // Compute divergence of velocity field.
 
-      AMREX_DEVICE_LAUNCH(ca_divu)(AMREX_ARLIM_ARG(obx.loVect()), AMREX_ARLIM_ARG(obx.hiVect()),
-                                   dx,
-                                   BL_TO_FORTRAN_ANYD(q[mfi]),
-                                   BL_TO_FORTRAN_ANYD(div[mfi]));
+#pragma gpu
+      ca_divu(AMREX_ARLIM_ARG(obx.loVect()), AMREX_ARLIM_ARG(obx.hiVect()),
+              dx,
+              BL_TO_FORTRAN_ANYD(q[mfi]),
+              BL_TO_FORTRAN_ANYD(div[mfi]));
 
       // Compute flattening coefficient for slope calculations.
-      AMREX_DEVICE_LAUNCH(ca_uflaten)
+#pragma gpu
+      ca_uflaten
           (AMREX_ARLIM_ARG(obx.loVect()), AMREX_ARLIM_ARG(obx.hiVect()),
            BL_TO_FORTRAN_ANYD(q[mfi]),
            BL_TO_FORTRAN_ANYD(flatn[mfi]));
 
       // Do PPM reconstruction to the zone edges.
-      AMREX_DEVICE_LAUNCH(ca_ppm_reconstruct)
+#pragma gpu
+      ca_ppm_reconstruct
           (AMREX_ARLIM_ARG(obx.loVect()), AMREX_ARLIM_ARG(obx.hiVect()),
            BL_TO_FORTRAN_ANYD(q[mfi]),
            BL_TO_FORTRAN_ANYD(flatn[mfi]),
@@ -110,7 +114,8 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
 
           int idir_f = idir + 1;
 
-          AMREX_DEVICE_LAUNCH(ca_construct_flux)
+#pragma gpu
+          ca_construct_flux
               (AMREX_ARLIM_ARG(ebx.loVect()), AMREX_ARLIM_ARG(ebx.hiVect()),
                domain_lo, domain_hi,
                dx, dt,
@@ -140,7 +145,8 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
 
       const Box& bx = mfi.tilebox();
 
-      AMREX_DEVICE_LAUNCH(ca_construct_hydro_update)
+#pragma gpu
+      ca_construct_hydro_update
           (AMREX_ARLIM_ARG(bx.loVect()), AMREX_ARLIM_ARG(bx.hiVect()),
            dx, dt,
            b_mol[istage],
