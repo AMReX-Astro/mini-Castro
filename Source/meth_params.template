@@ -70,9 +70,8 @@ module meth_params_module
   integer, parameter :: NQAUX = 5
   integer, parameter :: QGAMC = 1
   integer, parameter :: QC    = 2
-  integer, parameter :: QCSML = 3
-  integer, parameter :: QDPDR = 4
-  integer, parameter :: QDPDE = 5
+  integer, parameter :: QDPDR = 3
+  integer, parameter :: QDPDE = 4
 
   ! NQ will be the total number of primitive variables, hydro + radiation
   integer, parameter :: NQ = QVAR

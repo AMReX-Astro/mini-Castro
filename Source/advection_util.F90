@@ -316,7 +316,7 @@ contains
                                   UEDEN, UEINT, UTEMP, &
                                   QRHO, QU, QV, QW, &
                                   QREINT, QPRES, QTEMP, QGAME, QFS, QFX, &
-                                  NQ, QC, QCSML, QGAMC, QDPDR, QDPDE, NQAUX, &
+                                  NQ, QC, QGAMC, QDPDR, QDPDE, NQAUX, &
                                   npassive, upass_map, qpass_map, small_dens
 
     implicit none
@@ -425,7 +425,6 @@ contains
 
              qaux(i,j,k,QGAMC)  = eos_state % gam1
              qaux(i,j,k,QC   )  = eos_state % cs
-             qaux(i,j,k,QCSML)  = max(small, small * qaux(i,j,k,QC))
           enddo
        enddo
     enddo
