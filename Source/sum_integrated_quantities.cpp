@@ -137,20 +137,11 @@ Castro::volWgtSum (const std::string& name,
         // whatever quantity is passed in, not strictly the "mass".
         //
 
-#ifdef AMREX_USE_DEVICE
-        Device::prepare_for_launch(box.loVect(), box.hiVect());
-#endif
-
-#ifdef CUDA
-        Real* s_f = mfi.add_reduce_value(&sum, MFIter::SUM);
-#else
-        Real* s_f = &sum;
-#endif
-
 #pragma gpu
 	ca_summass
             (AMREX_ARLIM_ARG(box.loVect()), AMREX_ARLIM_ARG(box.hiVect()),
-             BL_TO_FORTRAN_ANYD(fab), ZFILL(dx), BL_TO_FORTRAN_ANYD(volume[mfi]), s_f);
+             BL_TO_FORTRAN_ANYD(fab), ZFILL(dx), BL_TO_FORTRAN_ANYD(volume[mfi]),
+             AMREX_MFITER_REDUCE_SUM(&sum));
     }
 
     if (!local)

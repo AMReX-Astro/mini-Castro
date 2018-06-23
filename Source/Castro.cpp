@@ -565,17 +565,12 @@ Castro::estTimeStep (Real dt_old)
 	{
 	    const Box& box = mfi.tilebox();
 
-#ifdef CUDA
-            Real* dt_f = mfi.add_reduce_value(&dt, MFIter::MIN);
-#else
-            Real* dt_f = &dt;
-#endif
-
 #pragma gpu
             ca_estdt
                 (AMREX_ARLIM_ARG(box.loVect()), AMREX_ARLIM_ARG(box.hiVect()),
                  BL_TO_FORTRAN_ANYD(stateMF[mfi]),
-                 ZFILL(dx),dt_f);
+                 ZFILL(dx),
+                 AMREX_MFITER_REDUCE_MIN(&dt));
 	}
 #ifdef _OPENMP
 #pragma omp critical (castro_estdt)
@@ -994,19 +989,14 @@ Castro::enforce_min_density (MultiFab& S_old, MultiFab& S_new)
 	FArrayBox& statenew = S_new[mfi];
 	FArrayBox& vol      = volume[mfi];
 
-#ifdef CUDA
-        Real* dens_change_f = mfi.add_reduce_value(&dens_change, MFIter::MIN);
-#else
-        Real* dens_change_f = &dens_change;
-#endif
-
 #pragma gpu
 	ca_enforce_minimum_density
             (BL_TO_FORTRAN_ANYD(stateold),
              BL_TO_FORTRAN_ANYD(statenew),
              BL_TO_FORTRAN_ANYD(vol),
              AMREX_ARLIM_ARG(bx.loVect()), AMREX_ARLIM_ARG(bx.hiVect()),
-             dens_change_f, verbose);
+             AMREX_MFITER_REDUCE_MIN(&dens_change),
+             verbose);
 
     }
 
