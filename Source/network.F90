@@ -31,7 +31,7 @@ module network
 
   !$acc declare create(aion_inv)
 
-#ifdef CUDA
+#ifdef AMREX_USE_CUDA
   attributes(managed) :: aion_inv
 #endif
 
@@ -43,10 +43,6 @@ contains
     use bl_constants_module, only: ONE
 
     implicit none
-
-#ifdef CUDA
-    integer :: cuda_result
-#endif
 
     allocate(aion_inv(nspec))
 

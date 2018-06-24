@@ -8,7 +8,7 @@ module probdata_module
   real(rt), allocatable, public :: r_init
   integer,  allocatable, public :: nsub
 
-#ifdef CUDA
+#ifdef AMREX_USE_CUDA
   attributes(managed) :: p_ambient, dens_ambient, exp_energy, &
                          r_init, nsub, e_ambient
 #endif

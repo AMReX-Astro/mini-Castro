@@ -2,7 +2,7 @@ module c_interface_modules
 
   use meth_params_module, only: NVAR, NQAUX, NQ, QVAR, NGDNV
   use amrex_fort_module, only: rt => amrex_real
-#ifdef CUDA
+#ifdef AMREX_USE_CUDA
   use cuda_module, only: numBlocks, numThreads, cuda_stream
 #endif
 
@@ -27,12 +27,12 @@ contains
     real(rt), intent(in   ) :: dat(d_lo(1):d_hi(1),d_lo(2):d_hi(2),d_lo(3):d_hi(3),nc)
     integer,  intent(in   ) :: level, grid_no
 
-#ifdef CUDA
+#ifdef AMREX_USE_CUDA
     attributes(device) :: vel, dat, lo, hi, v_lo, v_hi, d_lo, d_hi, dx, xlo, domlo, domhi, nv, nc, bc, time, dt, level, grid_no
 #endif
 
     call dervel &
-#ifdef CUDA
+#ifdef AMREX_USE_CUDA
          <<<numBlocks, numThreads, 0, cuda_stream>>> &
 #endif
          (vel,v_lo,v_hi,nv, &
@@ -63,12 +63,12 @@ contains
     real(rt), intent(in   ) :: dx(3), xlo(3), time, dt
     integer,  intent(in   ) :: bc(3,2,nc), level, grid_no
 
-#ifdef CUDA
+#ifdef AMREX_USE_CUDA
     attributes(managed) :: p, u, lo, hi, p_lo, p_hi, u_lo, u_hi, dx, xlo, domlo, domhi, np, nc, bc, time, dt, level, grid_no
 #endif
 
     call derpres &
-#ifdef CUDA
+#ifdef AMREX_USE_CUDA
          <<<numBlocks, numThreads, 0, cuda_stream>>> &
 #endif
          (p,p_lo,p_hi,np, &
@@ -94,12 +94,12 @@ contains
     real(rt), intent(in   ) :: dx(3), xlo(3), time
     real(rt), intent(inout) :: adv(adv_l1:adv_h1,adv_l2:adv_h2,adv_l3:adv_h3,NVAR)
 
-#ifdef CUDA
+#ifdef AMREX_USE_CUDA
     attributes(device) :: adv, adv_l1, adv_l2, adv_l3, adv_h1, adv_h2, adv_h3, bc, dx, xlo, time, domlo, domhi
 #endif
 
     call hypfill &
-#ifdef CUDA
+#ifdef AMREX_USE_CUDA
          <<<numBlocks, numThreads, 0, cuda_stream>>> &
 #endif
          (adv, adv_l1, adv_l2, adv_l3, adv_h1, adv_h2, adv_h3, domlo, domhi, dx, xlo, time, bc)
@@ -124,12 +124,12 @@ contains
     real(rt), intent(in   ) :: dx(3), xlo(3), time
     real(rt), intent(inout) :: adv(adv_l1:adv_h1,adv_l2:adv_h2,adv_l3:adv_h3)
 
-#ifdef CUDA
+#ifdef AMREX_USE_CUDA
     attributes(device) :: adv, adv_l1, adv_l2, adv_l3, adv_h1, adv_h2, adv_h3, bc, dx, xlo, time, domlo, domhi
 #endif
 
     call denfill &
-#ifdef CUDA
+#ifdef AMREX_USE_CUDA
          <<<numBlocks, numThreads, 0, cuda_stream>>> &
 #endif
          (adv, adv_l1, adv_l2, adv_l3, adv_h1, adv_h2, adv_h3, domlo, domhi, dx, xlo, time, bc)

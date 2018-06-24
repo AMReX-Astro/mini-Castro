@@ -340,10 +340,6 @@ subroutine ca_set_method_params(dm,Density,Xmom,Eden,Eint,Temp, &
   integer :: i
   integer :: ioproc
 
-#ifdef CUDA
-  integer :: cuda_result
-#endif
-
   call parallel_initialize()
 
   ! easy indexing for the passively advected quantities.  This
@@ -477,10 +473,6 @@ subroutine ca_set_problem_params(dm,physbc_lo_in,physbc_hi_in,&
   use amrex_fort_module, only: rt => amrex_real
 
   implicit none
-
-#ifdef CUDA
-  integer :: cuda_result
-#endif
 
   integer,  intent(in) :: dm
   integer,  intent(in) :: physbc_lo_in(dm),physbc_hi_in(dm)

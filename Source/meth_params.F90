@@ -104,7 +104,7 @@ module meth_params_module
   logical,  save :: outflow_data_allocated
   real(rt), save :: max_dist
 
-#ifdef CUDA
+#ifdef AMREX_USE_CUDA
   attributes(managed) :: upass_map, qpass_map, npassive
 #endif
 
@@ -114,7 +114,7 @@ module meth_params_module
   real(rt), allocatable :: small_temp
   real(rt), allocatable :: cfl
 
-#ifdef CUDA
+#ifdef AMREX_USE_CUDA
   attributes(managed) :: small_dens
   attributes(managed) :: small_temp
   attributes(managed) :: cfl
@@ -131,15 +131,8 @@ contains
 
     use amrex_parmparse_module, only: amrex_parmparse_build, amrex_parmparse_destroy, amrex_parmparse
     use amrex_fort_module, only: rt => amrex_real
-#ifdef CUDA
-    use cudafor, only: cudaMemcpyAsync
-#endif
 
     implicit none
-
-#ifdef CUDA
-    integer :: istat
-#endif
 
     type (amrex_parmparse) :: pp
 

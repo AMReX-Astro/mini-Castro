@@ -8,7 +8,7 @@ module eos_module
 
   interface eos
      module procedure eos_doit
-#ifdef CUDA
+#ifdef AMREX_USE_CUDA
      module procedure eos_host
 #endif
   end interface eos
@@ -28,10 +28,6 @@ contains
     use actual_eos_module, only: actual_eos_init
 
     implicit none
-
-#ifdef CUDA
-    integer :: cuda_result
-#endif
 
     real(rt), optional :: small_temp
     real(rt), optional :: small_dens
@@ -123,8 +119,8 @@ contains
 
     use eos_type_module, only: eos_t, composition
     use actual_eos_module, only: actual_eos
-#if !(defined(ACC) || defined(CUDA))
-    use bl_error_module, only: bl_error
+#ifndef AMREX_USE_GPU
+    use amrex_error_module, only: amrex_error
 #endif
 
     implicit none
@@ -138,8 +134,8 @@ contains
 
     ! Local variables
 
-#if !(defined(ACC) || defined(CUDA))
-    if (.not. initialized) call bl_error('EOS: not initialized')
+#ifndef AMREX_USE_GPU
+    if (.not. initialized) call amrex_error('EOS: not initialized')
 #endif
 
     ! Get abar, zbar, etc.
@@ -363,7 +359,7 @@ contains
 
 
 
-#if !(defined(ACC) || defined(CUDA))
+#ifndef AMREX_USE_GPU
   subroutine check_inputs(input, state)
 
     !$acc routine seq
@@ -578,7 +574,7 @@ contains
 #endif
 
 
-#ifdef CUDA
+#ifdef AMREX_USE_CUDA
   subroutine eos_host(input, state)
 
     use eos_type_module, only: eos_t

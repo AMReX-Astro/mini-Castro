@@ -73,7 +73,7 @@ Vector<Real> Castro::c_mol;
 
 std::string  Castro::probin_file = "probin";
 
-#ifdef CUDA
+#ifdef AMREX_USE_GPU
 IntVect      Castro::hydro_tile_size(1024000,1024000,1024000);
 #else
 IntVect      Castro::hydro_tile_size(1024,16,16);
