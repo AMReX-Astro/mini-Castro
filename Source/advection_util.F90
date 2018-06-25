@@ -6,11 +6,11 @@ module advection_util_module
 
 contains
 
-  AMREX_DEVICE subroutine ca_enforce_minimum_density(uin,uin_lo,uin_hi, &
-                                                     uout,uout_lo,uout_hi, &
-                                                     vol,vol_lo,vol_hi, &
-                                                     lo,hi,frac_change,verbose) &
-                                                     bind(c,name='ca_enforce_minimum_density')
+  subroutine ca_enforce_minimum_density(uin,uin_lo,uin_hi, &
+                                        uout,uout_lo,uout_hi, &
+                                        vol,vol_lo,vol_hi, &
+                                        lo,hi,frac_change,verbose) &
+                                        bind(c,name='ca_enforce_minimum_density')
 
     use network, only: nspec, naux
     use bl_constants_module, only: ZERO
@@ -37,6 +37,8 @@ contains
     real(rt) :: f_c
     real(rt) :: old_state(NVAR), new_state(NVAR), unew(NVAR)
     integer  :: num_positive_zones
+
+    !$gpu
 
     max_dens = ZERO
 
@@ -113,7 +115,7 @@ contains
 
 
 
-  AMREX_DEVICE subroutine reset_to_small_state(old_state, new_state, idx, lo, hi, verbose)
+  subroutine reset_to_small_state(old_state, new_state, idx, lo, hi, verbose)
 
     use bl_constants_module, only: ZERO
     use network, only: nspec, naux
@@ -130,6 +132,8 @@ contains
 
     integer      :: n, ipassive
     type (eos_t) :: eos_state
+
+    !$gpu
 
     ! If no neighboring zones are above small_dens, our only recourse
     ! is to set the density equal to small_dens, and the temperature
@@ -177,7 +181,7 @@ contains
 
 
 
-  AMREX_DEVICE subroutine reset_to_zone_state(old_state, new_state, input_state, idx, lo, hi, verbose)
+  subroutine reset_to_zone_state(old_state, new_state, input_state, idx, lo, hi, verbose)
 
     use bl_constants_module, only: ZERO
     use amrex_fort_module, only: rt => amrex_real
@@ -188,6 +192,8 @@ contains
     real(rt), intent(in   ) :: old_state(NVAR), input_state(NVAR)
     real(rt), intent(inout) :: new_state(NVAR)
     integer,  intent(in   ) :: idx(3), lo(3), hi(3), verbose
+
+    !$gpu
 
 #ifndef CUDA
     if (verbose .gt. 0) then
@@ -215,10 +221,10 @@ contains
 
 
 
-  AMREX_DEVICE subroutine compute_cfl(lo, hi, dt, dx, courno, &
-                                      q, q_lo, q_hi, &
-                                      qaux, qa_lo, qa_hi) &
-                                      bind(C, name = "compute_cfl")
+  subroutine compute_cfl(lo, hi, dt, dx, courno, &
+                         q, q_lo, q_hi, &
+                         qaux, qa_lo, qa_hi) &
+                         bind(C, name = "compute_cfl")
 
     use bl_constants_module, only: ZERO, ONE
     use amrex_fort_module, only: rt => amrex_real, amrex_max
@@ -239,6 +245,8 @@ contains
     real(rt) :: courx, coury, courz, courmx, courmy, courmz, courtmp
     real(rt) :: dtdx, dtdy, dtdz
     integer  :: i, j, k
+
+    !$gpu
 
     ! Compute running max of Courant number over grids
 
@@ -302,10 +310,10 @@ contains
 
 
 
-  AMREX_DEVICE subroutine ca_ctoprim(lo, hi, &
-                                     uin, uin_lo, uin_hi, &
-                                     q,     q_lo,   q_hi, &
-                                     qaux, qa_lo,  qa_hi) bind(c,name='ca_ctoprim')
+  subroutine ca_ctoprim(lo, hi, &
+                        uin, uin_lo, uin_hi, &
+                        q,     q_lo,   q_hi, &
+                        qaux, qa_lo,  qa_hi) bind(c,name='ca_ctoprim')
 
     use actual_network, only: nspec, naux
     use eos_module, only: eos
@@ -339,6 +347,8 @@ contains
     real(rt) :: vel(3)
 
     type (eos_t) :: eos_state
+
+    !$gpu
 
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
@@ -433,7 +443,7 @@ contains
 
 
 
-  AMREX_DEVICE subroutine normalize_species_fluxes(lo, hi, flux, f_lo, f_hi)
+  subroutine normalize_species_fluxes(lo, hi, flux, f_lo, f_hi)
 
     ! Normalize the fluxes of the mass fractions so that
     ! they sum to 0.  This is essentially the CMA procedure that is
@@ -453,6 +463,8 @@ contains
     ! Local variables
     integer  :: i, j, k, n
     real(rt) :: sum, fac
+
+    !$gpu
 
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
@@ -484,7 +496,7 @@ contains
 ! ::: ------------------------------------------------------------------
 ! :::
 
-  AMREX_DEVICE subroutine ca_divu(lo, hi, dx, q, q_lo, q_hi, div, d_lo, d_hi) bind(c,name='ca_divu')
+  subroutine ca_divu(lo, hi, dx, q, q_lo, q_hi, div, d_lo, d_hi) bind(c,name='ca_divu')
 
     use bl_constants_module, only: FOURTH, ONE
     use amrex_fort_module, only: rt => amrex_real
@@ -501,6 +513,8 @@ contains
 
     integer  :: i, j, k
     real(rt) :: ux, vy, wz, dxinv, dyinv, dzinv
+
+    !$gpu
 
     dxinv = ONE/dx(1)
     dyinv = ONE/dx(2)
@@ -538,10 +552,10 @@ contains
 
 
 
-  AMREX_DEVICE subroutine apply_av(lo, hi, idir, dx, &
-                                   div, div_lo, div_hi, &
-                                   uin, uin_lo, uin_hi, &
-                                   flux, f_lo, f_hi)
+  subroutine apply_av(lo, hi, idir, dx, &
+                      div, div_lo, div_hi, &
+                      uin, uin_lo, uin_hi, &
+                      flux, f_lo, f_hi)
 
     use bl_constants_module, only: ZERO, FOURTH
     use meth_params_module, only: NVAR, UTEMP
@@ -564,6 +578,8 @@ contains
     real(rt) :: div1
 
     real(rt), parameter :: difmag = 0.1d0
+
+    !$gpu
 
     do n = 1, NVAR
 
@@ -608,19 +624,19 @@ contains
 
 
 
-  AMREX_DEVICE subroutine ca_construct_hydro_update(lo, hi, dx, dt, stage_weight, &
-                                                    q1, q1_lo, q1_hi, &
-                                                    q2, q2_lo, q2_hi, &
-                                                    q3, q3_lo, q3_hi, &
-                                                    f1, f1_lo, f1_hi, &
-                                                    f2, f2_lo, f2_hi, &
-                                                    f3, f3_lo, f3_hi, &
-                                                    a1, a1_lo, a1_hi, &
-                                                    a2, a2_lo, a2_hi, &
-                                                    a3, a3_lo, a3_hi, &
-                                                    vol, vol_lo, vol_hi, &
-                                                    update, u_lo, u_hi) &
-                                                    bind(c,name='ca_construct_hydro_update')
+  subroutine ca_construct_hydro_update(lo, hi, dx, dt, stage_weight, &
+                                       q1, q1_lo, q1_hi, &
+                                       q2, q2_lo, q2_hi, &
+                                       q3, q3_lo, q3_hi, &
+                                       f1, f1_lo, f1_hi, &
+                                       f2, f2_lo, f2_hi, &
+                                       f3, f3_lo, f3_hi, &
+                                       a1, a1_lo, a1_hi, &
+                                       a2, a2_lo, a2_hi, &
+                                       a3, a3_lo, a3_hi, &
+                                       vol, vol_lo, vol_hi, &
+                                       update, u_lo, u_hi) &
+                                       bind(c,name='ca_construct_hydro_update')
 
     use bl_constants_module, only: HALF, ONE
     use meth_params_module, only: NVAR, UEINT, NGDNV, GDPRES, GDU, GDV, GDW
@@ -656,6 +672,8 @@ contains
 
     integer  :: i, j, k, n
     real(rt) :: pdivu, dxinv(3), dtinv
+
+    !$gpu
 
     dtinv = ONE / dt
     dxinv = ONE / dx
@@ -694,7 +712,7 @@ contains
 
 
 
-  AMREX_DEVICE subroutine scale_flux(lo, hi, flux, f_lo, f_hi, area, a_lo, a_hi, dt)
+  subroutine scale_flux(lo, hi, flux, f_lo, f_hi, area, a_lo, a_hi, dt)
 
     use meth_params_module, only: NVAR
 
@@ -709,6 +727,8 @@ contains
     real(rt), intent(in   ) :: area(a_lo(1):a_hi(1),a_lo(2):a_hi(2),a_lo(3):a_hi(3))
 
     integer :: i, j, k, n
+
+    !$gpu
 
     do n = 1, NVAR
        do k = lo(3), hi(3)

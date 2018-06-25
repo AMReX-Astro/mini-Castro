@@ -775,7 +775,7 @@ module castro_util_module
 
 contains
 
-  AMREX_DEVICE subroutine ca_enforce_consistent_e(lo,hi,state,s_lo,s_hi) bind(c,name='ca_enforce_consistent_e')
+  subroutine ca_enforce_consistent_e(lo,hi,state,s_lo,s_hi) bind(c,name='ca_enforce_consistent_e')
 
     use bl_constants_module, only: HALF, ONE
     use amrex_fort_module, only: rt => amrex_real
@@ -790,6 +790,8 @@ contains
     ! Local variables
     integer  :: i,j,k
     real(rt) :: u, v, w, rhoInv
+
+    !$gpu
 
     !
     ! Enforces (rho E) = (rho e) + 1/2 rho (u^2 + v^2 + w^2)
@@ -814,7 +816,7 @@ contains
 
 
 
-  AMREX_DEVICE subroutine ca_reset_internal_e(lo,hi,u,u_lo,u_hi,verbose) bind(c,name='ca_reset_internal_e')
+  subroutine ca_reset_internal_e(lo,hi,u,u_lo,u_hi,verbose) bind(c,name='ca_reset_internal_e')
 
     use eos_module, only: eos
     use eos_type_module, only: eos_t, eos_input_re, eos_input_rt
@@ -837,6 +839,8 @@ contains
     real(rt), parameter :: dual_energy_eta2 = 1.e-4_rt
 
     type (eos_t) :: eos_state
+
+    !$gpu
 
     ! Reset internal energy
 
@@ -909,7 +913,7 @@ contains
 
 
 
-  AMREX_DEVICE subroutine ca_compute_temp(lo,hi,state,s_lo,s_hi) bind(c,name='ca_compute_temp')
+  subroutine ca_compute_temp(lo,hi,state,s_lo,s_hi) bind(c,name='ca_compute_temp')
 
     use network, only: nspec, naux
     use eos_module, only: eos
@@ -928,6 +932,8 @@ contains
     real(rt) :: rhoInv
 
     type (eos_t) :: eos_state
+
+    !$gpu
 
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
@@ -977,8 +983,7 @@ contains
   
 
 
-  AMREX_DEVICE subroutine ca_check_initial_species(lo, hi, &
-                                                   state, state_lo, state_hi) bind(c,name='ca_check_initial_species')
+  subroutine ca_check_initial_species(lo, hi, state, state_lo, state_hi) bind(c,name='ca_check_initial_species')
 
     use network           , only: nspec
     use meth_params_module, only: NVAR, URHO, UFS
@@ -993,6 +998,8 @@ contains
     ! Local variables
     integer  :: i, j, k
     real(rt) :: spec_sum
+
+    !$gpu
 
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
@@ -1017,7 +1024,7 @@ contains
 
 
 
-  AMREX_DEVICE subroutine ca_normalize_species(u, u_lo, u_hi, lo, hi) bind(c,name='ca_normalize_species')
+  subroutine ca_normalize_species(u, u_lo, u_hi, lo, hi) bind(c,name='ca_normalize_species')
 
     use network, only: nspec
     use bl_constants_module, only: ONE
@@ -1034,6 +1041,8 @@ contains
     ! Local variables
     integer  :: i, j, k
     real(rt) :: xn(nspec)
+
+    !$gpu
 
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
@@ -1146,8 +1155,8 @@ contains
 
 
 
-  AMREX_DEVICE subroutine ca_summass(lo,hi,rho,r_lo,r_hi,dx, &
-                                     vol,v_lo,v_hi,mass) bind(c,name='ca_summass')
+  subroutine ca_summass(lo,hi,rho,r_lo,r_hi,dx, &
+                        vol,v_lo,v_hi,mass) bind(c,name='ca_summass')
 
     use amrex_fort_module, only: rt => amrex_real, amrex_add
 
@@ -1163,6 +1172,8 @@ contains
 
     integer  :: i, j, k
     real(rt) :: dm
+
+    !$gpu
 
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
