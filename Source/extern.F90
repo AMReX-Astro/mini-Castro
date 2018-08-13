@@ -9,11 +9,13 @@ module extern_probin_module
 
   logical, allocatable, public :: use_eos_coulomb
   logical, allocatable, public :: eos_input_is_constant
+  real (kind=dp_t), allocatable, public :: eos_ttol, eos_dtol
   real (kind=dp_t), allocatable, public :: small_x
 #ifdef AMREX_USE_CUDA
   attributes(managed) :: small_x
   attributes(managed) :: eos_input_is_constant
   attributes(managed) :: use_eos_coulomb
+  attributes(managed) :: eos_ttol, eos_dtol
 #endif
 
   !$acc declare create(use_eos_coulomb, eos_input_is_constant, small_x)
@@ -37,15 +39,20 @@ subroutine runtime_init(name,namlen)
   namelist /extern/ use_eos_coulomb
   namelist /extern/ eos_input_is_constant
   namelist /extern/ small_x
+  namelist /extern/ eos_ttol
+  namelist /extern/ eos_dtol
 
   allocate(use_eos_coulomb)
   allocate(eos_input_is_constant)
   allocate(small_x)
+  allocate(eos_ttol)
+  allocate(eos_dtol)
 
   use_eos_coulomb = .true.
   eos_input_is_constant = .false.
   small_x = 1.d-30
-
+  eos_ttol = 1.d-8
+  eos_dtol = 1.d-8
 
   ! create the filename
   if (namlen > maxlen) then
@@ -90,5 +97,7 @@ subroutine ca_extern_finalize() bind(c, name='ca_extern_finalize')
   deallocate(use_eos_coulomb)
   deallocate(eos_input_is_constant)
   deallocate(small_x)
+  deallocate(eos_ttol)
+  deallocate(eos_dtol)
 
 end subroutine ca_extern_finalize
