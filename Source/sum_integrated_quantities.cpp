@@ -139,7 +139,7 @@ Castro::volWgtSum (const std::string& name,
 
 #pragma gpu
 	ca_summass
-            (AMREX_ARLIM_ARG(box.loVect()), AMREX_ARLIM_ARG(box.hiVect()),
+            (AMREX_INT_ANYD(box.loVect()), AMREX_INT_ANYD(box.hiVect()),
              BL_TO_FORTRAN_ANYD(fab), ZFILL(dx), BL_TO_FORTRAN_ANYD(volume[mfi]),
              AMREX_MFITER_REDUCE_SUM(&sum));
     }
