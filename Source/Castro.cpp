@@ -1202,7 +1202,7 @@ Castro::computeTemp(MultiFab& State)
       const Box& bx = mfi.growntilebox();
 
 #pragma gpu
-      ca_compute_temp(AMREX_INT_ANYD(bx.loVect()), AMREX_INT_ANYD(bx.hiVect()), BL_TO_FORTRAN_3D(State[mfi]));
+      ca_compute_temp(AMREX_INT_ANYD(bx.loVect()), AMREX_INT_ANYD(bx.hiVect()), BL_TO_FORTRAN_ANYD(State[mfi]));
     }
 
 }
