@@ -48,8 +48,6 @@ ca_F90EXE_sources += flatten.F90
 
 ca_F90EXE_sources += io.F90
 
-ca_F90EXE_sources += castro_c_interfaces.F90
-
 ca_F90EXE_sources += eos.F90
 ca_F90EXE_sources += eos_type.F90
 
