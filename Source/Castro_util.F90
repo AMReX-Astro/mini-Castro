@@ -323,10 +323,9 @@ subroutine ca_set_method_params(dm,Density,Xmom,Eden,Eint,Temp, &
 
   use meth_params_module
   use network, only: nspec, naux
-  use parallel, only: parallel_initialize
   use eos_module, only: eos_init
   use eos_type_module, only: eos_get_small_dens, eos_get_small_temp
-  use bl_constants_module, only: ZERO, ONE
+  use amrex_constants_module, only: ZERO, ONE
   use amrex_fort_module, only: rt => amrex_real
 
   implicit none
@@ -339,8 +338,6 @@ subroutine ca_set_method_params(dm,Density,Xmom,Eden,Eint,Temp, &
 
   integer :: i
   integer :: ioproc
-
-  call parallel_initialize()
 
   ! easy indexing for the passively advected quantities.  This
   ! lets us loop over all groups (advected, species, aux)
@@ -467,7 +464,7 @@ subroutine ca_set_problem_params(dm,physbc_lo_in,physbc_hi_in,&
 
   ! Passing data from C++ into F90
 
-  use bl_constants_module, only: ZERO
+  use amrex_constants_module, only: ZERO
   use prob_params_module
   use meth_params_module, only: UMX, UMY, UMZ
   use amrex_fort_module, only: rt => amrex_real
@@ -777,7 +774,7 @@ contains
 
   subroutine ca_enforce_consistent_e(lo,hi,state,s_lo,s_hi) bind(c,name='ca_enforce_consistent_e')
 
-    use bl_constants_module, only: HALF, ONE
+    use amrex_constants_module, only: HALF, ONE
     use amrex_fort_module, only: rt => amrex_real
     use meth_params_module, only: NVAR, URHO, UMX, UMY, UMZ, UEDEN, UEINT
 
@@ -821,7 +818,7 @@ contains
     use eos_module, only: eos
     use eos_type_module, only: eos_t, eos_input_re, eos_input_rt
     use network, only: nspec, naux
-    use bl_constants_module, only: ZERO, HALF, ONE
+    use amrex_constants_module, only: ZERO, HALF, ONE
     use amrex_fort_module, only: rt => amrex_real
     use meth_params_module, only: NVAR, URHO, UMX, UMY, UMZ, UEDEN, UEINT, UFS, UFX, UTEMP, small_temp
 
@@ -918,7 +915,7 @@ contains
     use network, only: nspec, naux
     use eos_module, only: eos
     use eos_type_module, only: eos_input_re, eos_t
-    use bl_constants_module, only: ZERO, ONE
+    use amrex_constants_module, only: ZERO, ONE
     use amrex_fort_module, only: rt => amrex_real
     use meth_params_module, only: NVAR, URHO, UEDEN, UEINT, UTEMP, UFS, UFX
 
@@ -1027,7 +1024,7 @@ contains
   subroutine ca_normalize_species(u, u_lo, u_hi, lo, hi) bind(c,name='ca_normalize_species')
 
     use network, only: nspec
-    use bl_constants_module, only: ONE
+    use amrex_constants_module, only: ONE
     use amrex_fort_module, only: rt => amrex_real
     use extern_probin_module, only: small_x
     use meth_params_module, only: NVAR, URHO, UFS

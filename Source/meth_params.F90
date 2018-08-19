@@ -12,7 +12,7 @@
 
 module meth_params_module
 
-  use bl_error_module, only: bl_error
+  use amrex_error_module, only: amrex_error
   use amrex_fort_module, only: rt => amrex_real
   use actual_network, only: nspec, naux
 

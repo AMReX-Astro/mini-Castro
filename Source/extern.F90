@@ -1,7 +1,6 @@
 module extern_probin_module
 
-  use bl_types
-  use bl_space
+  use amrex_fort_module, only: rt => amrex_real
 
   implicit none
 
@@ -9,8 +8,8 @@ module extern_probin_module
 
   logical, allocatable, public :: use_eos_coulomb
   logical, allocatable, public :: eos_input_is_constant
-  real (kind=dp_t), allocatable, public :: eos_ttol, eos_dtol
-  real (kind=dp_t), allocatable, public :: small_x
+  real(rt), allocatable, public :: eos_ttol, eos_dtol
+  real(rt), allocatable, public :: small_x
 #ifdef AMREX_USE_CUDA
   attributes(managed) :: small_x
   attributes(managed) :: eos_input_is_constant

@@ -1,11 +1,11 @@
 module eos_type_module
 
-  use bl_types, only: dp_t
+  use amrex_fort_module, only: rt => amrex_real
   use network, only: nspec, naux
 
   implicit none
 
-  private :: dp_t, nspec, naux
+  private :: rt, nspec, naux
 
   integer, parameter :: eos_input_rt = 1  ! rho, T are inputs
   integer, parameter :: eos_input_rh = 2  ! rho, h are inputs
@@ -41,22 +41,22 @@ module eos_type_module
 
   ! Minimum and maximum thermodynamic quantities permitted by the EOS.
 
-  real(dp_t), allocatable :: mintemp
-  real(dp_t), allocatable :: maxtemp
-  real(dp_t), allocatable :: mindens
-  real(dp_t), allocatable :: maxdens
-  real(dp_t), allocatable :: minx
-  real(dp_t), allocatable :: maxx
-  real(dp_t), allocatable :: minye
-  real(dp_t), allocatable :: maxye
-  real(dp_t), allocatable :: mine
-  real(dp_t), allocatable :: maxe
-  real(dp_t), allocatable :: minp
-  real(dp_t), allocatable :: maxp
-  real(dp_t), allocatable :: mins
-  real(dp_t), allocatable :: maxs
-  real(dp_t), allocatable :: minh
-  real(dp_t), allocatable :: maxh
+  real(rt), allocatable :: mintemp
+  real(rt), allocatable :: maxtemp
+  real(rt), allocatable :: mindens
+  real(rt), allocatable :: maxdens
+  real(rt), allocatable :: minx
+  real(rt), allocatable :: maxx
+  real(rt), allocatable :: minye
+  real(rt), allocatable :: maxye
+  real(rt), allocatable :: mine
+  real(rt), allocatable :: maxe
+  real(rt), allocatable :: minp
+  real(rt), allocatable :: maxp
+  real(rt), allocatable :: mins
+  real(rt), allocatable :: maxs
+  real(rt), allocatable :: minh
+  real(rt), allocatable :: maxh
 
   !$acc declare &
   !$acc create(mintemp, maxtemp, mindens, maxdens, minx, maxx, minye, maxye) &
@@ -122,46 +122,46 @@ module eos_type_module
 
   type :: eos_t
 
-    real(dp_t) :: rho
-    real(dp_t) :: T
-    real(dp_t) :: p
-    real(dp_t) :: e
-    real(dp_t) :: h
-    real(dp_t) :: s
-    real(dp_t) :: xn(nspec)
-    real(dp_t) :: aux(naux)
+    real(rt) :: rho
+    real(rt) :: T
+    real(rt) :: p
+    real(rt) :: e
+    real(rt) :: h
+    real(rt) :: s
+    real(rt) :: xn(nspec)
+    real(rt) :: aux(naux)
 
-    real(dp_t) :: dpdT
-    real(dp_t) :: dpdr
-    real(dp_t) :: dedT
-    real(dp_t) :: dedr
-    real(dp_t) :: dhdT
-    real(dp_t) :: dhdr
-    real(dp_t) :: dsdT
-    real(dp_t) :: dsdr
-    real(dp_t) :: dpde
-    real(dp_t) :: dpdr_e
+    real(rt) :: dpdT
+    real(rt) :: dpdr
+    real(rt) :: dedT
+    real(rt) :: dedr
+    real(rt) :: dhdT
+    real(rt) :: dhdr
+    real(rt) :: dsdT
+    real(rt) :: dsdr
+    real(rt) :: dpde
+    real(rt) :: dpdr_e
 
-    real(dp_t) :: cv
-    real(dp_t) :: cp
-    real(dp_t) :: xne
-    real(dp_t) :: xnp
-    real(dp_t) :: eta
-    real(dp_t) :: pele
-    real(dp_t) :: ppos
-    real(dp_t) :: mu
-    real(dp_t) :: mu_e
-    real(dp_t) :: y_e
-    real(dp_t) :: gam1
-    real(dp_t) :: cs
+    real(rt) :: cv
+    real(rt) :: cp
+    real(rt) :: xne
+    real(rt) :: xnp
+    real(rt) :: eta
+    real(rt) :: pele
+    real(rt) :: ppos
+    real(rt) :: mu
+    real(rt) :: mu_e
+    real(rt) :: y_e
+    real(rt) :: gam1
+    real(rt) :: cs
 
-    real(dp_t) :: abar
-    real(dp_t) :: zbar
-    real(dp_t) :: dpdA
+    real(rt) :: abar
+    real(rt) :: zbar
+    real(rt) :: dpdA
 
-    real(dp_t) :: dpdZ
-    real(dp_t) :: dedA
-    real(dp_t) :: dedZ
+    real(rt) :: dpdZ
+    real(rt) :: dedA
+    real(rt) :: dedZ
 
   end type eos_t
 
@@ -172,7 +172,7 @@ contains
 
   subroutine composition(state)
 
-    use bl_constants_module, only: ONE
+    use amrex_constants_module, only: ONE
     use network, only: aion, aion_inv, zion
 
     implicit none
@@ -204,7 +204,7 @@ contains
 
   subroutine normalize_abundances(state)
 
-    use bl_constants_module, only: ONE
+    use amrex_constants_module, only: ONE
     use extern_probin_module, only: small_x
 
     implicit none
@@ -264,7 +264,7 @@ contains
 
     !$acc routine seq
 
-    real(dp_t), intent(out) :: small_temp_out
+    real(rt), intent(out) :: small_temp_out
 
     !$gpu
 
@@ -279,7 +279,7 @@ contains
 
     !$acc routine seq
 
-    real(dp_t), intent(out) :: small_dens_out
+    real(rt), intent(out) :: small_dens_out
 
     !$gpu
 
@@ -295,7 +295,7 @@ contains
 
     !$acc routine seq
 
-    real(dp_t), intent(out) :: max_temp_out
+    real(rt), intent(out) :: max_temp_out
 
     !$gpu
 
@@ -311,7 +311,7 @@ contains
 
     !$acc routine seq
 
-    real(dp_t), intent(out) :: max_dens_out
+    real(rt), intent(out) :: max_dens_out
 
     !$gpu
 

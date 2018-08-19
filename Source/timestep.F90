@@ -13,7 +13,7 @@ contains
     use network, only: nspec, naux
     use eos_module, only: eos
     use eos_type_module, only: eos_t, eos_input_re
-    use bl_constants_module, only: ONE
+    use amrex_constants_module, only: ONE
     use amrex_fort_module, only: rt => amrex_real, amrex_min
     use meth_params_module, only: NVAR, URHO, UMX, UMY, UMZ, UEINT, UTEMP, UFS, UFX
     use prob_params_module, only: dim

@@ -3,7 +3,7 @@ module ppm_module
   ! this does the parabolic reconstruction on a variable and the (optional)
   ! integration under the characteristic domain of the parabola
 
-  use bl_constants_module, only: ZERO, SIXTH, HALF, ONE, TWO, THREE
+  use amrex_constants_module, only: ZERO, SIXTH, HALF, ONE, TWO, THREE
   use amrex_fort_module, only: rt => amrex_real
   use meth_params_module, only: NQ
 
