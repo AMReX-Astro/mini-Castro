@@ -27,13 +27,13 @@ module prob_params_module
   integer, allocatable :: dg(:)
 
   ! grid information
-  integer         , save              :: max_level
-  real(rt)        , save, allocatable :: dx_level(:,:)
-  integer         , save, allocatable :: domlo_level(:,:)
-  integer         , save, allocatable :: domhi_level(:,:)
-  integer         , save, allocatable :: ref_ratio(:,:)
-  integer         , save, allocatable :: n_error_buf(:)
-  integer         , save, allocatable :: blocking_factor(:)
+  integer         , save        :: max_level
+  real(rt)        , allocatable :: dx_level(:,:)
+  integer         , allocatable :: domlo_level(:,:)
+  integer         , allocatable :: domhi_level(:,:)
+  integer         , allocatable :: ref_ratio(:,:)
+  integer         , allocatable :: n_error_buf(:)
+  integer         , allocatable :: blocking_factor(:)
 
   integer, parameter :: MAX_MOM_INDEX = 5
 
