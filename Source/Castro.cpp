@@ -569,7 +569,7 @@ Castro::estTimeStep (Real dt_old)
             ca_estdt
                 (AMREX_INT_ANYD(box.loVect()), AMREX_INT_ANYD(box.hiVect()),
                  BL_TO_FORTRAN_ANYD(stateMF[mfi]),
-                 ZFILL(dx),
+                 AMREX_REAL_ANYD(dx),
                  AMREX_MFITER_REDUCE_MIN(&dt));
 	}
 #ifdef _OPENMP
