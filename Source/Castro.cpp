@@ -440,14 +440,14 @@ Castro::initData ()
     {
        for (MFIter mfi(S_new); mfi.isValid(); ++mfi)
        {
-          const RealBox& rbx = mfi.registerRealBox(RealBox(grids[mfi.index()],geom.CellSize(),geom.ProbLo()));
+          const RealBox& rbx = RealBox(grids[mfi.index()],geom.CellSize(),geom.ProbLo());
           const Box& box     = mfi.validbox();
 
 #pragma gpu
           ca_initdata
               (level, AMREX_INT_ANYD(box.loVect()), AMREX_INT_ANYD(box.hiVect()),
                BL_TO_FORTRAN_ANYD(S_new[mfi]), dx,
-               rbx.lo(), rbx.hi());
+               AMREX_REAL_ANYD(rbx.lo()), AMREX_REAL_ANYD(rbx.hi()));
        }
 
        for (MFIter mfi(S_new); mfi.isValid(); ++mfi)
@@ -1089,7 +1089,7 @@ Castro::apply_tagging_func(TagBoxArray& tags, int clearval, int tagval, Real tim
 		const Box&  tilebx  = mfi.tilebox();
 
 		// physical tile box
-		const RealBox& pbx  = mfi.registerRealBox(RealBox(tilebx,geom.CellSize(),geom.ProbLo()));
+		const RealBox& pbx  = RealBox(tilebx,geom.CellSize(),geom.ProbLo());
 
 		//fab box
 		const Box&  datbox  = datfab.box();
