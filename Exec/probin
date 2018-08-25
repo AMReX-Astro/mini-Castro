@@ -10,8 +10,8 @@
 
 &tagging
 
-  presserr = 1.d22
-  max_presserr_lev = 20
+  dengrad_rel = 0.25
+  max_dengrad_rel_lev = 20
 
 /
 
