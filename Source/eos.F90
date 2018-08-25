@@ -378,6 +378,7 @@ contains
     use eos_type_module, only: eos_t, print_state, minx, maxx, minye, maxye, &
                                eos_input_rt, eos_input_re, eos_input_rp, eos_input_rh, &
                                eos_input_th, eos_input_tp, eos_input_ph, eos_input_ps
+    use amrex_error_module, only: amrex_error
 
     implicit none
 
@@ -457,6 +458,7 @@ contains
     !$acc routine seq
 
     use eos_type_module, only: eos_t, mindens, maxdens, print_state
+    use amrex_error_module, only: amrex_error
 
     implicit none
 
@@ -479,6 +481,7 @@ contains
     !$acc routine seq
 
     use eos_type_module, only: eos_t, mintemp, maxtemp, print_state
+    use amrex_error_module, only: amrex_error
 
     implicit none
 
@@ -501,6 +504,7 @@ contains
     !$acc routine seq
 
     use eos_type_module, only: eos_t, mine, maxe, print_state
+    use amrex_error_module, only: amrex_error
 
     implicit none
 
@@ -523,6 +527,7 @@ contains
     !$acc routine seq
 
     use eos_type_module, only: eos_t, minh, maxh, print_state
+    use amrex_error_module, only: amrex_error
 
     implicit none
 
@@ -545,6 +550,7 @@ contains
     !$acc routine seq
 
     use eos_type_module, only: eos_t, mins, maxs, print_state
+    use amrex_error_module, only: amrex_error
 
     implicit none
 
@@ -567,6 +573,7 @@ contains
     !$acc routine seq
 
     use eos_type_module, only: eos_t, minp, maxp, print_state
+    use amrex_error_module, only: amrex_error
 
     implicit none
 
