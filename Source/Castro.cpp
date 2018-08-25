@@ -446,7 +446,7 @@ Castro::initData ()
 #pragma gpu
           ca_initdata
               (level, AMREX_INT_ANYD(box.loVect()), AMREX_INT_ANYD(box.hiVect()),
-               BL_TO_FORTRAN_ANYD(S_new[mfi]), dx,
+               BL_TO_FORTRAN_ANYD(S_new[mfi]), AMREX_REAL_ANYD(dx),
                AMREX_REAL_ANYD(rbx.lo()), AMREX_REAL_ANYD(rbx.hi()));
        }
 
