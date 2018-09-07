@@ -244,31 +244,6 @@ Castro::variableSetUp ()
   num_state_type = desc_lst.size();
 
   //
-  // DEFINE DERIVED QUANTITIES
-  //
-
-  //
-  // Pressure
-  //
-  derive_lst.add("pressure",IndexType::TheCellType(),1,ca_derpres,the_same_box);
-  derive_lst.addComponent("pressure",desc_lst,State_Type,Density,NUM_STATE);
-
-  //
-  // Velocities
-  //
-  derive_lst.add("x_velocity",IndexType::TheCellType(),1,ca_dervel,the_same_box);
-  derive_lst.addComponent("x_velocity",desc_lst,State_Type,Density,1);
-  derive_lst.addComponent("x_velocity",desc_lst,State_Type,Xmom,1);
-
-  derive_lst.add("y_velocity",IndexType::TheCellType(),1,ca_dervel,the_same_box);
-  derive_lst.addComponent("y_velocity",desc_lst,State_Type,Density,1);
-  derive_lst.addComponent("y_velocity",desc_lst,State_Type,Ymom,1);
-
-  derive_lst.add("z_velocity",IndexType::TheCellType(),1,ca_dervel,the_same_box);
-  derive_lst.addComponent("z_velocity",desc_lst,State_Type,Density,1);
-  derive_lst.addComponent("z_velocity",desc_lst,State_Type,Zmom,1);
-
-  //
   // DEFINE ERROR ESTIMATION QUANTITIES
   //
   ErrorSetUp();

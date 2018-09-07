@@ -3,7 +3,7 @@ module ppm_module
   ! this does the parabolic reconstruction on a variable and the (optional)
   ! integration under the characteristic domain of the parabola
 
-  use bl_constants_module, only: ZERO, SIXTH, HALF, ONE, TWO, THREE
+  use amrex_constants_module, only: ZERO, SIXTH, HALF, ONE, TWO, THREE
   use amrex_fort_module, only: rt => amrex_real
   use meth_params_module, only: NQ
 
@@ -11,11 +11,11 @@ module ppm_module
 
 contains
 
-  AMREX_DEVICE subroutine ca_ppm_reconstruct(lo, hi, &
-                                             s, s_lo, s_hi, &
-                                             flatn, f_lo, f_hi, &
-                                             qm, qm_lo, qm_hi, &
-                                             qp, qp_lo, qp_hi) bind(c,name='ca_ppm_reconstruct')
+  subroutine ca_ppm_reconstruct(lo, hi, &
+                                s, s_lo, s_hi, &
+                                flatn, f_lo, f_hi, &
+                                qm, qm_lo, qm_hi, &
+                                qp, qp_lo, qp_hi) bind(c,name='ca_ppm_reconstruct')
 
     implicit none
 
@@ -39,6 +39,8 @@ contains
 
     ! s_{\ib,+}, s_{\ib,-}
     real(rt) :: sm, sp
+
+    !$gpu
 
 #ifndef CUDA
     if (s_lo(1) .gt. lo(1)-3 .or. s_lo(2) .gt. lo(2)-3 .or. s_lo(3) .gt. lo(3)-3) then

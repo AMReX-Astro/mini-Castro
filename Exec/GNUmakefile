@@ -100,8 +100,6 @@ endif
 mega_f.F90: $(ca_F90EXE_sources)
 	$(AMREX_HOME)/Tools/F_scripts/f90cat.py $^
 
-include $(AMREX_HOME)/Src/F_BaseLib/FParallelMG.mak
-
 # runtime parameter support for extern/ routines
 
 

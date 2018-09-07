@@ -6,7 +6,7 @@ module riemann_module
                                 QFX, URHO, UMX, UMY, UMZ, UTEMP, UEDEN, UEINT, &
                                 UFS, UFX, &
                                 NGDNV, GDRHO, GDPRES, GDGAME, &
-                                QC, QCSML, QGAMC, &
+                                QC, QGAMC, &
                                 small_dens, small_temp, &
                                 npassive, upass_map, qpass_map
 
@@ -16,16 +16,16 @@ module riemann_module
 
 contains
 
-  AMREX_DEVICE subroutine cmpflx(lo, hi, domlo, domhi, idir, &
-                                 qm, qm_lo, qm_hi, &
-                                 qp, qp_lo, qp_hi, &
-                                 qint, qe_lo, qe_hi, &
-                                 flx, flx_lo, flx_hi, &
-                                 qaux, qa_lo, qa_hi)
+  subroutine cmpflx(lo, hi, domlo, domhi, idir, &
+                    qm, qm_lo, qm_hi, &
+                    qp, qp_lo, qp_hi, &
+                    qint, qe_lo, qe_hi, &
+                    flx, flx_lo, flx_hi, &
+                    qaux, qa_lo, qa_hi)
 
     use network, only: nspec, naux
     use amrex_fort_module, only: rt => amrex_real
-    use bl_constants_module, only: ZERO, HALF, ONE
+    use amrex_constants_module, only: ZERO, HALF, ONE
     use prob_params_module, only: physbc_lo, physbc_hi, Symmetry, SlipWall, NoSlipWall
 
     integer,  intent(in   ) :: qm_lo(3), qm_hi(3)
@@ -69,6 +69,8 @@ contains
 
     real(rt), parameter :: small = 1.e-8_rt
     real(rt), parameter :: small_pres = 1.e-200_rt
+
+    !$gpu
 
     if (idir .eq. 1) then
        iu = QU
@@ -133,17 +135,17 @@ contains
           do i = lo(1), hi(1)
 
              if (idir == 1) then
-                smallc = max( qaux(i,j,k,QCSML), qaux(i-1,j,k,QCSML) )
+                smallc = max( small, max( small*qaux(i,j,k,QC), small * qaux(i-1,j,k,QC)) )
                 cavg   = HALF*( qaux(i,j,k,QC) + qaux(i-1,j,k,QC) )
                 gamcm  = qaux(i-1,j,k,QGAMC)
                 gamcp  = qaux(i,j,k,QGAMC)
              elseif (idir == 2) then
-                smallc = max( qaux(i,j,k,QCSML), qaux(i,j-1,k,QCSML) )
+                smallc = max( small, max( small*qaux(i,j,k,QC), small * qaux(i,j-1,k,QC)) )
                 cavg   = HALF*( qaux(i,j,k,QC) + qaux(i,j-1,k,QC) )
                 gamcm  = qaux(i,j-1,k,QGAMC)
                 gamcp  = qaux(i,j,k,QGAMC)
              else
-                smallc = max( qaux(i,j,k,QCSML), qaux(i,j,k-1,QCSML) )
+                smallc = max( small, max( small*qaux(i,j,k,QC), small * qaux(i,j,k-1,QC)) )
                 cavg   = HALF*( qaux(i,j,k,QC) + qaux(i,j,k-1,QC) )
                 gamcm  = qaux(i,j,k-1,QGAMC)
                 gamcp  = qaux(i,j,k,QGAMC)

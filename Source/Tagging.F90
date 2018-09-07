@@ -4,18 +4,10 @@ module tagging_module
 
   implicit none
 
-  real(rt), save ::    denerr,   dengrad
-  real(rt), save ::    enterr,   entgrad
-  real(rt), save ::    velerr,   velgrad
-  real(rt), save ::   temperr,  tempgrad
-  real(rt), save ::  presserr, pressgrad
-  real(rt), save ::    raderr,   radgrad
-  integer,  save ::  max_denerr_lev,   max_dengrad_lev
-  integer,  save ::  max_enterr_lev,   max_entgrad_lev
-  integer,  save ::  max_velerr_lev,   max_velgrad_lev
-  integer,  save ::  max_temperr_lev,  max_tempgrad_lev
-  integer,  save ::  max_presserr_lev, max_pressgrad_lev
-  integer,  save ::  max_raderr_lev,   max_radgrad_lev
+  real(rt), save ::  denerr,  dengrad,  dengrad_rel
+  real(rt), save :: temperr, tempgrad, tempgrad_rel
+  integer,  save ::  max_denerr_lev,  max_dengrad_lev,  max_dengrad_rel_lev
+  integer,  save :: max_temperr_lev, max_tempgrad_lev, max_tempgrad_rel_lev
 
 contains
 
@@ -60,7 +52,7 @@ contains
     endif
 
     ! Tag on regions of high density gradient
-    if (level .lt. max_dengrad_lev) then
+    if (level .lt. max_dengrad_lev .or. level .lt. max_dengrad_rel_lev) then
        do k = lo(3), hi(3)
           do j = lo(2), hi(2)
              do i = lo(1), hi(1)
@@ -70,7 +62,7 @@ contains
                 ax = MAX(ax,ABS(den(i,j,k,1) - den(i-1*dg(1),j,k,1)))
                 ay = MAX(ay,ABS(den(i,j,k,1) - den(i,j-1*dg(2),k,1)))
                 az = MAX(az,ABS(den(i,j,k,1) - den(i,j,k-1*dg(3),1)))
-                if ( MAX(ax,ay,az) .ge. dengrad) then
+                if (MAX(ax,ay,az) .ge. dengrad .or. MAX(ax,ay,az) .ge. ABS(dengrad_rel * den(i,j,k,1))) then
                    tag(i,j,k) = set
                 endif
              enddo
@@ -121,7 +113,7 @@ contains
     endif
 
     ! Tag on regions of high temperature gradient
-    if (level .lt. max_tempgrad_lev) then
+    if (level .lt. max_tempgrad_lev .or. level .lt. max_tempgrad_rel_lev) then
        do k = lo(3), hi(3)
           do j = lo(2), hi(2)
              do i = lo(1), hi(1)
@@ -131,7 +123,7 @@ contains
                 ax = MAX(ax,ABS(temp(i,j,k,1) - temp(i-1*dg(1),j,k,1)))
                 ay = MAX(ay,ABS(temp(i,j,k,1) - temp(i,j-1*dg(2),k,1)))
                 az = MAX(az,ABS(temp(i,j,k,1) - temp(i,j,k-1*dg(3),1)))
-                if ( MAX(ax,ay,az) .ge. tempgrad) then
+                if (MAX(ax,ay,az) .ge. tempgrad .or. MAX(ax,ay,az) .ge. ABS(tempgrad_rel * temp(i,j,k,1))) then
                    tag(i,j,k) = set
                 endif
              enddo
@@ -140,127 +132,5 @@ contains
     endif
 
   end subroutine ca_temperror
-
-  ! ::: -----------------------------------------------------------
-  ! ::: This routine will tag high error cells based on the pressure
-  ! ::: -----------------------------------------------------------
-
-  subroutine ca_presserror(tag,taglo,taghi, &
-                           set,clear, &
-                           press,presslo,presshi, &
-                           lo,hi,np,domlo,domhi, &
-                           delta,xlo,problo,time,level) &
-                           bind(C, name="ca_presserror")
-
-    use prob_params_module, only: dg
-    use amrex_fort_module, only: rt => amrex_real
-
-    implicit none
-
-    integer,  intent(in   ) :: set, clear, np, level
-    integer,  intent(in   ) :: taglo(3), taghi(3)
-    integer,  intent(in   ) :: presslo(3), presshi(3)
-    integer,  intent(in   ) :: lo(3), hi(3), domlo(3), domhi(3)
-    integer,  intent(inout) :: tag(taglo(1):taghi(1),taglo(2):taghi(2),taglo(3):taghi(3))
-    real(rt), intent(in   ) :: press(presslo(1):presshi(1),presslo(2):presshi(2),presslo(3):presshi(3),np)
-    real(rt), intent(in   ) :: delta(3), xlo(3), problo(3), time
-
-    real(rt) :: ax, ay, az
-    integer  :: i, j, k
-
-    ! Tag on regions of high pressure
-    if (level .lt. max_presserr_lev) then
-       do k = lo(3), hi(3)
-          do j = lo(2), hi(2)
-             do i = lo(1), hi(1)
-                if (press(i,j,k,1) .ge. presserr) then
-                   tag(i,j,k) = set
-                endif
-             enddo
-          enddo
-       enddo
-    endif
-
-    ! Tag on regions of high pressure gradient
-    if (level .lt. max_pressgrad_lev) then
-       do k = lo(3), hi(3)
-          do j = lo(2), hi(2)
-             do i = lo(1), hi(1)
-                ax = ABS(press(i+1*dg(1),j,k,1) - press(i,j,k,1))
-                ay = ABS(press(i,j+1*dg(2),k,1) - press(i,j,k,1))
-                az = ABS(press(i,j,k+1*dg(3),1) - press(i,j,k,1))
-                ax = MAX(ax,ABS(press(i,j,k,1) - press(i-1*dg(1),j,k,1)))
-                ay = MAX(ay,ABS(press(i,j,k,1) - press(i,j-1*dg(2),k,1)))
-                az = MAX(az,ABS(press(i,j,k,1) - press(i,j,k-1*dg(3),1)))
-                if ( MAX(ax,ay,az) .ge. pressgrad) then
-                   tag(i,j,k) = set
-                endif
-             enddo
-          enddo
-       enddo
-    endif
-
-  end subroutine ca_presserror
-
-  ! ::: -----------------------------------------------------------
-  ! ::: This routine will tag high error cells based on the velocity
-  ! ::: -----------------------------------------------------------
-
-  subroutine ca_velerror(tag,taglo,taghi, &
-                         set,clear, &
-                         vel,vello,velhi, &
-                         lo,hi,nv,domlo,domhi, &
-                         delta,xlo,problo,time,level) &
-                         bind(C, name="ca_velerror")
-
-    use prob_params_module, only: dg
-    use amrex_fort_module, only: rt => amrex_real
-
-    implicit none
-
-    integer,  intent(in   ) :: set, clear, nv, level
-    integer,  intent(in   ) :: taglo(3), taghi(3)
-    integer,  intent(in   ) :: vello(3), velhi(3)
-    integer,  intent(in   ) :: lo(3), hi(3), domlo(3), domhi(3)
-    integer,  intent(inout) :: tag(taglo(1):taghi(1),taglo(2):taghi(2),taglo(3):taghi(3))
-    real(rt), intent(in   ) :: vel(vello(1):velhi(1),vello(2):velhi(2),vello(3):velhi(3),nv)
-    real(rt), intent(in   ) :: delta(3), xlo(3), problo(3), time
-
-    real(rt) :: ax, ay, az
-    integer  :: i, j, k
-
-    !     Tag on regions of high velocity
-    if (level .lt. max_velerr_lev) then
-       do k = lo(3), hi(3)
-          do j = lo(2), hi(2)
-             do i = lo(1), hi(1)
-                if (vel(i,j,k,1) .ge. velerr) then
-                   tag(i,j,k) = set
-                endif
-             enddo
-          enddo
-       enddo
-    endif
-
-    !     Tag on regions of high velocity gradient
-    if (level .lt. max_velgrad_lev) then
-       do k = lo(3), hi(3)
-          do j = lo(2), hi(2)
-             do i = lo(1), hi(1)
-                ax = ABS(vel(i+1*dg(1),j,k,1) - vel(i,j,k,1))
-                ay = ABS(vel(i,j+1*dg(2),k,1) - vel(i,j,k,1))
-                az = ABS(vel(i,j,k+1*dg(3),1) - vel(i,j,k,1))
-                ax = MAX(ax,ABS(vel(i,j,k,1) - vel(i-1*dg(1),j,k,1)))
-                ay = MAX(ay,ABS(vel(i,j,k,1) - vel(i,j-1*dg(2),k,1)))
-                az = MAX(az,ABS(vel(i,j,k,1) - vel(i,j,k-1*dg(3),1)))
-                if ( MAX(ax,ay,az) .ge. velgrad) then
-                   tag(i,j,k) = set
-                endif
-             enddo
-          enddo
-       enddo
-    endif
-
-  end subroutine ca_velerror
 
 end module tagging_module

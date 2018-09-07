@@ -8,12 +8,12 @@ contains
 
   ! Courant-condition limited timestep
 
-  AMREX_DEVICE subroutine ca_estdt(lo,hi,u,u_lo,u_hi,dx,dt) bind(c,name='ca_estdt')
+  subroutine ca_estdt(lo,hi,u,u_lo,u_hi,dx,dt) bind(c,name='ca_estdt')
 
     use network, only: nspec, naux
     use eos_module, only: eos
     use eos_type_module, only: eos_t, eos_input_re
-    use bl_constants_module, only: ONE
+    use amrex_constants_module, only: ONE
     use amrex_fort_module, only: rt => amrex_real, amrex_min
     use meth_params_module, only: NVAR, URHO, UMX, UMY, UMZ, UEINT, UTEMP, UFS, UFX
     use prob_params_module, only: dim
@@ -30,6 +30,8 @@ contains
     integer  :: i, j, k
 
     type (eos_t) :: eos_state
+
+    !$gpu
 
     ! Call EOS for the purpose of computing sound speed
 

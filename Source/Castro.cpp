@@ -73,7 +73,7 @@ Vector<Real> Castro::c_mol;
 
 std::string  Castro::probin_file = "probin";
 
-#ifdef CUDA
+#ifdef AMREX_USE_GPU
 IntVect      Castro::hydro_tile_size(1024000,1024000,1024000);
 #else
 IntVect      Castro::hydro_tile_size(1024,16,16);
@@ -440,14 +440,14 @@ Castro::initData ()
     {
        for (MFIter mfi(S_new); mfi.isValid(); ++mfi)
        {
-          const RealBox& rbx = mfi.registerRealBox(RealBox(grids[mfi.index()],geom.CellSize(),geom.ProbLo()));
+          const RealBox& rbx = RealBox(grids[mfi.index()],geom.CellSize(),geom.ProbLo());
           const Box& box     = mfi.validbox();
 
 #pragma gpu
           ca_initdata
-              (level, AMREX_ARLIM_ARG(box.loVect()), AMREX_ARLIM_ARG(box.hiVect()),
-               BL_TO_FORTRAN_ANYD(S_new[mfi]), dx,
-               rbx.lo(), rbx.hi());
+              (level, AMREX_INT_ANYD(box.loVect()), AMREX_INT_ANYD(box.hiVect()),
+               BL_TO_FORTRAN_ANYD(S_new[mfi]), AMREX_REAL_ANYD(dx),
+               AMREX_REAL_ANYD(rbx.lo()), AMREX_REAL_ANYD(rbx.hi()));
        }
 
        for (MFIter mfi(S_new); mfi.isValid(); ++mfi)
@@ -456,7 +456,7 @@ Castro::initData ()
 
            // Verify that the sum of (rho X)_i = rho at every cell
 #pragma gpu
-           ca_check_initial_species(AMREX_ARLIM_ARG(box.loVect()), AMREX_ARLIM_ARG(box.hiVect()), BL_TO_FORTRAN_ANYD(S_new[mfi]));
+           ca_check_initial_species(AMREX_INT_ANYD(box.loVect()), AMREX_INT_ANYD(box.hiVect()), BL_TO_FORTRAN_ANYD(S_new[mfi]));
        }
 
        enforce_consistent_e(S_new);
@@ -565,17 +565,12 @@ Castro::estTimeStep (Real dt_old)
 	{
 	    const Box& box = mfi.tilebox();
 
-#ifdef CUDA
-            Real* dt_f = mfi.add_reduce_value(&dt, MFIter::MIN);
-#else
-            Real* dt_f = &dt;
-#endif
-
 #pragma gpu
             ca_estdt
-                (AMREX_ARLIM_ARG(box.loVect()), AMREX_ARLIM_ARG(box.hiVect()),
+                (AMREX_INT_ANYD(box.loVect()), AMREX_INT_ANYD(box.hiVect()),
                  BL_TO_FORTRAN_ANYD(stateMF[mfi]),
-                 ZFILL(dx),dt_f);
+                 AMREX_REAL_ANYD(dx),
+                 AMREX_MFITER_REDUCE_MIN(&dt));
 	}
 #ifdef _OPENMP
 #pragma omp critical (castro_estdt)
@@ -940,7 +935,7 @@ Castro::normalize_species (MultiFab& S_new)
 #pragma gpu
        ca_normalize_species
            (BL_TO_FORTRAN_ANYD(S_new[mfi]), 
-            AMREX_ARLIM_ARG(bx.loVect()), AMREX_ARLIM_ARG(bx.hiVect()));
+            AMREX_INT_ANYD(bx.loVect()), AMREX_INT_ANYD(bx.hiVect()));
     }
 
 }
@@ -961,7 +956,7 @@ Castro::enforce_consistent_e (MultiFab& S)
         const int* hi      = box.hiVect();
 
 #pragma gpu
-        ca_enforce_consistent_e(AMREX_ARLIM_ARG(box.loVect()), AMREX_ARLIM_ARG(box.hiVect()), BL_TO_FORTRAN_ANYD(S[mfi]));
+        ca_enforce_consistent_e(AMREX_INT_ANYD(box.loVect()), AMREX_INT_ANYD(box.hiVect()), BL_TO_FORTRAN_ANYD(S[mfi]));
     }
 
 }
@@ -994,19 +989,14 @@ Castro::enforce_min_density (MultiFab& S_old, MultiFab& S_new)
 	FArrayBox& statenew = S_new[mfi];
 	FArrayBox& vol      = volume[mfi];
 
-#ifdef CUDA
-        Real* dens_change_f = mfi.add_reduce_value(&dens_change, MFIter::MIN);
-#else
-        Real* dens_change_f = &dens_change;
-#endif
-
 #pragma gpu
 	ca_enforce_minimum_density
             (BL_TO_FORTRAN_ANYD(stateold),
              BL_TO_FORTRAN_ANYD(statenew),
              BL_TO_FORTRAN_ANYD(vol),
-             AMREX_ARLIM_ARG(bx.loVect()), AMREX_ARLIM_ARG(bx.hiVect()),
-             dens_change_f, verbose);
+             AMREX_INT_ANYD(bx.loVect()), AMREX_INT_ANYD(bx.hiVect()),
+             AMREX_MFITER_REDUCE_MIN(&dens_change),
+             verbose);
 
     }
 
@@ -1099,7 +1089,7 @@ Castro::apply_tagging_func(TagBoxArray& tags, int clearval, int tagval, Real tim
 		const Box&  tilebx  = mfi.tilebox();
 
 		// physical tile box
-		const RealBox& pbx  = mfi.registerRealBox(RealBox(tilebx,geom.CellSize(),geom.ProbLo()));
+		const RealBox& pbx  = RealBox(tilebx,geom.CellSize(),geom.ProbLo());
 
 		//fab box
 		const Box&  datbox  = datfab.box();
@@ -1184,7 +1174,7 @@ Castro::reset_internal_energy(MultiFab& S_new)
 
 #pragma gpu
         ca_reset_internal_e
-            (AMREX_ARLIM_ARG(bx.loVect()), AMREX_ARLIM_ARG(bx.hiVect()),
+            (AMREX_INT_ANYD(bx.loVect()), AMREX_INT_ANYD(bx.hiVect()),
              BL_TO_FORTRAN_ANYD(S_new[mfi]),
              print_fortran_warnings);
     }
@@ -1212,7 +1202,7 @@ Castro::computeTemp(MultiFab& State)
       const Box& bx = mfi.growntilebox();
 
 #pragma gpu
-      ca_compute_temp(AMREX_ARLIM_ARG(bx.loVect()), AMREX_ARLIM_ARG(bx.hiVect()), BL_TO_FORTRAN_3D(State[mfi]));
+      ca_compute_temp(AMREX_INT_ANYD(bx.loVect()), AMREX_INT_ANYD(bx.hiVect()), BL_TO_FORTRAN_ANYD(State[mfi]));
     }
 
 }
@@ -1303,7 +1293,11 @@ Castro::clean_state(MultiFab& state) {
 
     // Enforce a minimum density.
 
-    Real frac_change = enforce_min_density(state, state);
+    MultiFab temp_state(state.boxArray(), state.DistributionMap(), state.nComp(), state.nGrow());
+
+    MultiFab::Copy(temp_state, state, 0, 0, state.nComp(), state.nGrow());
+
+    Real frac_change = enforce_min_density(temp_state, state);
 
     // Ensure all species are normalized.
 

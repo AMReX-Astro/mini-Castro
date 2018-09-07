@@ -86,10 +86,10 @@ module initdata_module
 
 contains
 
-AMREX_DEVICE subroutine ca_initdata(level, lo, hi, state, s_lo, s_hi, dx, xlo, xhi) bind(c,name='ca_initdata')
+subroutine ca_initdata(level, lo, hi, state, s_lo, s_hi, dx, xlo, xhi) bind(c,name='ca_initdata')
 
   use probdata_module, only: r_init, exp_energy, nsub, p_ambient, dens_ambient, e_ambient
-  use bl_constants_module, only: M_PI, FOUR3RD
+  use amrex_constants_module, only: M_PI, FOUR3RD
   use meth_params_module , only: NVAR, URHO, UMX, UMY, UMZ, UTEMP, UEDEN, UEINT, UFS
   use prob_params_module, only: center, problo, domlo_level
   use amrex_fort_module, only: rt => amrex_real
@@ -109,6 +109,8 @@ AMREX_DEVICE subroutine ca_initdata(level, lo, hi, state, s_lo, s_hi, dx, xlo, x
 
   integer :: i,j,k, ii, jj, kk
   integer :: npert, nambient
+
+  !$gpu
 
   ! Set explosion energy -- we will convert the point-explosion energy into
   ! a corresponding energy distributed throughout the perturbed volume.

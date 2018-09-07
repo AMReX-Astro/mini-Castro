@@ -323,10 +323,9 @@ subroutine ca_set_method_params(dm,Density,Xmom,Eden,Eint,Temp, &
 
   use meth_params_module
   use network, only: nspec, naux
-  use parallel, only: parallel_initialize
   use eos_module, only: eos_init
   use eos_type_module, only: eos_get_small_dens, eos_get_small_temp
-  use bl_constants_module, only: ZERO, ONE
+  use amrex_constants_module, only: ZERO, ONE
   use amrex_fort_module, only: rt => amrex_real
 
   implicit none
@@ -339,12 +338,6 @@ subroutine ca_set_method_params(dm,Density,Xmom,Eden,Eint,Temp, &
 
   integer :: i
   integer :: ioproc
-
-#ifdef CUDA
-  integer :: cuda_result
-#endif
-
-  call parallel_initialize()
 
   ! easy indexing for the passively advected quantities.  This
   ! lets us loop over all groups (advected, species, aux)
@@ -471,16 +464,12 @@ subroutine ca_set_problem_params(dm,physbc_lo_in,physbc_hi_in,&
 
   ! Passing data from C++ into F90
 
-  use bl_constants_module, only: ZERO
+  use amrex_constants_module, only: ZERO
   use prob_params_module
   use meth_params_module, only: UMX, UMY, UMZ
   use amrex_fort_module, only: rt => amrex_real
 
   implicit none
-
-#ifdef CUDA
-  integer :: cuda_result
-#endif
 
   integer,  intent(in) :: dm
   integer,  intent(in) :: physbc_lo_in(dm),physbc_hi_in(dm)
@@ -708,43 +697,23 @@ subroutine ca_get_tagging_params(name, namlen) &
   character (len=maxlen) :: probin
 
   namelist /tagging/ &
-       denerr,     dengrad,   max_denerr_lev,   max_dengrad_lev, &
-       enterr,     entgrad,   max_enterr_lev,   max_entgrad_lev, &
-       velerr,     velgrad,   max_velerr_lev,   max_velgrad_lev, &
-       presserr, pressgrad, max_presserr_lev, max_pressgrad_lev, &
-       temperr,   tempgrad,  max_temperr_lev,  max_tempgrad_lev, &
-       raderr,     radgrad,   max_raderr_lev,   max_radgrad_lev
+       denerr,   dengrad,  dengrad_rel,  max_denerr_lev,  max_dengrad_lev,  max_dengrad_rel_lev, &
+       temperr, tempgrad, tempgrad_rel, max_temperr_lev, max_tempgrad_lev, max_tempgrad_rel_lev
 
   ! Set namelist defaults
   denerr = 1.e20_rt
   dengrad = 1.e20_rt
+  dengrad_rel = 1.e20_rt
   max_denerr_lev = 10
   max_dengrad_lev = 10
-
-  enterr = 1.e20_rt
-  entgrad = 1.e20_rt
-  max_enterr_lev = -1
-  max_entgrad_lev = -1
-
-  presserr = 1.e20_rt
-  pressgrad = 1.e20_rt
-  max_presserr_lev = -1
-  max_pressgrad_lev = -1
-
-  velerr  = 1.e20_rt
-  velgrad = 1.e20_rt
-  max_velerr_lev = -1
-  max_velgrad_lev = -1
+  max_dengrad_rel_lev = -1
 
   temperr  = 1.e20_rt
   tempgrad = 1.e20_rt
+  tempgrad_rel = 1.e20_rt
   max_temperr_lev = -1
   max_tempgrad_lev = -1
-
-  raderr  = 1.e20_rt
-  radgrad = 1.e20_rt
-  max_raderr_lev = -1
-  max_radgrad_lev = -1
+  max_tempgrad_rel_lev = -1
 
   ! create the filename
   if (namlen > maxlen) then
@@ -783,9 +752,9 @@ module castro_util_module
 
 contains
 
-  AMREX_DEVICE subroutine ca_enforce_consistent_e(lo,hi,state,s_lo,s_hi) bind(c,name='ca_enforce_consistent_e')
+  subroutine ca_enforce_consistent_e(lo,hi,state,s_lo,s_hi) bind(c,name='ca_enforce_consistent_e')
 
-    use bl_constants_module, only: HALF, ONE
+    use amrex_constants_module, only: HALF, ONE
     use amrex_fort_module, only: rt => amrex_real
     use meth_params_module, only: NVAR, URHO, UMX, UMY, UMZ, UEDEN, UEINT
 
@@ -798,6 +767,8 @@ contains
     ! Local variables
     integer  :: i,j,k
     real(rt) :: u, v, w, rhoInv
+
+    !$gpu
 
     !
     ! Enforces (rho E) = (rho e) + 1/2 rho (u^2 + v^2 + w^2)
@@ -822,12 +793,12 @@ contains
 
 
 
-  AMREX_DEVICE subroutine ca_reset_internal_e(lo,hi,u,u_lo,u_hi,verbose) bind(c,name='ca_reset_internal_e')
+  subroutine ca_reset_internal_e(lo,hi,u,u_lo,u_hi,verbose) bind(c,name='ca_reset_internal_e')
 
     use eos_module, only: eos
     use eos_type_module, only: eos_t, eos_input_re, eos_input_rt
     use network, only: nspec, naux
-    use bl_constants_module, only: ZERO, HALF, ONE
+    use amrex_constants_module, only: ZERO, HALF, ONE
     use amrex_fort_module, only: rt => amrex_real
     use meth_params_module, only: NVAR, URHO, UMX, UMY, UMZ, UEDEN, UEINT, UFS, UFX, UTEMP, small_temp
 
@@ -845,6 +816,8 @@ contains
     real(rt), parameter :: dual_energy_eta2 = 1.e-4_rt
 
     type (eos_t) :: eos_state
+
+    !$gpu
 
     ! Reset internal energy
 
@@ -917,12 +890,12 @@ contains
 
 
 
-  AMREX_DEVICE subroutine ca_compute_temp(lo,hi,state,s_lo,s_hi) bind(c,name='ca_compute_temp')
+  subroutine ca_compute_temp(lo,hi,state,s_lo,s_hi) bind(c,name='ca_compute_temp')
 
     use network, only: nspec, naux
     use eos_module, only: eos
     use eos_type_module, only: eos_input_re, eos_t
-    use bl_constants_module, only: ZERO, ONE
+    use amrex_constants_module, only: ZERO, ONE
     use amrex_fort_module, only: rt => amrex_real
     use meth_params_module, only: NVAR, URHO, UEDEN, UEINT, UTEMP, UFS, UFX
 
@@ -936,6 +909,8 @@ contains
     real(rt) :: rhoInv
 
     type (eos_t) :: eos_state
+
+    !$gpu
 
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
@@ -985,8 +960,7 @@ contains
   
 
 
-  AMREX_DEVICE subroutine ca_check_initial_species(lo, hi, &
-                                                   state, state_lo, state_hi) bind(c,name='ca_check_initial_species')
+  subroutine ca_check_initial_species(lo, hi, state, state_lo, state_hi) bind(c,name='ca_check_initial_species')
 
     use network           , only: nspec
     use meth_params_module, only: NVAR, URHO, UFS
@@ -1001,6 +975,8 @@ contains
     ! Local variables
     integer  :: i, j, k
     real(rt) :: spec_sum
+
+    !$gpu
 
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
@@ -1025,10 +1001,10 @@ contains
 
 
 
-  AMREX_DEVICE subroutine ca_normalize_species(u, u_lo, u_hi, lo, hi) bind(c,name='ca_normalize_species')
+  subroutine ca_normalize_species(u, u_lo, u_hi, lo, hi) bind(c,name='ca_normalize_species')
 
     use network, only: nspec
-    use bl_constants_module, only: ONE
+    use amrex_constants_module, only: ONE
     use amrex_fort_module, only: rt => amrex_real
     use extern_probin_module, only: small_x
     use meth_params_module, only: NVAR, URHO, UFS
@@ -1042,6 +1018,8 @@ contains
     ! Local variables
     integer  :: i, j, k
     real(rt) :: xn(nspec)
+
+    !$gpu
 
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
@@ -1063,99 +1041,8 @@ contains
 
 
 
-  AMREX_LAUNCH subroutine dervel(vel,v_lo,v_hi,nv, &
-                                 dat,d_lo,d_hi,nc,lo,hi,domlo, &
-                                 domhi,delta,xlo,time,dt,bc,level,grid_no)
-
-    !
-    ! This routine will derive the velocity from the momentum.
-    !
-  
-    use amrex_fort_module, only: rt => amrex_real, get_loop_bounds
-
-    implicit none
-
-    integer,  intent(in   ) :: lo(3), hi(3)
-    integer,  intent(in   ) :: v_lo(3), v_hi(3), nv
-    integer,  intent(in   ) :: d_lo(3), d_hi(3), nc
-    integer,  intent(in   ) :: domlo(3), domhi(3)
-    integer,  intent(in   ) :: bc(3,2,nc)
-    real(rt), intent(in   ) :: delta(3), xlo(3), time, dt
-    real(rt), intent(inout) :: vel(v_lo(1):v_hi(1),v_lo(2):v_hi(2),v_lo(3):v_hi(3),nv)
-    real(rt), intent(in   ) :: dat(d_lo(1):d_hi(1),d_lo(2):d_hi(2),d_lo(3):d_hi(3),nc)
-    integer,  intent(in   ) :: level, grid_no
-
-    integer :: i, j, k
-    integer :: blo(3), bhi(3)
-
-    call get_loop_bounds(blo, bhi, lo, hi)
-
-    do k = blo(3), bhi(3)
-       do j = blo(2), bhi(2)
-          do i = blo(1), bhi(1)
-             vel(i,j,k,1) = dat(i,j,k,2) / dat(i,j,k,1)
-          end do
-       end do
-    end do
-
-  end subroutine dervel
-
-
-
-  AMREX_LAUNCH subroutine derpres(p,p_lo,p_hi,ncomp_p, &
-                                  u,u_lo,u_hi,ncomp_u,lo,hi,domlo, &
-                                  domhi,dx,xlo,time,dt,bc,level,grid_no)
-
-    use network, only: nspec, naux
-    use eos_module, only: eos
-    use eos_type_module, only: eos_t, eos_input_re
-    use bl_constants_module, only: ONE
-    use amrex_fort_module, only: rt => amrex_real, get_loop_bounds
-    use meth_params_module, only: URHO, UEINT, UTEMP, UFS, UFX
-
-    implicit none
-
-    integer,  intent(in   ) :: lo(3), hi(3)
-    integer,  intent(in   ) :: p_lo(3), p_hi(3), ncomp_p
-    integer,  intent(in   ) :: u_lo(3), u_hi(3), ncomp_u
-    integer,  intent(in   ) :: domlo(3), domhi(3)
-    real(rt), intent(inout) :: p(p_lo(1):p_hi(1),p_lo(2):p_hi(2),p_lo(3):p_hi(3),ncomp_p)
-    real(rt), intent(in   ) :: u(u_lo(1):u_hi(1),u_lo(2):u_hi(2),u_lo(3):u_hi(3),ncomp_u)
-    real(rt), intent(in   ) :: dx(3), xlo(3), time, dt
-    integer,  intent(in   ) :: bc(3,2,ncomp_u), level, grid_no
-
-    real(rt) :: rhoInv
-    integer  :: i, j, k
-    integer  :: blo(3), bhi(3)
-
-    type (eos_t) :: eos_state
-
-    call get_loop_bounds(blo, bhi, lo, hi)
-
-    do k = blo(3), bhi(3)
-       do j = blo(2), bhi(2)
-          do i = blo(1), bhi(1)
-             rhoInv = ONE / u(i,j,k,URHO)
-
-             eos_state % rho  = u(i,j,k,URHO)
-             eos_state % T    = u(i,j,k,UTEMP)
-             eos_state % e    = u(i,j,k,UEINT) * rhoInv
-             eos_state % xn   = u(i,j,k,UFS:UFS+nspec-1) * rhoInv
-             eos_state % aux  = u(i,j,k,UFX:UFX+naux-1) * rhoInv
-
-             call eos(eos_input_re, eos_state)
-
-             p(i,j,k,1) = eos_state % p
-          enddo
-       enddo
-    enddo
-
-  end subroutine derpres
-
-
-
-  AMREX_DEVICE subroutine ca_summass(lo,hi,rho,r_lo,r_hi,dx, &
-                                     vol,v_lo,v_hi,mass) bind(c,name='ca_summass')
+  subroutine ca_summass(lo,hi,rho,r_lo,r_hi,dx, &
+                        vol,v_lo,v_hi,mass) bind(c,name='ca_summass')
 
     use amrex_fort_module, only: rt => amrex_real, amrex_add
 
@@ -1172,6 +1059,8 @@ contains
     integer  :: i, j, k
     real(rt) :: dm
 
+    !$gpu
+
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
@@ -1185,5 +1074,49 @@ contains
     enddo
 
   end subroutine ca_summass
+
+
+
+  subroutine ca_hypfill(adv,adv_l1,adv_l2,adv_l3,adv_h1,adv_h2, &
+                        adv_h3,domlo,domhi,dx,xlo,time,bc) bind(C, name="ca_hypfill")
+
+    use amrex_fort_module, only: rt => amrex_real
+    use bc_fill_module, only: hypfill
+    use meth_params_module, only: NVAR
+
+    implicit none
+
+    integer,  intent(in   ) :: adv_l1, adv_l2, adv_l3, adv_h1, adv_h2, adv_h3
+    integer,  intent(in   ) :: bc(3,2,NVAR)
+    integer,  intent(in   ) :: domlo(3), domhi(3)
+    real(rt), intent(in   ) :: dx(3), xlo(3), time
+    real(rt), intent(inout) :: adv(adv_l1:adv_h1,adv_l2:adv_h2,adv_l3:adv_h3,NVAR)
+
+    call hypfill(adv, adv_l1, adv_l2, adv_l3, adv_h1, adv_h2, adv_h3, domlo, domhi, dx, xlo, time, bc)
+
+  end subroutine ca_hypfill
+
+
+
+  subroutine ca_denfill(adv,adv_l1,adv_l2,adv_l3,adv_h1,adv_h2, &
+                        adv_h3,domlo,domhi,dx,xlo,time,bc) bind(C, name="ca_denfill")
+
+    use amrex_fort_module, only: rt => amrex_real
+    use bc_fill_module, only: denfill
+    use meth_params_module, only: NVAR
+
+    implicit none
+
+    include 'AMReX_bc_types.fi'
+
+    integer,  intent(in   ) :: adv_l1, adv_l2, adv_l3, adv_h1, adv_h2, adv_h3
+    integer,  intent(in   ) :: bc(3,2,1)
+    integer,  intent(in   ) :: domlo(3), domhi(3)
+    real(rt), intent(in   ) :: dx(3), xlo(3), time
+    real(rt), intent(inout) :: adv(adv_l1:adv_h1,adv_l2:adv_h2,adv_l3:adv_h3)
+
+    call denfill(adv, adv_l1, adv_l2, adv_l3, adv_h1, adv_h2, adv_h3, domlo, domhi, dx, xlo, time, bc)
+
+  end subroutine ca_denfill
 
 end module castro_util_module

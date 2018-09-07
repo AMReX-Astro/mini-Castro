@@ -70,9 +70,8 @@ module meth_params_module
   integer, parameter :: NQAUX = 5
   integer, parameter :: QGAMC = 1
   integer, parameter :: QC    = 2
-  integer, parameter :: QCSML = 3
-  integer, parameter :: QDPDR = 4
-  integer, parameter :: QDPDE = 5
+  integer, parameter :: QDPDR = 3
+  integer, parameter :: QDPDE = 4
 
   ! NQ will be the total number of primitive variables, hydro + radiation
   integer, parameter :: NQ = QVAR
@@ -100,7 +99,7 @@ module meth_params_module
   logical,  save :: outflow_data_allocated
   real(rt), save :: max_dist
 
-#ifdef CUDA
+#ifdef AMREX_USE_CUDA
   attributes(managed) :: upass_map, qpass_map, npassive
 #endif
 
@@ -116,15 +115,8 @@ contains
 
     use amrex_parmparse_module, only: amrex_parmparse_build, amrex_parmparse_destroy, amrex_parmparse
     use amrex_fort_module, only: rt => amrex_real
-#ifdef CUDA
-    use cudafor, only: cudaMemcpyAsync
-#endif
 
     implicit none
-
-#ifdef CUDA
-    integer :: istat
-#endif
 
     type (amrex_parmparse) :: pp
 
