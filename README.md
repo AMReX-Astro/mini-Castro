@@ -17,6 +17,10 @@ using OpenACC. Below are instructions for compiling for each:
 
 make CUDA_VERSION=cc60 COMPILE_CUDA_PATH=/usr/local/cuda-9.2 USE_CUDA=TRUE COMP=PGI -j 4
 
+## Compiling on groot
+
+make CUDA_ARCH=60 COMPILE_CUDA_PATH=/usr/local/cuda-9.2 USE_CUDA=TRUE COMP=PGI -j 4
+
 ## Compiling on Titan (OLCF)
 
 Nothing works.
