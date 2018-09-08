@@ -9,8 +9,6 @@
 using std::string;
 using namespace amrex;
 
-static Box the_same_box (const Box& b) { return b; }
-
 typedef StateDescriptor::BndryFunc BndryFunc;
 
 //
