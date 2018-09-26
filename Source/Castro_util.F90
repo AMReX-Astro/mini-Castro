@@ -918,7 +918,7 @@ contains
 
              ! First check the inputs for validity.
 
-#ifndef CUDA
+#ifndef AMREX_USE_CUDA
              if (state(i,j,k,URHO) <= ZERO) then
                 print *,'   '
                 print *,'>>> Error: Castro_util.F90::ca_compute_temp ',i,j,k
@@ -986,7 +986,7 @@ contains
 
              if (abs(state(i,j,k,URHO)-spec_sum) .gt. 1.e-8_rt * state(i,j,k,URHO)) then
 
-#ifndef CUDA
+#ifndef AMREX_USE_CUDA
                 print *,'Sum of (rho X)_i vs rho at (i,j,k): ',i,j,k,spec_sum,state(i,j,k,URHO)
                 call bl_error("Error:: Failed check of initial species summing to 1")
 #endif
