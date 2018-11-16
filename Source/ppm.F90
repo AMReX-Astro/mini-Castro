@@ -144,8 +144,8 @@ contains
 
                 end if
 
-                qp(i  ,j,k,n,1) = sp
-                qm(i+1,j,k,n,1) = sm
+                qp(i  ,j,k,n,1) = sm
+                qm(i+1,j,k,n,1) = sp
 
              end do
           end do
@@ -241,8 +241,8 @@ contains
 
                 end if
 
-                qp(i,j  ,k,n,2) = sp
-                qm(i,j+1,k,n,2) = sm
+                qp(i,j  ,k,n,2) = sm
+                qm(i,j+1,k,n,2) = sp
 
              end do
           end do
@@ -338,8 +338,8 @@ contains
 
                 end if
 
-                qp(i,j,k  ,n,3) = sp
-                qm(i,j,k+1,n,3) = sm
+                qp(i,j,k  ,n,3) = sm
+                qm(i,j,k+1,n,3) = sp
 
              end do
           end do
