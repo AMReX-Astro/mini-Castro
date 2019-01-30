@@ -1,0 +1,32 @@
+If you use mini-Castro, please cite the most recent zenodo DOI, or the
+master zenodo DOI for the whole project.
+
+
+Additionally, to discuss its origins, please cite the Castro paper:
+
+    @ARTICLE{2010ApJ...715.1221A,
+       author = {{Almgren}, A.~S. and {Beckner}, V.~E. and {Bell},
+		      J.~B. and {Day}, M.~S. and {Howell}, L.~H. and
+		      {Joggerst}, C.~C. and {Lijewski}, M.~J. and
+		      {Nonaka}, A. and {Singer}, M. and {Zingale}, M.},
+	title = "{CASTRO: A New Compressible Astrophysical
+		      Solver. I. Hydrodynamics and Self-gravity}",
+      journal = {\apj},
+    archivePrefix = "arXiv",
+       eprint = {1005.0114},
+     primaryClass = "astro-ph.IM",
+     keywords = {equation of state, gravitation, hydrodynamics, methods:
+		      numerical, nuclear reactions, nucleosynthesis,
+		      abundances},
+	 year = 2010,
+	month = jun,
+       volume = 715,
+	pages = {1221-1238},
+	  doi = {10.1088/0004-637X/715/2/1221},
+       adsurl = {http://adsabs.harvard.edu/abs/2010ApJ...715.1221A},
+      adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+    }
+
+
+
+
