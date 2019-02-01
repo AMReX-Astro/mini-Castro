@@ -1,3 +1,6 @@
+[![DOI](https://zenodo.org/badge/92557777.svg)](https://zenodo.org/badge/latestdoi/92557777)
+
+
 # mini-Castro
 
 mini-Castro is a stripped-down version of Castro meant to serve as a
