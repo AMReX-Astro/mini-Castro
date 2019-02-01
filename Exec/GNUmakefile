@@ -13,6 +13,8 @@ USE_CUDA   = FALSE
 
 TINY_PROFILE = FALSE
 
+USE_GPU_PRAGMA = TRUE
+
 # define the location of the CASTRO top directory
 CASTRO_HOME  := ../
 TOP := $(CASTRO_HOME)
