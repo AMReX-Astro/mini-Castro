@@ -129,14 +129,15 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
                BL_TO_FORTRAN_ANYD(flux[idir][mfi]),
                BL_TO_FORTRAN_ANYD(area[idir][mfi]));
 
-          // Store the fluxes from this advance -- we weight them by the
-          // integrator weight for this stage
-          (*fluxes[idir])[mfi].saxpy(b_mol[istage], flux[idir][mfi], ebx, ebx, 0, 0, NUM_STATE);
-
       }
 
   } // MFIter loop
 
+  // Store the fluxes from this advance -- we weight them by the
+  // integrator weight for this stage
+  for (int idir = 0; idir < BL_SPACEDIM; ++idir) {
+      MultiFab::Saxpy(*fluxes[idir], b_mol[istage], flux[idir], 0, 0, (*fluxes[idir]).nComp(), 0);
+  }
 
 #ifdef _OPENMP
 #pragma omp parallel
