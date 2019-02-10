@@ -27,9 +27,6 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
   MultiFab qaux;
   qaux.define(grids, dmap, NQAUX, NUM_GROW);
 
-  MultiFab flatn;
-  flatn.define(grids, dmap, 1, 1);
-
   MultiFab div;
   div.define(grids, dmap, 1, 1);
 
@@ -75,6 +72,8 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
 
       const Box& obx = mfi.growntilebox(1);
 
+      AsyncFab flatn(obx, 1);
+
       // Compute divergence of velocity field.
 
 #pragma gpu
@@ -88,14 +87,14 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
       ca_uflaten
           (AMREX_INT_ANYD(obx.loVect()), AMREX_INT_ANYD(obx.hiVect()),
            BL_TO_FORTRAN_ANYD(q[mfi]),
-           BL_TO_FORTRAN_ANYD(flatn[mfi]));
+           BL_TO_FORTRAN_ANYD(*flatn.fabPtr()));
 
       // Do PPM reconstruction to the zone edges.
 #pragma gpu
       ca_ppm_reconstruct
           (AMREX_INT_ANYD(obx.loVect()), AMREX_INT_ANYD(obx.hiVect()),
            BL_TO_FORTRAN_ANYD(q[mfi]),
-           BL_TO_FORTRAN_ANYD(flatn[mfi]),
+           BL_TO_FORTRAN_ANYD(*flatn.fabPtr()),
            BL_TO_FORTRAN_ANYD(qm[mfi]),
            BL_TO_FORTRAN_ANYD(qp[mfi]));
 
