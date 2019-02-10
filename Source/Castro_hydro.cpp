@@ -39,7 +39,7 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
 
       const Box& bx = mfi.tilebox();
 
-      const Box& qbx = mfi.growntilebox(NUM_GROW);
+      const Box& qbx = amrex::grow(bx, NUM_GROW);
 
       // Convert the conservative state to the primitive variable state.
       // This fills both q and qaux.
@@ -53,11 +53,11 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
                  BL_TO_FORTRAN_ANYD(q.hostFab()),
                  BL_TO_FORTRAN_ANYD(qaux.hostFab()));
 
-      const Box& obx = mfi.growntilebox(1);
-      const Box& tbx = mfi.growntilebox(2);
+      const Box& obx = amrex::grow(bx, 1);
+      const Box& tbx = amrex::grow(bx, 2);
 
       AsyncFab div(obx, 1);
-      
+
       // Compute divergence of velocity field.
 
 #pragma gpu
@@ -77,7 +77,7 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
 
       AsyncFab qm(tbx, 3*NQ);
       AsyncFab qp(tbx, 3*NQ);
-      
+
       // Do PPM reconstruction to the zone edges.
 #pragma gpu
       ca_ppm_reconstruct
