@@ -128,6 +128,15 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
       qm.clear();
       qp.clear();
 
+  }
+
+#ifdef _OPENMP
+#pragma omp parallel
+#endif
+  for (MFIter mfi(S_new, hydro_tile_size); mfi.isValid(); ++mfi) {
+
+      const Box& bx = mfi.tilebox();
+
 #pragma gpu
       ca_construct_hydro_update
           (AMREX_INT_ANYD(bx.loVect()), AMREX_INT_ANYD(bx.hiVect()),
