@@ -21,21 +21,6 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
 
   MultiFab& k_stage = *k_mol[istage];
 
-  MultiFab q;
-  q.define(grids, dmap, NQ, NUM_GROW);
-
-  MultiFab qaux;
-  qaux.define(grids, dmap, NQAUX, NUM_GROW);
-
-  MultiFab div;
-  div.define(grids, dmap, 1, 1);
-
-  MultiFab qm;
-  qm.define(grids, dmap, 3*NQ, 2);
-
-  MultiFab qp;
-  qp.define(grids, dmap, 3*NQ, 2);
-
   MultiFab flux[BL_SPACEDIM];
   MultiFab qe[BL_SPACEDIM];
 
@@ -44,8 +29,8 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
       qe[i].define(getEdgeBoxArray(i), dmap, NGDNV, 0);
   }
 
-  const int*  domain_lo = geom.Domain().loVect();
-  const int*  domain_hi = geom.Domain().hiVect();
+  const int* domain_lo = geom.Domain().loVect();
+  const int* domain_hi = geom.Domain().hiVect();
 
 #ifdef _OPENMP
 #pragma omp parallel
@@ -57,39 +42,51 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
       // Convert the conservative state to the primitive variable state.
       // This fills both q and qaux.
 
+      AsyncFab q(qbx, NQ);
+      AsyncFab qaux(qbx, NQAUX);
+
 #pragma gpu
       ca_ctoprim(AMREX_INT_ANYD(qbx.loVect()), AMREX_INT_ANYD(qbx.hiVect()),
                  BL_TO_FORTRAN_ANYD(Sborder[mfi]),
-                 BL_TO_FORTRAN_ANYD(q[mfi]),
-                 BL_TO_FORTRAN_ANYD(qaux[mfi]));
+                 BL_TO_FORTRAN_ANYD(q.hostFab()),
+                 BL_TO_FORTRAN_ANYD(qaux.hostFab()));
 
       const Box& obx = mfi.growntilebox(1);
+      const Box& tbx = mfi.growntilebox(2);
 
-      AsyncFab flatn(obx, 1);
-
+      AsyncFab div(obx, 1);
+      
       // Compute divergence of velocity field.
 
 #pragma gpu
       ca_divu(AMREX_INT_ANYD(obx.loVect()), AMREX_INT_ANYD(obx.hiVect()),
               AMREX_REAL_ANYD(dx),
-              BL_TO_FORTRAN_ANYD(q[mfi]),
-              BL_TO_FORTRAN_ANYD(div[mfi]));
+              BL_TO_FORTRAN_ANYD(q.hostFab()),
+              BL_TO_FORTRAN_ANYD(div.hostFab()));
+
+      AsyncFab flatn(obx, 1);
 
       // Compute flattening coefficient for slope calculations.
 #pragma gpu
       ca_uflaten
           (AMREX_INT_ANYD(obx.loVect()), AMREX_INT_ANYD(obx.hiVect()),
-           BL_TO_FORTRAN_ANYD(q[mfi]),
+           BL_TO_FORTRAN_ANYD(q.hostFab()),
            BL_TO_FORTRAN_ANYD(flatn.hostFab()));
 
+      AsyncFab qm(tbx, 3*NQ);
+      AsyncFab qp(tbx, 3*NQ);
+      
       // Do PPM reconstruction to the zone edges.
 #pragma gpu
       ca_ppm_reconstruct
           (AMREX_INT_ANYD(obx.loVect()), AMREX_INT_ANYD(obx.hiVect()),
-           BL_TO_FORTRAN_ANYD(q[mfi]),
+           BL_TO_FORTRAN_ANYD(q.hostFab()),
            BL_TO_FORTRAN_ANYD(flatn.hostFab()),
-           BL_TO_FORTRAN_ANYD(qm[mfi]),
-           BL_TO_FORTRAN_ANYD(qp[mfi]));
+           BL_TO_FORTRAN_ANYD(qm.hostFab()),
+           BL_TO_FORTRAN_ANYD(qp.hostFab()));
+
+      q.clear();
+      flatn.clear();
 
       for (int idir = 0; idir < BL_SPACEDIM; ++idir) {
 
@@ -104,15 +101,20 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
                AMREX_REAL_ANYD(dx), dt,
                idir_f,
                BL_TO_FORTRAN_ANYD(Sborder[mfi]),
-               BL_TO_FORTRAN_ANYD(div[mfi]),
-               BL_TO_FORTRAN_ANYD(qaux[mfi]),
-               BL_TO_FORTRAN_ANYD(qm[mfi]),
-               BL_TO_FORTRAN_ANYD(qp[mfi]),
+               BL_TO_FORTRAN_ANYD(div.hostFab()),
+               BL_TO_FORTRAN_ANYD(qaux.hostFab()),
+               BL_TO_FORTRAN_ANYD(qm.hostFab()),
+               BL_TO_FORTRAN_ANYD(qp.hostFab()),
                BL_TO_FORTRAN_ANYD(qe[idir][mfi]),
                BL_TO_FORTRAN_ANYD(flux[idir][mfi]),
                BL_TO_FORTRAN_ANYD(area[idir][mfi]));
 
       }
+
+      div.clear();
+      qaux.clear();
+      qm.clear();
+      qp.clear();
 
   } // MFIter loop
 
