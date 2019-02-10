@@ -37,6 +37,8 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
 #endif
   for (MFIter mfi(S_new, hydro_tile_size); mfi.isValid(); ++mfi) {
 
+      const Box& bx = mfi.tilebox();
+
       const Box& qbx = mfi.growntilebox(NUM_GROW);
 
       // Convert the conservative state to the primitive variable state.
@@ -125,15 +127,6 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
       qaux.clear();
       qm.clear();
       qp.clear();
-
-  } // MFIter loop
-
-#ifdef _OPENMP
-#pragma omp parallel
-#endif
-  for (MFIter mfi(S_new, hydro_tile_size); mfi.isValid(); ++mfi) {
-
-      const Box& bx = mfi.tilebox();
 
 #pragma gpu
       ca_construct_hydro_update
