@@ -87,14 +87,14 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
       ca_uflaten
           (AMREX_INT_ANYD(obx.loVect()), AMREX_INT_ANYD(obx.hiVect()),
            BL_TO_FORTRAN_ANYD(q[mfi]),
-           BL_TO_FORTRAN_ANYD(*flatn.fabPtr()));
+           BL_TO_FORTRAN_ANYD(flatn.hostFab()));
 
       // Do PPM reconstruction to the zone edges.
 #pragma gpu
       ca_ppm_reconstruct
           (AMREX_INT_ANYD(obx.loVect()), AMREX_INT_ANYD(obx.hiVect()),
            BL_TO_FORTRAN_ANYD(q[mfi]),
-           BL_TO_FORTRAN_ANYD(*flatn.fabPtr()),
+           BL_TO_FORTRAN_ANYD(flatn.hostFab()),
            BL_TO_FORTRAN_ANYD(qm[mfi]),
            BL_TO_FORTRAN_ANYD(qp[mfi]));
 
