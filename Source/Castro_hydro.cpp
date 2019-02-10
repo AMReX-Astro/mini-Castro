@@ -66,13 +66,6 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
                  BL_TO_FORTRAN_ANYD(q[mfi]),
                  BL_TO_FORTRAN_ANYD(qaux[mfi]));
 
-  } // MFIter loop
-
-#ifdef _OPENMP
-#pragma omp parallel
-#endif
-  for (MFIter mfi(S_new, hydro_tile_size); mfi.isValid(); ++mfi) {
-
       const Box& obx = mfi.growntilebox(1);
 
       // Compute divergence of velocity field.
@@ -98,15 +91,6 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
            BL_TO_FORTRAN_ANYD(flatn[mfi]),
            BL_TO_FORTRAN_ANYD(qm[mfi]),
            BL_TO_FORTRAN_ANYD(qp[mfi]));
-
-  } // MFIter loop
-
-
-
-#ifdef _OPENMP
-#pragma omp parallel
-#endif
-  for (MFIter mfi(S_new, hydro_tile_size); mfi.isValid(); ++mfi) {
 
       for (int idir = 0; idir < BL_SPACEDIM; ++idir) {
 
