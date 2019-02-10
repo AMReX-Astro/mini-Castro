@@ -21,14 +21,6 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
 
   MultiFab& k_stage = *k_mol[istage];
 
-  MultiFab flux[BL_SPACEDIM];
-  MultiFab qe[BL_SPACEDIM];
-
-  for (int i = 0; i < BL_SPACEDIM; ++i) {
-      flux[i].define(getEdgeBoxArray(i), dmap, NUM_STATE, 0);
-      qe[i].define(getEdgeBoxArray(i), dmap, NGDNV, 0);
-  }
-
   const int* domain_lo = geom.Domain().loVect();
   const int* domain_hi = geom.Domain().hiVect();
 
@@ -90,9 +82,17 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
       q.clear();
       flatn.clear();
 
-      for (int idir = 0; idir < BL_SPACEDIM; ++idir) {
+      Array<AsyncFab, 3> flux{AsyncFab(amrex::surroundingNodes(bx, 0), NUM_STATE),
+                              AsyncFab(amrex::surroundingNodes(bx, 1), NUM_STATE),
+                              AsyncFab(amrex::surroundingNodes(bx, 2), NUM_STATE)};
 
-          const Box& ebx = mfi.nodaltilebox(idir);
+      Array<AsyncFab, 3> qe{AsyncFab(amrex::surroundingNodes(bx, 0), NGDNV),
+                            AsyncFab(amrex::surroundingNodes(bx, 1), NGDNV),
+                            AsyncFab(amrex::surroundingNodes(bx, 2), NGDNV)};
+
+      for (int idir = 0; idir < 3; ++idir) {
+
+          const Box& ebx = amrex::surroundingNodes(bx, idir);
 
           int idir_f = idir + 1;
 
@@ -107,12 +107,12 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
                BL_TO_FORTRAN_ANYD(qaux.hostFab()),
                BL_TO_FORTRAN_ANYD(qm.hostFab()),
                BL_TO_FORTRAN_ANYD(qp.hostFab()),
-               BL_TO_FORTRAN_ANYD(qe[idir][mfi]),
-               BL_TO_FORTRAN_ANYD(flux[idir][mfi]),
+               BL_TO_FORTRAN_ANYD(qe[idir].hostFab()),
+               BL_TO_FORTRAN_ANYD(flux[idir].hostFab()),
                BL_TO_FORTRAN_ANYD(area[idir][mfi]));
 
-          auto const flux_fab = (flux[idir]).array(mfi);
-          auto       fluxes_fab = (*fluxes[idir]).array(mfi);
+          Array4<Real> const flux_fab = (flux[idir]).fabPtr()->array();
+          Array4<Real> fluxes_fab = (*fluxes[idir]).array(mfi);
           const int numcomp = NUM_STATE;
           const Real scale = b_mol[istage];
 
@@ -128,26 +128,17 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
       qm.clear();
       qp.clear();
 
-  }
-
-#ifdef _OPENMP
-#pragma omp parallel
-#endif
-  for (MFIter mfi(S_new, hydro_tile_size); mfi.isValid(); ++mfi) {
-
-      const Box& bx = mfi.tilebox();
-
 #pragma gpu
       ca_construct_hydro_update
           (AMREX_INT_ANYD(bx.loVect()), AMREX_INT_ANYD(bx.hiVect()),
            AMREX_REAL_ANYD(dx), dt,
            b_mol[istage],
-           BL_TO_FORTRAN_ANYD(qe[0][mfi]),
-           BL_TO_FORTRAN_ANYD(qe[1][mfi]),
-           BL_TO_FORTRAN_ANYD(qe[2][mfi]),
-           BL_TO_FORTRAN_ANYD(flux[0][mfi]),
-           BL_TO_FORTRAN_ANYD(flux[1][mfi]),
-           BL_TO_FORTRAN_ANYD(flux[2][mfi]),
+           BL_TO_FORTRAN_ANYD(qe[0].hostFab()),
+           BL_TO_FORTRAN_ANYD(qe[1].hostFab()),
+           BL_TO_FORTRAN_ANYD(qe[2].hostFab()),
+           BL_TO_FORTRAN_ANYD(flux[0].hostFab()),
+           BL_TO_FORTRAN_ANYD(flux[1].hostFab()),
+           BL_TO_FORTRAN_ANYD(flux[2].hostFab()),
            BL_TO_FORTRAN_ANYD(area[0][mfi]),
            BL_TO_FORTRAN_ANYD(area[1][mfi]),
            BL_TO_FORTRAN_ANYD(area[2][mfi]),
