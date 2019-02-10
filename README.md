@@ -16,7 +16,8 @@ using OpenACC. Below are instructions for compiling for each:
 ## Compiling on bender
 
 ```
-make CUDA_ARCH=60 COMPILE_CUDA_PATH=/usr/local/cuda-9.2 USE_MPI=FALSE USE_CUDA=TRUE COMP=PGI -j 4
+module load gcc/7.3
+make CUDA_ARCH=60 COMPILE_CUDA_PATH=/usr/local/cuda-10.0 USE_MPI=FALSE USE_CUDA=TRUE COMP=PGI -j 4
 ```
 
 ## Compiling on groot
