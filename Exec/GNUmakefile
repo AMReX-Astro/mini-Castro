@@ -28,7 +28,7 @@ ifdef MICROPHYSICS_HOME
    EOS_PATH := $(MICROPHYSICS_HOME)/EOS/$(strip $(EOS_DIR))
    NETWORK_PATH := $(MICROPHYSICS_HOME)/networks/$(strip $(NETWORK_DIR))
 else
-   $(error StarLord requires Microphysics, and the MICROPHYSICS_HOME environment variable to be set)
+   $(error mini-Castro requires Microphysics, and the MICROPHYSICS_HOME environment variable to be set)
 endif
 
 EXTERN_CORE += $(EOS_HOME)
@@ -47,7 +47,7 @@ EBASE = Castro
 
 # This application only supports 3D.
 ifneq ($(DIM),3)
-  $(error StarLord only supports BL_SPACEDIM == 3)
+  $(error mini-Castro only supports BL_SPACEDIM == 3)
 endif
 
 # EXTERN_CORE is simply a list of the directories we use that
