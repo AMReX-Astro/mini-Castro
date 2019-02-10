@@ -109,6 +109,16 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
                BL_TO_FORTRAN_ANYD(flux[idir][mfi]),
                BL_TO_FORTRAN_ANYD(area[idir][mfi]));
 
+          auto const flux_fab = (flux[idir]).array(mfi);
+          auto       fluxes_fab = (*fluxes[idir]).array(mfi);
+          const int numcomp = NUM_STATE;
+          const Real scale = b_mol[istage];
+
+          AMREX_HOST_DEVICE_FOR_4D(ebx, numcomp, i, j, k, n,
+          {
+              fluxes_fab(i,j,k,n) += scale * flux_fab(i,j,k,n);
+          });
+
       }
 
       div.clear();
@@ -117,12 +127,6 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
       qp.clear();
 
   } // MFIter loop
-
-  // Store the fluxes from this advance -- we weight them by the
-  // integrator weight for this stage
-  for (int idir = 0; idir < BL_SPACEDIM; ++idir) {
-      MultiFab::Saxpy(*fluxes[idir], b_mol[istage], flux[idir], 0, 0, (*fluxes[idir]).nComp(), 0);
-  }
 
 #ifdef _OPENMP
 #pragma omp parallel
