@@ -100,11 +100,11 @@ Castro::variableSetUp ()
     const char* amrex_hash = buildInfoGetGitHash(2);
 
     if (strlen(castro_hash) > 0)
-      std::cout << "\n" << "Castro git describe: " << castro_hash << "\n";
+        amrex::Print() << std::endl << "mini-Castro git describe: " << castro_hash << "\n";
     if (strlen(amrex_hash) > 0)
-      std::cout << "AMReX git describe: " << amrex_hash << "\n";
+        amrex::Print() << std::endl << "AMReX git describe: " << amrex_hash << "\n";
 
-    std::cout << "\n";
+    amrex::Print() << std::endl;
   }
 
   BL_ASSERT(desc_lst.size() == 0);

@@ -434,9 +434,6 @@ Castro::initData ()
 	amrex::Abort("We don't support dx != dy != dz");
     }
 
-    if (verbose && ParallelDescriptor::IOProcessor())
-       std::cout << "Initializing the data at level " << level << std::endl;
-
     {
        for (MFIter mfi(S_new); mfi.isValid(); ++mfi)
        {
@@ -469,8 +466,6 @@ Castro::initData ()
 	   AmrLevel::FillPatch(*this, S_new, ng, cur_time, State_Type, 0, S_new.nComp());
     }
 
-    if (verbose && ParallelDescriptor::IOProcessor())
-       std::cout << "Done initializing the level " << level << " data " << std::endl;
 }
 
 void
@@ -639,17 +634,6 @@ Castro::computeNewDt (int                   finest_level,
           //
           for (i = 0; i <= finest_level; i++)
           {
-             if (verbose && ParallelDescriptor::IOProcessor())
-                 if (dt_min[i] > change_max*dt_level[i])
-                 {
-                        std::cout << "Castro::compute_new_dt : limiting dt at level "
-                             << i << '\n';
-                        std::cout << " ... new dt computed: " << dt_min[i]
-                             << '\n';
-                        std::cout << " ... but limiting to: "
-                             << change_max * dt_level[i] << " = " << change_max
-                             << " * " << dt_level[i] << '\n';
-                 }
               dt_min[i] = std::min(dt_min[i],change_max*dt_level[i]);
           }
        }
@@ -812,22 +796,6 @@ Castro::post_init (Real stop_time)
     for (int k = finest_level-1; k>= 0; k--)
         getLevel(k).avgDown();
 
-    int nstep = parent->levelSteps(0);
-    Real dtlev = parent->dtLevel(0);
-    Real cumtime = parent->cumTime();
-    if (cumtime != 0.0) cumtime += dtlev;
-
-}
-
-int
-Castro::okToContinue ()
-{
-    if (level > 0)
-        return 1;
-
-    int test = 1;
-
-    return test;
 }
 
 void
@@ -893,21 +861,6 @@ Castro::reflux(int crse_level, int fine_level)
 
     }
 
-    if (verbose)
-    {
-        const int IOProc = ParallelDescriptor::IOProcessorNumber();
-        Real      end    = ParallelDescriptor::second() - strt;
-
-#ifdef BL_LAZY
-	Lazy::QueueReduction( [=] () mutable {
-#endif
-        ParallelDescriptor::ReduceRealMax(end,IOProc);
-        if (ParallelDescriptor::IOProcessor())
-            std::cout << "Castro::reflux() at level " << level << " : time = " << end << std::endl;
-#ifdef BL_LAZY
-	});
-#endif
-    }
 }
 
 void
@@ -1143,10 +1096,6 @@ Castro::extern_init ()
 {
   // initialize the external runtime parameters -- these will
   // live in the probin
-
-  if (ParallelDescriptor::IOProcessor()) {
-    std::cout << "reading extern runtime parameters ..." << std::endl;
-  }
 
   int probin_file_length = probin_file.length();
   Vector<int> probin_file_name(probin_file_length);

@@ -106,10 +106,6 @@ public:
     //
     virtual void init () override;
     //
-    // Proceed with next timestep?
-    //
-    virtual int okToContinue () override;
-    //
     // Advance grids at this level in time.
     //
     virtual amrex::Real advance (amrex::Real time,

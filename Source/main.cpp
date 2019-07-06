@@ -48,8 +48,6 @@ main (int   argc,
 
     Real dRunTime1 = ParallelDescriptor::second();
 
-    std::cout << std::setprecision(10);
-
     int  max_step;
     Real stop_time;
     ParmParse pp;
@@ -72,15 +70,6 @@ main (int   argc,
     time(&time_type);
 
     time_pointer = gmtime(&time_type);
-
-    if (ParallelDescriptor::IOProcessor()) 
-      std::cout << std::setfill('0') << "\nStarting run at "
-		<< std::setw(2) << time_pointer->tm_hour << ":"
-		<< std::setw(2) << time_pointer->tm_min << ":"
-		<< std::setw(2) << time_pointer->tm_sec << " UTC on "
-		<< time_pointer->tm_year + 1900 << "-"
-		<< std::setw(2) << time_pointer->tm_mon + 1 << "-"
-		<< std::setw(2) << time_pointer->tm_mday << "." << std::endl;
 
     Amr* amrptr = new Amr;
 
@@ -110,15 +99,6 @@ main (int   argc,
 
     time_pointer = gmtime(&time_type);
 
-    if (ParallelDescriptor::IOProcessor())
-      std::cout << std::setfill('0') << "\nEnding run at "
-		<< std::setw(2) << time_pointer->tm_hour << ":"
-		<< std::setw(2) << time_pointer->tm_min << ":"
-		<< std::setw(2) << time_pointer->tm_sec << " UTC on "
-		<< time_pointer->tm_year + 1900 << "-"
-		<< std::setw(2) << time_pointer->tm_mon + 1 << "-"
-		<< std::setw(2) << time_pointer->tm_mday << "." << std::endl;
-
     delete amrptr;
 
     const int IOProc = ParallelDescriptor::IOProcessorNumber();
@@ -133,18 +113,15 @@ main (int   argc,
 
     if (ParallelDescriptor::IOProcessor())
     {
-        std::cout << "Run time = " << runtime_total << std::endl;
-        std::cout << "Run time without initialization = " << runtime_timestep << std::endl;
-
 	int nProcs = ParallelDescriptor::NProcs();
 #ifdef _OPENMP
 	nProcs *= omp_get_max_threads();
 #endif
 	Real fom = Castro::num_zones_advanced / runtime_timestep / 1.e6;
 
-	std::cout << "\n";
-	std::cout << "  Figure of Merit (zones / usec): " << std::fixed << std::setprecision(3) << fom << "\n";
-	std::cout << "\n";
+        amrex::Print() << std::endl;
+        amrex::Print() << "  Figure of Merit (zones / usec): " << std::fixed << std::setprecision(3) << fom << "\n";
+        amrex::Print() << std::endl;
     }
 
     BL_PROFILE_VAR_STOP(pmain);
