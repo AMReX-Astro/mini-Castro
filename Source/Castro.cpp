@@ -132,18 +132,20 @@ Castro::read_params ()
         phys_bc.setHi(i,hi_bc[i]);
     }
 
+    const Geometry& dgeom = DefaultGeometry();
+    
     //
     // Check phys_bc against possible periodic geometry
     // if periodic, must have internal BC marked.
     //
-    if (Geometry::isAnyPeriodic())
+    if (dgeom.isAnyPeriodic())
     {
         //
         // Do idiot check.  Periodic means interior in those directions.
         //
         for (int dir = 0; dir<BL_SPACEDIM; dir++)
         {
-            if (Geometry::isPeriodic(dir))
+            if (dgeom.isPeriodic(dir))
             {
                 if (lo_bc[dir] != Interior)
                 {
@@ -186,16 +188,16 @@ Castro::read_params ()
         }
     }
 
-    if ( Geometry::IsRZ() && (lo_bc[0] != Symmetry) ) {
+    if ( dgeom.IsRZ() && (lo_bc[0] != Symmetry) ) {
         std::cerr << "ERROR:Castro::read_params: must set r=0 boundary condition to Symmetry for r-z\n";
         amrex::Error();
     }
 
-    if ( Geometry::IsRZ() )
+    if ( dgeom.IsRZ() )
     {
 	amrex::Abort("We don't support cylindrical coordinate systems in 3D");
     }
-    else if ( Geometry::IsSPHERICAL() )
+    else if ( dgeom.IsSPHERICAL() )
     {
 	amrex::Abort("We don't support spherical coordinate systems in 3D");
     }
@@ -275,7 +277,7 @@ Castro::buildMetrics ()
 
         Real* rad = radius[i].dataPtr();
 
-        if (Geometry::IsCartesian())
+        if (Geom().IsCartesian())
         {
             for (int j = 0; j < len; j++)
             {

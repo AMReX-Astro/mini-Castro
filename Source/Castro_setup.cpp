@@ -164,7 +164,9 @@ Castro::variableSetUp ()
   ca_get_nqaux(&NQAUX);
   ca_get_ngdnv(&NGDNV);
 
-  int coord_type = Geometry::Coord();
+  const Geometry& dgeom = DefaultGeometry();
+
+  int coord_type = dgeom.Coord();
 
   // Get the center variable from the inputs and pass it directly to Fortran.
   Vector<Real> center(BL_SPACEDIM, 0.0);
@@ -173,7 +175,7 @@ Castro::variableSetUp ()
 
   ca_set_problem_params(dm,phys_bc.lo(),phys_bc.hi(),
 			Interior,Inflow,Outflow,Symmetry,SlipWall,NoSlipWall,coord_type,
-			Geometry::ProbLo(),Geometry::ProbHi(),center.dataPtr());
+			dgeom.ProbLo(),dgeom.ProbHi(),center.dataPtr());
 
   // Read in the parameters for the tagging criteria
   // and store them in the Fortran module.
