@@ -586,9 +586,6 @@ Castro::estTimeStep (Real dt_old)
 
     estdt = estdt_hydro;
 
-    if (verbose && ParallelDescriptor::IOProcessor())
-      std::cout << "Castro::estTimeStep (hydro-limited) at level " << level << ":  estdt = " << estdt << '\n';
-
     return estdt;
 }
 
