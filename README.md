@@ -12,9 +12,9 @@ https://github.com/AMReX-Astro/Castro
 
 ## Running on GPUs
 
-mini-Castro can run some algorithms on GPUs. Some algorithms are ported using CUDA
-Fortran (supported only on the PGI Fortran compiler), and others are ported
-using OpenACC. Below are instructions for compiling for each:
+mini-Castro runs its hydrodynamics advance on GPUs. The main physics kernels are ported using CUDA
+Fortran (supported on the PGI Fortran and IBM XL Fortran compilers). Below are instructions for
+compiling on various systems:
 
 ### Compiling on bender
 
@@ -36,8 +36,8 @@ Nothing works.
 
 ### Compiling CUDA Fortran on summitdev (OLCF)
 
-First, swap the `xl` module for `pgi`. mini-Castro currently only
-supports CUDA Fortran with the PGI compiler. Then load the CUDA 9 module. The latest
+First, swap the `xl` module for `pgi` (IBM's xlf compiler is supported, but we have found
+that it results in much lower performance than pgfortran). Then load the CUDA 9 module. The latest
 versions of these modules tested on summitdev are:
 
 - pgi/17.10
