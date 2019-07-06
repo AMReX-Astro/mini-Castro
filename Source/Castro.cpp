@@ -775,6 +775,23 @@ Castro::post_timestep (int iteration)
 	if (sum_interval > 0 && nstep%sum_interval == 0)
 	    sum_integrated_quantities();
 
+        // As a diagnostic quantity, we'll print the current
+        // blast radius (the location of the shock). We can
+        // estimate this using the location where the density
+        // on the domain is maximum. This may jump around
+        // from timestep to timestep, but the secular trend
+        // will be a monotonic increase with time (at least
+        // until the shock propagates off the domain).
+
+        IntVect max_loc = getLevel(parent->finestLevel()).get_new_data(State_Type).maxIndex(Density);
+
+        const Real* dx = getLevel(parent->finestLevel()).geom.CellSize();
+        Real blast_radius = std::sqrt(std::pow(max_loc[0] * dx[0] - (geom.ProbHi()[0] - geom.ProbLo()[0]) / 2.0, 2) +
+                                      std::pow(max_loc[1] * dx[1] - (geom.ProbHi()[1] - geom.ProbLo()[1]) / 2.0, 2) +
+                                      std::pow(max_loc[2] * dx[2] - (geom.ProbHi()[2] - geom.ProbLo()[2]) / 2.0, 2));
+
+        amrex::Print() << "Current blast radius: " << blast_radius / 1.0e5 << " km" << std::endl;
+
     }
 
 }
