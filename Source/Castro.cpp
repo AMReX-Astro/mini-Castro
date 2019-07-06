@@ -30,7 +30,6 @@ using namespace amrex;
 
 int          Castro::verbose       = 0;
 Real         Castro::fixed_dt      = -1.0;
-int          Castro::sum_interval  = -1;
 ErrorList    Castro::err_list;
 int          Castro::radius_grow   = 1;
 BCRec        Castro::phys_bc;
@@ -120,7 +119,6 @@ Castro::read_params ()
 
     pp.query("v",verbose);
     pp.query("fixed_dt",fixed_dt);
-    pp.query("sum_interval",sum_interval);
 
     // Get boundary conditions
     Vector<int> lo_bc(BL_SPACEDIM), hi_bc(BL_SPACEDIM);
@@ -768,12 +766,6 @@ Castro::post_timestep (int iteration)
 
     if (level == 0)
     {
-        int nstep = parent->levelSteps(0);
-	Real dtlev = parent->dtLevel(0);
-	Real cumtime = parent->cumTime() + dtlev;
-
-	if (sum_interval > 0 && nstep%sum_interval == 0)
-	    sum_integrated_quantities();
 
         // As a diagnostic quantity, we'll print the current
         // blast radius (the location of the shock). We can
@@ -823,13 +815,10 @@ Castro::post_init (Real stop_time)
     for (int k = finest_level-1; k>= 0; k--)
         getLevel(k).avgDown();
 
-        int nstep = parent->levelSteps(0);
-	Real dtlev = parent->dtLevel(0);
-	Real cumtime = parent->cumTime();
-	if (cumtime != 0.0) cumtime += dtlev;
-
-	if (sum_interval > 0 && nstep%sum_interval == 0)
-	    sum_integrated_quantities();
+    int nstep = parent->levelSteps(0);
+    Real dtlev = parent->dtLevel(0);
+    Real cumtime = parent->cumTime();
+    if (cumtime != 0.0) cumtime += dtlev;
 
 }
 

@@ -21,7 +21,6 @@ castro.hi_bc       =  0   0   0
 castro.cfl            = 0.5     # cfl number for hyperbolic system
 
 # DIAGNOSTICS & VERBOSITY
-castro.sum_interval   = 1       # timesteps between computing mass
 castro.v              = 1       # verbosity in Castro.cpp
 amr.v                 = 1       # verbosity in Amr.cpp
 
