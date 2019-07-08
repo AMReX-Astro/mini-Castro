@@ -58,10 +58,6 @@ module eos_type_module
   real(rt), allocatable :: minh
   real(rt), allocatable :: maxh
 
-  !$acc declare &
-  !$acc create(mintemp, maxtemp, mindens, maxdens, minx, maxx, minye, maxye) &
-  !$acc create(mine, maxe, minp, maxp, mins, maxs, minh, maxh)
-
 #ifdef AMREX_USE_CUDA
   attributes(managed) :: mintemp
   attributes(managed) :: maxtemp
@@ -177,8 +173,6 @@ contains
 
     implicit none
 
-    !$acc routine seq
-
     type (eos_t), intent(inout) :: state
 
     !$gpu
@@ -205,17 +199,14 @@ contains
   subroutine normalize_abundances(state)
 
     use amrex_constants_module, only: ONE
-    use extern_probin_module, only: small_x
 
     implicit none
-
-    !$acc routine seq
 
     type (eos_t), intent(inout) :: state
 
     !$gpu
 
-    state % xn = max(small_x, min(ONE, state % xn))
+    state % xn = max(1.0d-30, min(ONE, state % xn))
 
     state % xn = state % xn / sum(state % xn)
 
@@ -228,8 +219,6 @@ contains
   subroutine clean_state(state)
 
     implicit none
-
-    !$acc routine seq
 
     type (eos_t), intent(inout) :: state
 
@@ -262,8 +251,6 @@ contains
 
     implicit none
 
-    !$acc routine seq
-
     real(rt), intent(out) :: small_temp_out
 
     !$gpu
@@ -276,8 +263,6 @@ contains
   subroutine eos_get_small_dens(small_dens_out)
 
     implicit none
-
-    !$acc routine seq
 
     real(rt), intent(out) :: small_dens_out
 
@@ -293,8 +278,6 @@ contains
 
     implicit none
 
-    !$acc routine seq
-
     real(rt), intent(out) :: max_temp_out
 
     !$gpu
@@ -308,8 +291,6 @@ contains
   subroutine eos_get_max_dens(max_dens_out)
 
     implicit none
-
-    !$acc routine seq
 
     real(rt), intent(out) :: max_dens_out
 

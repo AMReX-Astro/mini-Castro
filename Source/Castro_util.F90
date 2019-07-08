@@ -5,25 +5,6 @@ subroutine ca_network_init() bind(C, name="ca_network_init")
 
 end subroutine ca_network_init
 
-
-! :::
-! ::: ----------------------------------------------------------------
-! :::
-
-subroutine ca_extern_init(name,namlen) bind(C, name="ca_extern_init")
-
-  ! initialize the external runtime parameters in
-  ! extern_probin_module
-
-  use amrex_fort_module, only: rt => amrex_real
-
-  integer, intent(in) :: namlen
-  integer, intent(in) :: name(namlen)
-
-  call runtime_init(name,namlen)
-
-end subroutine ca_extern_init
-
 ! :::
 ! ::: ----------------------------------------------------------------
 ! :::
@@ -394,16 +375,10 @@ subroutine ca_set_method_params(dm,Density,Xmom,Eden,Eint,Temp, &
   !---------------------------------------------------------------------
 
   if (small_dens <= 0.e0_rt) then
-     if (ioproc == 1) then
-        call bl_warning("Warning:: small_dens has not been set, defaulting to 1.e-200_rt.")
-     endif
      small_dens = 1.e-200_rt
   endif
 
   if (small_temp <= 0.e0_rt) then
-     if (ioproc == 1) then
-        call bl_warning("Warning:: small_temp has not been set, defaulting to 1.e-200_rt.")
-     endif
      small_temp = 1.e-200_rt
   endif
 
@@ -412,11 +387,6 @@ subroutine ca_set_method_params(dm,Density,Xmom,Eden,Eint,Temp, &
   ! may be modified coming back out of this routine.
 
   call eos_init(small_dens=small_dens, small_temp=small_temp)
-
-  ! Update device variables
-
-  !$acc update &
-  !$acc device(small_dens, small_temp)
 
 end subroutine ca_set_method_params
 
@@ -1006,7 +976,6 @@ contains
     use network, only: nspec
     use amrex_constants_module, only: ONE
     use amrex_fort_module, only: rt => amrex_real
-    use extern_probin_module, only: small_x
     use meth_params_module, only: NVAR, URHO, UFS
 
     implicit none
@@ -1027,7 +996,7 @@ contains
 
              xn = u(i,j,k,UFS:UFS+nspec-1)
 
-             xn = max(small_x * u(i,j,k,URHO), min(u(i,j,k,URHO), xn))
+             xn = max(1.0d-30 * u(i,j,k,URHO), min(u(i,j,k,URHO), xn))
 
              xn = u(i,j,k,URHO) * (xn / sum(xn))
 

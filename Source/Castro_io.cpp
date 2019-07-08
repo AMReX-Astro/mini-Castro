@@ -18,8 +18,6 @@
 #include <omp.h>
 #endif
 
-#include <AMReX_buildInfo.H>
-
 using std::string;
 using namespace amrex;
 

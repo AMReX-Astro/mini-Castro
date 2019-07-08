@@ -29,8 +29,6 @@ module network
   ! this will be computed here, not in the actual network
   real(rt), allocatable :: aion_inv(:)
 
-  !$acc declare create(aion_inv)
-
 #ifdef AMREX_USE_CUDA
   attributes(managed) :: aion_inv
 #endif
@@ -65,8 +63,6 @@ contains
     endif
 
     aion_inv(:) = ONE/aion(:)
-
-    !$acc update device(aion_inv)
 
     network_initialized = .true.
 

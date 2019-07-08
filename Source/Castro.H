@@ -289,8 +289,6 @@ protected:
     static amrex::Vector<amrex::Real> b_mol;
     static amrex::Vector<amrex::Real> c_mol;
 
-    static void extern_init ();
-
     static void network_init ();
 
     static void read_params ();

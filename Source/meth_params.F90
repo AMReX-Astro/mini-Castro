@@ -120,9 +120,6 @@ module meth_params_module
   attributes(managed) :: cfl
 #endif
 
-  !$acc declare &
-  !$acc create(small_dens, small_temp, cfl)
-
   ! End the declarations of the ParmParse parameters
 
 contains
@@ -148,9 +145,6 @@ contains
     call pp%query("small_dens", small_dens)
     call pp%query("small_temp", small_temp)
     call pp%query("cfl", cfl)
-
-    !$acc update &
-    !$acc device(small_dens, small_temp, cfl)
 
     call amrex_parmparse_destroy(pp)
 

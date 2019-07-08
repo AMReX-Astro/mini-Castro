@@ -91,8 +91,6 @@ Castro::variableCleanUp ()
 
     network_finalize();
 
-    ca_extern_finalize();
-
     ca_destroy_grid_info();
 
     ca_destroy_method_params();
@@ -1089,21 +1087,6 @@ void
 Castro::network_init ()
 {
    ca_network_init();
-}
-
-void
-Castro::extern_init ()
-{
-  // initialize the external runtime parameters -- these will
-  // live in the probin
-
-  int probin_file_length = probin_file.length();
-  Vector<int> probin_file_name(probin_file_length);
-
-  for (int i = 0; i < probin_file_length; i++)
-    probin_file_name[i] = probin_file[i];
-
-  ca_extern_init(probin_file_name.dataPtr(),&probin_file_length);
 }
 
 void

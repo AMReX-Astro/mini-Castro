@@ -75,9 +75,6 @@ contains
 
     if (present(small_temp)) then
        if (small_temp < mintemp) then
-          if (amrex_pd_ioprocessor()) then
-             print *, 'EOS: small_temp cannot be less than the mintemp allowed by the EOS. Resetting small_temp to mintemp.'
-          endif
           small_temp = mintemp
        else
           mintemp = small_temp
@@ -86,9 +83,6 @@ contains
 
     if (present(small_dens)) then
        if (small_dens < mindens) then
-          if (amrex_pd_ioprocessor()) then
-             print *, 'EOS: small_dens cannot be less than the mindens allowed by the EOS. Resetting small_dens to mindens.'
-          endif
           small_dens = mindens
        else
           mindens = small_dens
@@ -97,17 +91,11 @@ contains
 
     initialized = .true.
 
-    !$acc update &
-    !$acc device(mintemp, maxtemp, mindens, maxdens, minx, maxx, minye, maxye) &
-    !$acc device(mine, maxe, minp, maxp, mins, maxs, minh, maxh)
-
   end subroutine eos_init
 
 
 
   subroutine eos(input, state)
-
-    !$acc routine seq
 
     use eos_type_module, only: eos_t, composition
     use actual_eos_module, only: actual_eos
@@ -152,8 +140,6 @@ contains
 
 
   subroutine reset_inputs(input, state, has_been_reset)
-
-    !$acc routine seq
 
     use eos_type_module, only: eos_t, &
                                eos_input_rt, eos_input_re, eos_input_rh, eos_input_tp, &
@@ -220,8 +206,6 @@ contains
 
   subroutine reset_rho(state, has_been_reset)
 
-    !$acc routine seq
-
     use eos_type_module, only: eos_t, mindens, maxdens
 
     implicit none
@@ -241,8 +225,6 @@ contains
 
   subroutine reset_T(state, has_been_reset)
 
-    !$acc routine seq
-
     use eos_type_module, only: eos_t, mintemp, maxtemp
 
     implicit none
@@ -259,8 +241,6 @@ contains
 
 
   subroutine reset_e(state, has_been_reset)
-
-    !$acc routine seq
 
     use eos_type_module, only: eos_t, mine, maxe
 
@@ -281,8 +261,6 @@ contains
 
   subroutine reset_h(state, has_been_reset)
 
-    !$acc routine seq
-
     use eos_type_module, only: eos_t, minh, maxh
 
     implicit none
@@ -302,8 +280,6 @@ contains
 
   subroutine reset_s(state, has_been_reset)
 
-    !$acc routine seq
-
     use eos_type_module, only: eos_t, mins, maxs
 
     implicit none
@@ -321,8 +297,6 @@ contains
 
 
   subroutine reset_p(state, has_been_reset)
-
-    !$acc routine seq
 
     use eos_type_module, only: eos_t, minp, maxp
 
@@ -345,8 +319,6 @@ contains
   ! valid, then call with eos_input_rt.
 
   subroutine eos_reset(state, has_been_reset)
-
-    !$acc routine seq
 
     use actual_eos_module, only: actual_eos
     use eos_type_module, only: eos_t, eos_input_rt, mintemp, maxtemp, mindens, maxdens
@@ -371,8 +343,6 @@ contains
 
 #ifndef AMREX_USE_GPU
   subroutine check_inputs(input, state)
-
-    !$acc routine seq
 
     use network, only: nspec
     use eos_type_module, only: eos_t, print_state, minx, maxx, minye, maxye, &
@@ -455,8 +425,6 @@ contains
 
   subroutine check_rho(state)
 
-    !$acc routine seq
-
     use eos_type_module, only: eos_t, mindens, maxdens, print_state
     use amrex_error_module, only: amrex_error
 
@@ -477,8 +445,6 @@ contains
 
 
   subroutine check_T(state)
-
-    !$acc routine seq
 
     use eos_type_module, only: eos_t, mintemp, maxtemp, print_state
     use amrex_error_module, only: amrex_error
@@ -501,8 +467,6 @@ contains
 
   subroutine check_e(state)
 
-    !$acc routine seq
-
     use eos_type_module, only: eos_t, mine, maxe, print_state
     use amrex_error_module, only: amrex_error
 
@@ -523,8 +487,6 @@ contains
 
 
   subroutine check_h(state)
-
-    !$acc routine seq
 
     use eos_type_module, only: eos_t, minh, maxh, print_state
     use amrex_error_module, only: amrex_error
@@ -547,8 +509,6 @@ contains
 
   subroutine check_s(state)
 
-    !$acc routine seq
-
     use eos_type_module, only: eos_t, mins, maxs, print_state
     use amrex_error_module, only: amrex_error
 
@@ -569,8 +529,6 @@ contains
 
 
   subroutine check_p(state)
-
-    !$acc routine seq
 
     use eos_type_module, only: eos_t, minp, maxp, print_state
     use amrex_error_module, only: amrex_error

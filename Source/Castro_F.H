@@ -14,10 +14,6 @@ extern "C"
 
   void network_finalize();
 
-  void ca_extern_init(const int* name, const int* namlen);
-
-  void ca_extern_finalize();
-
   void probinit_finalize();
 
   void ca_get_num_spec(int* nspec);

@@ -4,7 +4,6 @@
 #include <AMReX_ParmParse.H>
 #include <Castro.H>
 #include <Castro_F.H>
-#include <AMReX_buildInfo.H>
 
 using std::string;
 using namespace amrex;
@@ -92,29 +91,10 @@ Castro::variableSetUp ()
   // Castro::variableSetUp is called in the constructor of Amr.cpp, so
   // it will get called when we start the job.
 
-  // Output the git commit hashes used to build the executable.
-
-  if (ParallelDescriptor::IOProcessor()) {
-
-    const char* castro_hash = buildInfoGetGitHash(1);
-    const char* amrex_hash = buildInfoGetGitHash(2);
-
-    if (strlen(castro_hash) > 0)
-        amrex::Print() << std::endl << "mini-Castro git describe: " << castro_hash << "\n";
-    if (strlen(amrex_hash) > 0)
-        amrex::Print() << std::endl << "AMReX git describe: " << amrex_hash << "\n";
-
-    amrex::Print() << std::endl;
-  }
-
   BL_ASSERT(desc_lst.size() == 0);
 
   // Get options, set phys_bc
   read_params();
-
-  // Initialize the runtime parameters for any of the external
-  // microphysics
-  extern_init();
 
   // Initialize the network
   network_init();
