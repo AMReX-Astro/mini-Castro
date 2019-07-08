@@ -5,5 +5,4 @@ geometry.prob_lo     =  0      0      0
 geometry.prob_hi     =  1.0e9  1.0e9  1.0e9
 amr.n_cell           =  128    128    128
 
-amr.blocking_factor = 16
 amr.max_grid_size   = 64
