@@ -37,8 +37,7 @@ extern "C"
   void ca_get_method_params(int* HYP_GROW);
 
   void ca_set_method_params
-    (const int& dm,
-     const int& Density, const int& Xmom, 
+    (const int& Density, const int& Xmom, 
      const int& Eden,    const int& Eint, 
      const int& Temp     , const int& FirstAdv, 
      const int& FirstSpec, const int& FirstAux, 
@@ -49,7 +48,7 @@ extern "C"
   void ca_init_godunov_indices();
 
   void ca_set_problem_params
-    (const int& dm, const amrex::Real* problo, const amrex::Real* probhi);
+    (const amrex::Real* problo, const amrex::Real* probhi);
 
   void ca_destroy_problem_params();
 

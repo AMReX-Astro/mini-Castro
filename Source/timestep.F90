@@ -16,7 +16,6 @@ contains
     use amrex_constants_module, only: ONE
     use amrex_fort_module, only: rt => amrex_real, amrex_min
     use meth_params_module, only: NVAR, URHO, UMX, UMY, UMZ, UEINT, UTEMP, UFS, UFX
-    use prob_params_module, only: dim
 
     implicit none
 
@@ -57,24 +56,10 @@ contains
              c = eos_state % cs
 
              dt1 = dx(1)/(c + abs(ux))
-             if (dim >= 2) then
-                dt2 = dx(2)/(c + abs(uy))
-             else
-                dt2 = dt1
-             endif
-             if (dim == 3) then
-                dt3 = dx(3)/(c + abs(uz))
-             else
-                dt3 = dt1
-             endif
+             dt2 = dx(2)/(c + abs(uy))
+             dt3 = dx(3)/(c + abs(uz))
 
-             dt_tmp = ONE/dt1
-             if (dim >= 2) then
-                dt_tmp = dt_tmp + ONE/dt2
-             endif
-             if (dim == 3) then
-                dt_tmp = dt_tmp + ONE/dt3
-             endif
+             dt_tmp = ONE / dt1 + ONE / dt2 + ONE / dt3
 
              call amrex_min(dt, ONE / dt_tmp)
 

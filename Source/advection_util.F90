@@ -181,7 +181,6 @@ contains
     use amrex_constants_module, only: ZERO, ONE
     use amrex_fort_module, only: rt => amrex_real, amrex_max
     use meth_params_module, only: NQ, QRHO, QU, QV, QW, QC, NQAUX
-    use prob_params_module, only: dim
 
     implicit none
 
@@ -207,18 +206,8 @@ contains
     courmz = courno
 
     dtdx = dt / dx(1)
-
-    if (dim .ge. 2) then
-       dtdy = dt / dx(2)
-    else
-       dtdy = ZERO
-    endif
-
-    if (dim .eq. 3) then
-       dtdz = dt / dx(3)
-    else
-       dtdz = ZERO
-    endif
+    dtdy = dt / dx(2)
+    dtdz = dt / dx(3)
 
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
@@ -233,13 +222,7 @@ contains
              courmz = max( courmz, courz )
 
              ! method-of-lines constraint
-             courtmp = courx
-             if (dim >= 2) then
-                courtmp = courtmp + coury
-             endif
-             if (dim == 3) then
-                courtmp = courtmp + courz
-             endif
+             courtmp = courx + coury + courz
 
 #ifndef AMREX_USE_CUDA
              ! note: it might not be 1 for all RK integrators

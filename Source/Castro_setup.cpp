@@ -98,8 +98,6 @@ Castro::variableSetUp ()
 
   NumAdv = 0;
 
-  int dm = BL_SPACEDIM;
-
   // Get the number of species from the network model.
   ca_get_num_spec(&NumSpec);
 
@@ -117,8 +115,7 @@ Castro::variableSetUp ()
 
   // Read in the input values to Fortran.
 
-  ca_set_method_params(dm, Density, Xmom, Eden, Eint, Temp, FirstAdv, FirstSpec, FirstAux,
-		       NumAdv);
+  ca_set_method_params(Density, Xmom, Eden, Eint, Temp, FirstAdv, FirstSpec, FirstAux, NumAdv);
 
   // Get the number of primitive variables from Fortran.
 
@@ -128,7 +125,7 @@ Castro::variableSetUp ()
 
   const Geometry& dgeom = DefaultGeometry();
 
-  ca_set_problem_params(dm, dgeom.ProbLo(), dgeom.ProbHi());
+  ca_set_problem_params(dgeom.ProbLo(), dgeom.ProbHi());
 
   // Read in the parameters for the tagging criteria
   // and store them in the Fortran module.

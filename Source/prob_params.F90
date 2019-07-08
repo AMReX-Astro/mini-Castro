@@ -12,12 +12,8 @@ module prob_params_module
   ! geometry information
   real(rt), allocatable :: problo(:), probhi(:)
 
-  ! dimension information
-  integer, allocatable :: dim
-
   ! indices that we use for dimension agnostic routines 
   ! to ensure we don't illegally access non-existent ghost cells
-  ! the format is dg(1:dim) = 1, dg(dim+1:3) = 0
   integer, allocatable :: dg(:)
 
   ! grid information
@@ -44,7 +40,6 @@ module prob_params_module
   type (momflux_t), save :: mom_flux_has_p(3)
 
 #ifdef AMREX_USE_CUDA
-  attributes(managed) :: dim
   attributes(managed) :: dg
   attributes(managed) :: problo, probhi
   attributes(managed) :: domlo_level, domhi_level

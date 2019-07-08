@@ -298,7 +298,7 @@ end subroutine swap_outflow_data
 ! ::: ----------------------------------------------------------------
 ! :::
 
-subroutine ca_set_method_params(dm,Density,Xmom,Eden,Eint,Temp, &
+subroutine ca_set_method_params(Density,Xmom,Eden,Eint,Temp, &
                                 FirstAdv,FirstSpec,FirstAux,numadv) &
                                 bind(C, name="ca_set_method_params")
 
@@ -310,7 +310,6 @@ subroutine ca_set_method_params(dm,Density,Xmom,Eden,Eint,Temp, &
 
   implicit none
 
-  integer, intent(in) :: dm
   integer, intent(in) :: Density, Xmom, Eden, Eint, Temp, &
        FirstAdv, FirstSpec, FirstAux
   integer, intent(in) :: numadv
@@ -326,25 +325,7 @@ subroutine ca_set_method_params(dm,Density,Xmom,Eden,Eint,Temp, &
   allocate(upass_map(NVAR))
   allocate(npassive)
 
-  ! Transverse velocities
-
-  if (dm == 1) then
-     upass_map(1) = UMY
-     qpass_map(1) = QV
-
-     upass_map(2) = UMZ
-     qpass_map(2) = QW
-
-     npassive = 2
-
-  else if (dm == 2) then
-     upass_map(1) = UMZ
-     qpass_map(1) = QW
-
-     npassive = 1
-  else
-     npassive = 0
-  endif
+  npassive = 0
 
   do iadv = 1, nadv
      upass_map(npassive + iadv) = UFA + iadv - 1
@@ -408,7 +389,7 @@ end subroutine ca_init_godunov_indices
 ! ::: ----------------------------------------------------------------
 ! :::
 
-subroutine ca_set_problem_params(dm, problo_in, probhi_in) &
+subroutine ca_set_problem_params(problo_in, probhi_in) &
                                  bind(C, name="ca_set_problem_params")
 
   ! Passing data from C++ into F90
@@ -420,12 +401,7 @@ subroutine ca_set_problem_params(dm, problo_in, probhi_in) &
 
   implicit none
 
-  integer,  intent(in) :: dm
-  real(rt), intent(in) :: problo_in(dm), probhi_in(dm)
-
-  allocate(dim)
-
-  dim = dm
+  real(rt), intent(in) :: problo_in(3), probhi_in(3)
 
   allocate(problo(3))
   allocate(probhi(3))
@@ -433,20 +409,12 @@ subroutine ca_set_problem_params(dm, problo_in, probhi_in) &
   problo = ZERO
   probhi = ZERO
 
-  problo(1:dm) = problo_in(1:dm)
-  probhi(1:dm) = probhi_in(1:dm)
+  problo(1:3) = problo_in(1:3)
+  probhi(1:3) = probhi_in(1:3)
 
   allocate(dg(3))
 
   dg(:) = 1
-
-  if (dim .lt. 2) then
-     dg(2) = 0
-  endif
-
-  if (dim .lt. 3) then
-     dg(3) = 0
-  endif
 
   ! sanity check on our allocations
   if (UMZ > MAX_MOM_INDEX) then
@@ -473,8 +441,6 @@ end subroutine ca_set_problem_params
 subroutine ca_destroy_problem_params() bind(C, name="ca_destroy_problem_params")
 
   use prob_params_module
-
-  deallocate(dim)
 
   deallocate(problo)
   deallocate(probhi)
