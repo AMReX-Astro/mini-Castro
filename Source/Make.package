@@ -53,5 +53,3 @@ F90EXE_sources += network.F90
 
 F90EXE_sources += actual_eos.F90
 F90EXE_sources += actual_network.F90
-
-F90EXE_sources += constants_cgs.F90
