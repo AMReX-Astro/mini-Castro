@@ -10,7 +10,6 @@ module prob_params_module
   implicit none
 
   ! geometry information
-  integer,  save :: coord_type
   real(rt), allocatable :: problo(:), probhi(:)
 
   ! dimension information

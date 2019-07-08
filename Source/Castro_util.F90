@@ -408,8 +408,7 @@ end subroutine ca_init_godunov_indices
 ! ::: ----------------------------------------------------------------
 ! :::
 
-subroutine ca_set_problem_params(dm, coord_type_in, &
-                                 problo_in, probhi_in) &
+subroutine ca_set_problem_params(dm, problo_in, probhi_in) &
                                  bind(C, name="ca_set_problem_params")
 
   ! Passing data from C++ into F90
@@ -422,7 +421,6 @@ subroutine ca_set_problem_params(dm, coord_type_in, &
   implicit none
 
   integer,  intent(in) :: dm
-  integer,  intent(in) :: coord_type_in
   real(rt), intent(in) :: problo_in(dm), probhi_in(dm)
 
   allocate(dim)
@@ -432,8 +430,6 @@ subroutine ca_set_problem_params(dm, coord_type_in, &
   allocate(problo(3))
   allocate(probhi(3))
   
-  coord_type = coord_type_in
-
   problo = ZERO
   probhi = ZERO
 
@@ -458,11 +454,7 @@ subroutine ca_set_problem_params(dm, coord_type_in, &
   endif
 
   ! keep track of which components of the momentum flux have pressure
-  if (dim == 1 .or. (dim == 2 .and. coord_type == 1)) then
-     mom_flux_has_p(1)%comp(UMX) = .false.
-  else
-     mom_flux_has_p(1)%comp(UMX) = .true.
-  endif
+  mom_flux_has_p(1)%comp(UMX) = .true.
   mom_flux_has_p(1)%comp(UMY) = .false.
   mom_flux_has_p(1)%comp(UMZ) = .false.
 

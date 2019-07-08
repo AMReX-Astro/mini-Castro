@@ -49,8 +49,7 @@ extern "C"
   void ca_init_godunov_indices();
 
   void ca_set_problem_params
-    (const int& dm, const int& coord_type,
-     const amrex::Real* problo, const amrex::Real* probhi);
+    (const int& dm, const amrex::Real* problo, const amrex::Real* probhi);
 
   void ca_destroy_problem_params();
 

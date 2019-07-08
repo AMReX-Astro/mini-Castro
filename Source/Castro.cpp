@@ -96,16 +96,8 @@ Castro::read_params ()
 
     done = true;
 
-    const Geometry& dgeom = DefaultGeometry();
-
-    if ( dgeom.IsRZ() )
-    {
-	amrex::Abort("We don't support cylindrical coordinate systems in 3D");
-    }
-    else if ( dgeom.IsSPHERICAL() )
-    {
-	amrex::Abort("We don't support spherical coordinate systems in 3D");
-    }
+    if (!DefaultGeometry().IsCartesian())
+	amrex::Abort("This test problem only supports a Cartesian coordinate system.");
 
     int bndry_func_thread_safe = 1;
     StateDescriptor::setBndryFuncThreadSafety(bndry_func_thread_safe);
