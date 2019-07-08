@@ -19,6 +19,3 @@ amr.max_grid_size   = 16
 # PLOTFILES
 amr.plot_files_output = 0
 amr.checkpoint_files_output = 0
-
-# PROBIN FILENAME
-amr.probin_file = probin

@@ -338,9 +338,6 @@ protected:
     static amrex::ErrorList err_list;
     static int              NUM_GROW;
 
-    // Name of the probin file and its length.
-    static std::string probin_file;
-
     static amrex::IntVect hydro_tile_size;
 
     static int num_state_type;

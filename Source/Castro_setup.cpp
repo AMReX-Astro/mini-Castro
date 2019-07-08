@@ -127,15 +127,6 @@ Castro::variableSetUp ()
 
   ca_set_problem_params(dgeom.ProbLo(), dgeom.ProbHi());
 
-  // Read in the parameters for the tagging criteria
-  // and store them in the Fortran module.
-
-  int probin_file_length = probin_file.length();
-  Vector<int> probin_file_name(probin_file_length);
-
-  for (int i = 0; i < probin_file_length; i++)
-    probin_file_name[i] = probin_file[i];
-
   Interpolater* interp = &cell_cons_interp;
 
   bool state_data_extrap = false;

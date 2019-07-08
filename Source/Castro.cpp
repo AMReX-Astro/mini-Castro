@@ -57,8 +57,6 @@ Vector< Vector<Real> > Castro::a_mol;
 Vector<Real> Castro::b_mol;
 Vector<Real> Castro::c_mol;
 
-std::string  Castro::probin_file = "probin";
-
 #ifdef AMREX_USE_GPU
 IntVect      Castro::hydro_tile_size(1024000,1024000,1024000);
 #else

@@ -7,13 +7,11 @@ ncell_list="128 192 256 384 512 768 1024 1536"
 ngpu_list="4 256 512 1024 2048 4096"
 
 inputs=inputs.starlord
-probin=probin.starlord
 
 Castro_ex=Castro3d.pgi.MPI.CUDA.ex
 
 if [ ! -e $dir/$Castro_ex ]; then
     cp $Castro_ex $dir/
-    cp $probin $dir/
 fi
 
 job_types="amr uniform"
@@ -150,7 +148,6 @@ Castro_ex=Castro3d.pgi.MPI.OMP.ex
 
 if [ ! -e $dir/$Castro_ex ]; then
     cp $Castro_ex $dir/
-    cp $probin $dir/
 fi
 
 n_mpi_per_node=6

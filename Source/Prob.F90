@@ -11,19 +11,7 @@ subroutine amrex_probinit (init,name,namlen,problo,probhi) bind(c)
   integer,  intent(in) :: name(namlen)
   real(rt), intent(in) :: problo(3), probhi(3)
 
-  integer :: untin, i
-
   type(eos_t) :: eos_state
-
-  namelist /fortin/ p_ambient, dens_ambient, exp_energy, r_init, nsub
-  
-  ! Build "probin" filename -- the name of file containing fortin namelist.
-  integer, parameter :: maxlen = 256
-  character :: probin*(maxlen)
-
-  do i = 1, namlen
-     probin(i:i) = char(name(i))
-  end do
 
   allocate(p_ambient)
   allocate(dens_ambient)
@@ -32,19 +20,13 @@ subroutine amrex_probinit (init,name,namlen,problo,probhi) bind(c)
   allocate(r_init)
   allocate(nsub)
 
-  ! set namelist defaults
+  ! Set problem parameters
 
   p_ambient = 1.e21_rt        ! ambient pressure (in erg/cc)
   dens_ambient = 1.e4_rt      ! ambient density (in g/cc)
   exp_energy = 1.e52_rt       ! absolute energy of the explosion (in erg)
   r_init = 1.25e8_rt          ! initial radius of the explosion (in cm)
-  nsub = 4
-
-  ! Read namelists
-  untin = 9
-  open(untin,file=probin(1:namlen),form='formatted',status='old')
-  read(untin,fortin)
-  close(unit=untin)
+  nsub = 10
 
   ! Convert the ambient pressure into an ambient energy
 
