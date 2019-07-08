@@ -64,19 +64,12 @@ main (int   argc,
     while ( amrptr->okToContinue()                            &&
            (amrptr->levelSteps(0) < max_step || max_step < 0) &&
            (amrptr->cumTime() < stop_time || stop_time < 0.0) )
-
     {
         //
         // Do a timestep.
         //
         amrptr->coarseTimeStep(stop_time);
 
-    }
-
-    // Write final plotfile
-
-    if (amrptr->stepOfLastPlotFile() < amrptr->levelSteps(0)) {
-	amrptr->writePlotFile();
     }
 
     delete amrptr;
