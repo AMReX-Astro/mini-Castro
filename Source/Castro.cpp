@@ -602,7 +602,7 @@ Castro::post_timestep (int iteration)
                                       std::pow(max_loc[1] * dx[1] - (geom.ProbHi()[1] - geom.ProbLo()[1]) / 2.0, 2) +
                                       std::pow(max_loc[2] * dx[2] - (geom.ProbHi()[2] - geom.ProbLo()[2]) / 2.0, 2));
 
-        amrex::Print() << "Current blast radius: " << blast_radius / 1.0e5 << " km" << std::endl;
+        amrex::Print() << "Current blast radius (step " << parent->levelSteps(0) << "): " << blast_radius / 1.0e5 << " km" << std::endl;
 
     }
 
