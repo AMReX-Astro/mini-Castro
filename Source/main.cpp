@@ -48,32 +48,16 @@ main (int   argc,
 
     Real dRunTime1 = ParallelDescriptor::second();
 
-    int  max_step;
-    Real stop_time;
+    int max_step = 10000000;
+    Real stop_time = 1.0e-2;
+
     ParmParse pp;
-
-    max_step  = -1;
-    stop_time = -1.0;
-
     pp.query("max_step",max_step);
     pp.query("stop_time",stop_time);
 
-    if (max_step < 0 && stop_time < 0.0)
-      amrex::Abort("Exiting because neither max_step nor stop_time is non-negative.");
-
-    // Print the current date and time.
-
-    time_t time_type;
-
-    struct tm* time_pointer;
-
-    time(&time_type);
-
-    time_pointer = gmtime(&time_type);
-
     Amr* amrptr = new Amr;
 
-    amrptr->init(0.0,stop_time);
+    amrptr->init(0.0, stop_time);
 
     Real dRunTime2 = ParallelDescriptor::second();
 
@@ -94,10 +78,6 @@ main (int   argc,
     if (amrptr->stepOfLastPlotFile() < amrptr->levelSteps(0)) {
 	amrptr->writePlotFile();
     }
-
-    time(&time_type);
-
-    time_pointer = gmtime(&time_type);
 
     delete amrptr;
 
