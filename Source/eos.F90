@@ -11,7 +11,7 @@ contains
   ! EOS initialization routine: read in general EOS parameters, then 
   ! call any specific initialization used by the EOS.
 
-  subroutine eos_init(small_temp, small_dens)
+  subroutine eos_init()
 
     use amrex_fort_module, only: rt => amrex_real
     use amrex_paralleldescriptor_module, only: amrex_pd_ioprocessor
@@ -20,9 +20,6 @@ contains
     use actual_eos_module, only: actual_eos_init
 
     implicit none
-
-    real(rt), optional :: small_temp
-    real(rt), optional :: small_dens
 
     ! Allocate and set default values
 
@@ -62,32 +59,7 @@ contains
 
     ! Set up any specific parameters or initialization steps required by the EOS we are using.
 
-    call actual_eos_init
-
-    ! If they exist, save the minimum permitted user temperature and density.
-    ! These are only relevant to this module if they are larger than the minimum
-    ! possible EOS quantities. We will reset them to be equal to the EOS minimum
-    ! if they are smaller than that.
-
-    ! Note that in this routine we use the Fortran-based parallel_ioprocessor
-    ! command rather than the C++-based version used elsewhere in Castro; this
-    ! ensures compatibility with Fortran-based test programs.
-
-    if (present(small_temp)) then
-       if (small_temp < mintemp) then
-          small_temp = mintemp
-       else
-          mintemp = small_temp
-       endif
-    endif
-
-    if (present(small_dens)) then
-       if (small_dens < mindens) then
-          small_dens = mindens
-       else
-          mindens = small_dens
-       endif
-    endif
+    call actual_eos_init()
 
     initialized = .true.
 

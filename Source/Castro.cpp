@@ -67,9 +67,6 @@ Vector< Vector<Real> > Castro::a_mol;
 Vector<Real> Castro::b_mol;
 Vector<Real> Castro::c_mol;
 
-amrex::Real Castro::small_dens = -1.e200;
-amrex::Real Castro::small_temp = -1.e200;
-
 std::string  Castro::probin_file = "probin";
 
 #ifdef AMREX_USE_GPU
@@ -94,8 +91,6 @@ Castro::variableCleanUp ()
     ca_destroy_grid_info();
 
     ca_destroy_method_params();
-
-    ca_destroy_castro_method_params();
 
     ca_destroy_problem_params();
 

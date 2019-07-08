@@ -46,10 +46,6 @@ extern "C"
 
   void ca_destroy_method_params();
 
-  void ca_set_castro_method_params();
-
-  void ca_destroy_castro_method_params();
-
   void ca_init_godunov_indices();
 
   void ca_set_problem_params

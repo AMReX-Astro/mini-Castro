@@ -305,7 +305,6 @@ subroutine ca_set_method_params(dm,Density,Xmom,Eden,Eint,Temp, &
   use meth_params_module
   use network, only: nspec, naux
   use eos_module, only: eos_init
-  use eos_type_module, only: eos_get_small_dens, eos_get_small_temp
   use amrex_constants_module, only: ZERO, ONE
   use amrex_fort_module, only: rt => amrex_real
 
@@ -370,23 +369,7 @@ subroutine ca_set_method_params(dm,Density,Xmom,Eden,Eint,Temp, &
 
   call bl_pd_is_ioproc(ioproc)
 
-  !---------------------------------------------------------------------
-  ! safety checks
-  !---------------------------------------------------------------------
-
-  if (small_dens <= 0.e0_rt) then
-     small_dens = 1.e-200_rt
-  endif
-
-  if (small_temp <= 0.e0_rt) then
-     small_temp = 1.e-200_rt
-  endif
-
-  ! Note that the EOS may modify our choices because of its
-  ! internal limitations, so the small_dens and small_temp
-  ! may be modified coming back out of this routine.
-
-  call eos_init(small_dens=small_dens, small_temp=small_temp)
+  call eos_init()
 
 end subroutine ca_set_method_params
 

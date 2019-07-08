@@ -335,10 +335,6 @@ protected:
     //
     // Static data members.
     //
-
-    static amrex::Real small_dens;
-    static amrex::Real small_temp;
-    
     static int              radius_grow;
     static int              verbose;
     static amrex::Real      fixed_dt;

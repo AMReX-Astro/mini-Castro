@@ -1,14 +1,6 @@
 
-! This file is automatically created by parse_castro_params.py.  To update
-! or add runtime parameters, please edit _cpp_parameters and then run
-! mk_params.sh
-
 ! This module stores the runtime parameters and integer names for 
 ! indexing arrays.
-!
-! The Fortran-specific parameters are initialized in set_method_params(),
-! and the ones that we are mirroring from C++ and obtaining through the
-! ParmParse module are initialized in ca_set_castro_method_params().
 
 module meth_params_module
 
@@ -108,54 +100,8 @@ module meth_params_module
   attributes(managed) :: upass_map, qpass_map, npassive
 #endif
 
+  real(rt), parameter :: small_dens = 1.0d-12
+  real(rt), parameter :: small_temp = 1.0d3
   real(rt), parameter :: cfl = 0.5d0
-
-  ! Begin the declarations of the ParmParse parameters
-
-  real(rt), allocatable :: small_dens
-  real(rt), allocatable :: small_temp
-
-#ifdef AMREX_USE_CUDA
-  attributes(managed) :: small_dens
-  attributes(managed) :: small_temp
-#endif
-
-  ! End the declarations of the ParmParse parameters
-
-contains
-
-  subroutine ca_set_castro_method_params() bind(C, name="ca_set_castro_method_params")
-
-    use amrex_parmparse_module, only: amrex_parmparse_build, amrex_parmparse_destroy, amrex_parmparse
-    use amrex_fort_module, only: rt => amrex_real
-
-    implicit none
-
-    type (amrex_parmparse) :: pp
-
-    call amrex_parmparse_build(pp, "castro")
-
-    allocate(small_dens)
-    small_dens = -1.d200
-    allocate(small_temp)
-    small_temp = -1.d200
-
-    call pp%query("small_dens", small_dens)
-    call pp%query("small_temp", small_temp)
-
-    call amrex_parmparse_destroy(pp)
-
-  end subroutine ca_set_castro_method_params
-
-
-
-  subroutine ca_destroy_castro_method_params() bind(C, name="ca_destroy_castro_method_params")
-
-    implicit none
-
-    deallocate(small_dens)
-    deallocate(small_temp)
-
-  end subroutine ca_destroy_castro_method_params
 
 end module meth_params_module
