@@ -335,8 +335,10 @@ protected:
     //
     // Static data members.
     //
-#include <castro_params.H>
 
+    static amrex::Real small_dens;
+    static amrex::Real small_temp;
+    
     static int              radius_grow;
     static int              verbose;
     static amrex::Real      fixed_dt;

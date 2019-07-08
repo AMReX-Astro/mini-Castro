@@ -67,8 +67,8 @@ Vector< Vector<Real> > Castro::a_mol;
 Vector<Real> Castro::b_mol;
 Vector<Real> Castro::c_mol;
 
-
-#include <castro_defaults.H>
+amrex::Real Castro::small_dens = -1.e200;
+amrex::Real Castro::small_temp = -1.e200;
 
 std::string  Castro::probin_file = "probin";
 
@@ -112,8 +112,6 @@ Castro::read_params ()
     done = true;
 
     ParmParse pp("castro");
-
-#include <castro_queries.H>
 
     pp.query("v",verbose);
     pp.query("fixed_dt",fixed_dt);
@@ -197,11 +195,6 @@ Castro::read_params ()
     {
 	amrex::Abort("We don't support spherical coordinate systems in 3D");
     }
-
-    // sanity checks
-
-    if (cfl <= 0.0 || cfl > 1.0)
-      amrex::Error("Invalid CFL factor; must be between zero and one.");
 
     int bndry_func_thread_safe = 1;
     StateDescriptor::setBndryFuncThreadSafety(bndry_func_thread_safe);
@@ -540,6 +533,8 @@ Castro::estTimeStep (Real dt_old)
     const MultiFab& stateMF = get_new_data(State_Type);
 
     const Real* dx = geom.CellSize();
+
+    const Real cfl = 0.5;
 
     // Start the hydro with the max_dt value, but divide by CFL
     // to account for the fact that we multiply by it at the end.

@@ -108,16 +108,16 @@ module meth_params_module
   attributes(managed) :: upass_map, qpass_map, npassive
 #endif
 
+  real(rt), parameter :: cfl = 0.5d0
+
   ! Begin the declarations of the ParmParse parameters
 
   real(rt), allocatable :: small_dens
   real(rt), allocatable :: small_temp
-  real(rt), allocatable :: cfl
 
 #ifdef AMREX_USE_CUDA
   attributes(managed) :: small_dens
   attributes(managed) :: small_temp
-  attributes(managed) :: cfl
 #endif
 
   ! End the declarations of the ParmParse parameters
@@ -139,12 +139,9 @@ contains
     small_dens = -1.d200
     allocate(small_temp)
     small_temp = -1.d200
-    allocate(cfl)
-    cfl = 0.8d0
 
     call pp%query("small_dens", small_dens)
     call pp%query("small_temp", small_temp)
-    call pp%query("cfl", cfl)
 
     call amrex_parmparse_destroy(pp)
 
@@ -158,7 +155,6 @@ contains
 
     deallocate(small_dens)
     deallocate(small_temp)
-    deallocate(cfl)
 
   end subroutine ca_destroy_castro_method_params
 

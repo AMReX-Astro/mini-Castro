@@ -17,9 +17,6 @@ amr.n_cell           =  384    384    384
 castro.lo_bc       =  0   0   0
 castro.hi_bc       =  0   0   0
 
-# TIME STEP CONTROL
-castro.cfl            = 0.5     # cfl number for hyperbolic system
-
 # DIAGNOSTICS & VERBOSITY
 castro.v              = 1       # verbosity in Castro.cpp
 amr.v                 = 1       # verbosity in Amr.cpp
