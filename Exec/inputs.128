@@ -7,7 +7,3 @@ amr.n_cell           =  128    128    128
 
 amr.blocking_factor = 16
 amr.max_grid_size   = 64
-
-# PLOTFILES
-amr.plot_files_output = 0
-amr.checkpoint_files_output = 0
