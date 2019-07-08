@@ -336,7 +336,6 @@ protected:
     //
     static int              sum_interval;
     static amrex::ErrorList err_list;
-    static amrex::BCRec     phys_bc;
     static int              NUM_GROW;
 
     // Name of the probin file and its length.

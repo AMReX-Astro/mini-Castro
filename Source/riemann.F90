@@ -26,7 +26,6 @@ contains
     use network, only: nspec, naux
     use amrex_fort_module, only: rt => amrex_real
     use amrex_constants_module, only: ZERO, HALF, ONE
-    use prob_params_module, only: physbc_lo, physbc_hi, Symmetry, SlipWall, NoSlipWall
 
     integer,  intent(in   ) :: qm_lo(3), qm_hi(3)
     integer,  intent(in   ) :: qp_lo(3), qp_hi(3)
@@ -63,8 +62,6 @@ contains
     real(rt) :: u_adv
 
     integer :: iu, iv1, iv2, im1, im2, im3
-    logical :: special_bnd_lo, special_bnd_hi, special_bnd_lo_x, special_bnd_hi_x
-    real(rt) :: bnd_fac_x, bnd_fac_y, bnd_fac_z
     real(rt) :: wwinv, roinv, co2inv
 
     real(rt), parameter :: small = 1.e-8_rt
@@ -97,41 +94,8 @@ contains
        im3 = UMY
     end if
 
-    special_bnd_lo = (physbc_lo(idir) .eq. Symmetry &
-         .or.         physbc_lo(idir) .eq. SlipWall &
-         .or.         physbc_lo(idir) .eq. NoSlipWall)
-    special_bnd_hi = (physbc_hi(idir) .eq. Symmetry &
-         .or.         physbc_hi(idir) .eq. SlipWall &
-         .or.         physbc_hi(idir) .eq. NoSlipWall)
-
-    if (idir .eq. 1) then
-       special_bnd_lo_x = special_bnd_lo
-       special_bnd_hi_x = special_bnd_hi
-    else
-       special_bnd_lo_x = .false.
-       special_bnd_hi_x = .false.
-    end if
-
     do k = lo(3), hi(3)
-
-       bnd_fac_z = ONE
-       if (idir.eq.3) then
-          if ( k .eq. domlo(3)   .and. special_bnd_lo .or. &
-               k .eq. domhi(3)+1 .and. special_bnd_hi ) then
-             bnd_fac_z = ZERO
-          end if
-       end if
-
        do j = lo(2), hi(2)
-
-          bnd_fac_y = ONE
-          if (idir .eq. 2) then
-             if ( j .eq. domlo(2)   .and. special_bnd_lo .or. &
-                  j .eq. domhi(2)+1 .and. special_bnd_hi ) then
-                bnd_fac_y = ZERO
-             end if
-          end if
-
           do i = lo(1), hi(1)
 
              if (idir == 1) then
@@ -274,16 +238,6 @@ contains
              qint(i,j,k,GDGAME) = qint(i,j,k,GDPRES)/regdnv + ONE
              qint(i,j,k,GDPRES) = max(qint(i,j,k,GDPRES),small_pres)
              u_adv = qint(i,j,k,iu)
-
-             ! Enforce that fluxes through a symmetry plane or wall are hard zero.
-             if ( special_bnd_lo_x .and. i.eq.domlo(1) .or. &
-                  special_bnd_hi_x .and. i.eq.domhi(1)+1 ) then
-                bnd_fac_x = ZERO
-             else
-                bnd_fac_x = ONE
-             end if
-             u_adv = u_adv * bnd_fac_x*bnd_fac_y*bnd_fac_z
-
 
              ! Compute fluxes, order as conserved state (not q)
              flx(i,j,k,URHO) = qint(i,j,k,GDRHO)*u_adv

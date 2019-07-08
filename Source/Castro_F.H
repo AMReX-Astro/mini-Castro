@@ -49,14 +49,8 @@ extern "C"
   void ca_init_godunov_indices();
 
   void ca_set_problem_params
-    (const int& dm,
-     const int* physbc_lo, const int* physbc_hi,
-     const int& Interior_value, const int& Inflow_value,
-     const int& Outflow_value, const int& Symmetry_value,
-     const int& SlipWall_value, const int& NoSlipWall_value,
-     const int& coord_type,
-     const amrex::Real* problo, const amrex::Real* probhi,
-     const amrex::Real* center);
+    (const int& dm, const int& coord_type,
+     const amrex::Real* problo, const amrex::Real* probhi);
 
   void ca_destroy_problem_params();
 
@@ -95,18 +89,6 @@ extern "C"
 
   void ca_reset_internal_e
     (const int* lo, const int* hi, BL_FORT_FAB_ARG_3D(S_new));
-
-  void ca_hypfill
-    (BL_FORT_FAB_ARG(state),
-     const int dlo[], const int dhi[],
-     const amrex::Real dx[], const amrex::Real glo[],
-     const amrex::Real* time, const int bc[]);
-
-  void ca_denfill
-    (BL_FORT_FAB_ARG(state),
-     const int dlo[], const int dhi[],
-     const amrex::Real dx[], const amrex::Real glo[],
-     const amrex::Real* time, const int bc[]);
 
   void ca_xmomfill
     (BL_FORT_FAB_ARG(state),

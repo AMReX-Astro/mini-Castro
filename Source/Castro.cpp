@@ -1,10 +1,6 @@
 
-#ifndef WIN32
 #include <unistd.h>
-#endif
-
 #include <iomanip>
-
 #include <algorithm>
 #include <cstdio>
 #include <vector>
@@ -29,7 +25,6 @@
 using namespace amrex;
 
 ErrorList    Castro::err_list;
-BCRec        Castro::phys_bc;
 int          Castro::NUM_STATE     = -1;
 int          Castro::NUM_GROW      = -1;
 
@@ -101,78 +96,7 @@ Castro::read_params ()
 
     done = true;
 
-    ParmParse pp("castro");
-
-    // Get boundary conditions
-    Vector<int> lo_bc(BL_SPACEDIM), hi_bc(BL_SPACEDIM);
-    pp.getarr("lo_bc",lo_bc,0,BL_SPACEDIM);
-    pp.getarr("hi_bc",hi_bc,0,BL_SPACEDIM);
-    for (int i = 0; i < BL_SPACEDIM; i++)
-    {
-        phys_bc.setLo(i,lo_bc[i]);
-        phys_bc.setHi(i,hi_bc[i]);
-    }
-
     const Geometry& dgeom = DefaultGeometry();
-    
-    //
-    // Check phys_bc against possible periodic geometry
-    // if periodic, must have internal BC marked.
-    //
-    if (dgeom.isAnyPeriodic())
-    {
-        //
-        // Do idiot check.  Periodic means interior in those directions.
-        //
-        for (int dir = 0; dir<BL_SPACEDIM; dir++)
-        {
-            if (dgeom.isPeriodic(dir))
-            {
-                if (lo_bc[dir] != Interior)
-                {
-                    std::cerr << "Castro::read_params:periodic in direction "
-                              << dir
-                              << " but low BC is not Interior\n";
-                    amrex::Error();
-                }
-                if (hi_bc[dir] != Interior)
-                {
-                    std::cerr << "Castro::read_params:periodic in direction "
-                              << dir
-                              << " but high BC is not Interior\n";
-                    amrex::Error();
-                }
-            }
-        }
-    }
-    else
-    {
-        //
-        // Do idiot check.  If not periodic, should be no interior.
-        //
-        for (int dir=0; dir<BL_SPACEDIM; dir++)
-        {
-            if (lo_bc[dir] == Interior)
-            {
-                std::cerr << "Castro::read_params:interior bc in direction "
-                          << dir
-                          << " but not periodic\n";
-                amrex::Error();
-            }
-            if (hi_bc[dir] == Interior)
-            {
-                std::cerr << "Castro::read_params:interior bc in direction "
-                          << dir
-                          << " but not periodic\n";
-                amrex::Error();
-            }
-        }
-    }
-
-    if ( dgeom.IsRZ() && (lo_bc[0] != Symmetry) ) {
-        std::cerr << "ERROR:Castro::read_params: must set r=0 boundary condition to Symmetry for r-z\n";
-        amrex::Error();
-    }
 
     if ( dgeom.IsRZ() )
     {

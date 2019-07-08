@@ -408,11 +408,8 @@ end subroutine ca_init_godunov_indices
 ! ::: ----------------------------------------------------------------
 ! :::
 
-subroutine ca_set_problem_params(dm,physbc_lo_in,physbc_hi_in,&
-                                 Interior_in, Inflow_in, Outflow_in, &
-                                 Symmetry_in, SlipWall_in, NoSlipWall_in, &
-                                 coord_type_in, &
-                                 problo_in, probhi_in, center_in) &
+subroutine ca_set_problem_params(dm, coord_type_in, &
+                                 problo_in, probhi_in) &
                                  bind(C, name="ca_set_problem_params")
 
   ! Passing data from C++ into F90
@@ -425,48 +422,23 @@ subroutine ca_set_problem_params(dm,physbc_lo_in,physbc_hi_in,&
   implicit none
 
   integer,  intent(in) :: dm
-  integer,  intent(in) :: physbc_lo_in(dm),physbc_hi_in(dm)
-  integer,  intent(in) :: Interior_in, Inflow_in, Outflow_in, Symmetry_in, SlipWall_in, NoSlipWall_in
   integer,  intent(in) :: coord_type_in
-  real(rt), intent(in) :: problo_in(dm), probhi_in(dm), center_in(dm)
+  real(rt), intent(in) :: problo_in(dm), probhi_in(dm)
 
   allocate(dim)
 
   dim = dm
 
-  allocate(physbc_lo(3))
-  allocate(physbc_hi(3))
-
-  physbc_lo(1:dm) = physbc_lo_in(1:dm)
-  physbc_hi(1:dm) = physbc_hi_in(1:dm)
-
-  allocate(Interior)
-  allocate(Inflow)
-  allocate(Outflow)
-  allocate(Symmetry)
-  allocate(SlipWall)
-  allocate(NoSlipWall)
-
-  allocate(center(3))
   allocate(problo(3))
   allocate(probhi(3))
   
-  Interior   = Interior_in
-  Inflow     = Inflow_in
-  Outflow    = Outflow_in
-  Symmetry   = Symmetry_in
-  SlipWall   = SlipWall_in
-  NoSlipWall = NoSlipWall_in
-
   coord_type = coord_type_in
 
   problo = ZERO
   probhi = ZERO
-  center = ZERO
 
   problo(1:dm) = problo_in(1:dm)
   probhi(1:dm) = probhi_in(1:dm)
-  center(1:dm) = center_in(1:dm)
 
   allocate(dg(3))
 
@@ -512,17 +484,6 @@ subroutine ca_destroy_problem_params() bind(C, name="ca_destroy_problem_params")
 
   deallocate(dim)
 
-  deallocate(physbc_lo)
-  deallocate(physbc_hi)
-
-  deallocate(Interior)
-  deallocate(Inflow)
-  deallocate(Outflow)
-  deallocate(Symmetry)
-  deallocate(SlipWall)
-  deallocate(NoSlipWall)
-
-  deallocate(center)
   deallocate(problo)
   deallocate(probhi)
 
@@ -1017,49 +978,5 @@ contains
     enddo
 
   end subroutine ca_summass
-
-
-
-  subroutine ca_hypfill(adv,adv_l1,adv_l2,adv_l3,adv_h1,adv_h2, &
-                        adv_h3,domlo,domhi,dx,xlo,time,bc) bind(C, name="ca_hypfill")
-
-    use amrex_fort_module, only: rt => amrex_real
-    use bc_fill_module, only: hypfill
-    use meth_params_module, only: NVAR
-
-    implicit none
-
-    integer,  intent(in   ) :: adv_l1, adv_l2, adv_l3, adv_h1, adv_h2, adv_h3
-    integer,  intent(in   ) :: bc(3,2,NVAR)
-    integer,  intent(in   ) :: domlo(3), domhi(3)
-    real(rt), intent(in   ) :: dx(3), xlo(3), time
-    real(rt), intent(inout) :: adv(adv_l1:adv_h1,adv_l2:adv_h2,adv_l3:adv_h3,NVAR)
-
-    call hypfill(adv, adv_l1, adv_l2, adv_l3, adv_h1, adv_h2, adv_h3, domlo, domhi, dx, xlo, time, bc)
-
-  end subroutine ca_hypfill
-
-
-
-  subroutine ca_denfill(adv,adv_l1,adv_l2,adv_l3,adv_h1,adv_h2, &
-                        adv_h3,domlo,domhi,dx,xlo,time,bc) bind(C, name="ca_denfill")
-
-    use amrex_fort_module, only: rt => amrex_real
-    use bc_fill_module, only: denfill
-    use meth_params_module, only: NVAR
-
-    implicit none
-
-    include 'AMReX_bc_types.fi'
-
-    integer,  intent(in   ) :: adv_l1, adv_l2, adv_l3, adv_h1, adv_h2, adv_h3
-    integer,  intent(in   ) :: bc(3,2,1)
-    integer,  intent(in   ) :: domlo(3), domhi(3)
-    real(rt), intent(in   ) :: dx(3), xlo(3), time
-    real(rt), intent(inout) :: adv(adv_l1:adv_h1,adv_l2:adv_h2,adv_l3:adv_h3)
-
-    call denfill(adv, adv_l1, adv_l2, adv_l3, adv_h1, adv_h2, adv_h3, domlo, domhi, dx, xlo, time, bc)
-
-  end subroutine ca_denfill
 
 end module castro_util_module

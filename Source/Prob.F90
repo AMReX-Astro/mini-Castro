@@ -1,7 +1,6 @@
 subroutine amrex_probinit (init,name,namlen,problo,probhi) bind(c)
 
   use probdata_module, only: p_ambient, dens_ambient, exp_energy, r_init, nsub, e_ambient
-  use prob_params_module, only: center
   use amrex_fort_module, only: rt => amrex_real
   use eos_type_module, only : eos_t, eos_input_rp
   use eos_module, only: eos
@@ -58,11 +57,6 @@ subroutine amrex_probinit (init,name,namlen,problo,probhi) bind(c)
   call eos(eos_input_rp, eos_state)
 
   e_ambient = eos_state % e
-
-  ! set local variable defaults
-  center(1) = (problo(1)+probhi(1))/2.e0_rt
-  center(2) = (problo(2)+probhi(2))/2.e0_rt
-  center(3) = (problo(3)+probhi(3))/2.e0_rt
   
 end subroutine amrex_probinit
 
@@ -91,7 +85,7 @@ subroutine ca_initdata(level, lo, hi, state, s_lo, s_hi, dx, xlo, xhi) bind(c,na
   use probdata_module, only: r_init, exp_energy, nsub, p_ambient, dens_ambient, e_ambient
   use amrex_constants_module, only: M_PI, FOUR3RD
   use meth_params_module , only: NVAR, URHO, UMX, UMY, UMZ, UTEMP, UEDEN, UEINT, UFS
-  use prob_params_module, only: center, problo, domlo_level
+  use prob_params_module, only: problo, probhi, domlo_level
   use amrex_fort_module, only: rt => amrex_real
 
   implicit none
@@ -110,6 +104,8 @@ subroutine ca_initdata(level, lo, hi, state, s_lo, s_hi, dx, xlo, xhi) bind(c,na
   integer :: i,j,k, ii, jj, kk
   integer :: npert, nambient
 
+  real(rt) :: center(3)
+
   !$gpu
 
   ! Set explosion energy -- we will convert the point-explosion energy into
@@ -119,6 +115,8 @@ subroutine ca_initdata(level, lo, hi, state, s_lo, s_hi, dx, xlo, xhi) bind(c,na
   vctr  = FOUR3RD*M_PI*r_init**3
 
   e_exp = exp_energy / vctr / dens_ambient
+
+  center(:) = (problo(:)+probhi(:)) / 2.e0_rt
 
   do k = lo(3), hi(3)
      zmin = problo(3) + dx(3)*dble(k-domlo_level(3, level))

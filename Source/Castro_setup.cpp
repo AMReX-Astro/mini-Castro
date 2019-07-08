@@ -8,80 +8,64 @@
 using std::string;
 using namespace amrex;
 
+// Hypfill and denfill are empty because we are requiring that
+// the boundary conditions are periodic for mini-Castro. However
+// the function signatures need to exist so that we can compile.
+    
+void ca_hypfill(BL_FORT_FAB_ARG(state),
+                const int dlo[], const int dhi[],
+                const amrex::Real dx[], const amrex::Real glo[],
+                const amrex::Real* time, const int bc[]) {}
+
+void ca_denfill(BL_FORT_FAB_ARG(state),
+                const int dlo[], const int dhi[],
+                const amrex::Real dx[], const amrex::Real glo[],
+                const amrex::Real* time, const int bc[]) {}
+
 typedef StateDescriptor::BndryFunc BndryFunc;
-
-//
-// Components are:
-//  Interior, Inflow, Outflow,  Symmetry,     SlipWall,     NoSlipWall
-//
-static int scalar_bc[] =
-  {
-    INT_DIR, EXT_DIR, FOEXTRAP, REFLECT_EVEN, REFLECT_EVEN, REFLECT_EVEN
-  };
-
-static int norm_vel_bc[] =
-  {
-    INT_DIR, EXT_DIR, FOEXTRAP, REFLECT_ODD,  REFLECT_ODD,  REFLECT_ODD
-  };
-
-static int tang_vel_bc[] =
-  {
-    INT_DIR, EXT_DIR, FOEXTRAP, REFLECT_EVEN, REFLECT_EVEN, REFLECT_EVEN
-  };
 
 static
 void
-set_scalar_bc (BCRec& bc, const BCRec& phys_bc)
+set_scalar_bc (BCRec& bc)
 {
-  const int* lo_bc = phys_bc.lo();
-  const int* hi_bc = phys_bc.hi();
-  for (int i = 0; i < BL_SPACEDIM; i++)
+    for (int i = 0; i < BL_SPACEDIM; i++)
     {
-      bc.setLo(i,scalar_bc[lo_bc[i]]);
-      bc.setHi(i,scalar_bc[hi_bc[i]]);
+        bc.setLo(i, INT_DIR);
+        bc.setHi(i, INT_DIR);
     }
 }
 
 static
 void
-set_x_vel_bc(BCRec& bc, const BCRec& phys_bc)
+set_x_vel_bc(BCRec& bc)
 {
-  const int* lo_bc = phys_bc.lo();
-  const int* hi_bc = phys_bc.hi();
-  bc.setLo(0,norm_vel_bc[lo_bc[0]]);
-  bc.setHi(0,norm_vel_bc[hi_bc[0]]);
-  bc.setLo(1,tang_vel_bc[lo_bc[1]]);
-  bc.setHi(1,tang_vel_bc[hi_bc[1]]);
-  bc.setLo(2,tang_vel_bc[lo_bc[2]]);
-  bc.setHi(2,tang_vel_bc[hi_bc[2]]);
+    for (int i = 0; i < BL_SPACEDIM; i++)
+    {
+        bc.setLo(i, INT_DIR);
+        bc.setHi(i, INT_DIR);
+    }
 }
 
 static
 void
-set_y_vel_bc(BCRec& bc, const BCRec& phys_bc)
+set_y_vel_bc(BCRec& bc)
 {
-  const int* lo_bc = phys_bc.lo();
-  const int* hi_bc = phys_bc.hi();
-  bc.setLo(0,tang_vel_bc[lo_bc[0]]);
-  bc.setHi(0,tang_vel_bc[hi_bc[0]]);
-  bc.setLo(1,norm_vel_bc[lo_bc[1]]);
-  bc.setHi(1,norm_vel_bc[hi_bc[1]]);
-  bc.setLo(2,tang_vel_bc[lo_bc[2]]);
-  bc.setHi(2,tang_vel_bc[hi_bc[2]]);
+    for (int i = 0; i < BL_SPACEDIM; i++)
+    {
+        bc.setLo(i, INT_DIR);
+        bc.setHi(i, INT_DIR);
+    }
 }
 
 static
 void
-set_z_vel_bc(BCRec& bc, const BCRec& phys_bc)
+set_z_vel_bc(BCRec& bc)
 {
-  const int* lo_bc = phys_bc.lo();
-  const int* hi_bc = phys_bc.hi();
-  bc.setLo(0,tang_vel_bc[lo_bc[0]]);
-  bc.setHi(0,tang_vel_bc[hi_bc[0]]);
-  bc.setLo(1,tang_vel_bc[lo_bc[1]]);
-  bc.setHi(1,tang_vel_bc[hi_bc[1]]);
-  bc.setLo(2,norm_vel_bc[lo_bc[2]]);
-  bc.setHi(2,norm_vel_bc[hi_bc[2]]);
+    for (int i = 0; i < BL_SPACEDIM; i++)
+    {
+        bc.setLo(i, INT_DIR);
+        bc.setHi(i, INT_DIR);
+    }
 }
 
 void
@@ -146,12 +130,7 @@ Castro::variableSetUp ()
 
   int coord_type = dgeom.Coord();
 
-  // Get the center variable from the inputs and pass it directly to Fortran.
-  Vector<Real> center(BL_SPACEDIM, 0.0);
-
-  ca_set_problem_params(dm,phys_bc.lo(),phys_bc.hi(),
-			Interior,Inflow,Outflow,Symmetry,SlipWall,NoSlipWall,coord_type,
-			dgeom.ProbLo(),dgeom.ProbHi(),center.dataPtr());
+  ca_set_problem_params(dm,coord_type,dgeom.ProbLo(),dgeom.ProbHi());
 
   // Read in the parameters for the tagging criteria
   // and store them in the Fortran module.
@@ -182,13 +161,13 @@ Castro::variableSetUp ()
   Vector<std::string> name(NUM_STATE);
 
   BCRec bc;
-  cnt=0; set_scalar_bc(bc,phys_bc); bcs[cnt] = bc; name[cnt] = "density";
-  cnt++; set_x_vel_bc(bc,phys_bc);  bcs[cnt] = bc; name[cnt] = "xmom";
-  cnt++; set_y_vel_bc(bc,phys_bc);  bcs[cnt] = bc; name[cnt] = "ymom";
-  cnt++; set_z_vel_bc(bc,phys_bc);  bcs[cnt] = bc; name[cnt] = "zmom";
-  cnt++; set_scalar_bc(bc,phys_bc); bcs[cnt] = bc; name[cnt] = "rho_E";
-  cnt++; set_scalar_bc(bc,phys_bc); bcs[cnt] = bc; name[cnt] = "rho_e";
-  cnt++; set_scalar_bc(bc,phys_bc); bcs[cnt] = bc; name[cnt] = "Temp";
+  cnt=0; set_scalar_bc(bc); bcs[cnt] = bc; name[cnt] = "density";
+  cnt++; set_x_vel_bc(bc);  bcs[cnt] = bc; name[cnt] = "xmom";
+  cnt++; set_y_vel_bc(bc);  bcs[cnt] = bc; name[cnt] = "ymom";
+  cnt++; set_z_vel_bc(bc);  bcs[cnt] = bc; name[cnt] = "zmom";
+  cnt++; set_scalar_bc(bc); bcs[cnt] = bc; name[cnt] = "rho_E";
+  cnt++; set_scalar_bc(bc); bcs[cnt] = bc; name[cnt] = "rho_e";
+  cnt++; set_scalar_bc(bc); bcs[cnt] = bc; name[cnt] = "Temp";
 
   // Get the species names from the network model.
   std::vector<std::string> spec_names;
@@ -206,7 +185,7 @@ Castro::variableSetUp ()
 
   for (int i=0; i<NumSpec; ++i) {
       cnt++;
-      set_scalar_bc(bc,phys_bc);
+      set_scalar_bc(bc);
       bcs[cnt] = bc;
       name[cnt] = "rho_" + spec_names[i];
   }

@@ -9,14 +9,9 @@ module prob_params_module
 
   implicit none
 
-  ! boundary condition information
-  integer, allocatable :: physbc_lo(:)
-  integer, allocatable :: physbc_hi(:)
-  integer, allocatable :: Interior, Inflow, Outflow, Symmetry, SlipWall, NoSlipWall
-
   ! geometry information
   integer,  save :: coord_type
-  real(rt), allocatable :: center(:), problo(:), probhi(:)
+  real(rt), allocatable :: problo(:), probhi(:)
 
   ! dimension information
   integer, allocatable :: dim
@@ -50,11 +45,9 @@ module prob_params_module
   type (momflux_t), save :: mom_flux_has_p(3)
 
 #ifdef AMREX_USE_CUDA
-  attributes(managed) :: physbc_lo, physbc_hi
-  attributes(managed) :: Interior, Inflow, Outflow, Symmetry, Slipwall, NoSlipWall
   attributes(managed) :: dim
   attributes(managed) :: dg
-  attributes(managed) :: center, problo, probhi
+  attributes(managed) :: problo, probhi
   attributes(managed) :: domlo_level, domhi_level
 #endif
   
