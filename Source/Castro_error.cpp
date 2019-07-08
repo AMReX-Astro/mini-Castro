@@ -14,6 +14,4 @@ Castro::ErrorSetUp ()
     //
 
     err_list.add("density",1,ErrorRec::Special,ca_denerror);
-    err_list.add("Temp",1,ErrorRec::Special,ca_temperror);
-
 }

@@ -136,8 +136,6 @@ Castro::variableSetUp ()
   for (int i = 0; i < probin_file_length; i++)
     probin_file_name[i] = probin_file[i];
 
-  ca_get_tagging_params(probin_file_name.dataPtr(),&probin_file_length);
-
   Interpolater* interp = &cell_cons_interp;
 
   bool state_data_extrap = false;

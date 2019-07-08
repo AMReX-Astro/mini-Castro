@@ -32,8 +32,6 @@ extern "C"
 
   void ca_get_ngdnv(int* ngdnv);
 
-  void ca_set_special_tagging_flag(const amrex::Real& max_den, const int* flag);
-
   void ca_get_method_params(int* HYP_GROW);
 
   void ca_set_method_params
@@ -59,8 +57,6 @@ extern "C"
      const int* blocking_factor);
 
   void ca_destroy_grid_info();
-
-  void ca_get_tagging_params(const int* name, const int* namlen);
 
   void ca_ctoprim(const int* lo, const int* hi,
                   const amrex::Real* u, const int* u_lo, const int* u_hi,
