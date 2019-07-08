@@ -9,7 +9,7 @@ contains
   subroutine ca_enforce_minimum_density(uin,uin_lo,uin_hi, &
                                         uout,uout_lo,uout_hi, &
                                         vol,vol_lo,vol_hi, &
-                                        lo,hi,frac_change,verbose) &
+                                        lo,hi,frac_change) &
                                         bind(c,name='ca_enforce_minimum_density')
 
     use network, only: nspec, naux
@@ -20,7 +20,6 @@ contains
     implicit none
 
     integer,  intent(in   ) :: lo(3), hi(3)
-    integer,  intent(in   ), value :: verbose
     integer,  intent(in   ) ::  uin_lo(3),  uin_hi(3)
     integer,  intent(in   ) :: uout_lo(3), uout_hi(3)
     integer,  intent(in   ) ::  vol_lo(3),  vol_hi(3)
@@ -93,13 +92,13 @@ contains
 
                    ! We could not find any nearby zones with sufficient density.
 
-                   call reset_to_small_state(old_state, new_state, [i, j, k], lo, hi, verbose)
+                   call reset_to_small_state(old_state, new_state, [i, j, k], lo, hi)
 
                 else
 
                    unew = uout(i_set,j_set,k_set,:)
 
-                   call reset_to_zone_state(old_state, new_state, unew, [i, j, k], lo, hi, verbose)
+                   call reset_to_zone_state(old_state, new_state, unew, [i, j, k], lo, hi)
 
                 endif
 
@@ -115,7 +114,7 @@ contains
 
 
 
-  subroutine reset_to_small_state(old_state, new_state, idx, lo, hi, verbose)
+  subroutine reset_to_small_state(old_state, new_state, idx, lo, hi)
 
     use amrex_constants_module, only: ZERO
     use network, only: nspec, naux
@@ -128,7 +127,7 @@ contains
 
     real(rt), intent(in   ) :: old_state(NVAR)
     real(rt), intent(inout) :: new_state(NVAR)
-    integer,  intent(in   ) :: idx(3), lo(3), hi(3), verbose
+    integer,  intent(in   ) :: idx(3), lo(3), hi(3)
 
     integer      :: n, ipassive
     type (eos_t) :: eos_state
@@ -139,21 +138,6 @@ contains
     ! is to set the density equal to small_dens, and the temperature
     ! equal to small_temp. We set the velocities to zero,
     ! though any choice here would be arbitrary.
-
-#ifndef AMREX_USE_CUDA
-    if (verbose .gt. 0) then
-       print *,'   '
-       if (new_state(URHO) < ZERO) then
-          print *,'>>> RESETTING NEG.  DENSITY AT ',idx(1),idx(2),idx(3)
-       else
-          print *,'>>> RESETTING SMALL DENSITY AT ',idx(1),idx(2),idx(3)
-       endif
-       print *,'>>> FROM ',new_state(URHO),' TO ',small_dens
-       print *,'>>> IN GRID ',lo(1),lo(2),lo(3),hi(1),hi(2),hi(3)
-       print *,'>>> ORIGINAL DENSITY FOR OLD STATE WAS ',old_state(URHO)
-       print *,'   '
-    end if
-#endif
 
     do ipassive = 1, npassive
        n = upass_map(ipassive)
@@ -181,7 +165,7 @@ contains
 
 
 
-  subroutine reset_to_zone_state(old_state, new_state, input_state, idx, lo, hi, verbose)
+  subroutine reset_to_zone_state(old_state, new_state, input_state, idx, lo, hi)
 
     use amrex_constants_module, only: ZERO
     use amrex_fort_module, only: rt => amrex_real
@@ -191,29 +175,9 @@ contains
 
     real(rt), intent(in   ) :: old_state(NVAR), input_state(NVAR)
     real(rt), intent(inout) :: new_state(NVAR)
-    integer,  intent(in   ) :: idx(3), lo(3), hi(3), verbose
+    integer,  intent(in   ) :: idx(3), lo(3), hi(3)
 
     !$gpu
-
-#ifndef AMREX_USE_CUDA
-    if (verbose .gt. 0) then
-       if (new_state(URHO) < ZERO) then
-          print *,'   '
-          print *,'>>> RESETTING NEG.  DENSITY AT ',idx(1),idx(2),idx(3)
-          print *,'>>> FROM ',new_state(URHO),' TO ',input_state(URHO)
-          print *,'>>> IN GRID ',lo(1),lo(2),lo(3),hi(1),hi(2),hi(3)
-          print *,'>>> ORIGINAL DENSITY FOR OLD STATE WAS ',old_state(URHO)
-          print *,'   '
-       else
-          print *,'   '
-          print *,'>>> RESETTING SMALL DENSITY AT ',idx(1),idx(2),idx(3)
-          print *,'>>> FROM ',new_state(URHO),' TO ',input_state(URHO)
-          print *,'>>> IN GRID ',lo(1),lo(2),lo(3),hi(1),hi(2),hi(3)
-          print *,'>>> ORIGINAL DENSITY FOR OLD STATE WAS ',old_state(URHO)
-          print *,'   '
-       end if
-    end if
-#endif
 
     new_state(:) = input_state(:)
 

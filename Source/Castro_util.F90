@@ -746,7 +746,7 @@ contains
 
 
 
-  subroutine ca_reset_internal_e(lo,hi,u,u_lo,u_hi,verbose) bind(c,name='ca_reset_internal_e')
+  subroutine ca_reset_internal_e(lo,hi,u,u_lo,u_hi) bind(c,name='ca_reset_internal_e')
 
     use eos_module, only: eos
     use eos_type_module, only: eos_t, eos_input_re, eos_input_rt
@@ -758,7 +758,6 @@ contains
     implicit none
 
     integer, intent(in) :: lo(3), hi(3)
-    integer, intent(in), value :: verbose
     integer, intent(in) :: u_lo(3), u_hi(3)
     real(rt), intent(inout) :: u(u_lo(1):u_hi(1),u_lo(2):u_hi(2),u_lo(3):u_hi(3),NVAR)
 
@@ -821,14 +820,6 @@ contains
                    call eos(eos_input_rt, eos_state)
 
                    eint_new = eos_state % e
-
-                   if (verbose .gt. 0) then
-                      print *,'   '
-                      print *,'>>> Warning: Castro_util.F90::reset_internal_energy  ',i,j,k
-                      print *,'>>> ... resetting neg. e from EOS using small_temp'
-                      print *,'>>> ... from ',u(i,j,k,UEINT)/u(i,j,k,URHO),' to ', eint_new
-                      print *,'    '
-                   end if
 
                    u(i,j,k,UEINT) = u(i,j,k,URHO) * eint_new
 

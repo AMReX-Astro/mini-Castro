@@ -83,7 +83,7 @@ extern "C"
      const amrex::Real* S_new, const int* s_new_lo, const int* s_new_hi,
      const amrex::Real* vol, const int* vol_lo, const int* vol_hi,
      const int* lo, const int* hi,
-     const amrex::Real* frac_change, const int verbose);
+     const amrex::Real* frac_change);
 
   void ca_normalize_species
     (BL_FORT_FAB_ARG_3D(S_new), const int* lo, const int* hi);
@@ -95,8 +95,7 @@ extern "C"
     (const int* lo, const int* hi, BL_FORT_FAB_ARG_3D(state));
 
   void ca_reset_internal_e
-    (const int* lo, const int* hi, BL_FORT_FAB_ARG_3D(S_new),
-     const int verbose);
+    (const int* lo, const int* hi, BL_FORT_FAB_ARG_3D(S_new));
 
   void ca_hypfill
     (BL_FORT_FAB_ARG(state),

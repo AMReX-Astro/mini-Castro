@@ -325,7 +325,6 @@ protected:
     //
     amrex::MultiFab             volume;
     amrex::MultiFab             area[BL_SPACEDIM];
-    amrex::Vector< amrex::Vector<amrex::Real> > radius;
 
     //
     // Keep track of which AMR iteration we're on.
@@ -335,9 +334,6 @@ protected:
     //
     // Static data members.
     //
-    static int              radius_grow;
-    static int              verbose;
-    static amrex::Real      fixed_dt;
     static int              sum_interval;
     static amrex::ErrorList err_list;
     static amrex::BCRec     phys_bc;

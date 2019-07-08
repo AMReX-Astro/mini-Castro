@@ -28,10 +28,7 @@
 
 using namespace amrex;
 
-int          Castro::verbose       = 0;
-Real         Castro::fixed_dt      = -1.0;
 ErrorList    Castro::err_list;
-int          Castro::radius_grow   = 1;
 BCRec        Castro::phys_bc;
 int          Castro::NUM_STATE     = -1;
 int          Castro::NUM_GROW      = -1;
@@ -107,9 +104,6 @@ Castro::read_params ()
     done = true;
 
     ParmParse pp("castro");
-
-    pp.query("v",verbose);
-    pp.query("fixed_dt",fixed_dt);
 
     // Get boundary conditions
     Vector<int> lo_bc(BL_SPACEDIM), hi_bc(BL_SPACEDIM);
@@ -194,15 +188,6 @@ Castro::read_params ()
     int bndry_func_thread_safe = 1;
     StateDescriptor::setBndryFuncThreadSafety(bndry_func_thread_safe);
 
-    ParmParse ppa("amr");
-    ppa.query("probin_file",probin_file);
-
-    Vector<int> tilesize(BL_SPACEDIM);
-    if (pp.queryarr("hydro_tile_size", tilesize, 0, BL_SPACEDIM))
-    {
-	for (int i=0; i<BL_SPACEDIM; i++) hydro_tile_size[i] = tilesize[i];
-    }
-
 }
 
 Castro::Castro ()
@@ -244,43 +229,6 @@ Castro::~Castro ()
 void
 Castro::buildMetrics ()
 {
-    const int ngrd = grids.size();
-
-    radius.resize(ngrd);
-
-    const Real* dx = geom.CellSize();
-
-    for (int i = 0; i < ngrd; i++)
-    {
-        const Box& b = grids[i];
-        int ilo      = b.smallEnd(0)-radius_grow;
-        int ihi      = b.bigEnd(0)+radius_grow;
-        int len      = ihi - ilo + 1;
-
-        radius[i].resize(len);
-
-        Real* rad = radius[i].dataPtr();
-
-        if (Geom().IsCartesian())
-        {
-            for (int j = 0; j < len; j++)
-            {
-                rad[j] = 1.0;
-            }
-        }
-        else
-        {
-            RealBox gridloc = RealBox(grids[i],geom.CellSize(),geom.ProbLo());
-
-            const Real xlo = gridloc.lo(0) + (0.5 - radius_grow)*dx[0];
-
-            for (int j = 0; j < len; j++)
-            {
-                rad[j] = xlo + j*dx[0];
-            }
-        }
-    }
-
     volume.clear();
     volume.define(grids,dmap,1,NUM_GROW);
     geom.GetVolume(volume);
@@ -518,9 +466,6 @@ Castro::estTimeStep (Real dt_old)
 {
     BL_PROFILE("Castro::estTimeStep()");
 
-    if (fixed_dt > 0.0)
-        return fixed_dt;
-
     Real max_dt = 1.e200;
 
     Real estdt = max_dt;
@@ -603,27 +548,24 @@ Castro::computeNewDt (int                   finest_level,
         dt_min[i] = adv_level.estTimeStep(dt_level[i]);
     }
 
-    if (fixed_dt <= 0.0)
+    if (post_regrid_flag == 1)
     {
-       if (post_regrid_flag == 1)
+       //
+       // Limit dt's by pre-regrid dt
+       //
+       for (i = 0; i <= finest_level; i++)
        {
-          //
-          // Limit dt's by pre-regrid dt
-          //
-          for (i = 0; i <= finest_level; i++)
-          {
-              dt_min[i] = std::min(dt_min[i],dt_level[i]);
-          }
+           dt_min[i] = std::min(dt_min[i],dt_level[i]);
        }
-       else
+    }
+    else
+    {
+       //
+       // Limit dt's by change_max * old dt
+       //
+       for (i = 0; i <= finest_level; i++)
        {
-          //
-          // Limit dt's by change_max * old dt
-          //
-          for (i = 0; i <= finest_level; i++)
-          {
-              dt_min[i] = std::min(dt_min[i],change_max*dt_level[i]);
-          }
+           dt_min[i] = std::min(dt_min[i],change_max*dt_level[i]);
        }
     }
 
@@ -727,11 +669,6 @@ Castro::post_timestep (int iteration)
     // and then update quantities like temperature to be consistent.
 
     clean_state(S_new);
-
-    // Flush Fortran output
-
-    if (verbose)
-	flush_output();
 
     if (level == 0)
     {
@@ -941,8 +878,7 @@ Castro::enforce_min_density (MultiFab& S_old, MultiFab& S_new)
              BL_TO_FORTRAN_ANYD(statenew),
              BL_TO_FORTRAN_ANYD(vol),
              AMREX_INT_ANYD(bx.loVect()), AMREX_INT_ANYD(bx.hiVect()),
-             AMREX_MFITER_REDUCE_MIN(&dens_change),
-             verbose);
+             AMREX_MFITER_REDUCE_MIN(&dens_change));
 
     }
 
@@ -1089,8 +1025,6 @@ Castro::reset_internal_energy(MultiFab& S_new)
 
     int ng = S_new.nGrow();
 
-    int print_fortran_warnings = 0;
-
     // Ensure (rho e) isn't too small or negative
 #ifdef _OPENMP
 #pragma omp parallel
@@ -1102,14 +1036,8 @@ Castro::reset_internal_energy(MultiFab& S_new)
 #pragma gpu
         ca_reset_internal_e
             (AMREX_INT_ANYD(bx.loVect()), AMREX_INT_ANYD(bx.hiVect()),
-             BL_TO_FORTRAN_ANYD(S_new[mfi]),
-             print_fortran_warnings);
+             BL_TO_FORTRAN_ANYD(S_new[mfi]));
     }
-
-    // Flush Fortran output
-
-    if (verbose)
-      flush_output();
 
 }
 

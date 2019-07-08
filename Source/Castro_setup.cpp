@@ -148,8 +148,6 @@ Castro::variableSetUp ()
 
   // Get the center variable from the inputs and pass it directly to Fortran.
   Vector<Real> center(BL_SPACEDIM, 0.0);
-  ParmParse ppc("castro");
-  ppc.queryarr("center",center,0,BL_SPACEDIM);
 
   ca_set_problem_params(dm,phys_bc.lo(),phys_bc.hi(),
 			Interior,Inflow,Outflow,Symmetry,SlipWall,NoSlipWall,coord_type,

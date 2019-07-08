@@ -179,9 +179,4 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
 
   BL_PROFILE_VAR_STOP(CA_HYDRO);
 
-  // Flush Fortran output
-
-  if (verbose)
-    flush_output();
-
 }
