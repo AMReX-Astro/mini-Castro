@@ -35,8 +35,6 @@ int          Castro::NUM_GROW      = -1;
 
 long         Castro::num_zones_advanced = 0;
 
-Real         Castro::frac_change   = 1.e200;
-
 int          Castro::Density       = -1;
 int          Castro::Eden          = -1;
 int          Castro::Eint          = -1;
@@ -844,7 +842,7 @@ Castro::enforce_consistent_e (MultiFab& S)
 
 }
 
-Real
+void
 Castro::enforce_min_density (MultiFab& S_old, MultiFab& S_new)
 {
 
@@ -856,13 +854,8 @@ Castro::enforce_min_density (MultiFab& S_old, MultiFab& S_new)
     // was so that we have a reference for comparison. If you are calling it elsewhere
     // and there's no meaningful reference state, just pass in the same MultiFab twice.
 
-    // The return value is the the negative fractional change in the state that has the
-    // largest magnitude. If there is no reference state, this is meaningless.
-
-    Real dens_change = 1.e0;
-
 #ifdef _OPENMP
-#pragma omp parallel reduction(min:dens_change)
+#pragma omp parallel
 #endif
     for (MFIter mfi(S_new, true); mfi.isValid(); ++mfi) {
 
@@ -877,12 +870,9 @@ Castro::enforce_min_density (MultiFab& S_old, MultiFab& S_new)
             (BL_TO_FORTRAN_ANYD(stateold),
              BL_TO_FORTRAN_ANYD(statenew),
              BL_TO_FORTRAN_ANYD(vol),
-             AMREX_INT_ANYD(bx.loVect()), AMREX_INT_ANYD(bx.hiVect()),
-             AMREX_MFITER_REDUCE_MIN(&dens_change));
+             AMREX_INT_ANYD(bx.loVect()), AMREX_INT_ANYD(bx.hiVect()));
 
     }
-
-    return dens_change;
 
 }
 
@@ -1141,7 +1131,7 @@ Castro::check_for_nan(MultiFab& state, int check_ghost)
 // sure the data is sensible. The return value is the same as the return
 // value of enforce_min_density.
 
-Real
+void
 Castro::clean_state(MultiFab& state) {
 
     BL_PROFILE("Castro::clean_state()");
@@ -1152,7 +1142,7 @@ Castro::clean_state(MultiFab& state) {
 
     MultiFab::Copy(temp_state, state, 0, 0, state.nComp(), state.nGrow());
 
-    Real frac_change = enforce_min_density(temp_state, state);
+    enforce_min_density(temp_state, state);
 
     // Ensure all species are normalized.
 
@@ -1162,7 +1152,5 @@ Castro::clean_state(MultiFab& state) {
     // the internal energy for consistency with the total energy).
 
     computeTemp(state);
-
-    return frac_change;
 
 }

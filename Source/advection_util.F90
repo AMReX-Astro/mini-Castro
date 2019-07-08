@@ -9,7 +9,7 @@ contains
   subroutine ca_enforce_minimum_density(uin,uin_lo,uin_hi, &
                                         uout,uout_lo,uout_hi, &
                                         vol,vol_lo,vol_hi, &
-                                        lo,hi,frac_change) &
+                                        lo,hi) &
                                         bind(c,name='ca_enforce_minimum_density')
 
     use network, only: nspec, naux
@@ -27,13 +27,11 @@ contains
     real(rt), intent(in   ) ::  uin( uin_lo(1): uin_hi(1), uin_lo(2): uin_hi(2), uin_lo(3): uin_hi(3),NVAR)
     real(rt), intent(inout) :: uout(uout_lo(1):uout_hi(1),uout_lo(2):uout_hi(2),uout_lo(3):uout_hi(3),NVAR)
     real(rt), intent(in   ) ::  vol( vol_lo(1): vol_hi(1), vol_lo(2): vol_hi(2), vol_lo(3): vol_hi(3))
-    real(rt), intent(inout) :: frac_change
 
     ! Local variables
     integer  :: i,ii,j,jj,k,kk
     integer  :: i_set, j_set, k_set
     real(rt) :: max_dens
-    real(rt) :: f_c
     real(rt) :: old_state(NVAR), new_state(NVAR), unew(NVAR)
     integer  :: num_positive_zones
 
@@ -55,16 +53,6 @@ contains
              else if (uout(i,j,k,URHO) < small_dens) then
 
                 old_state = uin(i,j,k,:)
-
-                ! Store the maximum (negative) fractional change in the density
-
-                if (uout(i,j,k,URHO) < ZERO) then
-
-                   f_c = (uout(i,j,k,URHO) - uin(i,j,k,URHO)) / uin(i,j,k,URHO)
-
-                   call amrex_min(frac_change, f_c)
-
-                endif
 
                 ! Reset to the characteristics of the adjacent state with the highest density.
 

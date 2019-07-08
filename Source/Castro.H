@@ -304,9 +304,9 @@ protected:
 
     void enforce_consistent_e (amrex::MultiFab& S);
 
-    amrex::Real enforce_min_density (amrex::MultiFab& S_old, amrex::MultiFab& S_new);
+    void enforce_min_density (amrex::MultiFab& S_old, amrex::MultiFab& S_new);
 
-    amrex::Real clean_state (amrex::MultiFab& state);
+    void clean_state (amrex::MultiFab& state);
 
     void avgDown ();
 
@@ -338,9 +338,6 @@ protected:
     static amrex::ErrorList err_list;
     static amrex::BCRec     phys_bc;
     static int              NUM_GROW;
-
-    // for keeping track of mass changes from negative density resets
-    static amrex::Real      frac_change;
 
     // Name of the probin file and its length.
     static std::string probin_file;

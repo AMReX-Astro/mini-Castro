@@ -130,15 +130,6 @@ Castro::initialize_do_advance(Real time, Real dt, int amr_iteration, int amr_ncy
 
     BL_PROFILE_VAR("Castro::initialize_do_advance()", CA_INIT_DO_ADV);
 
-    // Reset the change from density resets
-
-    frac_change = 1.e0;
-
-    // Indicate that our local MultiFabs should have a device copy of their data
-
-    MFInfo info;
-//    info.SetDevice(true);
-
     int finest_level = parent->finestLevel();
 
     // For the hydrodynamics update we need to have NUM_GROW ghost zones available,
@@ -151,7 +142,7 @@ Castro::initialize_do_advance(Real time, Real dt, int amr_iteration, int amr_ncy
     if (sub_iteration == 0) {
 
 	// first MOL stage
-	Sborder.define(grids, dmap, NUM_STATE, NUM_GROW, info);
+	Sborder.define(grids, dmap, NUM_STATE, NUM_GROW);
 	const Real prev_time = state[State_Type].prevTime();
 	expand_state(Sborder, prev_time, NUM_GROW);
 
@@ -171,7 +162,7 @@ Castro::initialize_do_advance(Real time, Real dt, int amr_iteration, int amr_ncy
 	for (int i = 0; i < sub_iteration; ++i)
 	    MultiFab::Saxpy(S_new, dt*a_mol[sub_iteration][i], *k_mol[i], 0, 0, S_new.nComp(), 0);
 
-	Sborder.define(grids, dmap, NUM_STATE, NUM_GROW, info);
+	Sborder.define(grids, dmap, NUM_STATE, NUM_GROW);
 	const Real new_time = state[State_Type].curTime();
 	expand_state(Sborder, new_time, NUM_GROW);
 
