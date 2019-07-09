@@ -1,10 +1,10 @@
 module eos_module
 
+  use amrex_fort_module, only: rt => amrex_real
+
   implicit none
 
   public eos_init, eos
-
-  logical, save :: initialized = .false.
 
 contains
 
@@ -13,10 +13,8 @@ contains
 
   subroutine eos_init()
 
-    use amrex_fort_module, only: rt => amrex_real
-    use amrex_paralleldescriptor_module, only: amrex_pd_ioprocessor
     use eos_type_module, only: mintemp, maxtemp, mindens, maxdens, minx, maxx, &
-                               minye, maxye, mine, maxe, minp, maxp, minh, maxh, mins, maxs
+                               minye, maxye, mine, maxe, minp, maxp
     use actual_eos_module, only: actual_eos_init
 
     implicit none
@@ -35,10 +33,6 @@ contains
     allocate(maxe)
     allocate(minp)
     allocate(maxp)
-    allocate(mins)
-    allocate(maxs)
-    allocate(minh)
-    allocate(maxh)
 
     mintemp = 1.d-200
     maxtemp = 1.d200
@@ -52,16 +46,10 @@ contains
     maxe    = 1.d200
     minp    = 1.d-200
     maxp    = 1.d200
-    mins    = 1.d-200
-    maxs    = 1.d200
-    minh    = 1.d-200
-    maxh    = 1.d200
 
     ! Set up any specific parameters or initialization steps required by the EOS we are using.
 
     call actual_eos_init()
-
-    initialized = .true.
 
   end subroutine eos_init
 
@@ -71,9 +59,6 @@ contains
 
     use eos_type_module, only: eos_t, composition
     use actual_eos_module, only: actual_eos
-#ifndef AMREX_USE_GPU
-    use amrex_error_module, only: amrex_error
-#endif
 
     implicit none
 
@@ -85,12 +70,6 @@ contains
     logical :: has_been_reset
 
     !$gpu
-
-    ! Local variables
-
-#ifndef AMREX_USE_GPU
-    if (.not. initialized) call amrex_error('EOS: not initialized')
-#endif
 
     ! Get abar, zbar, etc.
 
@@ -113,9 +92,7 @@ contains
 
   subroutine reset_inputs(input, state, has_been_reset)
 
-    use eos_type_module, only: eos_t, &
-                               eos_input_rt, eos_input_re, eos_input_rh, eos_input_tp, &
-                               eos_input_rp, eos_input_th, eos_input_ph, eos_input_ps
+    use eos_type_module, only: eos_t, eos_input_rt, eos_input_re, eos_input_rp
 
     implicit none
 
@@ -272,10 +249,6 @@ contains
     deallocate(maxe)
     deallocate(minp)
     deallocate(maxp)
-    deallocate(mins)
-    deallocate(maxs)
-    deallocate(minh)
-    deallocate(maxh)
 
     call actual_eos_finalize()
 
