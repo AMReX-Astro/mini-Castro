@@ -51,7 +51,7 @@ extern "C"
   void ca_destroy_problem_params();
 
   void ca_set_grid_info
-    (const int& max_level, const amrex::Real* dx_level,
+    (const int& max_level,
      const int* domlo_level, const int* domhi_level,
      const int* ref_ratio, const int* n_error_buf,
      const int* blocking_factor);

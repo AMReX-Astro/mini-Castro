@@ -18,7 +18,6 @@ module prob_params_module
 
   ! grid information
   integer         , save        :: max_level
-  real(rt)        , allocatable :: dx_level(:,:)
   integer         , allocatable :: domlo_level(:,:)
   integer         , allocatable :: domhi_level(:,:)
   integer         , allocatable :: ref_ratio(:,:)

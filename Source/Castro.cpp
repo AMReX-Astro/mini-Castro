@@ -203,7 +203,6 @@ Castro::setGridInfo ()
       int max_level = parent->maxLevel();
       int nlevs = max_level + 1;
 
-      Real dx_level[3*nlevs];
       int domlo_level[3*nlevs];
       int domhi_level[3*nlevs];
       int ref_ratio_to_f[3*nlevs];
@@ -216,8 +215,6 @@ Castro::setGridInfo ()
       const int* domhi_coarse = geom.Domain().hiVect();
 
       for (int dir = 0; dir < 3; dir++) {
-	dx_level[dir] = (ZFILL(dx_coarse))[dir];
-
 	domlo_level[dir] = (AMREX_ARLIM_3D(domlo_coarse))[dir];
 	domhi_level[dir] = (AMREX_ARLIM_3D(domhi_coarse))[dir];
 
@@ -242,7 +239,6 @@ Castro::setGridInfo ()
 
 	for (int dir = 0; dir < 3; dir++)
 	{
-	    dx_level[3 * lev + dir] = dx_level[3 * (lev - 1) + dir] / ref_ratio[dir];
 	    int ncell = (domhi_level[3 * (lev - 1) + dir] - domlo_level[3 * (lev - 1) + dir] + 1) * ref_ratio[dir];
 	    domlo_level[3 * lev + dir] = domlo_level[dir];
 	    domhi_level[3 * lev + dir] = domlo_level[3 * lev + dir] + ncell - 1;
@@ -252,7 +248,7 @@ Castro::setGridInfo ()
 	n_error_buf_to_f[lev - 1] = parent->nErrorBuf(lev - 1);
       }
 
-      ca_set_grid_info(max_level, dx_level, domlo_level, domhi_level,
+      ca_set_grid_info(max_level, domlo_level, domhi_level,
 		       ref_ratio_to_f, n_error_buf_to_f, blocking_factor_to_f);
 
     }

@@ -453,17 +453,16 @@ end subroutine ca_destroy_problem_params
 ! ::: ----------------------------------------------------------------
 ! :::
 
-subroutine ca_set_grid_info(max_level_in, dx_level_in, domlo_in, domhi_in, &
+subroutine ca_set_grid_info(max_level_in, domlo_in, domhi_in, &
                             ref_ratio_in, n_error_buf_in, blocking_factor_in) &
                             bind(C, name="ca_set_grid_info")
 
-  use prob_params_module, only: max_level, dx_level, domlo_level, domhi_level, n_error_buf, ref_ratio, blocking_factor
+  use prob_params_module, only: max_level, domlo_level, domhi_level, n_error_buf, ref_ratio, blocking_factor
   use amrex_fort_module, only: rt => amrex_real
 
   implicit none
 
   integer,  intent(in) :: max_level_in
-  real(rt), intent(in) :: dx_level_in(3*(max_level_in+1))
   integer,  intent(in) :: domlo_in(3*(max_level_in+1)), domhi_in(3*(max_level_in+1))
   integer,  intent(in) :: ref_ratio_in(3*(max_level_in+1))
   integer,  intent(in) :: n_error_buf_in(0:max_level_in)
@@ -475,9 +474,6 @@ subroutine ca_set_grid_info(max_level_in, dx_level_in, domlo_in, domhi_in, &
   ! times upon initialization; in this case, just to
   ! be safe, we'll deallocate and start again.
 
-  if (allocated(dx_level)) then
-     deallocate(dx_level)
-  endif
   if (allocated(domlo_level)) then
      deallocate(domlo_level)
   endif
@@ -497,7 +493,6 @@ subroutine ca_set_grid_info(max_level_in, dx_level_in, domlo_in, domhi_in, &
 
   max_level = max_level_in
 
-  allocate(dx_level(1:3, 0:max_level))
   allocate(domlo_level(1:3, 0:max_level))
   allocate(domhi_level(1:3, 0:max_level))
   allocate(ref_ratio(1:3, 0:max_level))
@@ -506,7 +501,6 @@ subroutine ca_set_grid_info(max_level_in, dx_level_in, domlo_in, domhi_in, &
 
   do lev = 0, max_level
      do dir = 1, 3
-        dx_level(dir,lev) = dx_level_in(3*lev + dir)
         domlo_level(dir,lev) = domlo_in(3*lev + dir)
         domhi_level(dir,lev) = domhi_in(3*lev + dir)
         ref_ratio(dir,lev) = ref_ratio_in(3*lev + dir)
@@ -521,11 +515,10 @@ end subroutine ca_set_grid_info
 
 subroutine ca_destroy_grid_info() bind(c, name='ca_destroy_grid_info')
 
-  use prob_params_module, only: max_level, dx_level, domlo_level, domhi_level, n_error_buf, ref_ratio, blocking_factor
+  use prob_params_module, only: max_level, domlo_level, domhi_level, n_error_buf, ref_ratio, blocking_factor
 
   implicit none
 
-  deallocate(dx_level)
   deallocate(domlo_level)
   deallocate(domhi_level)
   deallocate(ref_ratio)
