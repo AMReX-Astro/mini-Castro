@@ -173,10 +173,6 @@ public:
     //
     virtual void removeOldData () override;
     //
-    // Passes some data about the grid to a Fortran module.
-    //
-    void setGridInfo();
-    //
     // Do work after timestep().
     //
     virtual void post_timestep (int iteration) override;

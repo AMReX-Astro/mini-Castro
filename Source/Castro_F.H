@@ -45,19 +45,6 @@ extern "C"
 
   void ca_init_godunov_indices();
 
-  void ca_set_problem_params
-    (const amrex::Real* problo, const amrex::Real* probhi);
-
-  void ca_destroy_problem_params();
-
-  void ca_set_grid_info
-    (const int& max_level,
-     const int* domlo_level, const int* domhi_level,
-     const int* ref_ratio, const int* n_error_buf,
-     const int* blocking_factor);
-
-  void ca_destroy_grid_info();
-
   void ca_ctoprim(const int* lo, const int* hi,
                   const amrex::Real* u, const int* u_lo, const int* u_hi,
                   const amrex::Real* q, const int* q_lo, const int* q_hi,

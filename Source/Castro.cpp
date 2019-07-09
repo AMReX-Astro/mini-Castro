@@ -76,11 +76,7 @@ Castro::variableCleanUp ()
 
     network_finalize();
 
-    ca_destroy_grid_info();
-
     ca_destroy_method_params();
-
-    ca_destroy_problem_params();
 
     probinit_finalize();
 }
@@ -151,8 +147,6 @@ Castro::buildMetrics ()
 	area[dir].define(getEdgeBoxArray(dir),dmap,1,NUM_GROW);
         geom.GetFaceArea(area[dir],dir);
     }
-
-    if (level == 0) setGridInfo();
 }
 
 // Initialize the MultiFabs and flux registers that live as class members.
@@ -185,74 +179,6 @@ Castro::setTimeLevel (Real time,
                       Real dt_new)
 {
     AmrLevel::setTimeLevel(time,dt_old,dt_new);
-}
-
-void
-Castro::setGridInfo ()
-{
-
-    // Send refinement data to Fortran. We do it here
-    // because now the grids have been initialized and
-    // we need this data for setting up the problem.
-    // Note that this routine will always get called
-    // on level 0, even if we are doing a restart,
-    // so it is safe to put this here.
-
-    if (level == 0) {
-
-      int max_level = parent->maxLevel();
-      int nlevs = max_level + 1;
-
-      int domlo_level[3*nlevs];
-      int domhi_level[3*nlevs];
-      int ref_ratio_to_f[3*nlevs];
-      int n_error_buf_to_f[nlevs];
-      int blocking_factor_to_f[nlevs];
-
-      const Real* dx_coarse = geom.CellSize();
-
-      const int* domlo_coarse = geom.Domain().loVect();
-      const int* domhi_coarse = geom.Domain().hiVect();
-
-      for (int dir = 0; dir < 3; dir++) {
-	domlo_level[dir] = (AMREX_ARLIM_3D(domlo_coarse))[dir];
-	domhi_level[dir] = (AMREX_ARLIM_3D(domhi_coarse))[dir];
-
-	// Refinement ratio and error buffer on finest level are meaningless,
-	// and we want them to be zero on the finest level because some
-	// of the algorithms depend on this feature.
-
-	ref_ratio_to_f[dir + 3 * (nlevs - 1)] = 0;
-	n_error_buf_to_f[nlevs-1] = 0;
-      }
-
-      for (int lev = 0; lev <= max_level; lev++)
-	blocking_factor_to_f[lev] = parent->blockingFactor(lev)[0];
-
-      for (int lev = 1; lev <= max_level; lev++) {
-	IntVect ref_ratio = parent->refRatio(lev-1);
-
-	// Note that we are explicitly calculating here what the
-	// data would be on refined levels rather than getting the
-	// data directly from those levels, because some potential
-	// refined levels may not exist at the beginning of the simulation.
-
-	for (int dir = 0; dir < 3; dir++)
-	{
-	    int ncell = (domhi_level[3 * (lev - 1) + dir] - domlo_level[3 * (lev - 1) + dir] + 1) * ref_ratio[dir];
-	    domlo_level[3 * lev + dir] = domlo_level[dir];
-	    domhi_level[3 * lev + dir] = domlo_level[3 * lev + dir] + ncell - 1;
-	    ref_ratio_to_f[3 * (lev - 1) + dir] = ref_ratio[dir];
-	}
-
-	n_error_buf_to_f[lev - 1] = parent->nErrorBuf(lev - 1);
-      }
-
-      ca_set_grid_info(max_level, domlo_level, domhi_level,
-		       ref_ratio_to_f, n_error_buf_to_f, blocking_factor_to_f);
-
-    }
-
 }
 
 void

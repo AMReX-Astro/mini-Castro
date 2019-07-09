@@ -123,10 +123,6 @@ Castro::variableSetUp ()
   ca_get_nqaux(&NQAUX);
   ca_get_ngdnv(&NGDNV);
 
-  const Geometry& dgeom = DefaultGeometry();
-
-  ca_set_problem_params(dgeom.ProbLo(), dgeom.ProbHi());
-
   Interpolater* interp = &cell_cons_interp;
 
   bool state_data_extrap = false;
