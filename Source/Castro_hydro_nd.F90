@@ -154,7 +154,7 @@ contains
     use eos_type_module, only: eos_t, eos_input_rt
     use eos_module, only: eos
     use amrex_fort_module, only: rt => amrex_real
-    use castro_module, only: NVAR, URHO, UMX, UMY, UMZ, UTEMP, UEINT, UEDEN, UFS, small_temp, small_dens, npassive, upass_map
+    use castro_module, only: NVAR, URHO, UMX, UMY, UMZ, UTEMP, UEINT, UEDEN, UFS, small_temp, small_dens, upass_map
 
     implicit none
 
@@ -172,7 +172,7 @@ contains
     ! equal to small_temp. We set the velocities to zero,
     ! though any choice here would be arbitrary.
 
-    do ipassive = 1, npassive
+    do ipassive = 1, nspec
        n = upass_map(ipassive)
        new_state(n) = new_state(n) * (small_dens / new_state(URHO))
     end do
@@ -293,7 +293,7 @@ contains
                              QRHO, QU, QV, QW, &
                              QREINT, QPRES, QTEMP, QGAME, QFS, QFX, &
                              NQ, QC, QGAMC, QDPDR, QDPDE, NQAUX, &
-                             npassive, upass_map, qpass_map, small_dens
+                             upass_map, qpass_map, small_dens
 
     implicit none
 
@@ -354,7 +354,7 @@ contains
     enddo
 
     ! Load passively advected quatities into q
-    do ipassive = 1, npassive
+    do ipassive = 1, nspec
        n  = upass_map(ipassive)
        iq = qpass_map(ipassive)
        do k = lo(3), hi(3)

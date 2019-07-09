@@ -8,7 +8,7 @@ module riemann_module
                            NGDNV, GDRHO, GDPRES, GDGAME, &
                            QC, QGAMC, &
                            small_dens, small_temp, &
-                           npassive, upass_map, qpass_map
+                           upass_map, qpass_map
 
   implicit none
 
@@ -253,7 +253,7 @@ contains
              flx(i,j,k,UEINT) = u_adv*regdnv
 
              ! passively advected quantities
-             do ipassive = 1, npassive
+             do ipassive = 1, nspec
 
                 n  = upass_map(ipassive)
                 nqp = qpass_map(ipassive)

@@ -60,7 +60,6 @@ module castro_module
   ! NQ will be the total number of primitive variables, hydro + radiation
   integer, parameter :: NQ = QVAR
 
-  integer, allocatable :: npassive
   integer, allocatable :: qpass_map(:), upass_map(:)
 
   ! These are used for the Godunov state
@@ -84,7 +83,7 @@ module castro_module
   real(rt), save :: max_dist
 
 #ifdef AMREX_USE_CUDA
-  attributes(managed) :: upass_map, qpass_map, npassive
+  attributes(managed) :: upass_map, qpass_map
 #endif
 
   real(rt), parameter :: small_dens = 1.0d-12
@@ -439,7 +438,7 @@ end subroutine ca_get_ngdnv
 
 subroutine ca_set_method_params() bind(C, name="ca_set_method_params")
 
-  use castro_module, only: npassive, qpass_map, upass_map, QVAR, NVAR, UFS, QFS
+  use castro_module, only: qpass_map, upass_map, QVAR, NVAR, UFS, QFS
   use network, only: nspec
   use eos_module, only: eos_init
 
@@ -455,16 +454,12 @@ subroutine ca_set_method_params() bind(C, name="ca_set_method_params")
   ! in a single loop.
   allocate(qpass_map(QVAR))
   allocate(upass_map(NVAR))
-  allocate(npassive)
-
-  npassive = 0
 
   if (QFS > -1) then
      do ispec = 1, nspec
-        upass_map(npassive + ispec) = UFS + ispec - 1
-        qpass_map(npassive + ispec) = QFS + ispec - 1
+        upass_map(ispec) = UFS + ispec - 1
+        qpass_map(ispec) = QFS + ispec - 1
      enddo
-     npassive = npassive + nspec
   endif
 
   call eos_init()
@@ -475,12 +470,11 @@ end subroutine ca_set_method_params
 
 subroutine ca_destroy_method_params() bind(C, name="ca_destroy_method_params")
 
-  use castro_module, only: qpass_map, upass_map, npassive
+  use castro_module, only: qpass_map, upass_map
 
   implicit none
 
   deallocate(qpass_map)
   deallocate(upass_map)
-  deallocate(npassive)
 
 end subroutine ca_destroy_method_params
