@@ -25,14 +25,7 @@ F90EXE_sources += Castro_mol.F90
 
 F90EXE_sources += riemann.F90 
 
-F90EXE_sources += bc_fill.F90
-ifeq ($(USE_CUDA),TRUE)
-  CUDA_MAXREGCOUNT_bc_fill.F90 := 128
-endif
-
 F90EXE_sources += Prob.F90
-
-F90EXE_sources += probdata.F90
 
 F90EXE_sources += Castro_util.F90
 F90EXE_sources += advection_util.F90
@@ -42,8 +35,6 @@ F90EXE_sources += meth_params.F90
 F90EXE_sources += timestep.F90
 
 F90EXE_sources += flatten.F90
-
-F90EXE_sources += io.F90
 
 F90EXE_sources += eos.F90
 F90EXE_sources += eos_type.F90
