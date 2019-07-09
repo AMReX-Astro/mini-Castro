@@ -127,7 +127,14 @@ main (int   argc,
     pp.query("max_level", max_level);
     pp_amr.add("max_level", max_level);
 
-    amrex::Print() << "Initializing AMR driver..." << std::endl << std::endl;
+    amrex::Print() << "Initializing AMR driver using the following runtime parameters:" << std::endl << std::endl;
+    amrex::Print() << "n_cell = " << n_cell << std::endl;
+    amrex::Print() << "max_grid_size = " << max_grid_size << std::endl;
+    amrex::Print() << "min_grid_size = " << min_grid_size << std::endl;
+    amrex::Print() << "max_level = " << max_level << std::endl;
+    amrex::Print() << "max_step = " << max_step << std::endl;
+    amrex::Print() << "stop_time = " << stop_time << std::endl;
+    amrex::Print() << std::endl;
 
     Amr* amrptr = new Amr;
 
