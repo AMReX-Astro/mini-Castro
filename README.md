@@ -13,7 +13,9 @@ https://github.com/AMReX-Astro/Castro
 
 Clone this repository with:
 
+```
 git clone --recursive https://github.com/AMReX-Astro/mini-Castro.git
+```
 
 The `--recursive` option is needed because mini-Castro depends on the
 AMReX library as a submodule.
