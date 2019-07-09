@@ -178,11 +178,6 @@ Castro::variableSetUp ()
 
   num_state_type = desc_lst.size();
 
-  //
-  // DEFINE ERROR ESTIMATION QUANTITIES
-  //
-  ErrorSetUp();
-
   // method of lines Butcher tableau
 #define SECONDORDER_TVD
 

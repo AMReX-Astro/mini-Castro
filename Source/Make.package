@@ -3,7 +3,6 @@ CEXE_sources += Castro.cpp
 CEXE_sources += Castro_advance.cpp
 CEXE_sources += Castro_hydro.cpp
 CEXE_sources += Castro_setup.cpp
-CEXE_sources += Castro_error.cpp 
 CEXE_sources += Castro_io.cpp 
 CEXE_sources += CastroBld.cpp
 CEXE_sources += main.cpp
@@ -13,7 +12,6 @@ CEXE_headers += Castro_io.H
 
 FEXE_headers += Castro_F.H
 FEXE_headers += Problem_F.H
-FEXE_headers += Castro_error_F.H
 
 CEXE_headers += castro_params.H
 CEXE_headers += castro_queries.H

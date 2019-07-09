@@ -182,11 +182,6 @@ public:
 			   int          n_error_buf = 0,
 			   int          ngrow = 0) override;
 
-    //
-    // Apply a given tagging function.
-    //
-    void apply_tagging_func (amrex::TagBoxArray& tags, int clearval, int setval, amrex::Real time, int j);
-
     void reset_internal_energy (amrex::MultiFab& State);
 
     void computeTemp (amrex::MultiFab& State);
@@ -294,7 +289,6 @@ protected:
     //
     // Static data members.
     //
-    static amrex::ErrorList err_list;
     static int              NUM_GROW;
 
     static amrex::IntVect hydro_tile_size;
