@@ -19,7 +19,7 @@ contains
   subroutine ca_initdata(lo, hi, state, s_lo, s_hi, dx, problo, probhi) bind(c,name='ca_initdata')
 
     use amrex_constants_module, only: M_PI, FOUR3RD
-    use meth_params_module , only: NVAR, URHO, UMX, UMY, UMZ, UTEMP, UEDEN, UEINT, UFS
+    use castro_module , only: NVAR, URHO, UMX, UMY, UMZ, UTEMP, UEDEN, UEINT, UFS
 
     implicit none
 

@@ -5,7 +5,7 @@ module ppm_module
 
   use amrex_constants_module, only: ZERO, SIXTH, HALF, ONE, TWO, THREE
   use amrex_fort_module, only: rt => amrex_real
-  use meth_params_module, only: NQ
+  use castro_module, only: NQ
 
   implicit none
 

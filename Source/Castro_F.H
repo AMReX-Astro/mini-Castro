@@ -43,15 +43,10 @@ extern "C"
 
   void ca_destroy_method_params();
 
-  void ca_init_godunov_indices();
-
   void ca_ctoprim(const int* lo, const int* hi,
                   const amrex::Real* u, const int* u_lo, const int* u_hi,
                   const amrex::Real* q, const int* q_lo, const int* q_hi,
                   const amrex::Real* qaux, const int* qa_lo, const int* qa_hi);
-
-  void ca_check_initial_species
-    (const int* lo, const int* hi, BL_FORT_FAB_ARG_3D(state));
 
   void ca_enforce_minimum_density
     (const amrex::Real* S_old, const int* s_old_lo, const int* s_old_hi,

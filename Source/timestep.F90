@@ -15,7 +15,7 @@ contains
     use eos_type_module, only: eos_t, eos_input_re
     use amrex_constants_module, only: ONE
     use amrex_fort_module, only: rt => amrex_real, amrex_min
-    use meth_params_module, only: NVAR, URHO, UMX, UMY, UMZ, UEINT, UTEMP, UFS, UFX
+    use castro_module, only: NVAR, URHO, UMX, UMY, UMZ, UEINT, UTEMP, UFS, UFX
 
     implicit none
 

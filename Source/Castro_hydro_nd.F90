@@ -18,7 +18,7 @@ contains
                                bind(c,name='ca_construct_flux')
 
     use amrex_fort_module, only: rt => amrex_real
-    use meth_params_module, only: NVAR, NGDNV, NQAUX, NQ
+    use castro_module, only: NVAR, NGDNV, NQAUX, NQ
     use riemann_module, only: cmpflx
 
     implicit none
@@ -65,7 +65,7 @@ contains
     use network, only: nspec, naux
     use amrex_constants_module, only: ZERO
     use amrex_fort_module, only: rt => amrex_real, amrex_min
-    use meth_params_module, only: NVAR, URHO, UEINT, UEDEN, small_dens
+    use castro_module, only: NVAR, URHO, UEINT, UEDEN, small_dens
 
     implicit none
 
@@ -152,7 +152,7 @@ contains
     use eos_type_module, only: eos_t, eos_input_rt
     use eos_module, only: eos
     use amrex_fort_module, only: rt => amrex_real
-    use meth_params_module, only: NVAR, URHO, UMX, UMY, UMZ, UTEMP, UEINT, UEDEN, UFS, small_temp, small_dens, npassive, upass_map
+    use castro_module, only: NVAR, URHO, UMX, UMY, UMZ, UTEMP, UEINT, UEDEN, UFS, small_temp, small_dens, npassive, upass_map
 
     implicit none
 
@@ -200,7 +200,7 @@ contains
 
     use amrex_constants_module, only: ZERO
     use amrex_fort_module, only: rt => amrex_real
-    use meth_params_module, only: NVAR, URHO
+    use castro_module, only: NVAR, URHO
 
     implicit none
 
@@ -223,7 +223,7 @@ contains
 
     use amrex_constants_module, only: ZERO, ONE
     use amrex_fort_module, only: rt => amrex_real, amrex_max
-    use meth_params_module, only: NQ, QRHO, QU, QV, QW, QC, NQAUX
+    use castro_module, only: NQ, QRHO, QU, QV, QW, QC, NQAUX
 
     implicit none
 
@@ -287,12 +287,12 @@ contains
     use eos_type_module, only: eos_t, eos_input_re
     use amrex_constants_module, only: ZERO, HALF, ONE
     use amrex_fort_module, only: rt => amrex_real
-    use meth_params_module, only: NVAR, URHO, UMX, UMZ, &
-                                  UEDEN, UEINT, UTEMP, &
-                                  QRHO, QU, QV, QW, &
-                                  QREINT, QPRES, QTEMP, QGAME, QFS, QFX, &
-                                  NQ, QC, QGAMC, QDPDR, QDPDE, NQAUX, &
-                                  npassive, upass_map, qpass_map, small_dens
+    use castro_module, only: NVAR, URHO, UMX, UMZ, &
+                             UEDEN, UEINT, UTEMP, &
+                             QRHO, QU, QV, QW, &
+                             QREINT, QPRES, QTEMP, QGAME, QFS, QFX, &
+                             NQ, QC, QGAMC, QDPDR, QDPDE, NQAUX, &
+                             npassive, upass_map, qpass_map, small_dens
 
     implicit none
 
@@ -405,7 +405,7 @@ contains
     use network, only: nspec
     use amrex_constants_module, only: ZERO, ONE
     use amrex_fort_module, only: rt => amrex_real
-    use meth_params_module, only: NVAR, URHO, UFS
+    use castro_module, only: NVAR, URHO, UFS
 
     implicit none
 
@@ -451,7 +451,7 @@ contains
 
     use amrex_constants_module, only: FOURTH, ONE
     use amrex_fort_module, only: rt => amrex_real
-    use meth_params_module, only: QU, QV, QW, NQ
+    use castro_module, only: QU, QV, QW, NQ
 
     implicit none
 
@@ -509,7 +509,7 @@ contains
                       flux, f_lo, f_hi)
 
     use amrex_constants_module, only: ZERO, FOURTH
-    use meth_params_module, only: NVAR, UTEMP
+    use castro_module, only: NVAR, UTEMP
 
     implicit none
 
@@ -590,7 +590,7 @@ contains
                                        bind(c,name='ca_construct_hydro_update')
 
     use amrex_constants_module, only: HALF, ONE
-    use meth_params_module, only: NVAR, UEINT, NGDNV, GDPRES, GDU, GDV, GDW
+    use castro_module, only: NVAR, UEINT, NGDNV, GDPRES, GDU, GDV, GDW
 
     implicit none
 
@@ -665,7 +665,7 @@ contains
 
   subroutine scale_flux(lo, hi, flux, f_lo, f_hi, area, a_lo, a_hi, dt)
 
-    use meth_params_module, only: NVAR
+    use castro_module, only: NVAR
 
     implicit none
 

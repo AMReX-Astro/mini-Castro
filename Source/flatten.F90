@@ -8,7 +8,7 @@ contains
 
     use amrex_constants_module, only: ZERO, ONE
     use amrex_fort_module, only: rt => amrex_real
-    use meth_params_module, only: NQ, QU, QV, QW, QPRES
+    use castro_module, only: NQ, QU, QV, QW, QPRES
 
     implicit none
 

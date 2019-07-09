@@ -1,14 +1,14 @@
 module riemann_module
 
   use amrex_fort_module, only: rt => amrex_real
-  use meth_params_module, only: NQ, NQAUX, NVAR, QRHO, QU, QV, QW, &
-                                QPRES, QGAME, QREINT, QFS, &
-                                QFX, URHO, UMX, UMY, UMZ, UTEMP, UEDEN, UEINT, &
-                                UFS, UFX, &
-                                NGDNV, GDRHO, GDPRES, GDGAME, &
-                                QC, QGAMC, &
-                                small_dens, small_temp, &
-                                npassive, upass_map, qpass_map
+  use castro_module, only: NQ, NQAUX, NVAR, QRHO, QU, QV, QW, &
+                           QPRES, QGAME, QREINT, QFS, &
+                           QFX, URHO, UMX, UMY, UMZ, UTEMP, UEDEN, UEINT, &
+                           UFS, UFX, &
+                           NGDNV, GDRHO, GDPRES, GDGAME, &
+                           QC, QGAMC, &
+                           small_dens, small_temp, &
+                           npassive, upass_map, qpass_map
 
   implicit none
 

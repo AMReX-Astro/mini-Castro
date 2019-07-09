@@ -136,11 +136,6 @@ Castro::Castro (Amr&            papa,
     flux_crse_scale = -1.0;
     flux_fine_scale = 1.0;
 
-    // initialize the Godunov state array used in hydro -- we wait
-    // until here so that ngroups is defined (if needed) in
-    // rad_params_module
-    ca_init_godunov_indices();
-
     // NQ will be used to dimension the primitive variable state
     NQ = QVAR;
 
