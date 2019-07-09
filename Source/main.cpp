@@ -29,6 +29,10 @@ int
 main (int   argc,
       char* argv[])
 {
+    // Disable AMReX verbosity for the purposes of this benchmark.
+    amrex::SetVerbose(0);
+
+    // Initialize AMReX.
     amrex::Initialize(argc,argv);
 
     BL_PROFILE_VAR("main()", pmain);
@@ -37,6 +41,7 @@ main (int   argc,
 
     // Print out some information about this mini-app.
 
+    amrex::Print() << std::endl;
     amrex::Print() << "mini-Castro is an astrophysical 3D Sedov-Taylor blast wave benchmark." << std::endl;
     amrex::Print() << "The algorithm closely resembles that of the Castro code." << std::endl;
     amrex::Print() << std::endl;
@@ -116,6 +121,8 @@ main (int   argc,
     pp.query("max_level", max_level);
     pp_amr.add("max_level", max_level);
 
+    amrex::Print() << "Initializing AMR driver..." << std::endl << std::endl;
+
     Amr* amrptr = new Amr;
 
     amrex::Print() << "Starting simulation..." << std::endl << std::endl;
@@ -147,18 +154,17 @@ main (int   argc,
     ParallelDescriptor::ReduceRealMax(runtime_total,IOProc);
     ParallelDescriptor::ReduceRealMax(runtime_timestep,IOProc);
 
-    if (ParallelDescriptor::IOProcessor())
-    {
-	int nProcs = ParallelDescriptor::NProcs();
+    int nProcs = ParallelDescriptor::NProcs();
 #ifdef _OPENMP
-	nProcs *= omp_get_max_threads();
+    nProcs *= omp_get_max_threads();
 #endif
-	Real fom = Castro::num_zones_advanced / runtime_timestep / 1.e6;
+    Real fom = Castro::num_zones_advanced / runtime_timestep / 1.e6;
 
-        amrex::Print() << std::endl;
-        amrex::Print() << "  Figure of Merit (zones / usec): " << std::fixed << std::setprecision(3) << fom << "\n";
-        amrex::Print() << std::endl;
-    }
+    amrex::Print() << std::endl;
+    amrex::Print() << "Simulation completed!" << std::endl;
+    amrex::Print() << std::endl;
+    amrex::Print() << "Figure of Merit (zones / usec): " << std::fixed << std::setprecision(3) << fom << "\n";
+    amrex::Print() << std::endl;
 
     BL_PROFILE_VAR_STOP(pmain);
     BL_PROFILE_SET_RUN_TIME(dRunTime2);
