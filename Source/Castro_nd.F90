@@ -60,8 +60,6 @@ module castro_module
   ! NQ will be the total number of primitive variables, hydro + radiation
   integer, parameter :: NQ = QVAR
 
-  integer, allocatable :: qpass_map(:), upass_map(:)
-
   ! These are used for the Godunov state
   ! Note that the velocity indices here are picked to be the same value
   ! as in the primitive variable array
@@ -81,10 +79,6 @@ module castro_module
   real(rt), save :: outflow_data_new_time
   logical,  save :: outflow_data_allocated
   real(rt), save :: max_dist
-
-#ifdef AMREX_USE_CUDA
-  attributes(managed) :: upass_map, qpass_map
-#endif
 
   real(rt), parameter :: small_dens = 1.0d-12
   real(rt), parameter :: small_temp = 1.0d3
@@ -438,8 +432,6 @@ end subroutine ca_get_ngdnv
 
 subroutine ca_set_method_params() bind(C, name="ca_set_method_params")
 
-  use castro_module, only: qpass_map, upass_map, QVAR, NVAR, UFS, QFS
-  use network, only: nspec
   use eos_module, only: eos_init
 
   implicit none
@@ -449,32 +441,6 @@ subroutine ca_set_method_params() bind(C, name="ca_set_method_params")
   integer :: i
   integer :: ioproc
 
-  ! easy indexing for the passively advected quantities.  This
-  ! lets us loop over all groups (advected, species)
-  ! in a single loop.
-  allocate(qpass_map(QVAR))
-  allocate(upass_map(NVAR))
-
-  if (QFS > -1) then
-     do ispec = 1, nspec
-        upass_map(ispec) = UFS + ispec - 1
-        qpass_map(ispec) = QFS + ispec - 1
-     enddo
-  endif
-
   call eos_init()
 
 end subroutine ca_set_method_params
-
-
-
-subroutine ca_destroy_method_params() bind(C, name="ca_destroy_method_params")
-
-  use castro_module, only: qpass_map, upass_map
-
-  implicit none
-
-  deallocate(qpass_map)
-  deallocate(upass_map)
-
-end subroutine ca_destroy_method_params

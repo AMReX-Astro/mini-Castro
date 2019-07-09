@@ -7,8 +7,7 @@ module riemann_module
                            UFS, &
                            NGDNV, GDRHO, GDPRES, GDGAME, &
                            QC, QGAMC, &
-                           small_dens, small_temp, &
-                           upass_map, qpass_map
+                           small_dens, small_temp
 
   implicit none
 
@@ -48,7 +47,7 @@ contains
     integer  :: is_shock
     real(rt) :: cl, cr
 
-    integer :: n, nqp, ipassive
+    integer :: n, nqp, ispec
 
     real(rt) :: regdnv
     real(rt) :: rl, ul, v1l, v2l, pl, rel
@@ -253,10 +252,10 @@ contains
              flx(i,j,k,UEINT) = u_adv*regdnv
 
              ! passively advected quantities
-             do ipassive = 1, nspec
+             do ispec = 1, nspec
 
-                n  = upass_map(ipassive)
-                nqp = qpass_map(ipassive)
+                n  = UFS + ispec - 1
+                nqp = QFS + ispec - 1
 
                 if (ustar > ZERO) then
                    flx(i,j,k,n) = flx(i,j,k,URHO)*qm(i,j,k,nqp,idir)

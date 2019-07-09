@@ -56,8 +56,6 @@ Castro::variableCleanUp ()
 
     network_finalize();
 
-    ca_destroy_method_params();
-
     probinit_finalize();
 }
 

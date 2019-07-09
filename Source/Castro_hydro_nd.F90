@@ -154,7 +154,7 @@ contains
     use eos_type_module, only: eos_t, eos_input_rt
     use eos_module, only: eos
     use amrex_fort_module, only: rt => amrex_real
-    use castro_module, only: NVAR, URHO, UMX, UMY, UMZ, UTEMP, UEINT, UEDEN, UFS, small_temp, small_dens, upass_map
+    use castro_module, only: NVAR, URHO, UMX, UMY, UMZ, UTEMP, UEINT, UEDEN, UFS, small_temp, small_dens
 
     implicit none
 
@@ -162,7 +162,7 @@ contains
     real(rt), intent(inout) :: new_state(NVAR)
     integer,  intent(in   ) :: idx(3), lo(3), hi(3)
 
-    integer      :: n, ipassive
+    integer      :: n, ispec
     type (eos_t) :: eos_state
 
     !$gpu
@@ -172,8 +172,8 @@ contains
     ! equal to small_temp. We set the velocities to zero,
     ! though any choice here would be arbitrary.
 
-    do ipassive = 1, nspec
-       n = upass_map(ipassive)
+    do ispec = 1, nspec
+       n = UFS + ispec - 1
        new_state(n) = new_state(n) * (small_dens / new_state(URHO))
     end do
 
@@ -289,11 +289,11 @@ contains
     use amrex_constants_module, only: ZERO, HALF, ONE
     use amrex_fort_module, only: rt => amrex_real
     use castro_module, only: NVAR, URHO, UMX, UMZ, &
-                             UEDEN, UEINT, UTEMP, &
+                             UEDEN, UEINT, UTEMP, UFS, &
                              QRHO, QU, QV, QW, &
                              QREINT, QPRES, QTEMP, QGAME, QFS, QFX, &
                              NQ, QC, QGAMC, QDPDR, QDPDE, NQAUX, &
-                             upass_map, qpass_map, small_dens
+                             small_dens
 
     implicit none
 
@@ -310,7 +310,7 @@ contains
     real(rt), parameter :: dual_energy_eta1 = 1.e0_rt
 
     integer  :: i, j, k, g
-    integer  :: n, iq, ipassive
+    integer  :: n, iq, ispec
     real(rt) :: kineng, rhoinv
     real(rt) :: vel(3)
 
@@ -354,9 +354,9 @@ contains
     enddo
 
     ! Load passively advected quatities into q
-    do ipassive = 1, nspec
-       n  = upass_map(ipassive)
-       iq = qpass_map(ipassive)
+    do ispec = 1, nspec
+       n  = UFS + ispec - 1
+       iq = QFS + ispec - 1
        do k = lo(3), hi(3)
           do j = lo(2), hi(2)
              do i = lo(1), hi(1)
