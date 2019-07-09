@@ -71,15 +71,18 @@ main (int   argc,
     amrex::Print() << std::endl;
     amrex::Print() << "The simulation prints a Figure of Merit at the end which measures the simulation throughput." << std::endl;
     amrex::Print() << "The FOM measures the average number of zones advanced per microsecond (higher is better)." << std::endl;
+    amrex::Print() << "To disable printing the FOM, set fom = 0." << std::endl;
     amrex::Print() << "At the end of each step, the effective radius of the blast wave is calculated and printed." << std::endl;
     amrex::Print() << std::endl;
 
     int max_step = 10000000;
     Real stop_time = 1.0e-2;
+    int do_fom = 1;
 
     ParmParse pp;
-    pp.query("max_step",max_step);
-    pp.query("stop_time",stop_time);
+    pp.query("max_step", max_step);
+    pp.query("stop_time", stop_time);
+    pp.query("fom", do_fom);
 
     // Set the geometry parameters for this problem.
     // They are hardcoded for the Sedov blast wave
@@ -166,8 +169,10 @@ main (int   argc,
     amrex::Print() << std::endl;
     amrex::Print() << "Simulation completed!" << std::endl;
     amrex::Print() << std::endl;
-    amrex::Print() << "Figure of Merit (zones / usec): " << std::fixed << std::setprecision(3) << fom << "\n";
-    amrex::Print() << std::endl;
+    if (do_fom) {
+        amrex::Print() << "Figure of Merit (zones / usec): " << std::fixed << std::setprecision(3) << fom << "\n";
+        amrex::Print() << std::endl;
+    }
 
     BL_PROFILE_VAR_STOP(pmain);
     BL_PROFILE_SET_RUN_TIME(dRunTime2);
