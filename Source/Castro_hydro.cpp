@@ -46,7 +46,7 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
           // Convert the conservative state to the primitive variable state.
           // This fills both q and qaux.
 
-          q.resize(qbx, NQ);
+          q.resize(qbx, QVAR);
           Elixir elix_q = q.elixir();
 
           qaux.resize(qbx, NQAUX);
@@ -82,10 +82,10 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
                BL_TO_FORTRAN_ANYD(q),
                BL_TO_FORTRAN_ANYD(flatn));
 
-          qm.resize(tbx, 3*NQ);
+          qm.resize(tbx, 3*QVAR);
           Elixir elix_qm = qm.elixir();
 
-          qp.resize(tbx, 3*NQ);
+          qp.resize(tbx, 3*QVAR);
           Elixir elix_qp = qp.elixir();
 
           // Do PPM reconstruction to the zone edges.

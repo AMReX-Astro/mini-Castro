@@ -8,14 +8,14 @@ contains
 
     use amrex_constants_module, only: ZERO, ONE
     use amrex_fort_module, only: rt => amrex_real
-    use castro_module, only: NQ, QU, QV, QW, QPRES
+    use castro_module, only: QVAR, QU, QV, QW, QPRES
 
     implicit none
 
     integer,  intent(in   ) :: lo(3), hi(3)
     integer,  intent(in   ) :: q_lo(3), q_hi(3)
     integer,  intent(in   ) :: f_lo(3), f_hi(3)
-    real(rt), intent(in   ) :: q(q_lo(1):q_hi(1),q_lo(2):q_hi(2),q_lo(3):q_hi(3),NQ)
+    real(rt), intent(in   ) :: q(q_lo(1):q_hi(1),q_lo(2):q_hi(2),q_lo(3):q_hi(3),QVAR)
     real(rt), intent(inout) :: flatn(f_lo(1):f_hi(1),f_lo(2):f_hi(2),f_lo(3):f_hi(3))
 
     integer :: i, j, k, ishft

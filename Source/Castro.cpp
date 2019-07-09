@@ -29,7 +29,6 @@ long         Castro::num_zones_advanced = 0;
 
 int          Castro::QVAR          = -1;
 int          Castro::NQAUX         = -1;
-int          Castro::NQ            = -1;
 int          Castro::NGDNV         = -1;
 
 int          Castro::MOL_STAGES;
@@ -116,9 +115,6 @@ Castro::Castro (Amr&            papa,
 
     flux_crse_scale = -1.0;
     flux_fine_scale = 1.0;
-
-    // NQ will be used to dimension the primitive variable state
-    NQ = QVAR;
 
 }
 

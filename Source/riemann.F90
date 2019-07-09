@@ -1,7 +1,7 @@
 module riemann_module
 
   use amrex_fort_module, only: rt => amrex_real
-  use castro_module, only: NQ, NQAUX, NVAR, QRHO, QU, QV, QW, &
+  use castro_module, only: QVAR, NQAUX, NVAR, QRHO, QU, QV, QW, &
                            QPRES, QGAME, QREINT, QFS, &
                            QFX, URHO, UMX, UMY, UMZ, UTEMP, UEDEN, UEINT, &
                            UFS, &
@@ -35,8 +35,8 @@ contains
     integer,  intent(in   ) :: domlo(3), domhi(3)
     integer,  intent(in   ), value :: idir
 
-    real(rt), intent(in   ) :: qm(qm_lo(1):qm_hi(1),qm_lo(2):qm_hi(2),qm_lo(3):qm_hi(3),NQ,3)
-    real(rt), intent(in   ) :: qp(qp_lo(1):qp_hi(1),qp_lo(2):qp_hi(2),qp_lo(3):qp_hi(3),NQ,3)
+    real(rt), intent(in   ) :: qm(qm_lo(1):qm_hi(1),qm_lo(2):qm_hi(2),qm_lo(3):qm_hi(3),QVAR,3)
+    real(rt), intent(in   ) :: qp(qp_lo(1):qp_hi(1),qp_lo(2):qp_hi(2),qp_lo(3):qp_hi(3),QVAR,3)
     real(rt), intent(inout) :: qint(qe_lo(1):qe_hi(1),qe_lo(2):qe_hi(2),qe_lo(3):qe_hi(3),NGDNV)
     real(rt), intent(inout) :: flx(flx_lo(1):flx_hi(1),flx_lo(2):flx_hi(2),flx_lo(3):flx_hi(3),NVAR)
     real(rt), intent(in   ) :: qaux(qa_lo(1):qa_hi(1),qa_lo(2):qa_hi(2),qa_lo(3):qa_hi(3),NQAUX)

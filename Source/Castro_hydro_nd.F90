@@ -18,7 +18,7 @@ contains
                                bind(c,name='ca_construct_flux')
 
     use amrex_fort_module, only: rt => amrex_real
-    use castro_module, only: NVAR, NGDNV, NQAUX, NQ
+    use castro_module, only: NVAR, QVAR, NGDNV, NQAUX
     use riemann_module, only: cmpflx
 
     implicit none
@@ -38,8 +38,8 @@ contains
     real(rt), intent(in   ) :: uin(uin_lo(1):uin_hi(1), uin_lo(2):uin_hi(2), uin_lo(3):uin_hi(3), NVAR)
     real(rt), intent(in   ) :: div(div_lo(1):div_hi(1), div_lo(2):div_hi(2), div_lo(3):div_hi(3))
     real(rt), intent(in   ) :: qaux(qa_lo(1):qa_hi(1), qa_lo(2):qa_hi(2), qa_lo(3):qa_hi(3), NQAUX)
-    real(rt), intent(inout) :: qm(qm_lo(1):qm_hi(1),qm_lo(2):qm_hi(2),qm_lo(3):qm_hi(3),NQ,3)
-    real(rt), intent(inout) :: qp(qp_lo(1):qp_hi(1),qp_lo(2):qp_hi(2),qp_lo(3):qp_hi(3),NQ,3)
+    real(rt), intent(inout) :: qm(qm_lo(1):qm_hi(1),qm_lo(2):qm_hi(2),qm_lo(3):qm_hi(3),QVAR,3)
+    real(rt), intent(inout) :: qp(qp_lo(1):qp_hi(1),qp_lo(2):qp_hi(2),qp_lo(3):qp_hi(3),QVAR,3)
     real(rt), intent(inout) :: qint(qe_lo(1):qe_hi(1), qe_lo(2):qe_hi(2), qe_lo(3):qe_hi(3), NGDNV)
     real(rt), intent(inout) :: flux(f_lo(1):f_hi(1), f_lo(2):f_hi(2), f_lo(3):f_hi(3), NVAR)
     real(rt), intent(in   ) :: area(a_lo(1):a_hi(1), a_lo(2):a_hi(2), a_lo(3):a_hi(3))
@@ -224,7 +224,7 @@ contains
 
     use amrex_constants_module, only: ZERO, ONE
     use amrex_fort_module, only: rt => amrex_real, amrex_max
-    use castro_module, only: NQ, QRHO, QU, QV, QW, QC, NQAUX
+    use castro_module, only: QVAR, QRHO, QU, QV, QW, QC, NQAUX
 
     implicit none
 
@@ -232,7 +232,7 @@ contains
     integer,  intent(in   ) :: q_lo(3), q_hi(3)
     integer,  intent(in   ) :: qa_lo(3), qa_hi(3)
 
-    real(rt), intent(in   ) :: q(q_lo(1):q_hi(1),q_lo(2):q_hi(2),q_lo(3):q_hi(3),NQ)
+    real(rt), intent(in   ) :: q(q_lo(1):q_hi(1),q_lo(2):q_hi(2),q_lo(3):q_hi(3),QVAR)
     real(rt), intent(in   ) :: qaux(qa_lo(1):qa_hi(1),qa_lo(2):qa_hi(2),qa_lo(3):qa_hi(3),NQAUX)
     real(rt), intent(in   ) :: dt, dx(3)
     real(rt), intent(inout) :: courno
@@ -292,7 +292,7 @@ contains
                              UEDEN, UEINT, UTEMP, UFS, &
                              QRHO, QU, QV, QW, &
                              QREINT, QPRES, QTEMP, QGAME, QFS, QFX, &
-                             NQ, QC, QGAMC, QDPDR, QDPDE, NQAUX, &
+                             QVAR, QC, QGAMC, QDPDR, QDPDE, NQAUX, &
                              small_dens
 
     implicit none
@@ -303,7 +303,7 @@ contains
     integer, intent(in) :: qa_lo(3), qa_hi(3)
 
     real(rt), intent(in   ) :: uin(uin_lo(1):uin_hi(1),uin_lo(2):uin_hi(2),uin_lo(3):uin_hi(3),NVAR)
-    real(rt), intent(inout) :: q(q_lo(1):q_hi(1),q_lo(2):q_hi(2),q_lo(3):q_hi(3),NQ)
+    real(rt), intent(inout) :: q(q_lo(1):q_hi(1),q_lo(2):q_hi(2),q_lo(3):q_hi(3),QVAR)
     real(rt), intent(inout) :: qaux(qa_lo(1):qa_hi(1),qa_lo(2):qa_hi(2),qa_lo(3):qa_hi(3),NQAUX)
 
     real(rt), parameter :: small = 1.e-8_rt
@@ -451,7 +451,7 @@ contains
 
     use amrex_constants_module, only: FOURTH, ONE
     use amrex_fort_module, only: rt => amrex_real
-    use castro_module, only: QU, QV, QW, NQ
+    use castro_module, only: QU, QV, QW, QVAR
 
     implicit none
 
@@ -459,7 +459,7 @@ contains
     integer,  intent(in   ) :: q_lo(3), q_hi(3)
     integer,  intent(in   ) :: d_lo(3), d_hi(3)
     real(rt), intent(in   ) :: dx(3)
-    real(rt), intent(in   ) :: q(q_lo(1):q_hi(1),q_lo(2):q_hi(2),q_lo(3):q_hi(3),NQ)
+    real(rt), intent(in   ) :: q(q_lo(1):q_hi(1),q_lo(2):q_hi(2),q_lo(3):q_hi(3),QVAR)
     real(rt), intent(inout) :: div(d_lo(1):d_hi(1),d_lo(2):d_hi(2),d_lo(3):d_hi(3))
 
     integer  :: i, j, k

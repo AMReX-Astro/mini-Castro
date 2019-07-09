@@ -57,9 +57,6 @@ module castro_module
   integer, parameter :: QDPDR = 3
   integer, parameter :: QDPDE = 4
 
-  ! NQ will be the total number of primitive variables, hydro + radiation
-  integer, parameter :: NQ = QVAR
-
   ! These are used for the Godunov state
   ! Note that the velocity indices here are picked to be the same value
   ! as in the primitive variable array
@@ -70,15 +67,6 @@ module castro_module
   integer, parameter :: GDW = 4
   integer, parameter :: GDPRES = 5
   integer, parameter :: GDGAME = 6
-
-  integer, save :: numpts_1d
-
-  real(rt), save, allocatable :: outflow_data_old(:,:)
-  real(rt), save, allocatable :: outflow_data_new(:,:)
-  real(rt), save :: outflow_data_old_time
-  real(rt), save :: outflow_data_new_time
-  logical,  save :: outflow_data_allocated
-  real(rt), save :: max_dist
 
   real(rt), parameter :: small_dens = 1.0d-12
   real(rt), parameter :: small_temp = 1.0d3

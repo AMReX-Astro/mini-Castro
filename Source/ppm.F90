@@ -5,7 +5,7 @@ module ppm_module
 
   use amrex_constants_module, only: ZERO, SIXTH, HALF, ONE, TWO, THREE
   use amrex_fort_module, only: rt => amrex_real
-  use castro_module, only: NQ
+  use castro_module, only: QVAR
 
   implicit none
 
@@ -25,10 +25,10 @@ contains
     integer,  intent(in   ) :: qm_lo(3), qm_hi(3)
     integer,  intent(in   ) :: qp_lo(3), qp_hi(3)
 
-    real(rt), intent(in   ) :: s(s_lo(1):s_hi(1), s_lo(2):s_hi(2), s_lo(3):s_hi(3), NQ)
+    real(rt), intent(in   ) :: s(s_lo(1):s_hi(1), s_lo(2):s_hi(2), s_lo(3):s_hi(3),QVAR)
     real(rt), intent(in   ) :: flatn(f_lo(1):f_hi(1), f_lo(2):f_hi(2), f_lo(3):f_hi(3))
-    real(rt), intent(inout) :: qm(qm_lo(1):qm_hi(1),qm_lo(2):qm_hi(2),qm_lo(3):qm_hi(3),NQ,3)
-    real(rt), intent(inout) :: qp(qp_lo(1):qp_hi(1),qp_lo(2):qp_hi(2),qp_lo(3):qp_hi(3),NQ,3)
+    real(rt), intent(inout) :: qm(qm_lo(1):qm_hi(1),qm_lo(2):qm_hi(2),qm_lo(3):qm_hi(3),QVAR,3)
+    real(rt), intent(inout) :: qp(qp_lo(1):qp_hi(1),qp_lo(2):qp_hi(2),qp_lo(3):qp_hi(3),QVAR,3)
 
     ! local
     integer :: i, j, k, n
@@ -60,7 +60,7 @@ contains
     ! x-direction
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-    do n = 1, NQ
+    do n = 1, QVAR
        do k = lo(3), hi(3)
           do j = lo(2), hi(2)
              do i = lo(1), hi(1)
@@ -156,7 +156,7 @@ contains
     ! y-direction
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-    do n = 1, NQ
+    do n = 1, QVAR
        do k = lo(3), hi(3)
           do j = lo(2), hi(2)
              do i = lo(1), hi(1)
@@ -253,7 +253,7 @@ contains
     ! z-direction
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-    do n = 1, NQ
+    do n = 1, QVAR
        do k = lo(3), hi(3)
           do j = lo(2), hi(2)
              do i = lo(1), hi(1)
