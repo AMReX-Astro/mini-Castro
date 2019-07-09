@@ -10,13 +10,10 @@ CEXE_sources += CastroBld.cpp
 
 FEXE_headers += Castro_F.H
 
-F90EXE_sources += ppm.F90
-F90EXE_sources += Castro_mol.F90 
-F90EXE_sources += riemann.F90 
-F90EXE_sources += Prob.F90
 F90EXE_sources += Castro_util.F90
-F90EXE_sources += advection_util.F90
-F90EXE_sources += meth_params.F90
+F90EXE_sources += Castro_hydro_nd.F90 
+F90EXE_sources += ppm.F90
+F90EXE_sources += riemann.F90 
 F90EXE_sources += timestep.F90
 F90EXE_sources += flatten.F90
 F90EXE_sources += eos_type.F90
@@ -24,3 +21,5 @@ F90EXE_sources += eos.F90
 F90EXE_sources += actual_eos.F90
 F90EXE_sources += network.F90
 F90EXE_sources += actual_network.F90
+F90EXE_sources += meth_params.F90
+F90EXE_sources += Prob.F90
