@@ -1,6 +1,5 @@
 [![DOI](https://zenodo.org/badge/92557777.svg)](https://zenodo.org/badge/latestdoi/92557777)
 
-
 # mini-Castro
 
 mini-Castro is a stripped-down version of Castro meant to serve as a
@@ -10,11 +9,17 @@ Castro is available at:
 
 https://github.com/AMReX-Astro/Castro
 
-## Running on GPUs
+## Compiling
 
-mini-Castro runs its hydrodynamics advance on GPUs. The main physics kernels are ported using CUDA
-Fortran (supported on the PGI Fortran and IBM XL Fortran compilers). Below are instructions for
-compiling on various systems:
+mini-Castro depends on the AMReX library and uses its build system. Compiling
+is done in the Exec/ directory using `make`. By default a serial build will
+be generated. MPI can be enabled with `make USE_MPI=TRUE`, which will require
+valid MPI C/C++/Fortran compilers in your PATH. CUDA can be enabled by adding
+`USE_CUDA=TRUE`, which will require both `nvcc` and a CUDA Fortran compiler
+(either `pgfortran` or `xlf`). Parallel builds with `make -j` are acceptable.
+The compiler used is specified with COMP (PGI or IBM respectively).
+
+Below are instructions for compiling on various systems:
 
 ### Compiling on bender
 
@@ -30,33 +35,15 @@ module load gcc/7.3
 make CUDA_ARCH=70 COMPILE_CUDA_PATH=/usr/local/cuda-10.0 USE_MPI=FALSE USE_CUDA=TRUE COMP=PGI -j 4
 ```
 
-### Compiling on Titan (OLCF)
+### Compiling on Summitdev (OLCF)
 
-Nothing works.
-
-### Compiling CUDA Fortran on summitdev (OLCF)
-
-First, swap the `xl` module for `pgi` (IBM's xlf compiler is supported, but we have found
-that it results in much lower performance than pgfortran). Then load the CUDA 9 module. The latest
-versions of these modules tested on summitdev are:
-
-- pgi/17.10
-- cuda/9.0.69
-
-To compile with CUDA 8, use the following modules and also set
-`CUDA_VERSION=8.0` when running `make`:
-
-- pgi/17.9
-- cuda/8.0.61-1
-
-Then after setting the modules, in the GNUmakefile, set
-`USE_CUDA=TRUE` and type `make`. The code should now compile and run.
-
-*NOTE*: If using NVIDIA's profiling tool `nvprof` on mini-Castro with
-CUDA 8, it will likely encounter an error on summitdev. This is an MPI
-bug in CUDA 8, which is fixed in CUDA 9. To work around this problem,
-compile the code with CUDA 8, but before running, swap the CUDA 8
-module with CUDA 9. Now the code should run with `nvprof`.
+```
+# IBM's xlf compiler is supported, but we have found
+# that it results in much lower performance than pgfortran
+module swap xl pgi/17.10
+module load cuda/9.0.69
+make USE_CUDA=TRUE COMP=PGI -j 4
+```
 
 ### Running mini-Castro on a single GPU
 
