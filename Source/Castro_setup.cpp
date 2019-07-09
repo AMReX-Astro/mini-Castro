@@ -83,32 +83,7 @@ Castro::variableSetUp ()
   // Initialize the network
   network_init();
 
-  //
-  // Set number of state variables and pointers to components
-  //
-
-  int cnt = 0;
-  Density = cnt++;
-  Xmom = cnt++;
-  Ymom = cnt++;
-  Zmom = cnt++;
-  Eden = cnt++;
-  Eint = cnt++;
-  Temp = cnt++;
-
-  // Get the number of species from the network model.
-  ca_get_num_spec(&NumSpec);
-
-  if (NumSpec > 0) {
-      FirstSpec = cnt;
-      cnt += NumSpec;
-  }
-
-  NUM_STATE = cnt;
-
-  // Read in the input values to Fortran.
-
-  ca_set_method_params(Density, Xmom, Eden, Eint, Temp, FirstSpec);
+  ca_set_method_params();
 
   // Get the number of primitive variables from Fortran.
 
@@ -134,6 +109,7 @@ Castro::variableSetUp ()
   Vector<std::string> name(NUM_STATE);
 
   BCRec bc;
+  int cnt;
   cnt=0; set_scalar_bc(bc); bcs[cnt] = bc; name[cnt] = "density";
   cnt++; set_x_vel_bc(bc);  bcs[cnt] = bc; name[cnt] = "xmom";
   cnt++; set_y_vel_bc(bc);  bcs[cnt] = bc; name[cnt] = "ymom";

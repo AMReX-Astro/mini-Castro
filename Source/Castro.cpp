@@ -23,20 +23,9 @@
 
 using namespace amrex;
 
-int          Castro::NUM_STATE     = -1;
 int          Castro::NUM_GROW      = 4;
 
 long         Castro::num_zones_advanced = 0;
-
-int          Castro::Density       = -1;
-int          Castro::Eden          = -1;
-int          Castro::Eint          = -1;
-int          Castro::Temp          = -1;
-int          Castro::Xmom          = -1;
-int          Castro::Ymom          = -1;
-int          Castro::Zmom          = -1;
-int          Castro::NumSpec       = 0;
-int          Castro::FirstSpec     = -1;
 
 int          Castro::QVAR          = -1;
 int          Castro::NQAUX         = -1;

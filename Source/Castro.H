@@ -18,8 +18,11 @@
 using std::istream;
 using std::ostream;
 
+#define NumSpec 13
 
-enum StateType { State_Type = 0 };
+enum StateType { State_Type };
+
+enum Conserved { Density = 0, Xmom, Ymom, Zmom, Eden, Eint, Temp, FirstSpec, NUM_STATE = FirstSpec + NumSpec };
 
 //
 // AmrLevel-derived class for hyperbolic conservation equations for stellar media
@@ -178,14 +181,10 @@ public:
 
     void expand_state(amrex::MultiFab& S, amrex::Real time, int ng);
 
-    static int NUM_STATE;
-    static int Density, Xmom, Ymom, Zmom, Eden, Eint, Temp;
     static int QVAR;
     static int NQAUX;
     static int NQ;
     static int NGDNV;
-
-    static int FirstSpec, NumSpec;
 
     //
     // A record of how many cells we have advanced throughout the simulation

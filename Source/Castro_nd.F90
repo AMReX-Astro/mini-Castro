@@ -437,18 +437,14 @@ end subroutine ca_get_ngdnv
 
 
 
-subroutine ca_set_method_params(Density, Xmom, Eden, Eint, Temp, FirstSpec) &
-                                bind(C, name="ca_set_method_params")
+subroutine ca_set_method_params() bind(C, name="ca_set_method_params")
 
-  use castro_module
+  use castro_module, only: npassive, qpass_map, upass_map, QVAR, NVAR, UFS, QFS
   use network, only: nspec
   use eos_module, only: eos_init
-  use amrex_constants_module, only: ZERO, ONE
-  use amrex_fort_module, only: rt => amrex_real
 
   implicit none
 
-  integer, intent(in) :: Density, Xmom, Eden, Eint, Temp, FirstSpec
   integer :: ispec
 
   integer :: i
