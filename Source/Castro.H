@@ -230,15 +230,6 @@ public:
     static int       FirstAux,  NumAux;
 
     //
-    // This MultiFab is on the coarser level.  This is useful for the coarser level
-    // to mask out the finer level.  We only build this when it is needed.
-    // This coarse MultiFab has to live on the fine level because it must be updated
-    // even when only the fine level changes.
-    //
-    amrex::MultiFab fine_mask;
-    amrex::MultiFab& build_fine_mask();
-    
-    //
     // A record of how many cells we have advanced throughout the simulation
     //
     static long num_zones_advanced;

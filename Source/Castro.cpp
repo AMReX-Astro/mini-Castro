@@ -611,11 +611,7 @@ void
 Castro::post_regrid (int lbase,
                      int new_finest)
 {
-
     BL_PROFILE("Castro::post_regrid()");
-
-    fine_mask.clear();
-
 }
 
 void
@@ -965,39 +961,6 @@ Castro::computeTemp(MultiFab& State)
       ca_compute_temp(AMREX_INT_ANYD(bx.loVect()), AMREX_INT_ANYD(bx.hiVect()), BL_TO_FORTRAN_ANYD(State[mfi]));
     }
 
-}
-
-MultiFab&
-Castro::build_fine_mask()
-{
-    BL_ASSERT(level > 0); // because we are building a mask for the coarser level
-
-    if (!fine_mask.empty()) return fine_mask;
-
-    BoxArray baf = parent->boxArray(level);
-    baf.coarsen(crse_ratio);
-
-    const BoxArray& bac = parent->boxArray(level-1);
-    const DistributionMapping& dmc = parent->DistributionMap(level-1);
-    fine_mask.define(bac,dmc,1,0);
-    fine_mask.setVal(1.0);
-
-#ifdef _OPENMP
-#pragma omp parallel
-#endif
-    for (MFIter mfi(fine_mask); mfi.isValid(); ++mfi)
-    {
-        FArrayBox& fab = fine_mask[mfi];
-
-	const std::vector< std::pair<int,Box> >& isects = baf.intersections(fab.box());
-
-	for (int ii = 0; ii < isects.size(); ++ii)
-	{
-	    fab.setVal(0.0,isects[ii].second,0);
-	}
-    }
-
-    return fine_mask;
 }
 
 // Fill a version of the state with ng ghost zones from the state data.
