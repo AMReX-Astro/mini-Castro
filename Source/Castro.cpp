@@ -47,7 +47,6 @@ int          Castro::NumAdv        = 0;
 int          Castro::FirstAdv      = -1;
 
 int          Castro::QVAR          = -1;
-int          Castro::QRADVAR       = 0;
 int          Castro::NQAUX         = -1;
 int          Castro::NQ            = -1;
 int          Castro::NGDNV         = -1;
@@ -95,11 +94,6 @@ Castro::read_params ()
 
     int bndry_func_thread_safe = 1;
     StateDescriptor::setBndryFuncThreadSafety(bndry_func_thread_safe);
-
-}
-
-Castro::Castro ()
-{
 }
 
 Castro::Castro (Amr&            papa,
@@ -114,29 +108,8 @@ Castro::Castro (Amr&            papa,
 
     BL_PROFILE("Castro::Castro()");
 
-    buildMetrics();
+    // Initialize volume, area, flux arrays.
 
-    initMFs();
-
-    // initialize the Godunov state array used in hydro -- we wait
-    // until here so that ngroups is defined (if needed) in
-    // rad_params_module
-    ca_init_godunov_indices();
-
-    // NQ will be used to dimension the primitive variable state
-    // vector it will include the "pure" hydrodynamical variables +
-    // any radiation variables
-    NQ = QVAR + QRADVAR;
-
-}
-
-Castro::~Castro ()
-{
-}
-
-void
-Castro::buildMetrics ()
-{
     volume.clear();
     volume.define(grids,dmap,1,NUM_GROW);
     geom.GetVolume(volume);
@@ -147,13 +120,7 @@ Castro::buildMetrics ()
 	area[dir].define(getEdgeBoxArray(dir),dmap,1,NUM_GROW);
         geom.GetFaceArea(area[dir],dir);
     }
-}
 
-// Initialize the MultiFabs and flux registers that live as class members.
-
-void
-Castro::initMFs()
-{
     fluxes.resize(3);
 
     for (int dir = 0; dir < BL_SPACEDIM; ++dir)
@@ -171,6 +138,18 @@ Castro::initMFs()
     flux_crse_scale = -1.0;
     flux_fine_scale = 1.0;
 
+    // initialize the Godunov state array used in hydro -- we wait
+    // until here so that ngroups is defined (if needed) in
+    // rad_params_module
+    ca_init_godunov_indices();
+
+    // NQ will be used to dimension the primitive variable state
+    NQ = QVAR;
+
+}
+
+Castro::~Castro ()
+{
 }
 
 void
@@ -623,13 +602,21 @@ Castro::reflux(int crse_level, int fine_level)
 void
 Castro::avgDown ()
 {
+    BL_PROFILE("Castro::avgDown()");
 
-  BL_PROFILE("Castro::avgDown()");
+    if (level == parent->finestLevel()) return;
 
-  if (level == parent->finestLevel()) return;
+    Castro& fine_lev = getLevel(level+1);
 
-  avgDown(State_Type);
+    const Geometry& fgeom = fine_lev.geom;
+    const Geometry& cgeom =          geom;
 
+    MultiFab& S_crse = get_new_data(State_Type);
+    MultiFab& S_fine = fine_lev.get_new_data(State_Type);
+
+    amrex::average_down(S_fine, S_crse,
+                        fgeom, cgeom,
+                        0, S_fine.nComp(), fine_ratio);
 }
 
 void
@@ -708,26 +695,6 @@ Castro::enforce_min_density (MultiFab& S_old, MultiFab& S_new)
 
     }
 
-}
-
-void
-Castro::avgDown (int state_indx)
-{
-    BL_PROFILE("Castro::avgDown(state_indx)");
-
-    if (level == parent->finestLevel()) return;
-
-    Castro& fine_lev = getLevel(level+1);
-
-    const Geometry& fgeom = fine_lev.geom;
-    const Geometry& cgeom =          geom;
-
-    MultiFab&  S_crse   = get_new_data(state_indx);
-    MultiFab&  S_fine   = fine_lev.get_new_data(state_indx);
-
-    amrex::average_down(S_fine, S_crse,
-			 fgeom, cgeom,
-			 0, S_fine.nComp(), fine_ratio);
 }
 
 void

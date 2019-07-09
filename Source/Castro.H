@@ -33,7 +33,7 @@ public:
     //
     //Default constructor.  Builds invalid object.
     //
-    Castro ();
+    Castro () {}
     //
     //The basic constructor.
     //
@@ -77,20 +77,6 @@ public:
     // Initialize grid data at problem start-up.
     //
     virtual void initData () override;
-
-    //
-    // Get problem metrics.
-    //
-    amrex::MultiFab* Area ();
-    amrex::MultiFab& Area (int dir);
-    //
-    // The volume of the multifab.
-    //
-    amrex::MultiFab& Volume ();
-    //
-    // Return the n'th fluxes MultiFab.
-    //
-    amrex::MultiFab& Fluxes (int dir);
     //
     // Set time levels of state data.
     //
@@ -205,25 +191,22 @@ public:
 
     void computeTemp (amrex::MultiFab& State);
 
-    amrex::Real volWgtSum (const std::string& name, amrex::Real time, bool local=false, bool finemask=true);
-
     void add_force_to_sources (amrex::MultiFab& force, amrex::MultiFab& sources, amrex::MultiFab& state);
 
     void apply_source_to_state (amrex::MultiFab& state, amrex::MultiFab& source, amrex::Real dt);
 
     void expand_state(amrex::MultiFab& S, amrex::Real time, int ng);
 
-    static int       NUM_STATE;
-    static int       Density, Xmom, Ymom, Zmom, Eden, Eint, Temp;
-    static int       QVAR;
-    static int       QRADVAR;
-    static int       NQAUX;
-    static int       NQ;
-    static int       NGDNV;
+    static int NUM_STATE;
+    static int Density, Xmom, Ymom, Zmom, Eden, Eint, Temp;
+    static int QVAR;
+    static int NQAUX;
+    static int NQ;
+    static int NGDNV;
 
-    static int       FirstAdv,  NumAdv;
-    static int       FirstSpec, NumSpec;
-    static int       FirstAux,  NumAux;
+    static int FirstAdv,  NumAdv;
+    static int FirstSpec, NumSpec;
+    static int FirstAux,  NumAux;
 
     //
     // A record of how many cells we have advanced throughout the simulation
@@ -297,21 +280,11 @@ protected:
 
     void avgDown ();
 
-    void avgDown (int state_indx);
-
-    void buildMetrics ();
-
-    void initMFs ();
-
-    void sum_integrated_quantities ();
-
-    void write_info ();
-
     //
     // The data.
     //
-    amrex::MultiFab             volume;
-    amrex::MultiFab             area[BL_SPACEDIM];
+    amrex::MultiFab volume;
+    amrex::MultiFab area[3];
 
     //
     // Keep track of which AMR iteration we're on.
@@ -321,7 +294,6 @@ protected:
     //
     // Static data members.
     //
-    static int              sum_interval;
     static amrex::ErrorList err_list;
     static int              NUM_GROW;
 
