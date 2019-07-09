@@ -38,7 +38,7 @@ public:
     //The basic constructor.
     //
     Castro (amrex::Amr&            papa,
-            int             lev,
+            int                    lev,
             const amrex::Geometry& level_geom,
             const amrex::BoxArray& bl,
             const amrex::DistributionMapping& dm,
@@ -47,20 +47,6 @@ public:
     //The destructor.
     //
     virtual ~Castro () override;
-
-    /*A string written as the first item in writePlotFile() at
-               level zero. It is so we can distinguish between different
-               types of plot files. For Castro it has the form: Castro-Vnnn
-    */
-    virtual std::string thePlotFileType () const override;
-
-    //
-    //Write a plotfile to specified directory.
-    //
-    virtual void writePlotFile (const std::string& dir,
-                                ostream&       os,
-                                amrex::VisMF::How     how) override;
-
     //
     // Define data descriptors.
     //
