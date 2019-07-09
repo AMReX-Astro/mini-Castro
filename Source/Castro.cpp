@@ -181,28 +181,16 @@ Castro::initData ()
 	amrex::Abort("We don't support dx != dy != dz");
     }
 
+    for (MFIter mfi(S_new); mfi.isValid(); ++mfi)
     {
-       for (MFIter mfi(S_new); mfi.isValid(); ++mfi)
-       {
-          const Box& box = mfi.validbox();
+        const Box& box = mfi.validbox();
 
 #pragma gpu
-          ca_initdata
-              (AMREX_INT_ANYD(box.loVect()), AMREX_INT_ANYD(box.hiVect()),
-               BL_TO_FORTRAN_ANYD(S_new[mfi]), AMREX_REAL_ANYD(dx),
-               AMREX_REAL_ANYD(problo), AMREX_REAL_ANYD(probhi));
-       }
-
-       enforce_consistent_e(S_new);
-
-       // Do a FillPatch so that we can get the ghost zones filled.
-
-       int ng = S_new.nGrow();
-
-       if (ng > 0)
-	   AmrLevel::FillPatch(*this, S_new, ng, cur_time, State_Type, 0, S_new.nComp());
+        ca_initdata
+            (AMREX_INT_ANYD(box.loVect()), AMREX_INT_ANYD(box.hiVect()),
+             BL_TO_FORTRAN_ANYD(S_new[mfi]), AMREX_REAL_ANYD(dx),
+             AMREX_REAL_ANYD(problo), AMREX_REAL_ANYD(probhi));
     }
-
 }
 
 void
@@ -627,27 +615,6 @@ Castro::normalize_species (MultiFab& S_new)
        ca_normalize_species
            (BL_TO_FORTRAN_ANYD(S_new[mfi]), 
             AMREX_INT_ANYD(bx.loVect()), AMREX_INT_ANYD(bx.hiVect()));
-    }
-
-}
-
-void
-Castro::enforce_consistent_e (MultiFab& S)
-{
-
-  BL_PROFILE("Castro::enforce_consistent_e()");
-
-#ifdef _OPENMP
-#pragma omp parallel
-#endif
-    for (MFIter mfi(S,true); mfi.isValid(); ++mfi)
-    {
-        const Box& box     = mfi.tilebox();
-        const int* lo      = box.loVect();
-        const int* hi      = box.hiVect();
-
-#pragma gpu
-        ca_enforce_consistent_e(AMREX_INT_ANYD(box.loVect()), AMREX_INT_ANYD(box.hiVect()), BL_TO_FORTRAN_ANYD(S[mfi]));
     }
 
 }

@@ -65,29 +65,8 @@ extern "C"
   void ca_compute_temp
     (const int* lo, const int* hi, const BL_FORT_FAB_ARG_3D(state));
 
-  void ca_enforce_consistent_e
-    (const int* lo, const int* hi, BL_FORT_FAB_ARG_3D(state));
-
   void ca_reset_internal_e
     (const int* lo, const int* hi, BL_FORT_FAB_ARG_3D(S_new));
-
-  void ca_xmomfill
-    (BL_FORT_FAB_ARG(state),
-     const int dlo[], const int dhi[],
-     const amrex::Real dx[], const amrex::Real glo[],
-     const amrex::Real* time, const int bc[]);
-
-  void ca_ymomfill
-    (BL_FORT_FAB_ARG(state),
-     const int dlo[], const int dhi[],
-     const amrex::Real dx[], const amrex::Real glo[],
-     const amrex::Real* time, const int bc[]);
-
-  void ca_zmomfill
-    (BL_FORT_FAB_ARG(state),
-     const int dlo[], const int dhi[],
-     const amrex::Real dx[], const amrex::Real glo[],
-     const amrex::Real* time, const int bc[]);
 
   void ca_estdt
     (const int* lo, const int* hi,
