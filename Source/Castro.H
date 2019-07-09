@@ -186,7 +186,6 @@ public:
     static int NGDNV;
 
     static int FirstSpec, NumSpec;
-    static int FirstAux,  NumAux;
 
     //
     // A record of how many cells we have advanced throughout the simulation

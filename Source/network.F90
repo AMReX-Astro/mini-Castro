@@ -45,10 +45,6 @@ contains
     allocate(aion_inv(nspec))
 
     ! First, we call the specific network initialization.
-    ! This should set the number of species and number of
-    ! aux variables, and the components of the species.
-    ! Note that the network MUST define nspec and naux
-    ! as parameters, or else the compiler will throw an error.
 
     call actual_network_init()
 
@@ -56,10 +52,6 @@ contains
 
     if ( nspec .le. 0 ) then
        call amrex_error("Network cannot have a negative number of species.")
-    endif
-
-    if ( naux .lt. 0 ) then
-       call amrex_error("Network cannot have a negative number of auxiliary variables.")
     endif
 
     aion_inv(:) = ONE/aion(:)

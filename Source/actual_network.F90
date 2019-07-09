@@ -6,7 +6,6 @@ module actual_network
 
   integer, parameter :: nspec = 13
   integer, parameter :: nspec_evolve = 13
-  integer, parameter :: naux  = 0
 
   integer, parameter :: ihe4  = 1
   integer, parameter :: ic12  = 2
@@ -31,7 +30,6 @@ module actual_network
 
   character (len=16), save :: spec_names(nspec)
   character (len= 5), save :: short_spec_names(nspec)
-  character (len= 5), save :: short_aux_names(naux)
 
   character (len=32), parameter :: network_name = "aprox13"
 

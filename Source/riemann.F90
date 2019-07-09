@@ -4,7 +4,7 @@ module riemann_module
   use castro_module, only: NQ, NQAUX, NVAR, QRHO, QU, QV, QW, &
                            QPRES, QGAME, QREINT, QFS, &
                            QFX, URHO, UMX, UMY, UMZ, UTEMP, UEDEN, UEINT, &
-                           UFS, UFX, &
+                           UFS, &
                            NGDNV, GDRHO, GDPRES, GDGAME, &
                            QC, QGAMC, &
                            small_dens, small_temp, &
@@ -23,7 +23,7 @@ contains
                     flx, flx_lo, flx_hi, &
                     qaux, qa_lo, qa_hi)
 
-    use network, only: nspec, naux
+    use network, only: nspec
     use amrex_fort_module, only: rt => amrex_real
     use amrex_constants_module, only: ZERO, HALF, ONE
 

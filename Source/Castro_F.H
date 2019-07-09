@@ -18,13 +18,9 @@ extern "C"
 
   void ca_get_num_spec(int* nspec);
 
-  void ca_get_num_aux(int* naux);
-
   void ca_get_spec_names(int* spec_names, int* ispec, int* len);
 
   void ca_get_spec_az(int* ispec, amrex::Real* A, amrex::Real* Z);
-
-  void ca_get_aux_names(int* aux_names, int* iaux, int* len);
 
   void ca_get_qvar(int* qvar);
 
@@ -36,7 +32,7 @@ extern "C"
     (const int& Density, const int& Xmom, 
      const int& Eden,    const int& Eint, 
      const int& Temp,
-     const int& FirstSpec, const int& FirstAux);
+     const int& FirstSpec);
 
   void ca_destroy_method_params();
 

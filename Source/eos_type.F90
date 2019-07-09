@@ -1,11 +1,11 @@
 module eos_type_module
 
   use amrex_fort_module, only: rt => amrex_real
-  use network, only: nspec, naux
+  use network, only: nspec
 
   implicit none
 
-  private :: rt, nspec, naux
+  private :: rt, nspec
 
   integer, parameter :: eos_input_rt = 1  ! rho, T are inputs
   integer, parameter :: eos_input_rh = 2  ! rho, h are inputs
@@ -125,7 +125,6 @@ module eos_type_module
     real(rt) :: h
     real(rt) :: s
     real(rt) :: xn(nspec)
-    real(rt) :: aux(naux)
 
     real(rt) :: dpdT
     real(rt) :: dpdr

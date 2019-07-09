@@ -104,13 +104,11 @@ Castro::variableSetUp ()
       cnt += NumSpec;
   }
 
-  NumAux = 0;
-
   NUM_STATE = cnt;
 
   // Read in the input values to Fortran.
 
-  ca_set_method_params(Density, Xmom, Eden, Eint, Temp, FirstSpec, FirstAux);
+  ca_set_method_params(Density, Xmom, Eden, Eint, Temp, FirstSpec);
 
   // Get the number of primitive variables from Fortran.
 

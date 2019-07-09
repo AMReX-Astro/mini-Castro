@@ -56,13 +56,15 @@ contains
 
   end subroutine ca_construct_flux
 
+
+
   subroutine ca_enforce_minimum_density(uin,uin_lo,uin_hi, &
                                         uout,uout_lo,uout_hi, &
                                         vol,vol_lo,vol_hi, &
                                         lo,hi) &
                                         bind(c,name='ca_enforce_minimum_density')
 
-    use network, only: nspec, naux
+    use network, only: nspec
     use amrex_constants_module, only: ZERO
     use amrex_fort_module, only: rt => amrex_real, amrex_min
     use castro_module, only: NVAR, URHO, UEINT, UEDEN, small_dens
@@ -148,7 +150,7 @@ contains
   subroutine reset_to_small_state(old_state, new_state, idx, lo, hi)
 
     use amrex_constants_module, only: ZERO
-    use network, only: nspec, naux
+    use network, only: nspec
     use eos_type_module, only: eos_t, eos_input_rt
     use eos_module, only: eos
     use amrex_fort_module, only: rt => amrex_real
@@ -178,7 +180,6 @@ contains
     eos_state % rho = small_dens
     eos_state % T   = small_temp
     eos_state % xn  = new_state(UFS:UFS+nspec-1) / small_dens
-    eos_state % aux = new_state(UFS:UFS+naux-1) / small_dens
 
     call eos(eos_input_rt, eos_state)
 
@@ -282,7 +283,7 @@ contains
                         q,     q_lo,   q_hi, &
                         qaux, qa_lo,  qa_hi) bind(c,name='ca_ctoprim')
 
-    use actual_network, only: nspec, naux
+    use actual_network, only: nspec
     use eos_module, only: eos
     use eos_type_module, only: eos_t, eos_input_re
     use amrex_constants_module, only: ZERO, HALF, ONE
@@ -374,7 +375,6 @@ contains
              eos_state % rho = q(i,j,k,QRHO  )
              eos_state % e   = q(i,j,k,QREINT)
              eos_state % xn  = q(i,j,k,QFS:QFS+nspec-1)
-             eos_state % aux = q(i,j,k,QFX:QFX+naux-1)
 
              call eos(eos_input_re, eos_state)
 

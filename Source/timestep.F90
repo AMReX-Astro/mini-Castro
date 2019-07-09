@@ -10,12 +10,12 @@ contains
 
   subroutine ca_estdt(lo,hi,u,u_lo,u_hi,dx,dt) bind(c,name='ca_estdt')
 
-    use network, only: nspec, naux
+    use network, only: nspec
     use eos_module, only: eos
     use eos_type_module, only: eos_t, eos_input_re
     use amrex_constants_module, only: ONE
     use amrex_fort_module, only: rt => amrex_real, amrex_min
-    use castro_module, only: NVAR, URHO, UMX, UMY, UMZ, UEINT, UTEMP, UFS, UFX
+    use castro_module, only: NVAR, URHO, UMX, UMY, UMZ, UEINT, UTEMP, UFS
 
     implicit none
 
@@ -43,7 +43,6 @@ contains
              eos_state % T   = u(i,j,k,UTEMP)
              eos_state % e   = u(i,j,k,UEINT) * rhoInv
              eos_state % xn  = u(i,j,k,UFS:UFS+nspec-1) * rhoInv
-             eos_state % aux = u(i,j,k,UFX:UFX+naux-1) * rhoInv
 
              call eos(eos_input_re, eos_state)
 

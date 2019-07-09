@@ -38,9 +38,6 @@ int          Castro::Zmom          = -1;
 int          Castro::NumSpec       = 0;
 int          Castro::FirstSpec     = -1;
 
-int          Castro::NumAux        = 0;
-int          Castro::FirstAux      = -1;
-
 int          Castro::QVAR          = -1;
 int          Castro::NQAUX         = -1;
 int          Castro::NQ            = -1;

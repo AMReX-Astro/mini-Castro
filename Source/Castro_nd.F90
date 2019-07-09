@@ -1,7 +1,7 @@
 module castro_module
 
   use amrex_fort_module, only: rt => amrex_real
-  use actual_network, only: nspec, naux
+  use actual_network, only: nspec
 
   implicit none
 
@@ -13,7 +13,7 @@ module castro_module
   integer, parameter :: NTHERM = 7
 
   ! NVAR  : number of total variables in initial system  
-  integer, parameter :: NVAR = NTHERM + nspec + naux
+  integer, parameter :: NVAR = NTHERM + nspec
 
   ! We use these to index into the state "U"
   integer, parameter :: URHO = 1
@@ -23,9 +23,7 @@ module castro_module
   integer, parameter :: UEDEN = 5
   integer, parameter :: UEINT = 6
   integer, parameter :: UTEMP = 7 ! == NTHERM
-  integer, parameter :: UFA = 1
   integer, parameter :: UFS = NTHERM + 1
-  integer, parameter :: UFX = 1
 
   !---------------------------------------------------------------------
   ! primitive state components
@@ -35,7 +33,7 @@ module castro_module
   integer, parameter :: QTHERM = NTHERM + 1 ! the + 1 is for QGAME which is always defined in primitive mode
 
   ! QVAR  : number of total variables in primitive form
-  integer, parameter :: QVAR = QTHERM + nspec + naux
+  integer, parameter :: QVAR = QTHERM + nspec
 
   ! We use these to index into the state "Q"
   integer, parameter :: QRHO = 1
@@ -99,7 +97,7 @@ contains
 
     use eos_module, only: eos
     use eos_type_module, only: eos_t, eos_input_re, eos_input_rt
-    use network, only: nspec, naux
+    use network, only: nspec
     use amrex_constants_module, only: ZERO, HALF, ONE
 
     implicit none
@@ -137,7 +135,6 @@ contains
                    eos_state % rho   = u(i,j,k,URHO)
                    eos_state % T     = small_temp
                    eos_state % xn(:) = u(i,j,k,UFS:UFS+nspec-1) * rhoInv
-                   eos_state % aux(1:naux) = u(i,j,k,UFX:UFX+naux-1) * rhoInv
 
                    call eos(eos_input_rt, eos_state)
 
@@ -162,7 +159,6 @@ contains
                    eos_state % rho   = u(i,j,k,URHO)
                    eos_state % T     = small_temp
                    eos_state % xn(:) = u(i,j,k,UFS:UFS+nspec-1) * rhoInv
-                   eos_state % aux(1:naux) = u(i,j,k,UFX:UFX+naux-1) * rhoInv
 
                    call eos(eos_input_rt, eos_state)
 
@@ -183,7 +179,7 @@ contains
 
   subroutine ca_compute_temp(lo,hi,state,s_lo,s_hi) bind(c,name='ca_compute_temp')
 
-    use network, only: nspec, naux
+    use network, only: nspec
     use eos_module, only: eos
     use eos_type_module, only: eos_input_re, eos_t
     use amrex_constants_module, only: ZERO, ONE
@@ -231,7 +227,6 @@ contains
              eos_state % T   = state(i,j,k,UTEMP) ! Initial guess for the EOS
              eos_state % e   = state(i,j,k,UEINT) * rhoInv
              eos_state % xn  = state(i,j,k,UFS:UFS+nspec-1) * rhoInv
-             eos_state % aux = state(i,j,k,UFX:UFX+naux-1) * rhoInv
 
              call eos(eos_input_re, eos_state)
 
@@ -355,21 +350,6 @@ end subroutine ca_get_num_spec
 
 
 
-subroutine ca_get_num_aux(naux_out) bind(C, name="ca_get_num_aux")
-
-  use network, only: naux
-  use amrex_fort_module, only: rt => amrex_real
-
-  implicit none
-
-  integer, intent(out) :: naux_out
-
-  naux_out = naux
-
-end subroutine ca_get_num_aux
-
-
-
 subroutine ca_get_spec_names(spec_names,ispec,len) &
      bind(C, name="ca_get_spec_names")
 
@@ -410,31 +390,6 @@ subroutine ca_get_spec_az(ispec,A,Z) bind(C, name="ca_get_spec_az")
   Z = zion(ispec+1)
 
 end subroutine ca_get_spec_az
-
-
-
-subroutine ca_get_aux_names(aux_names,iaux,len) &
-     bind(C, name="ca_get_aux_names")
-
-  use network, only: naux, short_aux_names
-  use amrex_fort_module, only: rt => amrex_real
-
-  implicit none
-
-  integer, intent(in   ) :: iaux
-  integer, intent(inout) :: len
-  integer, intent(inout) :: aux_names(len)
-
-  ! Local variables
-  integer   :: i
-
-  len = len_trim(short_aux_names(iaux+1))
-
-  do i = 1,len
-     aux_names(i) = ichar(short_aux_names(iaux+1)(i:i))
-  end do
-
-end subroutine ca_get_aux_names
 
 
 
@@ -482,26 +437,25 @@ end subroutine ca_get_ngdnv
 
 
 
-subroutine ca_set_method_params(Density,Xmom,Eden,Eint,Temp, &
-                                FirstSpec,FirstAux) &
+subroutine ca_set_method_params(Density, Xmom, Eden, Eint, Temp, FirstSpec) &
                                 bind(C, name="ca_set_method_params")
 
   use castro_module
-  use network, only: nspec, naux
+  use network, only: nspec
   use eos_module, only: eos_init
   use amrex_constants_module, only: ZERO, ONE
   use amrex_fort_module, only: rt => amrex_real
 
   implicit none
 
-  integer, intent(in) :: Density, Xmom, Eden, Eint, Temp, FirstSpec, FirstAux
+  integer, intent(in) :: Density, Xmom, Eden, Eint, Temp, FirstSpec
   integer :: ispec
 
   integer :: i
   integer :: ioproc
 
   ! easy indexing for the passively advected quantities.  This
-  ! lets us loop over all groups (advected, species, aux)
+  ! lets us loop over all groups (advected, species)
   ! in a single loop.
   allocate(qpass_map(QVAR))
   allocate(upass_map(NVAR))
@@ -510,11 +464,11 @@ subroutine ca_set_method_params(Density,Xmom,Eden,Eint,Temp, &
   npassive = 0
 
   if (QFS > -1) then
-     do ispec = 1, nspec+naux
+     do ispec = 1, nspec
         upass_map(npassive + ispec) = UFS + ispec - 1
         qpass_map(npassive + ispec) = QFS + ispec - 1
      enddo
-     npassive = npassive + nspec + naux
+     npassive = npassive + nspec
   endif
 
   call eos_init()
