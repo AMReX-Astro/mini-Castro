@@ -273,8 +273,6 @@ protected:
 
     static amrex::IntVect hydro_tile_size;
 
-    static int num_state_type;
-
 };
 
 inline

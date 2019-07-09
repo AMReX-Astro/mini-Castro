@@ -145,8 +145,6 @@ Castro::variableSetUp ()
 			bcs,
 			BndryFunc(ca_denfill,ca_hypfill));
 
-  num_state_type = desc_lst.size();
-
   // method of lines Butcher tableau
 #define SECONDORDER_TVD
 

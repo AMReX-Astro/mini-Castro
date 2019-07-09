@@ -204,19 +204,8 @@ Castro::initialize_advance(Real time, Real dt, int amr_iteration, int amr_ncycle
 
     // Swap the new data from the last timestep into the old state data.
 
-    for (int k = 0; k < num_state_type; k++) {
-
-	// The following is a hack to make sure that we only
-	// ever have new data for a few state types that only
-	// ever need new time data; by doing a swap now, we'll
-	// guarantee that allocOldData() does nothing. We do
-	// this because we never need the old data, so we
-	// don't want to allocate memory for it.
-
-	state[k].allocOldData();
-	state[k].swapTimeLevels(dt);
-
-    }
+    state[State_Type].allocOldData();
+    state[State_Type].swapTimeLevels(dt);
 
     // Ensure data is valid before beginning advance. This addresses
     // the fact that we may have new data on this level that was interpolated

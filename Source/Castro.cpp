@@ -42,8 +42,6 @@ IntVect      Castro::hydro_tile_size(1024000,1024000,1024000);
 IntVect      Castro::hydro_tile_size(1024,16,16);
 #endif
 
-int          Castro::num_state_type = 0;
-
 // Note: Castro::variableSetUp is in Castro_setup.cpp
 
 void
@@ -181,11 +179,8 @@ Castro::init (AmrLevel &old)
     Real dt_old    = cur_time - prev_time;
     setTimeLevel(cur_time,dt_old,dt_new);
 
-    for (int s = 0; s < num_state_type; ++s) {
-	MultiFab& state_MF = get_new_data(s);
-	FillPatch(old, state_MF, state_MF.nGrow(), cur_time, s, 0, state_MF.nComp());
-    }
-
+    MultiFab& state_MF = get_new_data(State_Type);
+    FillPatch(old, state_MF, state_MF.nGrow(), cur_time, State_Type, 0, state_MF.nComp());
 }
 
 //
@@ -207,10 +202,8 @@ Castro::init ()
 
     setTimeLevel(time,dt_old,dt);
 
-    for (int s = 0; s < num_state_type; ++s) {
-	MultiFab& state_MF = get_new_data(s);
-	FillCoarsePatch(state_MF, 0, cur_time, s, 0, state_MF.nComp());
-    }
+    MultiFab& state_MF = get_new_data(State_Type);
+    FillCoarsePatch(state_MF, 0, cur_time, State_Type, 0, state_MF.nComp());
 }
 
 Real
@@ -628,8 +621,7 @@ Castro::enforce_min_density (MultiFab& S_old, MultiFab& S_new)
 void
 Castro::allocOldData ()
 {
-    for (int k = 0; k < num_state_type; k++)
-        state[k].allocOldData();
+    state[State_Type].allocOldData();
 }
 
 void
