@@ -389,6 +389,8 @@ end subroutine ca_init_godunov_indices
 
 module castro_util_module
 
+  use amrex_fort_module, only: rt => amrex_real
+
   implicit none
 
 contains
@@ -396,7 +398,6 @@ contains
   subroutine ca_enforce_consistent_e(lo,hi,state,s_lo,s_hi) bind(c,name='ca_enforce_consistent_e')
 
     use amrex_constants_module, only: HALF, ONE
-    use amrex_fort_module, only: rt => amrex_real
     use meth_params_module, only: NVAR, URHO, UMX, UMY, UMZ, UEDEN, UEINT
 
     implicit none
@@ -440,7 +441,6 @@ contains
     use eos_type_module, only: eos_t, eos_input_re, eos_input_rt
     use network, only: nspec, naux
     use amrex_constants_module, only: ZERO, HALF, ONE
-    use amrex_fort_module, only: rt => amrex_real
     use meth_params_module, only: NVAR, URHO, UMX, UMY, UMZ, UEDEN, UEINT, UFS, UFX, UTEMP, small_temp
 
     implicit none
@@ -528,7 +528,6 @@ contains
     use eos_module, only: eos
     use eos_type_module, only: eos_input_re, eos_t
     use amrex_constants_module, only: ZERO, ONE
-    use amrex_fort_module, only: rt => amrex_real
     use meth_params_module, only: NVAR, URHO, UEDEN, UEINT, UTEMP, UFS, UFX
 
     implicit none
@@ -596,7 +595,6 @@ contains
 
     use network           , only: nspec
     use meth_params_module, only: NVAR, URHO, UFS
-    use amrex_fort_module, only: rt => amrex_real
 
     implicit none
 
@@ -637,7 +635,6 @@ contains
 
     use network, only: nspec
     use amrex_constants_module, only: ONE
-    use amrex_fort_module, only: rt => amrex_real
     use meth_params_module, only: NVAR, URHO, UFS
 
     implicit none
@@ -672,38 +669,45 @@ contains
 
 
 
-  subroutine ca_summass(lo,hi,rho,r_lo,r_hi,dx, &
-                        vol,v_lo,v_hi,mass) bind(c,name='ca_summass')
-
-    use amrex_fort_module, only: rt => amrex_real, amrex_add
+  subroutine ca_denerror(lo, hi, &
+                         tag, taglo, taghi, &
+                         den, denlo, denhi, &
+                         set, clear) &
+                         bind(C, name="ca_denerror")
 
     implicit none
 
-    integer,  intent(in   ) :: lo(3), hi(3)
-    integer,  intent(in   ) :: r_lo(3), r_hi(3)
-    integer,  intent(in   ) :: v_lo(3), v_hi(3)
-    real(rt), intent(in   ) :: dx(3)
-    real(rt), intent(in   ) :: rho(r_lo(1):r_hi(1),r_lo(2):r_hi(2),r_lo(3):r_hi(3))
-    real(rt), intent(in   ) :: vol(v_lo(1):v_hi(1),v_lo(2):v_hi(2),v_lo(3):v_hi(3))
-    real(rt), intent(inout) :: mass
+    integer,    intent(in   ) :: lo(3), hi(3)
+    integer,    intent(in   ) :: taglo(3), taghi(3)
+    integer,    intent(in   ) :: denlo(3), denhi(3)
+    integer(1), intent(inout) :: tag(taglo(1):taghi(1),taglo(2):taghi(2),taglo(3):taghi(3))
+    real(rt),   intent(in   ) :: den(denlo(1):denhi(1),denlo(2):denhi(2),denlo(3):denhi(3))
+    integer(1), intent(in   ), value :: set, clear
 
+    real(rt) :: ax, ay, az
     integer  :: i, j, k
-    real(rt) :: dm
+
+    real(rt), parameter :: dengrad_rel = 0.25d0
 
     !$gpu
 
+    ! Tag on regions of high density gradient
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
+             ax = ABS(den(i+1,j,k) - den(i,j,k))
+             ay = ABS(den(i,j+1,k) - den(i,j,k))
+             az = ABS(den(i,j,k+1) - den(i,j,k))
+             ax = MAX(ax,ABS(den(i,j,k) - den(i-1,j,k)))
+             ay = MAX(ay,ABS(den(i,j,k) - den(i,j-1,k)))
+             az = MAX(az,ABS(den(i,j,k) - den(i,j,k-1)))
+             if (MAX(ax,ay,az) .ge. ABS(dengrad_rel * den(i,j,k))) then
+                tag(i,j,k) = set
+             end if
+          end do
+       end do
+    end do
 
-             dm = rho(i,j,k) * vol(i,j,k)
-
-             call amrex_add(mass, dm)
-
-          enddo
-       enddo
-    enddo
-
-  end subroutine ca_summass
-
+  end subroutine ca_denerror
+  
 end module castro_util_module
