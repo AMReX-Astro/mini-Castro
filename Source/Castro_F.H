@@ -155,16 +155,10 @@ extern "C"
      const BL_FORT_FAB_ARG_3D(volume),
      BL_FORT_FAB_ARG_3D(update));
 
-  void flush_output();
-
-  void ca_summass
-    (const int* lo, const int* hi, const BL_FORT_FAB_ARG_3D(rho),
-     const amrex::Real* dx, BL_FORT_FAB_ARG_3D(vol), amrex::Real* mass);
-
   void ca_initdata
-    (const int level, const int* lo, const int* hi,
+    (const int* lo, const int* hi,
      BL_FORT_FAB_ARG_3D(state),
-     const amrex::Real* dx, const amrex::Real* xlo, const amrex::Real* xhi);
+     const amrex::Real* dx, const amrex::Real* problo, const amrex::Real* probhi);
 
 #ifdef __cplusplus
 }

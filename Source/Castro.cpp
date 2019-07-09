@@ -264,6 +264,8 @@ Castro::initData ()
     // Loop over grids, call FORTRAN function to init with data.
     //
     const Real* dx  = geom.CellSize();
+    const Real* problo = geom.ProbLo();
+    const Real* probhi = geom.ProbHi();
     MultiFab& S_new = get_new_data(State_Type);
     Real cur_time   = state[State_Type].curTime();
 
@@ -279,14 +281,13 @@ Castro::initData ()
     {
        for (MFIter mfi(S_new); mfi.isValid(); ++mfi)
        {
-          const RealBox& rbx = RealBox(grids[mfi.index()],geom.CellSize(),geom.ProbLo());
-          const Box& box     = mfi.validbox();
+          const Box& box = mfi.validbox();
 
 #pragma gpu
           ca_initdata
-              (level, AMREX_INT_ANYD(box.loVect()), AMREX_INT_ANYD(box.hiVect()),
+              (AMREX_INT_ANYD(box.loVect()), AMREX_INT_ANYD(box.hiVect()),
                BL_TO_FORTRAN_ANYD(S_new[mfi]), AMREX_REAL_ANYD(dx),
-               AMREX_REAL_ANYD(rbx.lo()), AMREX_REAL_ANYD(rbx.hi()));
+               AMREX_REAL_ANYD(problo), AMREX_REAL_ANYD(probhi));
        }
 
        for (MFIter mfi(S_new); mfi.isValid(); ++mfi)
