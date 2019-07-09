@@ -21,7 +21,7 @@ Docs/*/*.pdf
 
 
 # Castro executables
-Castro*.ex
+mini-Castro*.ex
 *.exe
 
 # plt and chk files
