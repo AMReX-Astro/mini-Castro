@@ -193,15 +193,6 @@ Castro::initData ()
                AMREX_REAL_ANYD(problo), AMREX_REAL_ANYD(probhi));
        }
 
-       for (MFIter mfi(S_new); mfi.isValid(); ++mfi)
-       {
-           const Box& box = mfi.validbox();
-
-           // Verify that the sum of (rho X)_i = rho at every cell
-#pragma gpu
-           ca_check_initial_species(AMREX_INT_ANYD(box.loVect()), AMREX_INT_ANYD(box.hiVect()), BL_TO_FORTRAN_ANYD(S_new[mfi]));
-       }
-
        enforce_consistent_e(S_new);
 
        // Do a FillPatch so that we can get the ghost zones filled.
