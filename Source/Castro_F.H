@@ -148,14 +148,10 @@ extern "C"
      const amrex::Real* dx, const amrex::Real* problo, const amrex::Real* probhi);
 
   void ca_denerror
-    (int* tag, const int* tag_lo, const int* tag_hi,
-     const int* tagval, const int* clearval,
-     BL_FORT_FAB_ARG_3D(den),
-     const int* lo, const int* hi,
-     const int* ncomp,
-     const int* domlo, const int* domhi,
-     const amrex::Real* dx, const amrex::Real* xlo, const amrex::Real* problo,
-     const amrex::Real* time, const int* level);
+    (const int* lo, const int* hi,
+     int8_t* tag, const int* tag_lo, const int* tag_hi,
+     const amrex::Real* den, const int* den_lo, const int* den_hi,
+     const int8_t tagval, const int8_t clearval);
 
 #ifdef __cplusplus
 }

@@ -718,64 +718,25 @@ Castro::errorEst (TagBoxArray& tags,
 {
     BL_PROFILE("Castro::errorEst()");
 
-    const int*  domain_lo = geom.Domain().loVect();
-    const int*  domain_hi = geom.Domain().hiVect();
-    const Real* dx        = geom.CellSize();
-    const Real* prob_lo   = geom.ProbLo();
-
     auto mf = derive("density", time, 1);
 
     BL_ASSERT(mf);
 
+    const int8_t set   = (int8_t) TagBox::SET;
+    const int8_t clear = (int8_t) TagBox::CLEAR;
+    
 #ifdef _OPENMP
 #pragma omp parallel
 #endif
+    for (MFIter mfi(*mf, true); mfi.isValid(); ++mfi)
     {
-        Vector<int>  itags;
+        const Box& bx = mfi.validbox();
 
-        for (MFIter mfi(*mf,true); mfi.isValid(); ++mfi)
-        {
-            // FABs
-            FArrayBox&  datfab  = (*mf)[mfi];
-            TagBox&     tagfab  = tags[mfi];
-
-            // tile box
-            const Box&  tilebx  = mfi.tilebox();
-
-            // physical tile box
-            const RealBox& pbx  = RealBox(tilebx,geom.CellSize(),geom.ProbLo());
-
-            //fab box
-            const Box&  datbox  = datfab.box();
-
-            // We cannot pass tagfab to Fortran becuase it is BaseFab<char>.
-            // So we are going to get a temporary integer array.
-            tagfab.get_itags(itags, tilebx);
-
-            // data pointer and index space
-            int*        tptr    = itags.dataPtr();
-            const int*  tlo     = tilebx.loVect();
-            const int*  thi     = tilebx.hiVect();
-            //
-            const int*  lo      = tlo;
-            const int*  hi      = thi;
-            //
-            const Real* xlo     = pbx.lo();
-            //
-            Real*       dat     = datfab.dataPtr();
-            const int*  dlo     = datbox.loVect();
-            const int*  dhi     = datbox.hiVect();
-            const int   ncomp   = datfab.nComp();
-
-	    ca_denerror(tptr, tlo, thi, &tagval,
-                        &clearval, dat, dlo, dhi,
-                        lo,hi, &ncomp, domain_lo, domain_hi,
-                        dx, xlo, prob_lo, &time, &level);
-            //
-            // Now update the tags in the TagBox.
-            //
-            tagfab.tags_and_untags(itags, tilebx);
-        }
+#pragma gpu
+        ca_denerror(AMREX_INT_ANYD(bx.loVect()), AMREX_INT_ANYD(bx.hiVect()),
+                    (int8_t*) BL_TO_FORTRAN_ANYD(tags[mfi]),
+                    BL_TO_FORTRAN_ANYD((*mf)[mfi]),
+                    set, clear);
     }
 }
 
