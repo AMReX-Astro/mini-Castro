@@ -55,6 +55,21 @@ main (int   argc,
     pp.query("max_step",max_step);
     pp.query("stop_time",stop_time);
 
+    // Set the geometry parameters for this problem.
+    // They are hardcoded for the Sedov blast wave
+    // that we are solving.
+
+    ParmParse pp_geom("geometry");
+
+    std::vector<int> periodic{1, 1, 1};
+    std::vector<Real> prob_lo{0.0, 0.0, 0.0};
+    std::vector<Real> prob_hi{1.0e9, 1.0e9, 1.0e9};
+
+    pp_geom.add("coord_sys", 0);
+    pp_geom.addarr("is_periodic", periodic);
+    pp_geom.addarr("prob_lo", prob_lo);
+    pp_geom.addarr("prob_hi", prob_hi);
+
     Amr* amrptr = new Amr;
 
     amrptr->init(0.0, stop_time);
