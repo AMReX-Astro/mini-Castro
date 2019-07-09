@@ -9,6 +9,15 @@ Castro is available at:
 
 https://github.com/AMReX-Astro/Castro
 
+## Getting the code
+
+Clone this repository with:
+
+git clone --recursive https://github.com/AMReX-Astro/mini-Castro.git
+
+The `--recursive` option is needed because mini-Castro depends on the
+AMReX library as a submodule.
+
 ## Compiling
 
 mini-Castro depends on the AMReX library and uses its build system. Compiling
