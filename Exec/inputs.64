@@ -1,3 +1,0 @@
-amr.n_cell           =  64     64     64
-
-amr.max_grid_size   = 64

@@ -32,21 +32,42 @@ int
 main (int   argc,
       char* argv[])
 {
-
     amrex::Initialize(argc,argv);
-
-    if (argc <= 1)
-	amrex::Abort("Error: no inputs file provided on command line.");
-
-    // Save the inputs file name for later.
-
-    if (!strchr(argv[1], '=')) {
-	inputs_name = argv[1];
-    }
 
     BL_PROFILE_VAR("main()", pmain);
 
     Real dRunTime1 = ParallelDescriptor::second();
+
+    // Print out some information about this mini-app.
+
+    amrex::Print() << "mini-Castro is an astrophysical 3D Sedov-Taylor blast wave benchmark." << std::endl;
+    amrex::Print() << "The algorithm closely resembles that of the Castro code." << std::endl;
+    amrex::Print() << std::endl;
+    amrex::Print() << "This mini-app has several inputs parameters (values in parentheses are the defaults):" << std::endl;
+    amrex::Print() << std::endl;
+    amrex::Print() << "n_cell (128): The number of zones per dimension." << std::endl;
+    amrex::Print() << "max_grid_size (64): The maximum size of a box in the domain." << std::endl;
+    amrex::Print() << "min_grid_size (16): The minimum size of a box in the domain." << std::endl;
+    amrex::Print() << "max_level (0): The maximum adaptive mesh refinement level (zero-indexed)." << std::endl;
+    amrex::Print() << "stop_time (0.01): The stopping time of the simulation, in seconds." << std::endl;
+    amrex::Print() << "max_step (10000000): The maximum number of timesteps to take." << std::endl;
+    amrex::Print() << std::endl;
+    amrex::Print() << "n_cell should be used to control the total amount of work to do. There are n_cell^3" << std::endl <<
+                      "zones in the simulation, subdivided into boxes of various sizes. The minimum size" << std::endl <<
+                      "of a box in any dimension is set by min_grid_size, and similarly for max_grid_size." << std::endl <<
+                      "For appropriate load balancing, there must be enough boxes as there are MPI ranks" << std::endl <<
+                      "so that every rank has work to do. Ideally there are multiple boxes per rank." << std::endl <<
+                      "For example, if n_cell = 768, and you have 128 MPI ranks, then a reasonable choice" << std::endl <<
+                      "would be max_grid_size = 96, since (768/96)^3 = 512 = 128 * 4, so that every rank" << std::endl <<
+                      "has 4 grids to work with. min_grid_size can be increased to decrease the number of boxes." << std::endl <<
+                      "Generally speaking, larger boxes are more efficient to compute on. Appropriate choices" << std::endl <<
+                      "for min_grid_size and max_grid_size usually must be empirically determined by trying" << std::endl <<
+                      "multiple values and finding the fastest run time." << std::endl;
+    amrex::Print() << std::endl;
+    amrex::Print() << "The simulation prints a Figure of Merit at the end which measures the simulation throughput." << std::endl;
+    amrex::Print() << "The FOM measures the average number of zones advanced per microsecond (higher is better)." << std::endl;
+    amrex::Print() << "At the end of each step, the effective radius of the blast wave is calculated and printed." << std::endl;
+    amrex::Print() << std::endl;
 
     int max_step = 10000000;
     Real stop_time = 1.0e-2;
@@ -92,7 +113,15 @@ main (int   argc,
     pp.query("min_grid_size", min_grid_size);
     pp_amr.add("blocking_factor", min_grid_size);
 
+    // Use max_level to replace amr.max_level.
+
+    int max_level = 0;
+    pp.query("max_level", max_level);
+    pp_amr.add("max_level", max_level);
+
     Amr* amrptr = new Amr;
+
+    amrex::Print() << "Starting simulation..." << std::endl << std::endl;
 
     amrptr->init(0.0, stop_time);
 
