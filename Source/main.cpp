@@ -22,11 +22,8 @@
 #include <time.h>
 
 #include <Castro.H>
-#include <Castro_io.H>
 
 using namespace amrex;
-
-std::string inputs_name = "";
 
 int
 main (int   argc,
