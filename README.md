@@ -40,42 +40,35 @@ make CUDA_ARCH=70 COMPILE_CUDA_PATH=/usr/local/cuda-10.0 USE_MPI=FALSE USE_CUDA=
 ```
 # IBM's xlf compiler is supported, but we have found
 # that it results in much lower performance than pgfortran
-module swap xl pgi/17.10
+module load pgi/18.7
+# Note that CUDA 9.2 is not currently supported due to a compiler issue.
 module load cuda/9.0.69
-make USE_CUDA=TRUE COMP=PGI -j 4
+make USE_CUDA=TRUE USE_MPI=TRUE COMP=PGI -j 4
 ```
 
-### Running mini-Castro on a single GPU
+## Running
 
-On summitdev, first request a job. The following `bsub` command
-requests an interactive job for 30 minutes on one node.
+mini-Castro has a few options to control the amount of work done
+in the problem (determined by the spatial resolution of the
+simulation) and the load balancing across MPI ranks. Run the program
+after compiling to get a summary of the available options.
+
+### Running mini-Castro on Summit/Summitdev
+
+The following command requests an interactive job for 30 minutes on one node.
 
 `bsub -P [project ID] -XF -nnodes 1 -W 30 -Is $SHELL`
 
-Then launch mini-Castro using a `jsrun` command similar to the following:
+Then launch mini-Castro using a `jsrun` command similar to the following,
+which uses 4 GPUs on a single node:
 
-`jsrun -n 1 -a 1 -g 1 ./Castro3d.pgi.CUDA.ex inputs.64`
+`jsrun -n 4 -a 1 -g 1 ./mini-Castro3d.pgi.MPI.CUDA.ex`
 
-### Running mini-Castro on multiple GPUs on a single node
-
-First build mini-Castro with MPI support by building using the following command:
-
-`make -j USE_MPI=TRUE`
-
-Then to run on 4 GPUs on a single node, use the `bsub` command above with the following `jsrun` command:
-
-`jsrun -n 4 -a 1 -g 1 ./Castro3d.pgi.MPI.CUDA.ex inputs.256`
-
-### Running mini-Castro on multiple GPUs on multiple nodes
-
-Build mini-Castro with MPI support as above.
-
-Request multiple nodes using the `-nnodes` option to `bsub`.
-
-For 1 MPI task per GPU, and e.g. 4 nodes with 4 GPUs per node, launch
+To run on multiple nodes, request them using the `-nnodes` option to `bsub`.
+For 1 MPI task per GPU, and 4 nodes with 4 GPUs per node, launch
 mini-Castro via a jsrun command like:
 
-`jsrun -n 16 -a 1 -g 1 -r 4 ./Castro3d.pgi.MPI.CUDA.ex inputs.256`
+`jsrun -n 16 -a 1 -g 1 -r 4 ./mini-Castro3d.pgi.MPI.CUDA.ex`
 
 Where the '-r' option specifies the number of 1 MPI task/1 GPU
 pairings (i.e. resource sets) per node.
