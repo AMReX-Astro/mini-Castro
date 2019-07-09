@@ -70,6 +70,28 @@ main (int   argc,
     pp_geom.addarr("prob_lo", prob_lo);
     pp_geom.addarr("prob_hi", prob_hi);
 
+    // Use n_cell to replace amr.n_cell for a friendlier
+    // user experience for those unfamiliar with AMReX.
+
+    ParmParse pp_amr("amr");
+
+    int n_cell = 128;
+    pp.query("n_cell", n_cell);
+    std::vector<int> n_cell_arr{n_cell, n_cell, n_cell};
+    pp_amr.addarr("n_cell", n_cell_arr);
+
+    // Use max_grid_size to replace amr.max_grid_size.
+
+    int max_grid_size = 64;
+    pp.query("max_grid_size", max_grid_size);
+    pp_amr.add("max_grid_size", max_grid_size);
+
+    // Use min_grid_size to replace amr.blocking_factor.
+
+    int min_grid_size = 16;
+    pp.query("min_grid_size", min_grid_size);
+    pp_amr.add("blocking_factor", min_grid_size);
+
     Amr* amrptr = new Amr;
 
     amrptr->init(0.0, stop_time);
