@@ -273,7 +273,7 @@ protected:
     //
     // Static data members.
     //
-    static int              NUM_GROW;
+    static int NUM_GROW;
 
     static amrex::IntVect hydro_tile_size;
 

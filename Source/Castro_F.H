@@ -32,8 +32,6 @@ extern "C"
 
   void ca_get_ngdnv(int* ngdnv);
 
-  void ca_get_method_params(int* HYP_GROW);
-
   void ca_set_method_params
     (const int& Density, const int& Xmom, 
      const int& Eden,    const int& Eint, 

@@ -110,9 +110,6 @@ Castro::variableSetUp ()
 
   NUM_STATE = cnt;
 
-  // Define NUM_GROW from the F90 module.
-  ca_get_method_params(&NUM_GROW);
-
   // Read in the input values to Fortran.
 
   ca_set_method_params(Density, Xmom, Eden, Eint, Temp, FirstAdv, FirstSpec, FirstAux, NumAdv);

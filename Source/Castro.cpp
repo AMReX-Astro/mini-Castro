@@ -24,7 +24,7 @@
 using namespace amrex;
 
 int          Castro::NUM_STATE     = -1;
-int          Castro::NUM_GROW      = -1;
+int          Castro::NUM_GROW      = 4;
 
 long         Castro::num_zones_advanced = 0;
 

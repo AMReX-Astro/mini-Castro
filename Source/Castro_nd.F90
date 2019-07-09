@@ -5,9 +5,6 @@ module castro_module
 
   implicit none
 
-  ! number of ghost cells for the hyperbolic solver
-  integer, parameter :: NHYP = 4
-
   !---------------------------------------------------------------------
   ! conserved state components
   !---------------------------------------------------------------------
@@ -417,9 +414,7 @@ subroutine ca_get_spec_az(ispec,A,Z) bind(C, name="ca_get_spec_az")
 
 end subroutine ca_get_spec_az
 
-! :::
-! ::: ----------------------------------------------------------------
-! :::
+
 
 subroutine ca_get_aux_names(aux_names,iaux,len) &
      bind(C, name="ca_get_aux_names")
@@ -474,9 +469,7 @@ subroutine ca_get_nqaux(nqaux_in) bind(C, name="ca_get_nqaux")
 
 end subroutine ca_get_nqaux
 
-! :::
-! ::: ----------------------------------------------------------------
-! :::
+
 
 subroutine ca_get_ngdnv(ngdnv_in) bind(C, name="ca_get_ngdnv")
 
@@ -489,21 +482,6 @@ subroutine ca_get_ngdnv(ngdnv_in) bind(C, name="ca_get_ngdnv")
   ngdnv_in = NGDNV
 
 end subroutine ca_get_ngdnv
-
-
-
-subroutine ca_get_method_params(nGrowHyp) bind(C, name="ca_get_method_params")
-
-  use castro_module, only: NHYP
-  use amrex_fort_module, only: rt => amrex_real
-
-  implicit none
-
-  integer, intent(out) :: ngrowHyp
-
-  nGrowHyp = NHYP
-
-end subroutine ca_get_method_params
 
 
 
