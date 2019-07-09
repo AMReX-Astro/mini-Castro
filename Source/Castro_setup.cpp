@@ -96,8 +96,6 @@ Castro::variableSetUp ()
   Eint = cnt++;
   Temp = cnt++;
 
-  NumAdv = 0;
-
   // Get the number of species from the network model.
   ca_get_num_spec(&NumSpec);
 
@@ -112,7 +110,7 @@ Castro::variableSetUp ()
 
   // Read in the input values to Fortran.
 
-  ca_set_method_params(Density, Xmom, Eden, Eint, Temp, FirstAdv, FirstSpec, FirstAux, NumAdv);
+  ca_set_method_params(Density, Xmom, Eden, Eint, Temp, FirstSpec, FirstAux);
 
   // Get the number of primitive variables from Fortran.
 

@@ -15,9 +15,6 @@ module castro_module
   ! NVAR  : number of total variables in initial system  
   integer, parameter :: NVAR = NTHERM + nspec + naux
 
-  ! nadv: number of passively advected variables
-  integer, parameter :: nadv = 0
-
   ! We use these to index into the state "U"
   integer, parameter :: URHO = 1
   integer, parameter :: UMX = 2
@@ -486,7 +483,7 @@ end subroutine ca_get_ngdnv
 
 
 subroutine ca_set_method_params(Density,Xmom,Eden,Eint,Temp, &
-                                FirstAdv,FirstSpec,FirstAux,numadv) &
+                                FirstSpec,FirstAux) &
                                 bind(C, name="ca_set_method_params")
 
   use castro_module
@@ -497,10 +494,8 @@ subroutine ca_set_method_params(Density,Xmom,Eden,Eint,Temp, &
 
   implicit none
 
-  integer, intent(in) :: Density, Xmom, Eden, Eint, Temp, &
-       FirstAdv, FirstSpec, FirstAux
-  integer, intent(in) :: numadv
-  integer :: iadv, ispec
+  integer, intent(in) :: Density, Xmom, Eden, Eint, Temp, FirstSpec, FirstAux
+  integer :: ispec
 
   integer :: i
   integer :: ioproc
@@ -513,12 +508,6 @@ subroutine ca_set_method_params(Density,Xmom,Eden,Eint,Temp, &
   allocate(npassive)
 
   npassive = 0
-
-  do iadv = 1, nadv
-     upass_map(npassive + iadv) = UFA + iadv - 1
-     qpass_map(npassive + iadv) = QFA + iadv - 1
-  enddo
-  npassive = npassive + nadv
 
   if (QFS > -1) then
      do ispec = 1, nspec+naux

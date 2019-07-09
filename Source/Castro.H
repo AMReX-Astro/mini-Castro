@@ -185,7 +185,6 @@ public:
     static int NQ;
     static int NGDNV;
 
-    static int FirstAdv,  NumAdv;
     static int FirstSpec, NumSpec;
     static int FirstAux,  NumAux;
 
