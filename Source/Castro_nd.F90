@@ -61,6 +61,146 @@ module castro_module
 
 contains
 
+  subroutine ca_enforce_minimum_density(lo, hi, state, s_lo, s_hi) bind(c,name='ca_enforce_minimum_density')
+
+    use amrex_constants_module, only: ZERO
+    use actual_network, only: nspec
+    use eos_type_module, only: eos_t, eos_input_rt
+    use eos_module, only: eos
+
+    implicit none
+
+    integer,  intent(in   ) :: lo(3), hi(3)
+    integer,  intent(in   ) :: s_lo(3), s_hi(3)
+    real(rt), intent(inout) :: state(s_lo(1):s_hi(1),s_lo(2):s_hi(2),s_lo(3):s_hi(3),NVAR)
+
+    integer      :: i, ii, j, jj, k, kk
+    integer      :: i_set, j_set, k_set
+    real(rt)     :: max_dens
+    integer      :: n, ispec
+    type (eos_t) :: eos_state
+
+    !$gpu
+
+    max_dens = ZERO
+
+    do k = lo(3), hi(3)
+       do j = lo(2), hi(2)
+          do i = lo(1), hi(1)
+
+             if (state(i,j,k,URHO) < small_dens) then
+
+                ! Reset to the characteristics of the adjacent state with the highest density.
+
+                max_dens = state(i,j,k,URHO)
+
+                i_set = i
+                j_set = j
+                k_set = k
+
+                do kk = -1, 1
+                   do jj = -1, 1
+                      do ii = -1, 1
+
+                         if (i+ii >= s_lo(1) .and. j+jj <= s_lo(2) .and. k+kk .ge. lo(3) .and. &
+                             i+ii <= s_hi(1) .and. j+jj <= s_hi(2) .and. k+kk .le. hi(3)) then
+
+                            if (state(i+ii,j+jj,k+kk,URHO) .gt. max_dens) then
+                               i_set = i + ii
+                               j_set = j + jj
+                               k_set = k + kk
+                               max_dens = state(i_set,j_set,k_set,URHO)
+                            end if
+
+                         end if
+
+                      end do
+                   end do
+                end do
+
+                if (max_dens < small_dens) then
+
+                   ! We could not find any nearby zones with sufficient density.
+                   ! Our only recourse is to set the density equal to small_dens,
+                   ! and the temperature equal to small_temp. We set the velocities
+                   ! to zero, though any choice here would be arbitrary.
+
+                   do ispec = 1, nspec
+                      n = UFS + ispec - 1
+                      state(i,j,k,n) = state(i,j,k,n) * (small_dens / state(i,j,k,URHO))
+                   end do
+
+                   eos_state % rho = small_dens
+                   eos_state % T   = small_temp
+                   eos_state % xn  = state(i,j,k,UFS:UFS+nspec-1) / small_dens
+
+                   call eos(eos_input_rt, eos_state)
+
+                   state(i,j,k,URHO ) = eos_state % rho
+                   state(i,j,k,UTEMP) = eos_state % T
+
+                   state(i,j,k,UMX  ) = ZERO
+                   state(i,j,k,UMY  ) = ZERO
+                   state(i,j,k,UMZ  ) = ZERO
+
+                   state(i,j,k,UEINT) = eos_state % rho * eos_state % e
+                   state(i,j,k,UEDEN) = state(i,j,k,UEINT)
+
+                else
+
+                   ! Reset to the characteristics of the target zone.
+
+                   state(i,j,k,:) = state(i_set,j_set,k_set,:)
+
+                endif
+
+             endif
+
+          enddo
+       enddo
+    enddo
+
+  end subroutine ca_enforce_minimum_density
+
+
+
+  subroutine ca_normalize_species(lo, hi, state, s_lo, s_hi) bind(c,name='ca_normalize_species')
+
+    use network, only: nspec
+    use amrex_constants_module, only: ONE
+
+    implicit none
+
+    integer,  intent(in   ) :: lo(3), hi(3)
+    integer,  intent(in   ) :: s_lo(3), s_hi(3)
+    real(rt), intent(inout) :: state(s_lo(1):s_hi(1),s_lo(2):s_hi(2),s_lo(3):s_hi(3),NVAR)
+
+    ! Local variables
+    integer  :: i, j, k
+    real(rt) :: xn(nspec)
+
+    !$gpu
+
+    do k = lo(3), hi(3)
+       do j = lo(2), hi(2)
+          do i = lo(1), hi(1)
+
+             xn = state(i,j,k,UFS:UFS+nspec-1)
+
+             xn = max(1.0d-30 * state(i,j,k,URHO), min(state(i,j,k,URHO), xn))
+
+             xn = state(i,j,k,URHO) * (xn / sum(xn))
+
+             state(i,j,k,UFS:UFS+nspec-1) = xn
+
+          enddo
+       enddo
+    enddo
+
+  end subroutine ca_normalize_species
+
+
+
   subroutine ca_reset_internal_e(lo,hi,u,u_lo,u_hi) bind(c,name='ca_reset_internal_e')
 
     use eos_module, only: eos
@@ -186,43 +326,6 @@ contains
     enddo
 
   end subroutine ca_compute_temp
-  
-
-
-  subroutine ca_normalize_species(u, u_lo, u_hi, lo, hi) bind(c,name='ca_normalize_species')
-
-    use network, only: nspec
-    use amrex_constants_module, only: ONE
-
-    implicit none
-
-    integer,  intent(in   ) :: lo(3), hi(3)
-    integer,  intent(in   ) :: u_lo(3), u_hi(3)
-    real(rt), intent(inout) :: u(u_lo(1):u_hi(1),u_lo(2):u_hi(2),u_lo(3):u_hi(3),NVAR)
-
-    ! Local variables
-    integer  :: i, j, k
-    real(rt) :: xn(nspec)
-
-    !$gpu
-
-    do k = lo(3), hi(3)
-       do j = lo(2), hi(2)
-          do i = lo(1), hi(1)
-
-             xn = u(i,j,k,UFS:UFS+nspec-1)
-
-             xn = max(1.0d-30 * u(i,j,k,URHO), min(u(i,j,k,URHO), xn))
-
-             xn = u(i,j,k,URHO) * (xn / sum(xn))
-
-             u(i,j,k,UFS:UFS+nspec-1) = xn
-
-          enddo
-       enddo
-    enddo
-
-  end subroutine ca_normalize_species
 
 
 
@@ -266,30 +369,27 @@ contains
     end do
 
   end subroutine ca_denerror
+
+
+
+  subroutine ca_get_spec_names(spec_names,ispec,len) bind(C, name="ca_get_spec_names")
+
+    use network, only: nspec, short_spec_names
+
+    implicit none
+
+    integer, intent(in   ) :: ispec
+    integer, intent(inout) :: len
+    integer, intent(inout) :: spec_names(len)
+
+    integer :: i
+
+    len = len_trim(short_spec_names(ispec+1))
+
+    do i = 1, len
+       spec_names(i) = ichar(short_spec_names(ispec+1)(i:i))
+    end do
+
+  end subroutine ca_get_spec_names
   
 end module castro_module
-
-
-
-subroutine ca_get_spec_names(spec_names,ispec,len) &
-     bind(C, name="ca_get_spec_names")
-
-  use network, only: nspec, short_spec_names
-  use amrex_fort_module, only: rt => amrex_real
-
-  implicit none
-
-  integer, intent(in   ) :: ispec
-  integer, intent(inout) :: len
-  integer, intent(inout) :: spec_names(len)
-
-  ! Local variables
-  integer   :: i
-
-  len = len_trim(short_spec_names(ispec+1))
-
-  do i = 1,len
-     spec_names(i) = ichar(short_spec_names(ispec+1)(i:i))
-  end do
-
-end subroutine ca_get_spec_names

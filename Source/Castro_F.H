@@ -30,19 +30,16 @@ extern "C"
                   const amrex::Real* qaux, const int* qa_lo, const int* qa_hi);
 
   void ca_enforce_minimum_density
-    (const amrex::Real* S_old, const int* s_old_lo, const int* s_old_hi,
-     const amrex::Real* S_new, const int* s_new_lo, const int* s_new_hi,
-     const amrex::Real* vol, const int* vol_lo, const int* vol_hi,
-     const int* lo, const int* hi);
+    (const int* lo, const int* hi, BL_FORT_FAB_ARG_3D(state));
 
   void ca_normalize_species
-    (BL_FORT_FAB_ARG_3D(S_new), const int* lo, const int* hi);
-
-  void ca_compute_temp
-    (const int* lo, const int* hi, const BL_FORT_FAB_ARG_3D(state));
+    (const int* lo, const int* hi, BL_FORT_FAB_ARG_3D(state));
 
   void ca_reset_internal_e
-    (const int* lo, const int* hi, BL_FORT_FAB_ARG_3D(S_new));
+    (const int* lo, const int* hi, BL_FORT_FAB_ARG_3D(state));
+
+  void ca_compute_temp
+    (const int* lo, const int* hi, BL_FORT_FAB_ARG_3D(state));
 
   void ca_estdt
     (const int* lo, const int* hi,

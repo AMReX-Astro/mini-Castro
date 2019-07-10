@@ -58,172 +58,13 @@ contains
 
 
 
-  subroutine ca_enforce_minimum_density(uin,uin_lo,uin_hi, &
-                                        uout,uout_lo,uout_hi, &
-                                        vol,vol_lo,vol_hi, &
-                                        lo,hi) &
-                                        bind(c,name='ca_enforce_minimum_density')
-
-    use network, only: nspec
-    use amrex_constants_module, only: ZERO
-    use amrex_fort_module, only: rt => amrex_real, amrex_min
-    use castro_module, only: NVAR, URHO, UEINT, UEDEN, small_dens
-
-    implicit none
-
-    integer,  intent(in   ) :: lo(3), hi(3)
-    integer,  intent(in   ) ::  uin_lo(3),  uin_hi(3)
-    integer,  intent(in   ) :: uout_lo(3), uout_hi(3)
-    integer,  intent(in   ) ::  vol_lo(3),  vol_hi(3)
-
-    real(rt), intent(in   ) ::  uin( uin_lo(1): uin_hi(1), uin_lo(2): uin_hi(2), uin_lo(3): uin_hi(3),NVAR)
-    real(rt), intent(inout) :: uout(uout_lo(1):uout_hi(1),uout_lo(2):uout_hi(2),uout_lo(3):uout_hi(3),NVAR)
-    real(rt), intent(in   ) ::  vol( vol_lo(1): vol_hi(1), vol_lo(2): vol_hi(2), vol_lo(3): vol_hi(3))
-
-    ! Local variables
-    integer  :: i,ii,j,jj,k,kk
-    integer  :: i_set, j_set, k_set
-    real(rt) :: max_dens
-    real(rt) :: old_state(NVAR), new_state(NVAR), unew(NVAR)
-    integer  :: num_positive_zones
-
-    !$gpu
-
-    max_dens = ZERO
-
-    do k = lo(3), hi(3)
-       do j = lo(2), hi(2)
-          do i = lo(1), hi(1)
-
-             if (uout(i,j,k,URHO) < small_dens) then
-
-                old_state = uin(i,j,k,:)
-
-                ! Reset to the characteristics of the adjacent state with the highest density.
-
-                max_dens = uout(i,j,k,URHO)
-                i_set = i
-                j_set = j
-                k_set = k
-                do kk = -1,1
-                   do jj = -1,1
-                      do ii = -1,1
-                         if (i+ii.ge.lo(1) .and. j+jj.ge.lo(2) .and. k+kk.ge.lo(3) .and. &
-                              i+ii.le.hi(1) .and. j+jj.le.hi(2) .and. k+kk.le.hi(3)) then
-                            if (uout(i+ii,j+jj,k+kk,URHO) .gt. max_dens) then
-                               i_set = i+ii
-                               j_set = j+jj
-                               k_set = k+kk
-                               max_dens = uout(i_set,j_set,k_set,URHO)
-                            endif
-                         endif
-                      end do
-                   end do
-                end do
-
-                if (max_dens < small_dens) then
-
-                   ! We could not find any nearby zones with sufficient density.
-
-                   call reset_to_small_state(old_state, new_state, [i, j, k], lo, hi)
-
-                else
-
-                   unew = uout(i_set,j_set,k_set,:)
-
-                   call reset_to_zone_state(old_state, new_state, unew, [i, j, k], lo, hi)
-
-                endif
-
-                uout(i,j,k,:) = new_state
-
-             endif
-
-          enddo
-       enddo
-    enddo
-
-  end subroutine ca_enforce_minimum_density
-
-
-
-  subroutine reset_to_small_state(old_state, new_state, idx, lo, hi)
-
-    use amrex_constants_module, only: ZERO
-    use network, only: nspec
-    use eos_type_module, only: eos_t, eos_input_rt
-    use eos_module, only: eos
-    use amrex_fort_module, only: rt => amrex_real
-    use castro_module, only: NVAR, URHO, UMX, UMY, UMZ, UTEMP, UEINT, UEDEN, UFS, small_temp, small_dens
-
-    implicit none
-
-    real(rt), intent(in   ) :: old_state(NVAR)
-    real(rt), intent(inout) :: new_state(NVAR)
-    integer,  intent(in   ) :: idx(3), lo(3), hi(3)
-
-    integer      :: n, ispec
-    type (eos_t) :: eos_state
-
-    !$gpu
-
-    ! If no neighboring zones are above small_dens, our only recourse
-    ! is to set the density equal to small_dens, and the temperature
-    ! equal to small_temp. We set the velocities to zero,
-    ! though any choice here would be arbitrary.
-
-    do ispec = 1, nspec
-       n = UFS + ispec - 1
-       new_state(n) = new_state(n) * (small_dens / new_state(URHO))
-    end do
-
-    eos_state % rho = small_dens
-    eos_state % T   = small_temp
-    eos_state % xn  = new_state(UFS:UFS+nspec-1) / small_dens
-
-    call eos(eos_input_rt, eos_state)
-
-    new_state(URHO ) = eos_state % rho
-    new_state(UTEMP) = eos_state % T
-
-    new_state(UMX  ) = ZERO
-    new_state(UMY  ) = ZERO
-    new_state(UMZ  ) = ZERO
-
-    new_state(UEINT) = eos_state % rho * eos_state % e
-    new_state(UEDEN) = new_state(UEINT)
-
-  end subroutine reset_to_small_state
-
-
-
-  subroutine reset_to_zone_state(old_state, new_state, input_state, idx, lo, hi)
-
-    use amrex_constants_module, only: ZERO
-    use amrex_fort_module, only: rt => amrex_real
-    use castro_module, only: NVAR, URHO
-
-    implicit none
-
-    real(rt), intent(in   ) :: old_state(NVAR), input_state(NVAR)
-    real(rt), intent(inout) :: new_state(NVAR)
-    integer,  intent(in   ) :: idx(3), lo(3), hi(3)
-
-    !$gpu
-
-    new_state(:) = input_state(:)
-
-  end subroutine reset_to_zone_state
-
-
-
   subroutine compute_cfl(lo, hi, dt, dx, courno, &
                          q, q_lo, q_hi, &
                          qaux, qa_lo, qa_hi) &
                          bind(C, name = "compute_cfl")
 
     use amrex_constants_module, only: ZERO, ONE
-    use amrex_fort_module, only: rt => amrex_real, amrex_max
+    use amrex_fort_module, only: amrex_max
     use castro_module, only: QVAR, QRHO, QU, QV, QW, QC, NQAUX
 
     implicit none
@@ -287,7 +128,6 @@ contains
     use eos_module, only: eos
     use eos_type_module, only: eos_t, eos_input_re
     use amrex_constants_module, only: ZERO, HALF, ONE
-    use amrex_fort_module, only: rt => amrex_real
     use castro_module, only: NVAR, URHO, UMX, UMZ, &
                              UEDEN, UEINT, UTEMP, UFS, &
                              QRHO, QU, QV, QW, &
@@ -404,7 +244,6 @@ contains
 
     use network, only: nspec
     use amrex_constants_module, only: ZERO, ONE
-    use amrex_fort_module, only: rt => amrex_real
     use castro_module, only: NVAR, URHO, UFS
 
     implicit none
@@ -450,7 +289,6 @@ contains
   subroutine ca_divu(lo, hi, dx, q, q_lo, q_hi, div, d_lo, d_hi) bind(c,name='ca_divu')
 
     use amrex_constants_module, only: FOURTH, ONE
-    use amrex_fort_module, only: rt => amrex_real
     use castro_module, only: QU, QV, QW, QVAR
 
     implicit none

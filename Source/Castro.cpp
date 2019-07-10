@@ -1,21 +1,13 @@
 
-#include <unistd.h>
-#include <iomanip>
-#include <algorithm>
-#include <cstdio>
 #include <vector>
 #include <iostream>
 #include <string>
-#include <ctime>
 
 #include <AMReX_Utility.H>
-#include <AMReX_CONSTANTS.H>
 #include <Castro.H>
 #include <Castro_F.H>
-#include <AMReX_VisMF.H>
 #include <AMReX_TagBox.H>
 #include <AMReX_FillPatchUtil.H>
-#include <AMReX_ParmParse.H>
 
 #ifdef _OPENMP
 #include <omp.h>
@@ -35,22 +27,6 @@ Castro::variableCleanUp ()
     network_finalize();
 
     probinit_finalize();
-}
-
-void
-Castro::read_params ()
-{
-    static bool done = false;
-
-    if (done) return;
-
-    done = true;
-
-    if (!DefaultGeometry().IsCartesian())
-	amrex::Abort("This test problem only supports a Cartesian coordinate system.");
-
-    int bndry_func_thread_safe = 1;
-    StateDescriptor::setBndryFuncThreadSafety(bndry_func_thread_safe);
 }
 
 Castro::Castro (Amr&            papa,
@@ -519,19 +495,6 @@ Castro::normalize_species (MultiFab& S_new)
 
     int ng = S_new.nGrow();
 
-#ifdef _OPENMP
-#pragma omp parallel
-#endif
-    for (MFIter mfi(S_new,true); mfi.isValid(); ++mfi)
-    {
-       const Box& bx = mfi.growntilebox(ng);
-
-#pragma gpu
-       ca_normalize_species
-           (BL_TO_FORTRAN_ANYD(S_new[mfi]), 
-            AMREX_INT_ANYD(bx.loVect()), AMREX_INT_ANYD(bx.hiVect()));
-    }
-
 }
 
 void
@@ -539,32 +502,6 @@ Castro::enforce_min_density (MultiFab& S_old, MultiFab& S_new)
 {
 
     BL_PROFILE("Castro::enforce_min_density()");
-
-    // This routine sets the density in S_new to be larger than the density floor.
-    // Note that it will operate everywhere on S_new, including ghost zones.
-    // S_old is present so that, after the hydro call, we know what the old density
-    // was so that we have a reference for comparison. If you are calling it elsewhere
-    // and there's no meaningful reference state, just pass in the same MultiFab twice.
-
-#ifdef _OPENMP
-#pragma omp parallel
-#endif
-    for (MFIter mfi(S_new, true); mfi.isValid(); ++mfi) {
-
-	const Box& bx = mfi.growntilebox();
-
-	FArrayBox& stateold = S_old[mfi];
-	FArrayBox& statenew = S_new[mfi];
-	FArrayBox& vol      = volume[mfi];
-
-#pragma gpu
-	ca_enforce_minimum_density
-            (BL_TO_FORTRAN_ANYD(stateold),
-             BL_TO_FORTRAN_ANYD(statenew),
-             BL_TO_FORTRAN_ANYD(vol),
-             AMREX_INT_ANYD(bx.loVect()), AMREX_INT_ANYD(bx.hiVect()));
-
-    }
 
 }
 
@@ -622,19 +559,6 @@ Castro::reset_internal_energy(MultiFab& S_new)
 
     int ng = S_new.nGrow();
 
-    // Ensure (rho e) isn't too small or negative
-#ifdef _OPENMP
-#pragma omp parallel
-#endif
-    for (MFIter mfi(S_new,true); mfi.isValid(); ++mfi)
-    {
-        const Box& bx = mfi.growntilebox(ng);
-
-#pragma gpu
-        ca_reset_internal_e
-            (AMREX_INT_ANYD(bx.loVect()), AMREX_INT_ANYD(bx.hiVect()),
-             BL_TO_FORTRAN_ANYD(S_new[mfi]));
-    }
 
 }
 
@@ -645,17 +569,6 @@ Castro::computeTemp(MultiFab& State)
   BL_PROFILE("Castro::computeTemp()");
 
   reset_internal_energy(State);
-
-#ifdef _OPENMP
-#pragma omp parallel
-#endif
-  for (MFIter mfi(State,true); mfi.isValid(); ++mfi)
-    {
-      const Box& bx = mfi.growntilebox();
-
-#pragma gpu
-      ca_compute_temp(AMREX_INT_ANYD(bx.loVect()), AMREX_INT_ANYD(bx.hiVect()), BL_TO_FORTRAN_ANYD(State[mfi]));
-    }
 
 }
 
@@ -700,31 +613,41 @@ Castro::check_for_nan(MultiFab& state, int check_ghost)
 
 }
 
-// Convert a MultiFab with conservative state data u to a primitive MultiFab q.
 // Given State_Type state data, perform a number of cleaning steps to make
-// sure the data is sensible. The return value is the same as the return
-// value of enforce_min_density.
+// sure the data is sensible.
 
 void
-Castro::clean_state(MultiFab& state) {
-
+Castro::clean_state(MultiFab& state)
+{
     BL_PROFILE("Castro::clean_state()");
 
-    // Enforce a minimum density.
+    int ng = state.nGrow();
 
-    MultiFab temp_state(state.boxArray(), state.DistributionMap(), state.nComp(), state.nGrow());
+#ifdef _OPENMP
+#pragma omp parallel
+#endif
+    for (MFIter mfi(state, true); mfi.isValid(); ++mfi)
+    {
+        const Box& bx = mfi.growntilebox(ng);
 
-    MultiFab::Copy(temp_state, state, 0, 0, state.nComp(), state.nGrow());
+        // Ensure the density is larger than the density floor.
 
-    enforce_min_density(temp_state, state);
+#pragma gpu
+	ca_enforce_minimum_density(AMREX_INT_ANYD(bx.loVect()), AMREX_INT_ANYD(bx.hiVect()), BL_TO_FORTRAN_ANYD(state[mfi]));
 
-    // Ensure all species are normalized.
+        // Ensure all species are normalized.
 
-    normalize_species(state);
+#pragma gpu
+        ca_normalize_species(AMREX_INT_ANYD(bx.loVect()), AMREX_INT_ANYD(bx.hiVect()), BL_TO_FORTRAN_ANYD(state[mfi]));
 
-    // Compute the temperature (note that this will also reset
-    // the internal energy for consistency with the total energy).
+        // Ensure (rho e) isn't too small or negative
 
-    computeTemp(state);
+#pragma gpu
+        ca_reset_internal_e(AMREX_INT_ANYD(bx.loVect()), AMREX_INT_ANYD(bx.hiVect()), BL_TO_FORTRAN_ANYD(state[mfi]));
 
+        // Make the temperature be consistent with the internal energy.
+
+#pragma gpu
+        ca_compute_temp(AMREX_INT_ANYD(bx.loVect()), AMREX_INT_ANYD(bx.hiVect()), BL_TO_FORTRAN_ANYD(state[mfi]));
+    }
 }

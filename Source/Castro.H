@@ -199,8 +199,6 @@ protected:
     amrex::MultiFab volume;
     amrex::MultiFab area[3];
   
-    static void read_params ();
-
     Castro& getLevel (int lev);
 
     void reflux (int crse_level, int fine_level);
