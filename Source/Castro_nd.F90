@@ -44,9 +44,7 @@ module castro_module
   integer, parameter :: QPRES = 6
   integer, parameter :: QREINT = 7
   integer, parameter :: QTEMP = 8 ! == QTHERM
-  integer, parameter :: QFA = 1
   integer, parameter :: QFS = QTHERM + 1
-  integer, parameter :: QFX = 1
 
   ! The NQAUX here are auxiliary quantities (game, gamc, c, csml, dpdr, dpde)
   ! that we create in the primitive variable call but that do not need to
@@ -353,24 +351,6 @@ subroutine ca_get_spec_names(spec_names,ispec,len) &
   end do
 
 end subroutine ca_get_spec_names
-
-
-
-subroutine ca_get_spec_az(ispec,A,Z) bind(C, name="ca_get_spec_az")
-
-  use network, only: nspec, aion, zion
-  use amrex_fort_module, only: rt => amrex_real
-
-  implicit none
-
-  integer,  intent(in   ) :: ispec
-  real(rt), intent(inout) :: A, Z
-
-  ! C++ is 0-based indexing, so increment
-  A = aion(ispec+1)
-  Z = zion(ispec+1)
-
-end subroutine ca_get_spec_az
 
 
 

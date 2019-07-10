@@ -291,7 +291,7 @@ contains
     use castro_module, only: NVAR, URHO, UMX, UMZ, &
                              UEDEN, UEINT, UTEMP, UFS, &
                              QRHO, QU, QV, QW, &
-                             QREINT, QPRES, QTEMP, QGAME, QFS, QFX, &
+                             QREINT, QPRES, QTEMP, QGAME, QFS, &
                              QVAR, QC, QGAMC, QDPDR, QDPDE, NQAUX, &
                              small_dens
 

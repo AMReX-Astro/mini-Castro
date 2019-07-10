@@ -20,8 +20,6 @@ extern "C"
 
   void ca_get_spec_names(int* spec_names, int* ispec, int* len);
 
-  void ca_get_spec_az(int* ispec, amrex::Real* A, amrex::Real* Z);
-
   void ca_get_qvar(int* qvar);
 
   void ca_get_nqaux(int* nqaux);
