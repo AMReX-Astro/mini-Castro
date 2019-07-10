@@ -9,10 +9,7 @@ using std::string;
 using namespace amrex;
 
 Real
-Castro::advance (Real time,
-                 Real dt,
-                 int  amr_iteration,
-                 int  amr_ncycle)
+Castro::advance (Real time, Real dt, int amr_iteration, int amr_ncycle)
 {
     BL_PROFILE("Castro::advance()");
 
@@ -20,28 +17,23 @@ Castro::advance (Real time,
 
     // Prepare for the advance.
 
-    initialize_advance(time, dt, amr_iteration, amr_ncycle);
+    initialize_advance(time, dt);
 
     // Do the advance from t = time to t = time + dt.
 
     for (int iter = 0; iter < MOL_STAGES; ++iter) {
-	dt_new = do_advance(time, dt, amr_iteration, amr_ncycle, iter, MOL_STAGES);
+	dt_new = do_advance(time, dt, iter, MOL_STAGES);
     }
 
     // Clean up.
 
-    finalize_advance(time, dt, amr_iteration, amr_ncycle);
+    finalize_advance(time, dt);
 
     return dt_new;
 }
 
 Real
-Castro::do_advance (Real time,
-                    Real dt,
-                    int  amr_iteration,
-                    int  amr_ncycle,
-                    int  sub_iteration,
-                    int  sub_ncycle)
+Castro::do_advance (Real time, Real dt, int sub_iteration, int sub_ncycle)
 {
 
   // this routine will advance the old state data (called S_old here)
@@ -58,7 +50,7 @@ Castro::do_advance (Real time,
 
     // Perform initialization steps.
 
-    initialize_do_advance(time, dt, amr_iteration, amr_ncycle, sub_iteration, sub_ncycle);
+    initialize_do_advance(time, dt, sub_iteration, sub_ncycle);
 
     // Check for NaN's.
 
@@ -104,7 +96,7 @@ Castro::do_advance (Real time,
 
     }
 
-    finalize_do_advance(time, dt, amr_iteration, amr_ncycle, sub_iteration, sub_ncycle);
+    finalize_do_advance(time, dt, sub_iteration, sub_ncycle);
 
     return dt;
 
@@ -113,7 +105,7 @@ Castro::do_advance (Real time,
 
 
 void
-Castro::initialize_do_advance(Real time, Real dt, int amr_iteration, int amr_ncycle, int sub_iteration, int sub_ncycle)
+Castro::initialize_do_advance(Real time, Real dt, int sub_iteration, int sub_ncycle)
 {
 
     BL_PROFILE_VAR("Castro::initialize_do_advance()", CA_INIT_DO_ADV);
@@ -160,7 +152,7 @@ Castro::initialize_do_advance(Real time, Real dt, int amr_iteration, int amr_ncy
 
 
 void
-Castro::finalize_do_advance(Real time, Real dt, int amr_iteration, int amr_ncycle, int sub_iteration, int sub_ncycle)
+Castro::finalize_do_advance(Real time, Real dt, int sub_iteration, int sub_ncycle)
 {
 
     BL_PROFILE_VAR("Castro::finalize_do_advance()", CA_FIN_DO_ADV);
@@ -174,7 +166,7 @@ Castro::finalize_do_advance(Real time, Real dt, int amr_iteration, int amr_ncycl
 
 
 void
-Castro::initialize_advance(Real time, Real dt, int amr_iteration, int amr_ncycle)
+Castro::initialize_advance(Real time, Real dt)
 {
 
     BL_PROFILE_VAR("Castro::initialize_advance()", CA_INIT_ADV);
@@ -223,7 +215,7 @@ Castro::initialize_advance(Real time, Real dt, int amr_iteration, int amr_ncycle
 
 
 void
-Castro::finalize_advance(Real time, Real dt, int amr_iteration, int amr_ncycle)
+Castro::finalize_advance(Real time, Real dt)
 {
 
     BL_PROFILE_VAR("Castro::finalize_advance()", CA_FIN_ADV);

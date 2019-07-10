@@ -83,29 +83,17 @@ public:
     //
     // Advance grids at this level in time.
     //
-    virtual amrex::Real advance (amrex::Real time,
-                          amrex::Real dt,
-                          int  iteration,
-                          int  ncycle) override;
+    virtual amrex::Real advance (amrex::Real time, amrex::Real dt, int iteration, int ncycle) override;
 
-    amrex::Real do_advance (amrex::Real time,
-                     amrex::Real dt,
-                     int  amr_iteration,
-                     int  amr_ncycle,
-                     int  sub_iteration,
-                     int  sub_ncycle);
+    amrex::Real do_advance (amrex::Real time, amrex::Real dt, int sub_iteration, int sub_ncycle);
 
-    amrex::Real retry_advance (amrex::Real time, amrex::Real dt, int amr_iteration, int amr_ncycle);
+    void initialize_advance(amrex::Real time, amrex::Real dt);
 
-    void initialize_advance(amrex::Real time, amrex::Real dt, int amr_iteration, int amr_ncycle);
+    void finalize_advance(amrex::Real time, amrex::Real dt);
 
-    void finalize_advance(amrex::Real time, amrex::Real dt, int amr_iteration, int amr_ncycle);
+    void initialize_do_advance(amrex::Real time, amrex::Real dt, int sub_iteration, int sub_ncycle);
 
-    void initialize_do_advance(amrex::Real time, amrex::Real dt, int amr_iteration, int amr_ncycle, int sub_iteration, int sub_ncycle);
-
-    void finalize_do_advance(amrex::Real time, amrex::Real dt, int amr_iteration, int amr_ncycle, int sub_iteration, int sub_ncycle);
-
-    void construct_hydro_source(amrex::Real time, amrex::Real dt);
+    void finalize_do_advance(amrex::Real time, amrex::Real dt, int sub_iteration, int sub_ncycle);
 
     void construct_mol_hydro_source(amrex::Real time, amrex::Real dt, int istage, int nstages);
 
