@@ -29,7 +29,6 @@ int          Castro::QVAR          = -1;
 int          Castro::NQAUX         = -1;
 int          Castro::NGDNV         = -1;
 
-int          Castro::MOL_STAGES;
 Vector< Vector<Real> > Castro::a_mol;
 Vector<Real> Castro::b_mol;
 Vector<Real> Castro::c_mol;

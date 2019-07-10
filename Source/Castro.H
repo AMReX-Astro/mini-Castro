@@ -19,6 +19,7 @@ using std::istream;
 using std::ostream;
 
 #define NumSpec 13
+#define MOL_STAGES 2
 
 enum StateType { State_Type };
 
@@ -181,13 +182,6 @@ public:
 protected:
 
     //
-    // Build a mask that ghost cells overlapping with interior cells in the same multifab
-    // are set to 0, whereas others are set to 1.
-    //
-    amrex::Vector<std::unique_ptr<amrex::iMultiFab> > ib_mask;
-    amrex::iMultiFab& build_interior_boundary_mask (int ng);
-
-    //
     // A state array with ghost zones.
     //
     amrex::MultiFab Sborder;
@@ -211,10 +205,6 @@ protected:
     //
     // Storage for the method of lines stages
     amrex::Vector<std::unique_ptr<amrex::MultiFab> > k_mol;
-    //
-
-    // MOL Butcher tableau
-    static int MOL_STAGES;
   
     static amrex::Vector< amrex::Vector<amrex::Real> > a_mol;
     static amrex::Vector<amrex::Real> b_mol;
