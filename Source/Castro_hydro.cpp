@@ -24,6 +24,8 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
   const int* domain_lo = geom.Domain().loVect();
   const int* domain_hi = geom.Domain().hiVect();
 
+  std::vector<amrex::Real> b_mol{0.5, 0.5};
+
 #ifdef _OPENMP
 #pragma omp parallel
 #endif

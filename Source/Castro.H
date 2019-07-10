@@ -204,12 +204,9 @@ protected:
 
     //
     // Storage for the method of lines stages
+    //
     amrex::Vector<std::unique_ptr<amrex::MultiFab> > k_mol;
   
-    static amrex::Vector< amrex::Vector<amrex::Real> > a_mol;
-    static amrex::Vector<amrex::Real> b_mol;
-    static amrex::Vector<amrex::Real> c_mol;
-
     static void network_init ();
 
     static void read_params ();

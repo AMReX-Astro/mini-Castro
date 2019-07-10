@@ -145,15 +145,4 @@ Castro::variableSetUp ()
 			bcs,
 			BndryFunc(ca_denfill,ca_hypfill));
 
-  // method of lines Butcher tableau
-
-  a_mol.resize(MOL_STAGES);
-  for (int n = 0; n < MOL_STAGES; ++n)
-    a_mol[n].resize(MOL_STAGES);
-
-  a_mol[0] = {0,   0,};
-  a_mol[1] = {1.0, 0,};
-  b_mol = {0.5, 0.5};
-  c_mol = {0.0, 1.0};
-
 }

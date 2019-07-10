@@ -29,10 +29,6 @@ int          Castro::QVAR          = -1;
 int          Castro::NQAUX         = -1;
 int          Castro::NGDNV         = -1;
 
-Vector< Vector<Real> > Castro::a_mol;
-Vector<Real> Castro::b_mol;
-Vector<Real> Castro::c_mol;
-
 #ifdef AMREX_USE_GPU
 IntVect      Castro::hydro_tile_size(1024000,1024000,1024000);
 #else
