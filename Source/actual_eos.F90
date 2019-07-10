@@ -2,8 +2,6 @@ module actual_eos_module
 
     use eos_type_module
 
-    character (len=64), public :: eos_name = "helmholtz"
-
     ! Runtime parameters
     logical, allocatable :: do_coulomb
     logical, allocatable :: input_is_constant

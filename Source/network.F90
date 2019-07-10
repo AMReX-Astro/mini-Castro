@@ -44,38 +44,15 @@ contains
 
     allocate(aion_inv(nspec))
 
-    ! First, we call the specific network initialization.
+    ! Call the specific network initialization.
 
     call actual_network_init()
 
-    ! Check to make sure, and if not, throw an error.
-
-    if ( nspec .le. 0 ) then
-       call amrex_error("Network cannot have a negative number of species.")
-    endif
-
-    aion_inv(:) = ONE/aion(:)
+    aion_inv(:) = ONE / aion(:)
 
     network_initialized = .true.
 
   end subroutine network_init
-
-
-  function network_species_index(name) result(r)
-
-    character(len=*) :: name
-    integer :: r, n
-
-    r = -1
-
-    do n = 1, nspec
-       if (name == spec_names(n) .or. name == short_spec_names(n)) then
-          r = n
-          return
-       endif
-    enddo
-
-  end function network_species_index
 
 
   subroutine network_finalize() bind(c, name='network_finalize')

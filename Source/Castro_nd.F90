@@ -121,7 +121,7 @@ contains
 
                    u(i,j,k,UEINT) = rho_eint
 
-                   ! If not resetting and little e is negative ...
+                ! If not resetting and little e is negative ...
                 else if (u(i,j,k,UEINT) .le. ZERO) then
 
                    eos_state % rho   = u(i,j,k,URHO)
@@ -169,26 +169,6 @@ contains
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
 
-             ! First check the inputs for validity.
-
-#ifndef AMREX_USE_CUDA
-             if (state(i,j,k,URHO) <= ZERO) then
-                print *,'   '
-                print *,'>>> Error: Castro_util.F90::ca_compute_temp ',i,j,k
-                print *,'>>> ... negative density ',state(i,j,k,URHO)
-                print *,'    '
-                call bl_error("Error:: compute_temp_nd.F90")
-             end if
-
-             if (state(i,j,k,UEINT) <= ZERO) then
-                print *,'   '
-                print *,'>>> Warning: Castro_util.F90::ca_compute_temp ',i,j,k
-                print *,'>>> ... negative (rho e) ',state(i,j,k,UEINT)
-                print *,'   '
-                call bl_error("Error:: compute_temp_nd.F90")
-             end if
-#endif
-
              rhoInv = ONE / state(i,j,k,URHO)
 
              eos_state % rho = state(i,j,k,URHO)
@@ -199,9 +179,6 @@ contains
              call eos(eos_input_re, eos_state)
 
              state(i,j,k,UTEMP) = eos_state % T
-
-             ! In case we've floored, or otherwise allowed the energy to change, update the energy accordingly.
-
              state(i,j,k,UEINT) = state(i,j,k,URHO) * eos_state % e
 
           enddo
