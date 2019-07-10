@@ -10,7 +10,7 @@ module actual_eos_module
     double precision, allocatable :: tlo, thi, tstp, tstpi
     double precision, allocatable :: dlo, dhi, dstp, dstpi
 
-    double precision, allocatable :: ttol, dtol
+    double precision, parameter :: ttol = 1.d-8, dtol = 1.d-8
 
     !..for the helmholtz free energy tables
     double precision, allocatable :: f(:,:), fd(:,:),                &
@@ -41,7 +41,6 @@ module actual_eos_module
     attributes(managed) :: d, t
     attributes(managed) :: tlo, thi, tstp, tstpi
     attributes(managed) :: dlo, dhi, dstp, dstpi
-    attributes(managed) :: ttol, dtol
     attributes(managed) :: f, fd, ft, fdd, ftt, fdt, fddt, fdtt, fddtt
     attributes(managed) :: dpdf, dpdfd, dpdft, dpdfdt
     attributes(managed) :: ef, efd, eft, efdt
@@ -987,8 +986,6 @@ contains
         allocate(dhi)
         allocate(dstp)
         allocate(dstpi)
-        allocate(ttol)
-        allocate(dtol)
         allocate(f(imax,jmax))
         allocate(fd(imax,jmax))
         allocate(ft(imax,jmax))
@@ -1018,11 +1015,6 @@ contains
         allocate(dd2_sav(imax))
         allocate(ddi_sav(imax))
         allocate(dd2i_sav(imax))
-
-        ! Set parameters
-
-        ttol = 1.0d-8
-        dtol = 1.0d-8
 
         !..   read the helmholtz free energy table
         itmax = imax
@@ -1307,8 +1299,6 @@ contains
       deallocate(dhi)
       deallocate(dstp)
       deallocate(dstpi)
-      deallocate(ttol)
-      deallocate(dtol)
       deallocate(f)
       deallocate(fd)
       deallocate(ft)
