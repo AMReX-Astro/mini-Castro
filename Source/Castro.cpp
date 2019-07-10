@@ -469,32 +469,6 @@ Castro::post_init (Real stop_time)
 
 }
 
-void
-Castro::FluxRegCrseInit() {
-
-    BL_PROFILE("Castro::FluxRegCrseInit()");
-
-    if (level == parent->finestLevel()) return;
-
-    Castro& fine_level = getLevel(level+1);
-
-    for (int i = 0; i < BL_SPACEDIM; ++i)
-	fine_level.flux_reg.CrseInit(*fluxes[i], i, 0, 0, NUM_STATE, -1.0);
-
-}
-
-
-void
-Castro::FluxRegFineAdd() {
-
-    BL_PROFILE("Castro::FluxRegFineAdd()");
-
-    if (level == 0) return;
-
-    for (int i = 0; i < BL_SPACEDIM; ++i)
-	flux_reg.FineAdd(*fluxes[i], i, 0, 0, NUM_STATE, 1.0);
-
-}
 
 
 void

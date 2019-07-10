@@ -154,13 +154,11 @@ Castro::initialize_do_advance(Real time, Real dt, int sub_iteration, int sub_ncy
 void
 Castro::finalize_do_advance(Real time, Real dt, int sub_iteration, int sub_ncycle)
 {
-
     BL_PROFILE_VAR("Castro::finalize_do_advance()", CA_FIN_DO_ADV);
 
     Sborder.clear();
 
     BL_PROFILE_VAR_STOP(CA_FIN_DO_ADV);
-
 }
 
 
@@ -168,27 +166,16 @@ Castro::finalize_do_advance(Real time, Real dt, int sub_iteration, int sub_ncycl
 void
 Castro::initialize_advance(Real time, Real dt)
 {
-
     BL_PROFILE_VAR("Castro::initialize_advance()", CA_INIT_ADV);
-
-    // The option of whether to do a multilevel initialization is
-    // controlled within the radiation class.  This step belongs
-    // before the swap.
 
     // Swap the new data from the last timestep into the old state data.
 
     state[State_Type].allocOldData();
     state[State_Type].swapTimeLevels(dt);
 
-    // Ensure data is valid before beginning advance. This addresses
-    // the fact that we may have new data on this level that was interpolated
-    // from a coarser level, and the interpolation in general cannot be
-    // trusted to respect the consistency between certain state variables
-    // (e.g. UEINT and UEDEN) that we demand in every zone.
+    // Ensure data is valid before beginning advance.
 
     clean_state(get_old_data(State_Type));
-
-    MultiFab& S_new = get_new_data(State_Type);
 
     // This array holds the hydrodynamics update.
 
@@ -209,7 +196,6 @@ Castro::initialize_advance(Real time, Real dt)
 	fluxes[dir]->setVal(0.0);
 
     BL_PROFILE_VAR_STOP(CA_INIT_ADV);
-
 }
 
 
@@ -217,16 +203,24 @@ Castro::initialize_advance(Real time, Real dt)
 void
 Castro::finalize_advance(Real time, Real dt)
 {
-
     BL_PROFILE_VAR("Castro::finalize_advance()", CA_FIN_ADV);
 
-    FluxRegCrseInit();
-    FluxRegFineAdd();
+    // Update flux registers.
 
-    Real cur_time = state[State_Type].curTime();
+    if (level < parent->finestLevel()) {
+        for (int i = 0; i < 3; ++i) {
+            getLevel(level+1).flux_reg.CrseInit(*fluxes[i], i, 0, 0, NUM_STATE, -1.0);
+        }
+    }
+
+
+    if (level > 0) {
+        for (int i = 0; i < 3; ++i) {
+            flux_reg.FineAdd(*fluxes[i], i, 0, 0, NUM_STATE, 1.0);
+        }
+    }
 
     hydro_source.clear();
-
     k_mol.clear();
     Sburn.clear();
 
@@ -235,5 +229,4 @@ Castro::finalize_advance(Real time, Real dt)
     num_zones_advanced += grids.numPts();
 
     BL_PROFILE_VAR_STOP(CA_FIN_ADV);
-
 }

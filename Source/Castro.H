@@ -226,9 +226,6 @@ protected:
 
     Castro& getLevel (int lev);
 
-    void FluxRegCrseInit();
-    void FluxRegFineAdd();
-
     void reflux (int crse_level, int fine_level);
 
     void normalize_species (amrex::MultiFab& S_new);
