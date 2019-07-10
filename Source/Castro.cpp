@@ -107,11 +107,6 @@ Castro::Castro (Amr&            papa,
 
     }
 
-    // Set the flux register scalings.
-
-    flux_crse_scale = -1.0;
-    flux_fine_scale = 1.0;
-
 }
 
 Castro::~Castro ()
@@ -484,7 +479,7 @@ Castro::FluxRegCrseInit() {
     Castro& fine_level = getLevel(level+1);
 
     for (int i = 0; i < BL_SPACEDIM; ++i)
-	fine_level.flux_reg.CrseInit(*fluxes[i], i, 0, 0, NUM_STATE, flux_crse_scale);
+	fine_level.flux_reg.CrseInit(*fluxes[i], i, 0, 0, NUM_STATE, -1.0);
 
 }
 
@@ -497,7 +492,7 @@ Castro::FluxRegFineAdd() {
     if (level == 0) return;
 
     for (int i = 0; i < BL_SPACEDIM; ++i)
-	flux_reg.FineAdd(*fluxes[i], i, 0, 0, NUM_STATE, flux_fine_scale);
+	flux_reg.FineAdd(*fluxes[i], i, 0, 0, NUM_STATE, 1.0);
 
 }
 

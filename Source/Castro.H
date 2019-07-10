@@ -220,10 +220,6 @@ protected:
     amrex::Vector<std::unique_ptr<amrex::MultiFab> > fluxes;
     amrex::FluxRegister flux_reg;
 
-    // Scalings for the flux registers.
-    amrex::Real flux_crse_scale;
-    amrex::Real flux_fine_scale;
-
     //
     // Storage for the method of lines stages
     amrex::Vector<std::unique_ptr<amrex::MultiFab> > k_mol;
