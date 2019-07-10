@@ -29,14 +29,6 @@ int          Castro::QVAR          = -1;
 int          Castro::NQAUX         = -1;
 int          Castro::NGDNV         = -1;
 
-#ifdef AMREX_USE_GPU
-IntVect      Castro::hydro_tile_size(1024000,1024000,1024000);
-#else
-IntVect      Castro::hydro_tile_size(1024,16,16);
-#endif
-
-// Note: Castro::variableSetUp is in Castro_setup.cpp
-
 void
 Castro::variableCleanUp ()
 {

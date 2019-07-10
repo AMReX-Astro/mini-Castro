@@ -2,21 +2,8 @@
 #ifndef _Castro_H_
 #define _Castro_H_
 
-#include <AMReX_BC_TYPES.H>
 #include <AMReX_AmrLevel.H>
-#include <AMReX_iMultiFab.H>
-#include <AMReX_ErrorList.H>
 #include <AMReX_FluxRegister.H>
-
-#ifdef BL_LAZY
-#include <AMReX_Lazy.H>
-#endif
-
-#include <memory>
-#include <iostream>
-
-using std::istream;
-using std::ostream;
 
 #define NumSpec 13
 #define MOL_STAGES 2
@@ -206,6 +193,12 @@ protected:
     // Storage for the method of lines stages
     //
     amrex::Vector<std::unique_ptr<amrex::MultiFab> > k_mol;
+
+    //
+    // Geometric data
+    //
+    amrex::MultiFab volume;
+    amrex::MultiFab area[3];
   
     static void network_init ();
 
@@ -222,15 +215,6 @@ protected:
     void clean_state (amrex::MultiFab& state);
 
     void avgDown ();
-
-    //
-    // The data.
-    //
-    amrex::MultiFab volume;
-    amrex::MultiFab area[3];
-
-    static amrex::IntVect hydro_tile_size;
-
 };
 
 inline

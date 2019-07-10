@@ -26,6 +26,14 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
 
   std::vector<amrex::Real> b_mol{0.5, 0.5};
 
+  // Choose tile size based on whether we're using a GPU.
+  
+#ifdef AMREX_USE_GPU
+  IntVect hydro_tile_size(1024000, 1024000, 1024000);
+#else
+  IntVect hydro_tile_size(1024, 16, 16);
+#endif
+
 #ifdef _OPENMP
 #pragma omp parallel
 #endif
