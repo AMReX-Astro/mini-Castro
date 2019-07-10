@@ -132,19 +132,16 @@ Castro::initialize_do_advance(Real time, Real dt, int amr_iteration, int amr_ncy
 
     int finest_level = parent->finestLevel();
 
-    // For the hydrodynamics update we need to have NUM_GROW ghost zones available,
+    // For the hydrodynamics update we need to have 4 ghost zones available,
     // but the state data does not carry ghost zones. So we use a FillPatch
     // using the state data to give us Sborder, which does have ghost zones.
 
-    // for Method of lines, our initialization of Sborder depends on
-    // which stage in the RK update we are working on
-      
     if (sub_iteration == 0) {
 
 	// first MOL stage
-	Sborder.define(grids, dmap, NUM_STATE, NUM_GROW);
+	Sborder.define(grids, dmap, NUM_STATE, 4);
 	const Real prev_time = state[State_Type].prevTime();
-	expand_state(Sborder, prev_time, NUM_GROW);
+	expand_state(Sborder, prev_time, 4);
 
     } else {
 
@@ -162,9 +159,9 @@ Castro::initialize_do_advance(Real time, Real dt, int amr_iteration, int amr_ncy
 	for (int i = 0; i < sub_iteration; ++i)
 	    MultiFab::Saxpy(S_new, dt*a_mol[sub_iteration][i], *k_mol[i], 0, 0, S_new.nComp(), 0);
 
-	Sborder.define(grids, dmap, NUM_STATE, NUM_GROW);
+	Sborder.define(grids, dmap, NUM_STATE, 4);
 	const Real new_time = state[State_Type].curTime();
-	expand_state(Sborder, new_time, NUM_GROW);
+	expand_state(Sborder, new_time, 4);
 
     }
 

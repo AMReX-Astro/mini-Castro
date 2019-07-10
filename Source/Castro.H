@@ -266,11 +266,6 @@ protected:
     //
     int iteration;
 
-    //
-    // Static data members.
-    //
-    static int NUM_GROW;
-
     static amrex::IntVect hydro_tile_size;
 
 };

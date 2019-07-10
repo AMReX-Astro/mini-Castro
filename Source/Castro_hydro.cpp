@@ -41,7 +41,7 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
 
           const Box& bx = mfi.tilebox();
 
-          const Box& qbx = amrex::grow(bx, NUM_GROW);
+          const Box& qbx = amrex::grow(bx, 4);
 
           // Convert the conservative state to the primitive variable state.
           // This fills both q and qaux.

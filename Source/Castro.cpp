@@ -23,8 +23,6 @@
 
 using namespace amrex;
 
-int          Castro::NUM_GROW      = 4;
-
 long         Castro::num_zones_advanced = 0;
 
 int          Castro::QVAR          = -1;
@@ -87,13 +85,13 @@ Castro::Castro (Amr&            papa,
     // Initialize volume, area, flux arrays.
 
     volume.clear();
-    volume.define(grids,dmap,1,NUM_GROW);
+    volume.define(grids, dmap, 1, 4);
     geom.GetVolume(volume);
 
     for (int dir = 0; dir < BL_SPACEDIM; dir++)
     {
         area[dir].clear();
-	area[dir].define(getEdgeBoxArray(dir),dmap,1,NUM_GROW);
+	area[dir].define(getEdgeBoxArray(dir), dmap, 1, 4);
         geom.GetFaceArea(area[dir],dir);
     }
 
