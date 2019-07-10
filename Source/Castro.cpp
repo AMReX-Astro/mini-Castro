@@ -23,9 +23,7 @@
 
 using namespace amrex;
 
-long         Castro::num_zones_advanced = 0;
-
-int          Castro::QVAR          = -1;
+long Castro::num_zones_advanced = 0;
 
 void
 Castro::variableCleanUp ()

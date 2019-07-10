@@ -85,10 +85,6 @@ Castro::variableSetUp ()
 
   ca_set_method_params();
 
-  // Get the number of primitive variables from Fortran.
-
-  ca_get_qvar(&QVAR);
-
   Interpolater* interp = &cell_cons_interp;
 
   bool state_data_extrap = false;

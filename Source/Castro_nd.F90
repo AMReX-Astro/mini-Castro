@@ -343,21 +343,6 @@ end subroutine ca_get_spec_names
 
 
 
-subroutine ca_get_qvar(qvar_in) bind(C, name="ca_get_qvar")
-
-  use castro_module, only: QVAR
-  use amrex_fort_module, only: rt => amrex_real
-
-  implicit none
-
-  integer, intent(inout) :: qvar_in
-
-  qvar_in = QVAR
-
-end subroutine ca_get_qvar
-
-
-
 subroutine ca_set_method_params() bind(C, name="ca_set_method_params")
 
   use eos_module, only: eos_init
