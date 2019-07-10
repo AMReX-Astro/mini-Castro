@@ -2,9 +2,6 @@ module actual_eos_module
 
     use eos_type_module
 
-    ! Runtime parameters
-    logical, allocatable :: input_is_constant
-
     !..for the tables, in general
     integer, parameter, private :: imax = 541, jmax = 201
     integer, allocatable :: itmax, jtmax
@@ -40,7 +37,6 @@ module actual_eos_module
                                      ddi_sav(:), dd2i_sav(:)
 
 #ifdef AMREX_USE_CUDA
-    attributes(managed) :: input_is_constant
     attributes(managed) :: itmax, jtmax
     attributes(managed) :: d, t
     attributes(managed) :: tlo, thi, tstp, tstpi
@@ -926,39 +922,37 @@ contains
 
         state % cs = sqrt(state % gam1 * state % p / state % rho)
 
-        if (input_is_constant) then
+        ! Ensure the inputs don't change as a result of the EOS call.
 
-          if (input .eq. eos_input_rh) then
+        if (input .eq. eos_input_rh) then
 
-            state % h = v_want
+          state % h = v_want
 
-          elseif (input .eq. eos_input_tp) then
+        elseif (input .eq. eos_input_tp) then
 
-            state % p = v_want
+          state % p = v_want
 
-          elseif (input .eq. eos_input_rp) then
+        elseif (input .eq. eos_input_rp) then
 
-            state % p = v_want
+          state % p = v_want
 
-          elseif (input .eq. eos_input_re) then
+        elseif (input .eq. eos_input_re) then
 
-            state % e = v_want
+          state % e = v_want
 
-          elseif (input .eq. eos_input_ps) then
+        elseif (input .eq. eos_input_ps) then
 
-            state % p = v1_want
-            state % s = v2_want
+          state % p = v1_want
+          state % s = v2_want
 
-          elseif (input .eq. eos_input_ph) then
+        elseif (input .eq. eos_input_ph) then
 
-            state % p = v1_want
-            state % h = v2_want
+          state % p = v1_want
+          state % h = v2_want
 
-          elseif (input .eq. eos_input_th) then
+        elseif (input .eq. eos_input_th) then
 
-            state % h = v_want
-
-          endif
+          state % h = v_want
 
         endif
 
@@ -981,7 +975,6 @@ contains
 
         ! Allocate managed module variables
 
-        allocate(input_is_constant)
         allocate(itmax)
         allocate(jtmax)
         allocate(d(imax))
@@ -1028,7 +1021,6 @@ contains
 
         ! Set parameters
 
-        input_is_constant = .true.
         ttol = 1.0d-8
         dtol = 1.0d-8
 
@@ -1303,7 +1295,6 @@ contains
 
       ! Deallocate managed module variables
 
-      deallocate(input_is_constant)
       deallocate(itmax)
       deallocate(jtmax)
       deallocate(d)
