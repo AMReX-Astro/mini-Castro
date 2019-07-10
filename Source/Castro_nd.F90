@@ -9,12 +9,6 @@ module castro_module
   ! conserved state components
   !---------------------------------------------------------------------
 
-  ! NTHERM: number of thermodynamic variables (rho, 3 momenta, rho*e, rho*E, T)
-  integer, parameter :: NTHERM = 7
-
-  ! NVAR  : number of total variables in initial system  
-  integer, parameter :: NVAR = NTHERM + nspec
-
   ! We use these to index into the state "U"
   integer, parameter :: URHO = 1
   integer, parameter :: UMX = 2
@@ -22,18 +16,14 @@ module castro_module
   integer, parameter :: UMZ = 4
   integer, parameter :: UEDEN = 5
   integer, parameter :: UEINT = 6
-  integer, parameter :: UTEMP = 7 ! == NTHERM
+  integer, parameter :: UTEMP = 7
+  integer, parameter :: NTHERM = UTEMP
   integer, parameter :: UFS = NTHERM + 1
+  integer, parameter :: NVAR = NTHERM + nspec
 
   !---------------------------------------------------------------------
   ! primitive state components
   !---------------------------------------------------------------------
-
-  ! QTHERM: number of primitive variables: rho, p, (rho e), T + 3 velocity components 
-  integer, parameter :: QTHERM = NTHERM + 1 ! the + 1 is for QGAME which is always defined in primitive mode
-
-  ! QVAR  : number of total variables in primitive form
-  integer, parameter :: QVAR = QTHERM + nspec
 
   ! We use these to index into the state "Q"
   integer, parameter :: QRHO = 1
@@ -43,28 +33,27 @@ module castro_module
   integer, parameter :: QGAME = 5
   integer, parameter :: QPRES = 6
   integer, parameter :: QREINT = 7
-  integer, parameter :: QTEMP = 8 ! == QTHERM
+  integer, parameter :: QTEMP = 8
+  integer, parameter :: QTHERM = QTEMP
   integer, parameter :: QFS = QTHERM + 1
+  integer, parameter :: QVAR = QTHERM + nspec
 
-  ! The NQAUX here are auxiliary quantities (game, gamc, c, csml, dpdr, dpde)
-  ! that we create in the primitive variable call but that do not need to
-  ! participate in tracing.
-  integer, parameter :: NQAUX = 5
+  ! The NQAUX here are auxiliary quantities for the primitive variable
+  ! call but that do not need to participate in tracing.
   integer, parameter :: QGAMC = 1
   integer, parameter :: QC    = 2
   integer, parameter :: QDPDR = 3
   integer, parameter :: QDPDE = 4
+  integer, parameter :: NQAUX = 4
 
   ! These are used for the Godunov state
-  ! Note that the velocity indices here are picked to be the same value
-  ! as in the primitive variable array
-  integer, parameter :: NGDNV = 6
   integer, parameter :: GDRHO = 1
   integer, parameter :: GDU = 2
   integer, parameter :: GDV = 3
   integer, parameter :: GDW = 4
   integer, parameter :: GDPRES = 5
   integer, parameter :: GDGAME = 6
+  integer, parameter :: NGDNV = 6
 
   real(rt), parameter :: small_dens = 1.0d-12
   real(rt), parameter :: small_temp = 1.0d3
