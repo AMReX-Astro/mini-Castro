@@ -88,7 +88,6 @@ Castro::variableSetUp ()
   // Get the number of primitive variables from Fortran.
 
   ca_get_qvar(&QVAR);
-  ca_get_nqaux(&NQAUX);
   ca_get_ngdnv(&NGDNV);
 
   Interpolater* interp = &cell_cons_interp;

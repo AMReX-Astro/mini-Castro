@@ -26,7 +26,6 @@ using namespace amrex;
 long         Castro::num_zones_advanced = 0;
 
 int          Castro::QVAR          = -1;
-int          Castro::NQAUX         = -1;
 int          Castro::NGDNV         = -1;
 
 void

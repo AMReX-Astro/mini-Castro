@@ -7,6 +7,7 @@
 
 #define NumSpec 13
 #define MOL_STAGES 2
+#define NQAUX 4
 
 enum StateType { State_Type };
 
@@ -158,7 +159,6 @@ public:
     void expand_state(amrex::MultiFab& S, amrex::Real time, int ng);
 
     static int QVAR;
-    static int NQAUX;
     static int NGDNV;
 
     //
