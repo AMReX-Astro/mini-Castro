@@ -80,10 +80,9 @@ Castro::variableSetUp ()
   // Get options, set phys_bc
   read_params();
 
-  // Initialize the network
+  // Initialize the network and EOS
   network_init();
-
-  ca_set_method_params();
+  eos_init();
 
   Interpolater* interp = &cell_cons_interp;
 
@@ -96,8 +95,6 @@ Castro::variableSetUp ()
   desc_lst.addDescriptor(State_Type,IndexType::TheCellType(),
 			 StateDescriptor::Point,ngrow_state,NUM_STATE,
 			 interp,state_data_extrap,store_in_checkpoint);
-
-//  desc_lst.setDeviceCopy(State_Type, true);
 
   Vector<BCRec>       bcs(NUM_STATE);
   Vector<std::string> name(NUM_STATE);

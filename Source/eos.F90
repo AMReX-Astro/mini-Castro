@@ -11,7 +11,7 @@ contains
   ! EOS initialization routine: read in general EOS parameters, then 
   ! call any specific initialization used by the EOS.
 
-  subroutine eos_init()
+  subroutine eos_init() bind(c, name='eos_init')
 
     use eos_type_module, only: mintemp, maxtemp, mindens, maxdens, minx, maxx, &
                                minye, maxye, mine, maxe, minp, maxp

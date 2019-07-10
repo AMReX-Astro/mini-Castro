@@ -613,12 +613,6 @@ Castro::errorEst (TagBoxArray& tags,
 }
 
 void
-Castro::network_init ()
-{
-   ca_network_init();
-}
-
-void
 Castro::reset_internal_energy(MultiFab& S_new)
 {
 

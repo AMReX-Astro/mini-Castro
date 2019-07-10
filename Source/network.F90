@@ -35,7 +35,7 @@ module network
 
 contains
 
-  subroutine network_init
+  subroutine network_init() bind(c, name='network_init')
 
     use amrex_error_module, only: amrex_error
     use amrex_constants_module, only: ONE

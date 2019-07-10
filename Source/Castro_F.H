@@ -8,11 +8,13 @@ extern "C"
 {
 #endif
 
-  void ca_network_init();
-
-  void eos_finalize();
+  void network_init();
 
   void network_finalize();
+
+  void eos_init();
+
+  void eos_finalize();
 
   void probinit_finalize();
 
@@ -21,8 +23,6 @@ extern "C"
   void ca_get_spec_names(int* spec_names, int* ispec, int* len);
 
   void ca_get_qvar(int* qvar);
-
-  void ca_set_method_params();
 
   void ca_ctoprim(const int* lo, const int* hi,
                   const amrex::Real* u, const int* u_lo, const int* u_hi,
