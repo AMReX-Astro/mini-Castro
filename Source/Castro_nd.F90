@@ -358,35 +358,6 @@ end subroutine ca_get_qvar
 
 
 
-subroutine ca_get_nqaux(nqaux_in) bind(C, name="ca_get_nqaux")
-
-  use castro_module, only: NQAUX
-  use amrex_fort_module, only: rt => amrex_real
-
-  implicit none
-
-  integer, intent(inout) :: nqaux_in
-
-  nqaux_in = NQAUX
-
-end subroutine ca_get_nqaux
-
-
-
-subroutine ca_get_ngdnv(ngdnv_in) bind(C, name="ca_get_ngdnv")
-
-  use castro_module, only: NGDNV
-
-  implicit none
-
-  integer, intent(inout) :: ngdnv_in
-
-  ngdnv_in = NGDNV
-
-end subroutine ca_get_ngdnv
-
-
-
 subroutine ca_set_method_params() bind(C, name="ca_set_method_params")
 
   use eos_module, only: eos_init

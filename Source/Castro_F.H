@@ -22,8 +22,6 @@ extern "C"
 
   void ca_get_qvar(int* qvar);
 
-  void ca_get_ngdnv(int* ngdnv);
-
   void ca_set_method_params();
 
   void ca_ctoprim(const int* lo, const int* hi,

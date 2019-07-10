@@ -8,6 +8,7 @@
 #define NumSpec 13
 #define MOL_STAGES 2
 #define NQAUX 4
+#define NGDNV 6
 
 enum StateType { State_Type };
 
@@ -159,7 +160,6 @@ public:
     void expand_state(amrex::MultiFab& S, amrex::Real time, int ng);
 
     static int QVAR;
-    static int NGDNV;
 
     //
     // A record of how many cells we have advanced throughout the simulation
