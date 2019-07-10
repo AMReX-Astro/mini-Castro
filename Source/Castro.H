@@ -257,11 +257,6 @@ protected:
     amrex::MultiFab volume;
     amrex::MultiFab area[3];
 
-    //
-    // Keep track of which AMR iteration we're on.
-    //
-    int iteration;
-
     static amrex::IntVect hydro_tile_size;
 
 };

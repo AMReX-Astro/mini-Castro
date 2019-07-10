@@ -13,32 +13,22 @@ Castro::advance (Real time,
                  Real dt,
                  int  amr_iteration,
                  int  amr_ncycle)
-
-  // the main driver for a single level.
-  //
-  // arguments:
-  //    time          : the current simulation time
-  //    dt            : the timestep to advance (e.g., go from time to 
-  //                    time + dt)
-  //    amr_iteration : where we are in the current AMR subcycle.  Each
-  //                    level will take a number of steps to reach the
-  //                    final time of the coarser level below it.  This
-  //                    counter starts at 1
-  //    amr_ncycle    : the number of subcycles at this level
-
 {
     BL_PROFILE("Castro::advance()");
 
     Real dt_new = dt;
 
+    // Prepare for the advance.
+
     initialize_advance(time, dt, amr_iteration, amr_ncycle);
 
-    // Do the advance.
+    // Do the advance from t = time to t = time + dt.
 
     for (int iter = 0; iter < MOL_STAGES; ++iter) {
-	dt_new = do_advance(time, dt, amr_iteration, amr_ncycle, 
-			    iter, MOL_STAGES);
+	dt_new = do_advance(time, dt, amr_iteration, amr_ncycle, iter, MOL_STAGES);
     }
+
+    // Clean up.
 
     finalize_advance(time, dt, amr_iteration, amr_ncycle);
 
@@ -68,8 +58,7 @@ Castro::do_advance (Real time,
 
     // Perform initialization steps.
 
-    initialize_do_advance(time, dt, amr_iteration, amr_ncycle, 
-			  sub_iteration, sub_ncycle);
+    initialize_do_advance(time, dt, amr_iteration, amr_ncycle, sub_iteration, sub_ncycle);
 
     // Check for NaN's.
 
@@ -124,8 +113,7 @@ Castro::do_advance (Real time,
 
 
 void
-Castro::initialize_do_advance(Real time, Real dt, int amr_iteration, int amr_ncycle, 
-			      int sub_iteration, int sub_ncycle)
+Castro::initialize_do_advance(Real time, Real dt, int amr_iteration, int amr_ncycle, int sub_iteration, int sub_ncycle)
 {
 
     BL_PROFILE_VAR("Castro::initialize_do_advance()", CA_INIT_DO_ADV);
@@ -190,10 +178,6 @@ Castro::initialize_advance(Real time, Real dt, int amr_iteration, int amr_ncycle
 {
 
     BL_PROFILE_VAR("Castro::initialize_advance()", CA_INIT_ADV);
-
-    // Save the current iteration.
-
-    iteration = amr_iteration;
 
     // The option of whether to do a multilevel initialization is
     // controlled within the radiation class.  This step belongs
