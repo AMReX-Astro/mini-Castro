@@ -161,10 +161,10 @@ Castro::init ()
 Real
 Castro::initialTimeStep ()
 {
-    Real dummy_dt = 0.0;
-    Real init_dt  = 0.0;
+    const Real dummy_dt = 0.0;
+    const Real init_shrink = 0.01;
 
-    init_dt = estTimeStep(dummy_dt);
+    Real init_dt = init_shrink * estTimeStep(dummy_dt);
 
     return init_dt;
 }
