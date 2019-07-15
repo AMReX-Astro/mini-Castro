@@ -52,7 +52,8 @@ main (int argc, char* argv[])
         amrex::Print() << "The simulation prints a Figure of Merit at the end which measures the simulation throughput." << std::endl;
         amrex::Print() << "The FOM measures the average number of zones advanced per microsecond (higher is better)." << std::endl;
         amrex::Print() << "To disable printing the FOM, set fom = 0." << std::endl;
-        amrex::Print() << "At the end of each step, the effective radius of the blast wave is calculated and printed." << std::endl;
+        amrex::Print() << std::endl;
+        amrex::Print() << "To track the state of the simulation, the effective radius of the blast wave is periodically calculated and printed." << std::endl;
         amrex::Print() << std::endl;
     }
     else
