@@ -60,12 +60,6 @@ public:
     //
     virtual void initData () override;
     //
-    // Set time levels of state data.
-    //
-    virtual void setTimeLevel (amrex::Real time,
-                               amrex::Real dt_old,
-                               amrex::Real dt_new) override;
-    //
     // Initialize data on this level from another Castro (during regrid).
     //
     virtual void init (amrex::AmrLevel& old) override;

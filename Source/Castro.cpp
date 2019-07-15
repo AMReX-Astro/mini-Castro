@@ -73,14 +73,6 @@ Castro::~Castro ()
 }
 
 void
-Castro::setTimeLevel (Real time,
-                      Real dt_old,
-                      Real dt_new)
-{
-    AmrLevel::setTimeLevel(time,dt_old,dt_new);
-}
-
-void
 Castro::initData ()
 {
     BL_PROFILE("Castro::initData()");
@@ -129,7 +121,7 @@ Castro::init (AmrLevel &old)
     Real cur_time  = oldlev->state[State_Type].curTime();
     Real prev_time = oldlev->state[State_Type].prevTime();
     Real dt_old    = cur_time - prev_time;
-    setTimeLevel(cur_time,dt_old,dt_new);
+    setTimeLevel(cur_time, dt_old, dt_new);
 
     MultiFab& state_MF = get_new_data(State_Type);
     FillPatch(old, state_MF, state_MF.nGrow(), cur_time, State_Type, 0, state_MF.nComp());
@@ -152,7 +144,7 @@ Castro::init ()
 
     Real time = cur_time;
 
-    setTimeLevel(time,dt_old,dt);
+    setTimeLevel(time, dt_old, dt);
 
     MultiFab& state_MF = get_new_data(State_Type);
     FillCoarsePatch(state_MF, 0, cur_time, State_Type, 0, state_MF.nComp());
