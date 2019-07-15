@@ -119,7 +119,7 @@ main (int argc, char* argv[])
 
         amrex::Amr* amrptr = new amrex::Amr;
 
-        amrex::Print() << "Starting simulation..." << std::endl << std::endl;
+        amrex::Print() << "Running simulation..." << std::endl << std::endl;
 
         amrptr->init(0.0, stop_time);
 

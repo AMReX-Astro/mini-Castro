@@ -105,6 +105,13 @@ extern "C"
      const amrex::Real* den, const int* den_lo, const int* den_hi,
      const int8_t tagval, const int8_t clearval);
 
+  void calculate_blast_radius
+    (const int* lo, const int* hi,
+     BL_FORT_FAB_ARG_3D(state),
+     const amrex::Real* dx, const amrex::Real* problo, const amrex::Real* probhi,
+     amrex::Real* blast_mass, amrex::Real* blast_radius,
+     const amrex::Real max_density);
+
 #ifdef __cplusplus
 }
 #endif

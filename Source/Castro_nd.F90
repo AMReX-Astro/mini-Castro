@@ -372,6 +372,57 @@ contains
 
 
 
+  subroutine calculate_blast_radius(lo, hi, &
+                                    state, s_lo, s_hi, &
+                                    dx, problo, probhi, &
+                                    blast_mass, blast_radius, &
+                                    max_density) &
+                                    bind(C, name="calculate_blast_radius")
+
+    use amrex_constants_module, only: HALF, TWO
+    use amrex_fort_module, only: amrex_add
+
+    implicit none
+
+    integer,  intent(in   ) :: lo(3), hi(3)
+    integer,  intent(in   ) :: s_lo(3), s_hi(3)
+    real(rt), intent(in   ) :: state(s_lo(1):s_hi(1),s_lo(2):s_hi(2),s_lo(3):s_hi(3),NVAR)
+    real(rt), intent(in   ) :: dx(3), problo(3), probhi(3)
+    real(rt), intent(inout) :: blast_mass, blast_radius
+    real(rt), intent(in   ), value :: max_density
+
+    integer  :: i, j, k
+    real(rt) :: x, y, z
+    real(rt) :: center(3)
+
+    real(rt), parameter :: density_tolerance = 0.1d0
+
+    !$gpu
+
+    ! Add to the (mass-weighted) blast radius if the density of this zone
+    ! is within density_tolerance of the maximum.
+
+    center = (probhi - problo) / TWO
+
+    do k = lo(3), hi(3)
+       z = problo(3) + (k + HALF) * dx(3) - center(3)
+       do j = lo(2), hi(2)
+          y = problo(2) + (j + HALF) * dx(2) - center(2)
+          do i = lo(1), hi(1)
+             x = problo(1) + (i + HALF) * dx(1) - center(1)
+
+             if (abs(state(i,j,k,URHO) - max_density) / max_density <= density_tolerance) then
+                call amrex_add(blast_mass, state(i,j,k,URHO))
+                call amrex_add(blast_radius, state(i,j,k,URHO) * sqrt(x**2 + y**2 + z**2))
+             end if
+          end do
+       end do
+    end do
+
+  end subroutine calculate_blast_radius
+
+
+
   subroutine ca_get_spec_names(spec_names,ispec,len) bind(C, name="ca_get_spec_names")
 
     use network, only: nspec, short_spec_names

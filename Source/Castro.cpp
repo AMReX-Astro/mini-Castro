@@ -372,27 +372,39 @@ Castro::post_timestep (int iteration)
 
     clean_state(S_new);
 
-    if (level == 0)
+    if (level == 0 && parent->levelSteps(0) % 50 == 0)
     {
+        // As a diagnostic quantity, we'll print the current blast radius
+        // (the location of the shock). We can estimate this using the
+        // location where the density on the domain is maximum. Then we
+        // can refine the estimate by doing a weighted sum on the domain.
 
-        // As a diagnostic quantity, we'll print the current
-        // blast radius (the location of the shock). We can
-        // estimate this using the location where the density
-        // on the domain is maximum. This may jump around
-        // from timestep to timestep, but the secular trend
-        // will be a monotonic increase with time (at least
-        // until the shock propagates off the domain).
-
-        IntVect max_loc = getLevel(parent->finestLevel()).get_new_data(State_Type).maxIndex(Density);
+        // We'll assume that everything we care about is on the finest level.
+        MultiFab& S_new = getLevel(parent->finestLevel()).get_new_data(State_Type);
+        Real max_density = S_new.max(Density);
 
         const Real* dx = getLevel(parent->finestLevel()).geom.CellSize();
-        Real blast_radius = std::sqrt(std::pow(max_loc[0] * dx[0] - (geom.ProbHi()[0] - geom.ProbLo()[0]) / 2.0, 2) +
-                                      std::pow(max_loc[1] * dx[1] - (geom.ProbHi()[1] - geom.ProbLo()[1]) / 2.0, 2) +
-                                      std::pow(max_loc[2] * dx[2] - (geom.ProbHi()[2] - geom.ProbLo()[2]) / 2.0, 2));
 
-        amrex::Print() << std::scientific << std::setprecision(6) << "Current blast radius (step " << parent->levelSteps(0) << "; time " << state[State_Type].curTime()
-                       << "): " << std::fixed << std::setprecision(3) << blast_radius / 1.0e5 << " km" << std::endl;
+        Real blast_radius = 0.0;
+        Real blast_mass = 0.0;
 
+#ifdef _OPENMP
+#pragma omp parallel reduction(sum:blast_mass,blast_radius)
+#endif
+        for (MFIter mfi(S_new); mfi.isValid(); ++mfi)
+        {
+            const Box& box = mfi.validbox();
+
+#pragma gpu box(box)
+            calculate_blast_radius(AMREX_INT_ANYD(box.loVect()), AMREX_INT_ANYD(box.hiVect()),
+                                   BL_TO_FORTRAN_ANYD(S_new[mfi]),
+                                   AMREX_REAL_ANYD(dx), AMREX_REAL_ANYD(geom.ProbLo()), AMREX_REAL_ANYD(geom.ProbHi()),
+                                   AMREX_MFITER_REDUCE_SUM(&blast_mass), AMREX_MFITER_REDUCE_SUM(&blast_radius),
+                                   max_density);
+        }
+
+        amrex::Print() << std::scientific << std::setprecision(6) << "Blast radius at step " << parent->levelSteps(0) << ", time " << state[State_Type].curTime()
+                       << ": " << std::fixed << std::setprecision(3) << (blast_radius / blast_mass) / 1.0e5 << " km" << std::endl;
     }
 
 }
