@@ -2,7 +2,9 @@
 #ifndef _Castro_H_
 #define _Castro_H_
 
+#include <AMReX_Amr.H>
 #include <AMReX_AmrLevel.H>
+#include <AMReX_ParmParse.H>
 #include <AMReX_FluxRegister.H>
 
 #define NumSpec 13

@@ -1,33 +1,9 @@
 
-#include <new>
-#include <cstdio>
-#include <cstring>
 #include <iostream>
-#include <iomanip>
-
-#ifndef WIN32
-#include <unistd.h>
-#endif
-
-#include <AMReX_CArena.H>
-#include <AMReX_REAL.H>
-#include <AMReX_Utility.H>
-#include <AMReX_IntVect.H>
-#include <AMReX_Box.H>
-#include <AMReX_Amr.H>
-#include <AMReX_ParmParse.H>
-#include <AMReX_ParallelDescriptor.H>
-#include <AMReX_AmrLevel.H>
-
-#include <time.h>
-
 #include <Castro.H>
 
-using namespace amrex;
-
 int
-main (int   argc,
-      char* argv[])
+main (int argc, char* argv[])
 {
     // Disable AMReX verbosity for the purposes of this benchmark.
     amrex::SetVerbose(0);
@@ -35,16 +11,10 @@ main (int   argc,
     // Initialize AMReX.
     amrex::Initialize(argc,argv);
 
-    BL_PROFILE_VAR("main()", pmain);
-
-    Real dRunTime1 = ParallelDescriptor::second();
-
     // Collect n_cell now. We're only actually going to run
     // the code if n_cell > 0. If the user doesn't set n_cell,
-    // we'll just print out some information about how to use
-    // the code.
-
-    ParmParse pp;
+    // we'll just print out some information about the code.
+    amrex::ParmParse pp;
 
     int n_cell = 0;
     pp.query("n_cell", n_cell);
@@ -58,25 +28,25 @@ main (int   argc,
         amrex::Print() << "This mini-app has several inputs parameters (values in parentheses are the defaults):" << std::endl;
         amrex::Print() << std::endl;
         amrex::Print() << "n_cell: The number of zones per dimension. This parameter must be set to run the code." << std::endl;
-        amrex::Print() << "max_grid_size (64): The maximum size of a box in the domain." << std::endl;
-        amrex::Print() << "min_grid_size (16): The minimum size of a box in the domain." << std::endl;
+        amrex::Print() << "max_box_size (64): The maximum size of a box in the domain." << std::endl;
+        amrex::Print() << "min_box_size (16): The minimum size of a box in the domain." << std::endl;
         amrex::Print() << "max_level (0): The maximum adaptive mesh refinement level (zero-indexed)." << std::endl;
         amrex::Print() << "stop_time (0.01): The stopping time of the simulation, in seconds." << std::endl;
         amrex::Print() << "max_step (10000000): The maximum number of timesteps to take." << std::endl;
         amrex::Print() << std::endl;
         amrex::Print() << "Example program invocation:" << std::endl;
-        amrex::Print() << "./mini-Castro3d.pgi.MPI.CUDA.ex n_cell = 128 max_grid_size = 128 min_grid_size = 32 max_level = 0" << std::endl;
+        amrex::Print() << "./mini-Castro3d.pgi.MPI.CUDA.ex n_cell = 128 max_box_size = 128 min_box_size = 32 max_level = 0" << std::endl;
         amrex::Print() << std::endl;
         amrex::Print() << "n_cell should be used to control the total amount of work to do. There are n_cell^3" << std::endl <<
                           "zones in the simulation, subdivided into boxes of various sizes. The minimum size" << std::endl <<
-                          "of a box in any dimension is set by min_grid_size, and similarly for max_grid_size." << std::endl <<
+                          "of a box in any dimension is set by min_box_size, and similarly for max_box_size." << std::endl <<
                           "For appropriate load balancing, there must be enough boxes as there are MPI ranks" << std::endl <<
                           "so that every rank has work to do. Ideally there are multiple boxes per rank." << std::endl <<
                           "For example, if n_cell = 768, and you have 128 MPI ranks, then a reasonable choice" << std::endl <<
-                          "would be max_grid_size = 96, since (768/96)^3 = 512 = 128 * 4, so that every rank" << std::endl <<
-                          "has 4 grids to work with. min_grid_size can be increased to decrease the number of boxes." << std::endl <<
+                          "would be max_box_size = 96, since (768/96)^3 = 512 = 128 * 4, so that every rank" << std::endl <<
+                          "has 4 boxes to work with. min_box_size can be increased to decrease the number of boxes." << std::endl <<
                           "Generally speaking, larger boxes are more efficient to compute on. Appropriate choices" << std::endl <<
-                          "for min_grid_size and max_grid_size usually must be empirically determined by trying" << std::endl <<
+                          "for min_box_size and max_box_size usually must be empirically determined by trying" << std::endl <<
                           "multiple values and finding the fastest run time." << std::endl;
         amrex::Print() << std::endl;
         amrex::Print() << "The simulation prints a Figure of Merit at the end which measures the simulation throughput." << std::endl;
@@ -87,10 +57,10 @@ main (int   argc,
     }
     else
     {
-        amrex::Print() << "Starting mini-Castro..." << std::endl << std::endl;
+        amrex::Print() << std::endl << "Starting mini-Castro..." << std::endl << std::endl;
 
         int max_step = 10000000;
-        Real stop_time = 1.0e-2;
+        amrex::Real stop_time = 1.0e-2;
         int do_fom = 1;
 
         pp.query("max_step", max_step);
@@ -101,11 +71,11 @@ main (int   argc,
         // They are hardcoded for the Sedov blast wave
         // that we are solving.
 
-        ParmParse pp_geom("geometry");
+        amrex::ParmParse pp_geom("geometry");
 
         std::vector<int> periodic{1, 1, 1};
-        std::vector<Real> prob_lo{0.0, 0.0, 0.0};
-        std::vector<Real> prob_hi{1.0e9, 1.0e9, 1.0e9};
+        std::vector<amrex::Real> prob_lo{0.0, 0.0, 0.0};
+        std::vector<amrex::Real> prob_hi{1.0e9, 1.0e9, 1.0e9};
 
         pp_geom.add("coord_sys", 0);
         pp_geom.addarr("is_periodic", periodic);
@@ -115,22 +85,22 @@ main (int   argc,
         // Use n_cell to replace amr.n_cell for a friendlier
         // user experience for those unfamiliar with AMReX.
 
-        ParmParse pp_amr("amr");
+        amrex::ParmParse pp_amr("amr");
 
         std::vector<int> n_cell_arr{n_cell, n_cell, n_cell};
         pp_amr.addarr("n_cell", n_cell_arr);
 
-        // Use max_grid_size to replace amr.max_grid_size.
+        // Use max_box_size to replace amr.max_grid_size.
 
-        int max_grid_size = 64;
-        pp.query("max_grid_size", max_grid_size);
-        pp_amr.add("max_grid_size", max_grid_size);
+        int max_box_size = 64;
+        pp.query("max_box_size", max_box_size);
+        pp_amr.add("max_grid_size", max_box_size);
 
-        // Use min_grid_size to replace amr.blocking_factor.
+        // Use min_box_size to replace amr.blocking_factor.
 
-        int min_grid_size = 16;
-        pp.query("min_grid_size", min_grid_size);
-        pp_amr.add("blocking_factor", min_grid_size);
+        int min_box_size = 16;
+        pp.query("min_box_size", min_box_size);
+        pp_amr.add("blocking_factor", min_box_size);
 
         // Use max_level to replace amr.max_level.
 
@@ -140,20 +110,20 @@ main (int   argc,
 
         amrex::Print() << "Initializing AMR driver using the following runtime parameters:" << std::endl << std::endl;
         amrex::Print() << "n_cell = " << n_cell << std::endl;
-        amrex::Print() << "max_grid_size = " << max_grid_size << std::endl;
-        amrex::Print() << "min_grid_size = " << min_grid_size << std::endl;
+        amrex::Print() << "max_box_size = " << max_box_size << std::endl;
+        amrex::Print() << "min_box_size = " << min_box_size << std::endl;
         amrex::Print() << "max_level = " << max_level << std::endl;
         amrex::Print() << "max_step = " << max_step << std::endl;
         amrex::Print() << "stop_time = " << stop_time << std::endl;
         amrex::Print() << std::endl;
 
-        Amr* amrptr = new Amr;
+        amrex::Amr* amrptr = new amrex::Amr;
 
         amrex::Print() << "Starting simulation..." << std::endl << std::endl;
 
         amrptr->init(0.0, stop_time);
 
-        Real dRunTime2 = ParallelDescriptor::second();
+        amrex::Real dRunTime1 = amrex::ParallelDescriptor::second();
 
         while ( amrptr->okToContinue()                            &&
                (amrptr->levelSteps(0) < max_step || max_step < 0) &&
@@ -168,21 +138,14 @@ main (int   argc,
 
         delete amrptr;
 
-        const int IOProc = ParallelDescriptor::IOProcessorNumber();
+        amrex::Real dRunTime2 = amrex::ParallelDescriptor::second();
 
-        Real dRunTime3 = ParallelDescriptor::second();
+        amrex::Real runtime = dRunTime2 - dRunTime1;
 
-        Real runtime_total = dRunTime3 - dRunTime1;
-        Real runtime_timestep = dRunTime3 - dRunTime2;
+        const int IOProc = amrex::ParallelDescriptor::IOProcessorNumber();
+        amrex::ParallelDescriptor::ReduceRealMax(runtime, IOProc);
 
-        ParallelDescriptor::ReduceRealMax(runtime_total,IOProc);
-        ParallelDescriptor::ReduceRealMax(runtime_timestep,IOProc);
-
-        int nProcs = ParallelDescriptor::NProcs();
-    #ifdef _OPENMP
-        nProcs *= omp_get_max_threads();
-    #endif
-        Real fom = Castro::num_zones_advanced / runtime_timestep / 1.e6;
+        amrex::Real fom = Castro::num_zones_advanced / runtime / 1.e6;
 
         amrex::Print() << std::endl;
         amrex::Print() << "Simulation completed!" << std::endl;
@@ -193,9 +156,6 @@ main (int   argc,
         }
 
     }
-
-    BL_PROFILE_VAR_STOP(pmain);
-    BL_PROFILE_SET_RUN_TIME(dRunTime2);
 
     amrex::Finalize();
 
