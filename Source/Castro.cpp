@@ -153,6 +153,8 @@ Castro::init ()
 Real
 Castro::initialTimeStep ()
 {
+    BL_PROFILE("Castro::initialTimeStep()");
+
     const Real dummy_dt = 0.0;
     const Real init_shrink = 0.01;
 
@@ -396,8 +398,7 @@ Castro::post_timestep (int iteration)
 }
 
 void
-Castro::post_regrid (int lbase,
-                     int new_finest)
+Castro::post_regrid (int lbase, int new_finest)
 {
     BL_PROFILE("Castro::post_regrid()");
 }
@@ -407,17 +408,13 @@ Castro::post_init (Real stop_time)
 {
     BL_PROFILE("Castro::post_init()");
 
-    if (level > 0)
-        return;
+    if (level > 0) return;
 
-    //
     // Average data down from finer levels
     // so that conserved data is consistent between levels.
-    //
     int finest_level = parent->finestLevel();
     for (int k = finest_level-1; k>= 0; k--)
         getLevel(k).avgDown();
-
 }
 
 
@@ -480,36 +477,6 @@ Castro::avgDown ()
 }
 
 void
-Castro::normalize_species (MultiFab& S_new)
-{
-
-    BL_PROFILE("Castro::normalize_species()");
-
-    int ng = S_new.nGrow();
-
-}
-
-void
-Castro::enforce_min_density (MultiFab& S_old, MultiFab& S_new)
-{
-
-    BL_PROFILE("Castro::enforce_min_density()");
-
-}
-
-void
-Castro::allocOldData ()
-{
-    state[State_Type].allocOldData();
-}
-
-void
-Castro::removeOldData()
-{
-    AmrLevel::removeOldData();
-}
-
-void
 Castro::errorEst (TagBoxArray& tags,
                   int          clearval,
                   int          tagval,
@@ -541,34 +508,10 @@ Castro::errorEst (TagBoxArray& tags,
     }
 }
 
-void
-Castro::reset_internal_energy(MultiFab& S_new)
-{
-
-    BL_PROFILE("Castro::reset_internal_energy()");
-
-    MultiFab old_state;
-
-    int ng = S_new.nGrow();
-
-
-}
-
-void
-Castro::computeTemp(MultiFab& State)
-{
-
-  BL_PROFILE("Castro::computeTemp()");
-
-  reset_internal_energy(State);
-
-}
-
 // Fill a version of the state with ng ghost zones from the state data.
 void
 Castro::expand_state(MultiFab& S, Real time, int ng)
 {
-
     BL_PROFILE("Castro::expand_state()");
 
     BL_ASSERT(S.nGrow() >= ng);
@@ -576,14 +519,12 @@ Castro::expand_state(MultiFab& S, Real time, int ng)
     AmrLevel::FillPatch(*this,S,ng,time,State_Type,0,NUM_STATE);
 
     clean_state(S);
-
 }
 
 
 void
 Castro::check_for_nan(MultiFab& state, int check_ghost)
 {
-
   BL_PROFILE("Castro::check_for_nan()");
 
   int ng = 0;
@@ -602,7 +543,6 @@ Castro::check_for_nan(MultiFab& state, int check_ghost)
             }
         }
     }
-
 }
 
 // Given State_Type state data, perform a number of cleaning steps to make
