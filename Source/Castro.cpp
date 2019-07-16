@@ -403,6 +403,9 @@ Castro::post_timestep (int iteration)
                                    max_density);
         }
 
+        amrex::ParallelDescriptor::ReduceRealSum(blast_mass);
+        amrex::ParallelDescriptor::ReduceRealSum(blast_radius);
+
         amrex::Print() << std::scientific << std::setprecision(6) << "Blast radius at step " << parent->levelSteps(0) << ", time " << state[State_Type].curTime()
                        << ": " << std::fixed << std::setprecision(3) << (blast_radius / blast_mass) / 1.0e5 << " km" << std::endl;
     }
