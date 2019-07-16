@@ -16,6 +16,7 @@
 using namespace amrex;
 
 long Castro::num_zones_advanced = 0;
+int Castro::diagnostic_interval = 50;
 
 void
 Castro::variableCleanUp ()
@@ -372,7 +373,7 @@ Castro::post_timestep (int iteration)
 
     clean_state(S_new);
 
-    if (level == 0 && parent->levelSteps(0) % 50 == 0)
+    if (level == 0 && parent->levelSteps(0) % diagnostic_interval == 0)
     {
         // As a diagnostic quantity, we'll print the current blast radius
         // (the location of the shock). We can estimate this using the

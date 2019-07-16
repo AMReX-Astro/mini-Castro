@@ -135,6 +135,9 @@ public:
     // A record of how many cells we have advanced throughout the simulation
     static long num_zones_advanced;
 
+    // How often should we print out diagnostic output?
+    static int diagnostic_interval;
+
 protected:
 
     // A state array with ghost zones
