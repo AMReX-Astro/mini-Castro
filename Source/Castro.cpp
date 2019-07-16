@@ -13,6 +13,8 @@
 #include <omp.h>
 #endif
 
+#define BL_ARR4_TO_FORTRAN_ANYD(a) a.p,&((a).begin.x),amrex::GpuArray<int,3>{(a).end.x-1,(a).end.y-1,(a).end.z-1}.data()
+
 using namespace amrex;
 
 long Castro::num_zones_advanced = 0;
@@ -99,11 +101,14 @@ Castro::initData ()
     {
         const Box& box = mfi.validbox();
 
-#pragma gpu
-        ca_initdata
-            (AMREX_INT_ANYD(box.loVect()), AMREX_INT_ANYD(box.hiVect()),
-             BL_TO_FORTRAN_ANYD(S_new[mfi]), AMREX_REAL_ANYD(dx),
-             AMREX_REAL_ANYD(problo), AMREX_REAL_ANYD(probhi));
+        const auto state_fab = S_new[mfi].array();
+
+        AMREX_LAUNCH_DEVICE_LAMBDA(box, tbx,
+        {
+            ca_initdata(AMREX_ARLIM_ANYD(tbx.loVect()), AMREX_ARLIM_ANYD(tbx.hiVect()),
+                        BL_ARR4_TO_FORTRAN_ANYD(state_fab), AMREX_ZFILL(dx),
+                        AMREX_ZFILL(problo), AMREX_ZFILL(probhi));
+        });
     }
 }
 

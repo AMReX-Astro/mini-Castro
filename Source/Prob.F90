@@ -16,7 +16,10 @@ module initdata_module
   
 contains
 
-  subroutine ca_initdata(lo, hi, state, s_lo, s_hi, dx, problo, probhi) bind(c,name='ca_initdata')
+  AMREX_CUDA_FORT_DEVICE subroutine ca_initdata(lo, hi, &
+                                                state, s_lo, s_hi, &
+                                                dx, problo, probhi) &
+                                                bind(c,name='ca_initdata')
 
     use amrex_constants_module, only: M_PI, FOUR3RD
     use castro_module , only: NVAR, URHO, UMX, UMY, UMZ, UTEMP, UEDEN, UEINT, UFS
@@ -37,8 +40,6 @@ contains
     integer :: npert, nambient
 
     real(rt) :: center(3)
-
-    !$gpu
 
     ! Set explosion energy -- we will convert the point-explosion energy into
     ! a corresponding energy distributed throughout the perturbed volume.
