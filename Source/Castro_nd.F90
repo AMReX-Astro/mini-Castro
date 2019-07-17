@@ -61,12 +61,16 @@ module castro_module
 
 contains
 
-  subroutine ca_enforce_minimum_density(lo, hi, state, s_lo, s_hi) bind(c,name='ca_enforce_minimum_density')
+  AMREX_CUDA_FORT_DEVICE subroutine ca_enforce_minimum_density(lo, hi, state, s_lo, s_hi) bind(c,name='ca_enforce_minimum_density')
 
     use amrex_constants_module, only: ZERO
     use network, only: nspec
     use eos_type_module, only: eos_t, eos_input_rt
+#ifdef AMREX_USE_CUDA
+    use eos_module, only: eos => eos_device
+#else
     use eos_module, only: eos
+#endif
 
     implicit none
 
@@ -79,8 +83,6 @@ contains
     real(rt)     :: max_dens
     integer      :: n, ispec
     type (eos_t) :: eos_state
-
-    !$gpu
 
     max_dens = ZERO
 
@@ -164,7 +166,7 @@ contains
 
 
 
-  subroutine ca_normalize_species(lo, hi, state, s_lo, s_hi) bind(c,name='ca_normalize_species')
+  AMREX_CUDA_FORT_DEVICE subroutine ca_normalize_species(lo, hi, state, s_lo, s_hi) bind(c,name='ca_normalize_species')
 
     use network, only: nspec
     use amrex_constants_module, only: ONE
@@ -178,8 +180,6 @@ contains
     ! Local variables
     integer  :: i, j, k
     real(rt) :: xn(nspec)
-
-    !$gpu
 
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
@@ -201,12 +201,16 @@ contains
 
 
 
-  subroutine ca_reset_internal_e(lo,hi,u,u_lo,u_hi) bind(c,name='ca_reset_internal_e')
+  AMREX_CUDA_FORT_DEVICE subroutine ca_reset_internal_e(lo,hi,u,u_lo,u_hi) bind(c,name='ca_reset_internal_e')
 
-    use eos_module, only: eos
     use eos_type_module, only: eos_t, eos_input_re, eos_input_rt
     use network, only: nspec
     use amrex_constants_module, only: ZERO, HALF, ONE
+#ifdef AMREX_USE_CUDA
+    use eos_module, only: eos => eos_device
+#else
+    use eos_module, only: eos
+#endif
 
     implicit none
 
@@ -221,8 +225,6 @@ contains
     real(rt), parameter :: dual_energy_eta2 = 1.e-4_rt
 
     type (eos_t) :: eos_state
-
-    !$gpu
 
     ! Reset internal energy
 
@@ -285,12 +287,16 @@ contains
 
 
 
-  subroutine ca_compute_temp(lo,hi,state,s_lo,s_hi) bind(c,name='ca_compute_temp')
+  AMREX_CUDA_FORT_DEVICE subroutine ca_compute_temp(lo,hi,state,s_lo,s_hi) bind(c,name='ca_compute_temp')
 
     use network, only: nspec
-    use eos_module, only: eos
     use eos_type_module, only: eos_input_re, eos_t
     use amrex_constants_module, only: ZERO, ONE
+#ifdef AMREX_USE_CUDA
+    use eos_module, only: eos => eos_device
+#else
+    use eos_module, only: eos
+#endif
 
     implicit none
 
@@ -302,8 +308,6 @@ contains
     real(rt) :: rhoInv
 
     type (eos_t) :: eos_state
-
-    !$gpu
 
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
@@ -329,11 +333,11 @@ contains
 
 
 
-  subroutine ca_denerror(lo, hi, &
-                         tag, taglo, taghi, &
-                         den, denlo, denhi, &
-                         set, clear) &
-                         bind(C, name="ca_denerror")
+  AMREX_CUDA_FORT_DEVICE subroutine ca_denerror(lo, hi, &
+                                                tag, taglo, taghi, &
+                                                den, denlo, denhi, &
+                                                set, clear) &
+                                                bind(C, name="ca_denerror")
 
     implicit none
 
@@ -348,8 +352,6 @@ contains
     integer  :: i, j, k
 
     real(rt), parameter :: dengrad_rel = 0.25d0
-
-    !$gpu
 
     ! Tag on regions of high density gradient
     do k = lo(3), hi(3)
@@ -372,15 +374,19 @@ contains
 
 
 
-  subroutine calculate_blast_radius(lo, hi, &
-                                    state, s_lo, s_hi, &
-                                    dx, problo, probhi, &
-                                    blast_mass, blast_radius, &
-                                    max_density) &
-                                    bind(C, name="calculate_blast_radius")
+  AMREX_CUDA_FORT_DEVICE subroutine calculate_blast_radius(lo, hi, &
+                                                           state, s_lo, s_hi, &
+                                                           dx, problo, probhi, &
+                                                           blast_mass, blast_radius, &
+                                                           max_density) &
+                                                           bind(C, name="calculate_blast_radius")
 
     use amrex_constants_module, only: HALF, TWO
+#ifdef AMREX_USE_CUDA
+    use amrex_fort_module, only: amrex_add => amrex_add_device
+#else
     use amrex_fort_module, only: amrex_add
+#endif
 
     implicit none
 
@@ -396,8 +402,6 @@ contains
     real(rt) :: center(3)
 
     real(rt), parameter :: density_tolerance = 0.1d0
-
-    !$gpu
 
     ! Add to the (mass-weighted) blast radius if the density of this zone
     ! is within density_tolerance of the maximum.

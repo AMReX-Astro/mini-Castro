@@ -8,14 +8,19 @@ contains
 
   ! Courant-condition limited timestep
 
-  subroutine ca_estdt(lo,hi,u,u_lo,u_hi,dx,dt) bind(c,name='ca_estdt')
+  AMREX_CUDA_FORT_DEVICE subroutine ca_estdt(lo,hi,u,u_lo,u_hi,dx,dt) bind(c,name='ca_estdt')
 
     use network, only: nspec
-    use eos_module, only: eos
+    use castro_module, only: NVAR, URHO, UMX, UMY, UMZ, UEINT, UTEMP, UFS
     use eos_type_module, only: eos_t, eos_input_re
     use amrex_constants_module, only: ONE
-    use amrex_fort_module, only: rt => amrex_real, amrex_min
-    use castro_module, only: NVAR, URHO, UMX, UMY, UMZ, UEINT, UTEMP, UFS
+#ifdef AMREX_USE_CUDA
+    use amrex_fort_module, only: amrex_min => amrex_min_device
+    use eos_module, only: eos => eos_device
+#else
+    use amrex_fort_module, only: amrex_min
+    use eos_module, only: eos
+#endif
 
     implicit none
 
@@ -29,8 +34,6 @@ contains
     integer  :: i, j, k
 
     type (eos_t) :: eos_state
-
-    !$gpu
 
     ! Call EOS for the purpose of computing sound speed
 

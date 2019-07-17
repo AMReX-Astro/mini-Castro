@@ -6,16 +6,16 @@ module hydro_module
 
 contains
 
-  subroutine ca_construct_flux(lo, hi, domlo, domhi, dx, dt, idir, &
-                               uin, uin_lo, uin_hi, &
-                               div, div_lo, div_hi, &
-                               qaux, qa_lo, qa_hi, &
-                               qm, qm_lo, qm_hi, &
-                               qp, qp_lo, qp_hi, &
-                               qint, qe_lo, qe_hi, &
-                               flux, f_lo, f_hi, &
-                               area, a_lo, a_hi) &
-                               bind(c,name='ca_construct_flux')
+  AMREX_CUDA_FORT_DEVICE subroutine ca_construct_flux(lo, hi, domlo, domhi, dx, dt, idir, &
+                                                      uin, uin_lo, uin_hi, &
+                                                      div, div_lo, div_hi, &
+                                                      qaux, qa_lo, qa_hi, &
+                                                      qm, qm_lo, qm_hi, &
+                                                      qp, qp_lo, qp_hi, &
+                                                      qint, qe_lo, qe_hi, &
+                                                      flux, f_lo, f_hi, &
+                                                      area, a_lo, a_hi) &
+                                                      bind(c,name='ca_construct_flux')
 
     use amrex_fort_module, only: rt => amrex_real
     use castro_module, only: NVAR, QVAR, NGDNV, NQAUX
@@ -46,8 +46,6 @@ contains
     real(rt), intent(in   ) :: dx(3)
     real(rt), intent(in   ), value :: dt
 
-    !$gpu
-
     call cmpflx(lo, hi, domlo, domhi, idir, qm, qm_lo, qm_hi, qp, qp_lo, qp_hi, &
                 qint, qe_lo, qe_hi, flux, f_lo, f_hi, qaux, qa_lo, qa_hi)
     call apply_av(lo, hi, idir, dx, div, div_lo, div_hi, uin, uin_lo, uin_hi, flux, f_lo, f_hi)
@@ -58,14 +56,18 @@ contains
 
 
 
-  subroutine compute_cfl(lo, hi, dt, dx, courno, &
-                         q, q_lo, q_hi, &
-                         qaux, qa_lo, qa_hi) &
-                         bind(C, name = "compute_cfl")
+  AMREX_CUDA_FORT_DEVICE subroutine compute_cfl(lo, hi, dt, dx, courno, &
+                                                q, q_lo, q_hi, &
+                                                qaux, qa_lo, qa_hi) &
+                                                bind(C, name = "compute_cfl")
 
     use amrex_constants_module, only: ZERO, ONE
-    use amrex_fort_module, only: amrex_max
     use castro_module, only: QVAR, QRHO, QU, QV, QW, QC, NQAUX
+#ifdef AMREX_USE_CUDA
+    use amrex_fort_module, only: amrex_max => amrex_max_device
+#else
+    use amrex_fort_module, only: amrex_max
+#endif
 
     implicit none
 
@@ -81,8 +83,6 @@ contains
     real(rt) :: courx, coury, courz, courmx, courmy, courmz, courtmp
     real(rt) :: dtdx, dtdy, dtdz
     integer  :: i, j, k
-
-    !$gpu
 
     ! Compute running max of Courant number over grids
 
@@ -119,13 +119,12 @@ contains
 
 
 
-  subroutine ca_ctoprim(lo, hi, &
-                        uin, uin_lo, uin_hi, &
-                        q,     q_lo,   q_hi, &
-                        qaux, qa_lo,  qa_hi) bind(c,name='ca_ctoprim')
+  AMREX_CUDA_FORT_DEVICE subroutine ca_ctoprim(lo, hi, &
+                                               uin, uin_lo, uin_hi, &
+                                               q,     q_lo,   q_hi, &
+                                               qaux, qa_lo,  qa_hi) bind(c,name='ca_ctoprim')
 
     use network, only: nspec
-    use eos_module, only: eos
     use eos_type_module, only: eos_t, eos_input_re
     use amrex_constants_module, only: ZERO, HALF, ONE
     use castro_module, only: NVAR, URHO, UMX, UMZ, &
@@ -134,6 +133,11 @@ contains
                              QREINT, QPRES, QTEMP, QGAME, QFS, &
                              QVAR, QC, QGAMC, QDPDR, QDPDE, NQAUX, &
                              small_dens
+#ifdef AMREX_USE_CUDA
+    use eos_module, only: eos => eos_device
+#else
+    use eos_module, only: eos
+#endif
 
     implicit none
 
@@ -155,8 +159,6 @@ contains
     real(rt) :: vel(3)
 
     type (eos_t) :: eos_state
-
-    !$gpu
 
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
@@ -236,7 +238,7 @@ contains
 
 
 
-  subroutine normalize_species_fluxes(lo, hi, flux, f_lo, f_hi)
+  AMREX_CUDA_FORT_DEVICE subroutine normalize_species_fluxes(lo, hi, flux, f_lo, f_hi)
 
     ! Normalize the fluxes of the mass fractions so that
     ! they sum to 0.  This is essentially the CMA procedure that is
@@ -255,8 +257,6 @@ contains
     ! Local variables
     integer  :: i, j, k, n
     real(rt) :: sum, fac
-
-    !$gpu
 
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
@@ -286,7 +286,7 @@ contains
 
 
 
-  subroutine ca_divu(lo, hi, dx, q, q_lo, q_hi, div, d_lo, d_hi) bind(c,name='ca_divu')
+  AMREX_CUDA_FORT_DEVICE subroutine ca_divu(lo, hi, dx, q, q_lo, q_hi, div, d_lo, d_hi) bind(c,name='ca_divu')
 
     use amrex_constants_module, only: FOURTH, ONE
     use castro_module, only: QU, QV, QW, QVAR
@@ -302,8 +302,6 @@ contains
 
     integer  :: i, j, k
     real(rt) :: ux, vy, wz, dxinv, dyinv, dzinv
-
-    !$gpu
 
     dxinv = ONE/dx(1)
     dyinv = ONE/dx(2)
@@ -341,10 +339,10 @@ contains
 
 
 
-  subroutine apply_av(lo, hi, idir, dx, &
-                      div, div_lo, div_hi, &
-                      uin, uin_lo, uin_hi, &
-                      flux, f_lo, f_hi)
+  AMREX_CUDA_FORT_DEVICE subroutine apply_av(lo, hi, idir, dx, &
+                                             div, div_lo, div_hi, &
+                                             uin, uin_lo, uin_hi, &
+                                             flux, f_lo, f_hi)
 
     use amrex_constants_module, only: ZERO, FOURTH
     use castro_module, only: NVAR, UTEMP
@@ -367,8 +365,6 @@ contains
     real(rt) :: div1
 
     real(rt), parameter :: difmag = 0.1d0
-
-    !$gpu
 
     do n = 1, NVAR
 
@@ -413,19 +409,19 @@ contains
 
 
 
-  subroutine ca_construct_hydro_update(lo, hi, dx, dt, stage_weight, &
-                                       q1, q1_lo, q1_hi, &
-                                       q2, q2_lo, q2_hi, &
-                                       q3, q3_lo, q3_hi, &
-                                       f1, f1_lo, f1_hi, &
-                                       f2, f2_lo, f2_hi, &
-                                       f3, f3_lo, f3_hi, &
-                                       a1, a1_lo, a1_hi, &
-                                       a2, a2_lo, a2_hi, &
-                                       a3, a3_lo, a3_hi, &
-                                       vol, vol_lo, vol_hi, &
-                                       update, u_lo, u_hi) &
-                                       bind(c,name='ca_construct_hydro_update')
+  AMREX_CUDA_FORT_DEVICE subroutine ca_construct_hydro_update(lo, hi, dx, dt, stage_weight, &
+                                                              q1, q1_lo, q1_hi, &
+                                                              q2, q2_lo, q2_hi, &
+                                                              q3, q3_lo, q3_hi, &
+                                                              f1, f1_lo, f1_hi, &
+                                                              f2, f2_lo, f2_hi, &
+                                                              f3, f3_lo, f3_hi, &
+                                                              a1, a1_lo, a1_hi, &
+                                                              a2, a2_lo, a2_hi, &
+                                                              a3, a3_lo, a3_hi, &
+                                                              vol, vol_lo, vol_hi, &
+                                                              update, u_lo, u_hi) &
+                                                              bind(c,name='ca_construct_hydro_update')
 
     use amrex_constants_module, only: HALF, ONE
     use castro_module, only: NVAR, UEINT, NGDNV, GDPRES, GDU, GDV, GDW
@@ -461,8 +457,6 @@ contains
 
     integer  :: i, j, k, n
     real(rt) :: pdivu, dxinv(3), dtinv
-
-    !$gpu
 
     dtinv = ONE / dt
     dxinv = ONE / dx
@@ -501,7 +495,7 @@ contains
 
 
 
-  subroutine scale_flux(lo, hi, flux, f_lo, f_hi, area, a_lo, a_hi, dt)
+  AMREX_CUDA_FORT_DEVICE subroutine scale_flux(lo, hi, flux, f_lo, f_hi, area, a_lo, a_hi, dt)
 
     use castro_module, only: NVAR
 
@@ -516,8 +510,6 @@ contains
     real(rt), intent(in   ) :: area(a_lo(1):a_hi(1),a_lo(2):a_hi(2),a_lo(3):a_hi(3))
 
     integer :: i, j, k, n
-
-    !$gpu
 
     do n = 1, NVAR
        do k = lo(3), hi(3)

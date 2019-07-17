@@ -11,11 +11,11 @@ module ppm_module
 
 contains
 
-  subroutine ca_ppm_reconstruct(lo, hi, &
-                                s, s_lo, s_hi, &
-                                flatn, f_lo, f_hi, &
-                                qm, qm_lo, qm_hi, &
-                                qp, qp_lo, qp_hi) bind(c,name='ca_ppm_reconstruct')
+  AMREX_CUDA_FORT_DEVICE subroutine ca_ppm_reconstruct(lo, hi, &
+                                                       s, s_lo, s_hi, &
+                                                       flatn, f_lo, f_hi, &
+                                                       qm, qm_lo, qm_hi, &
+                                                       qp, qp_lo, qp_hi) bind(c,name='ca_ppm_reconstruct')
 
     implicit none
 
@@ -39,22 +39,6 @@ contains
 
     ! s_{\ib,+}, s_{\ib,-}
     real(rt) :: sm, sp
-
-    !$gpu
-
-#ifndef AMREX_USE_CUDA
-    if (s_lo(1) .gt. lo(1)-3 .or. s_lo(2) .gt. lo(2)-3 .or. s_lo(3) .gt. lo(3)-3) then
-         print *,'Low bounds of array: ',s_lo(1), s_lo(2),s_lo(3)
-         print *,'Low bounds of  loop: ',lo(1),lo(2),lo(3)
-         call bl_error("Need more ghost cells on array in ppm_type1")
-    end if
-
-    if (s_hi(1) .lt. hi(1)+3 .or. s_hi(2) .lt. hi(2)+3 .or. s_hi(3) .lt. hi(3)+3) then
-         print *,'Hi  bounds of array: ',s_hi(1), s_hi(2), s_hi(3)
-         print *,'Hi  bounds of  loop: ',hi(1),hi(2),hi(3)
-         call bl_error("Need more ghost cells on array in ppm_type1")
-      end if
-#endif
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     ! x-direction
