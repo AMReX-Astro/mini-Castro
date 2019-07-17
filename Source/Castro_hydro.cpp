@@ -48,9 +48,9 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
 
         for (MFIter mfi(S_new, hydro_tile_size); mfi.isValid(); ++mfi) {
 
-            const Box& bx = mfi.tilebox();
+            const Box& box = mfi.tilebox();
 
-            const Box& qbx = amrex::grow(bx, 4);
+            const Box& qbx = amrex::grow(box, 4);
 
             // Convert the conservative state to the primitive variable state.
             // This fills both q and qaux.
@@ -61,21 +61,21 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
             qaux.resize(qbx, NQAUX);
             Elixir elix_qaux = qaux.elixir();
 
-#pragma gpu
+#pragma gpu box(qbx) nohost
             ca_ctoprim(AMREX_INT_ANYD(qbx.loVect()), AMREX_INT_ANYD(qbx.hiVect()),
                        BL_TO_FORTRAN_ANYD(Sborder[mfi]),
                        BL_TO_FORTRAN_ANYD(q),
                        BL_TO_FORTRAN_ANYD(qaux));
 
-            const Box& obx = amrex::grow(bx, 1);
-            const Box& tbx = amrex::grow(bx, 2);
+            const Box& obx = amrex::grow(box, 1);
+            const Box& tbx = amrex::grow(box, 2);
 
             div.resize(obx, 1);
             Elixir elix_div = div.elixir();
 
             // Compute divergence of velocity field.
 
-#pragma gpu
+#pragma gpu box(obx) nohost
             ca_divu(AMREX_INT_ANYD(obx.loVect()), AMREX_INT_ANYD(obx.hiVect()),
                     AMREX_REAL_ANYD(dx),
                     BL_TO_FORTRAN_ANYD(q),
@@ -85,7 +85,7 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
             Elixir elix_flatn = flatn.elixir();
 
             // Compute flattening coefficient for slope calculations.
-#pragma gpu
+#pragma gpu box(obx) nohost
             ca_uflaten
                 (AMREX_INT_ANYD(obx.loVect()), AMREX_INT_ANYD(obx.hiVect()),
                  BL_TO_FORTRAN_ANYD(q),
@@ -98,7 +98,7 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
             Elixir elix_qp = qp.elixir();
 
             // Do PPM reconstruction to the zone edges.
-#pragma gpu
+#pragma gpu box(obx) nohost
             ca_ppm_reconstruct
                 (AMREX_INT_ANYD(obx.loVect()), AMREX_INT_ANYD(obx.hiVect()),
                  BL_TO_FORTRAN_ANYD(q),
@@ -109,31 +109,31 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
             q.clear();
             flatn.clear();
 
-            flux[0].resize(amrex::surroundingNodes(bx, 0), NUM_STATE);
+            flux[0].resize(amrex::surroundingNodes(box, 0), NUM_STATE);
             Elixir elix_flux_x = flux[0].elixir();
 
-            flux[1].resize(amrex::surroundingNodes(bx, 1), NUM_STATE);
+            flux[1].resize(amrex::surroundingNodes(box, 1), NUM_STATE);
             Elixir elix_flux_y = flux[1].elixir();
 
-            flux[2].resize(amrex::surroundingNodes(bx, 2), NUM_STATE);
+            flux[2].resize(amrex::surroundingNodes(box, 2), NUM_STATE);
             Elixir elix_flux_z = flux[2].elixir();
 
-            qe[0].resize(amrex::surroundingNodes(bx, 0), NGDNV);
+            qe[0].resize(amrex::surroundingNodes(box, 0), NGDNV);
             Elixir elix_qe_x = qe[0].elixir();
 
-            qe[1].resize(amrex::surroundingNodes(bx, 1), NGDNV);
+            qe[1].resize(amrex::surroundingNodes(box, 1), NGDNV);
             Elixir elix_qe_y = qe[1].elixir();
 
-            qe[2].resize(amrex::surroundingNodes(bx, 2), NGDNV);
+            qe[2].resize(amrex::surroundingNodes(box, 2), NGDNV);
             Elixir elix_qe_z = qe[2].elixir();
 
             for (int idir = 0; idir < 3; ++idir) {
 
-                const Box& ebx = amrex::surroundingNodes(bx, idir);
+                const Box& ebx = amrex::surroundingNodes(box, idir);
 
                 int idir_f = idir + 1;
 
-#pragma gpu
+#pragma gpu box(ebx) nohost
                 ca_construct_flux
                     (AMREX_INT_ANYD(ebx.loVect()), AMREX_INT_ANYD(ebx.hiVect()),
                      AMREX_INT_ANYD(domain_lo), AMREX_INT_ANYD(domain_hi),
@@ -165,9 +165,9 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
             qm.clear();
             qp.clear();
 
-#pragma gpu
+#pragma gpu box(box) nohost
             ca_construct_hydro_update
-                (AMREX_INT_ANYD(bx.loVect()), AMREX_INT_ANYD(bx.hiVect()),
+                (AMREX_INT_ANYD(box.loVect()), AMREX_INT_ANYD(box.hiVect()),
                  AMREX_REAL_ANYD(dx), dt,
                  b_mol[istage],
                  BL_TO_FORTRAN_ANYD(qe[0]),

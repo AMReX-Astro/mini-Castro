@@ -102,14 +102,11 @@ Castro::initData ()
     {
         const Box& box = mfi.validbox();
 
-        const auto state_fab = S_new[mfi].array();
-
-        AMREX_LAUNCH_DEVICE_LAMBDA(box, tbx,
-        {
-            ca_initdata(AMREX_ARLIM_ANYD(tbx.loVect()), AMREX_ARLIM_ANYD(tbx.hiVect()),
-                        BL_ARR4_TO_FORTRAN_ANYD(state_fab), AMREX_ZFILL(dx),
-                        AMREX_ZFILL(problo), AMREX_ZFILL(probhi));
-        });
+#pragma gpu box(box) nohost
+        ca_initdata
+            (AMREX_INT_ANYD(box.loVect()), AMREX_INT_ANYD(box.hiVect()),
+             BL_TO_FORTRAN_ANYD(S_new[mfi]), AMREX_REAL_ANYD(dx),
+             AMREX_REAL_ANYD(problo), AMREX_REAL_ANYD(probhi));
     }
 }
 
@@ -201,7 +198,7 @@ Castro::estTimeStep (Real dt_old)
 	{
 	    const Box& box = mfi.tilebox();
 
-#pragma gpu
+#pragma gpu box(box) nohost
             ca_estdt
                 (AMREX_INT_ANYD(box.loVect()), AMREX_INT_ANYD(box.hiVect()),
                  BL_TO_FORTRAN_ANYD(stateMF[mfi]),
@@ -401,7 +398,7 @@ Castro::post_timestep (int iteration)
         {
             const Box& box = mfi.validbox();
 
-#pragma gpu box(box)
+#pragma gpu box(box) nohost
             calculate_blast_radius(AMREX_INT_ANYD(box.loVect()), AMREX_INT_ANYD(box.hiVect()),
                                    BL_TO_FORTRAN_ANYD(S_new[mfi]),
                                    AMREX_REAL_ANYD(dx), AMREX_REAL_ANYD(geom.ProbLo()), AMREX_REAL_ANYD(geom.ProbHi()),
@@ -519,10 +516,10 @@ Castro::errorEst (TagBoxArray& tags,
 #endif
     for (MFIter mfi(*mf, true); mfi.isValid(); ++mfi)
     {
-        const Box& bx = mfi.validbox();
+        const Box& box = mfi.validbox();
 
-#pragma gpu
-        ca_denerror(AMREX_INT_ANYD(bx.loVect()), AMREX_INT_ANYD(bx.hiVect()),
+#pragma gpu box(box) nohost
+        ca_denerror(AMREX_INT_ANYD(box.loVect()), AMREX_INT_ANYD(box.hiVect()),
                     (int8_t*) BL_TO_FORTRAN_ANYD(tags[mfi]),
                     BL_TO_FORTRAN_ANYD((*mf)[mfi]),
                     set, clear);
@@ -581,26 +578,26 @@ Castro::clean_state(MultiFab& state)
 #endif
     for (MFIter mfi(state, true); mfi.isValid(); ++mfi)
     {
-        const Box& bx = mfi.growntilebox(ng);
+        const Box& box = mfi.growntilebox(ng);
 
         // Ensure the density is larger than the density floor.
 
-#pragma gpu
-	ca_enforce_minimum_density(AMREX_INT_ANYD(bx.loVect()), AMREX_INT_ANYD(bx.hiVect()), BL_TO_FORTRAN_ANYD(state[mfi]));
+#pragma gpu box(box) nohost
+	ca_enforce_minimum_density(AMREX_INT_ANYD(box.loVect()), AMREX_INT_ANYD(box.hiVect()), BL_TO_FORTRAN_ANYD(state[mfi]));
 
         // Ensure all species are normalized.
 
-#pragma gpu
-        ca_normalize_species(AMREX_INT_ANYD(bx.loVect()), AMREX_INT_ANYD(bx.hiVect()), BL_TO_FORTRAN_ANYD(state[mfi]));
+#pragma gpu box(box) nohost
+        ca_normalize_species(AMREX_INT_ANYD(box.loVect()), AMREX_INT_ANYD(box.hiVect()), BL_TO_FORTRAN_ANYD(state[mfi]));
 
         // Ensure (rho e) isn't too small or negative
 
-#pragma gpu
-        ca_reset_internal_e(AMREX_INT_ANYD(bx.loVect()), AMREX_INT_ANYD(bx.hiVect()), BL_TO_FORTRAN_ANYD(state[mfi]));
+#pragma gpu box(box) nohost
+        ca_reset_internal_e(AMREX_INT_ANYD(box.loVect()), AMREX_INT_ANYD(box.hiVect()), BL_TO_FORTRAN_ANYD(state[mfi]));
 
         // Make the temperature be consistent with the internal energy.
 
-#pragma gpu
-        ca_compute_temp(AMREX_INT_ANYD(bx.loVect()), AMREX_INT_ANYD(bx.hiVect()), BL_TO_FORTRAN_ANYD(state[mfi]));
+#pragma gpu box(box) nohost
+        ca_compute_temp(AMREX_INT_ANYD(box.loVect()), AMREX_INT_ANYD(box.hiVect()), BL_TO_FORTRAN_ANYD(state[mfi]));
     }
 }
