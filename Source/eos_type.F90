@@ -230,22 +230,6 @@ contains
 
 
 
-  ! Print out details of the state.
-
-  subroutine print_state(state)
-
-    implicit none
-
-    type (eos_t), intent(in) :: state
-
-    print *, 'DENS = ', state % rho
-    print *, 'TEMP = ', state % T
-    print *, 'X    = ', state % xn
-    print *, 'Y_E  = ', state % y_e
-
-  end subroutine print_state
-
-
   subroutine eos_get_small_temp(small_temp_out)
 
     implicit none

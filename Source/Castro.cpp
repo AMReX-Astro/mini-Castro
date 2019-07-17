@@ -18,6 +18,7 @@
 using namespace amrex;
 
 long Castro::num_zones_advanced = 0;
+int Castro::diagnostic_interval = 50;
 
 void
 Castro::variableCleanUp ()
@@ -377,7 +378,7 @@ Castro::post_timestep (int iteration)
 
     clean_state(S_new);
 
-    if (level == 0 && parent->levelSteps(0) % 50 == 0)
+    if (level == 0 && parent->levelSteps(0) % diagnostic_interval == 0)
     {
         // As a diagnostic quantity, we'll print the current blast radius
         // (the location of the shock). We can estimate this using the
@@ -407,6 +408,9 @@ Castro::post_timestep (int iteration)
                                    AMREX_MFITER_REDUCE_SUM(&blast_mass), AMREX_MFITER_REDUCE_SUM(&blast_radius),
                                    max_density);
         }
+
+        amrex::ParallelDescriptor::ReduceRealSum(blast_mass);
+        amrex::ParallelDescriptor::ReduceRealSum(blast_radius);
 
         amrex::Print() << std::scientific << std::setprecision(6) << "Blast radius at step " << parent->levelSteps(0) << ", time " << state[State_Type].curTime()
                        << ": " << std::fixed << std::setprecision(3) << (blast_radius / blast_mass) / 1.0e5 << " km" << std::endl;

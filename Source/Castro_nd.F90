@@ -1,7 +1,7 @@
 module castro_module
 
   use amrex_fort_module, only: rt => amrex_real
-  use actual_network, only: nspec
+  use network, only: nspec
 
   implicit none
 
@@ -64,7 +64,7 @@ contains
   subroutine ca_enforce_minimum_density(lo, hi, state, s_lo, s_hi) bind(c,name='ca_enforce_minimum_density')
 
     use amrex_constants_module, only: ZERO
-    use actual_network, only: nspec
+    use network, only: nspec
     use eos_type_module, only: eos_t, eos_input_rt
     use eos_module, only: eos
 

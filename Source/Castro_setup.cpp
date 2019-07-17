@@ -93,4 +93,8 @@ Castro::variableSetUp()
     }
 
     desc_lst.setComponent(State_Type, Density, name, bcs, BndryFunc(ca_denfill, ca_hypfill));
+
+    // Update the diagnostic interval.
+    ParmParse pp;
+    pp.query("diagnostic_interval", diagnostic_interval);
 }
