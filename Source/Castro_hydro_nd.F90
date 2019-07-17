@@ -124,7 +124,7 @@ contains
                         q,     q_lo,   q_hi, &
                         qaux, qa_lo,  qa_hi) bind(c,name='ca_ctoprim')
 
-    use actual_network, only: nspec
+    use network, only: nspec
     use eos_module, only: eos
     use eos_type_module, only: eos_t, eos_input_re
     use amrex_constants_module, only: ZERO, HALF, ONE
