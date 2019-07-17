@@ -61,7 +61,7 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
             qaux.resize(qbx, NQAUX);
             Elixir elix_qaux = qaux.elixir();
 
-#pragma gpu box(qbx)
+#pragma gpu box(qbx) nohost
             ca_ctoprim(AMREX_INT_ANYD(qbx.loVect()), AMREX_INT_ANYD(qbx.hiVect()),
                        BL_TO_FORTRAN_ANYD(Sborder[mfi]),
                        BL_TO_FORTRAN_ANYD(q),
@@ -75,7 +75,7 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
 
             // Compute divergence of velocity field.
 
-#pragma gpu box(obx)
+#pragma gpu box(obx) nohost
             ca_divu(AMREX_INT_ANYD(obx.loVect()), AMREX_INT_ANYD(obx.hiVect()),
                     AMREX_REAL_ANYD(dx),
                     BL_TO_FORTRAN_ANYD(q),
@@ -85,7 +85,7 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
             Elixir elix_flatn = flatn.elixir();
 
             // Compute flattening coefficient for slope calculations.
-#pragma gpu box(obx)
+#pragma gpu box(obx) nohost
             ca_uflaten
                 (AMREX_INT_ANYD(obx.loVect()), AMREX_INT_ANYD(obx.hiVect()),
                  BL_TO_FORTRAN_ANYD(q),
@@ -98,7 +98,7 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
             Elixir elix_qp = qp.elixir();
 
             // Do PPM reconstruction to the zone edges.
-#pragma gpu box(obx)
+#pragma gpu box(obx) nohost
             ca_ppm_reconstruct
                 (AMREX_INT_ANYD(obx.loVect()), AMREX_INT_ANYD(obx.hiVect()),
                  BL_TO_FORTRAN_ANYD(q),
@@ -133,7 +133,7 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
 
                 int idir_f = idir + 1;
 
-#pragma gpu box(ebx)
+#pragma gpu box(ebx) nohost
                 ca_construct_flux
                     (AMREX_INT_ANYD(ebx.loVect()), AMREX_INT_ANYD(ebx.hiVect()),
                      AMREX_INT_ANYD(domain_lo), AMREX_INT_ANYD(domain_hi),
@@ -165,7 +165,7 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
             qm.clear();
             qp.clear();
 
-#pragma gpu box(box)
+#pragma gpu box(box) nohost
             ca_construct_hydro_update
                 (AMREX_INT_ANYD(box.loVect()), AMREX_INT_ANYD(box.hiVect()),
                  AMREX_REAL_ANYD(dx), dt,
