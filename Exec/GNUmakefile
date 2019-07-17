@@ -7,6 +7,9 @@ DIM        = 3
 
 COMP	   = PGI
 
+# To work around PGI compiler bug
+PGI_GOPT   = FALSE
+
 USE_MPI    = FALSE
 USE_OMP    = FALSE
 USE_CUDA   = FALSE
