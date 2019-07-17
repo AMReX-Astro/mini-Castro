@@ -23,23 +23,10 @@ module actual_network
   real(rt), allocatable :: aion(:), zion(:)
 
 #ifdef AMREX_USE_CUDA
-  attributes(managed) :: aion, zion, nion, bion, mion, wion
+  attributes(managed) :: aion, zion
 #endif
 
   character(len=5), save :: short_spec_names(nspec)
-
-  ! Some fundamental physical constants
-
-  double precision, parameter :: avo = 6.0221417930d23
-  double precision, parameter :: c_light = 2.99792458d10
-
-  double precision, parameter :: ev2erg  = 1.60217648740d-12
-  double precision, parameter :: mev2erg = ev2erg*1.0d6
-  double precision, parameter :: mev2gr  = mev2erg/c_light**2
-
-  double precision, parameter :: mn = 1.67492721184d-24
-  double precision, parameter :: mp = 1.67262163783d-24
-  double precision, parameter :: me = 9.1093821545d-28
 
 contains
 
