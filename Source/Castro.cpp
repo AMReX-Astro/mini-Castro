@@ -102,7 +102,7 @@ Castro::initData ()
     {
         const Box& box = mfi.validbox();
 
-#pragma gpu box(box) nohost nodevicesuffix
+#pragma gpu box(box) nohost
         ca_initdata
             (AMREX_INT_ANYD(box.loVect()), AMREX_INT_ANYD(box.hiVect()),
              BL_TO_FORTRAN_ANYD(S_new[mfi]), AMREX_REAL_ANYD(dx),
@@ -198,7 +198,7 @@ Castro::estTimeStep (Real dt_old)
 	{
 	    const Box& box = mfi.tilebox();
 
-#pragma gpu box(box) nohost nodevicesuffix
+#pragma gpu box(box) nohost
             ca_estdt
                 (AMREX_INT_ANYD(box.loVect()), AMREX_INT_ANYD(box.hiVect()),
                  BL_TO_FORTRAN_ANYD(stateMF[mfi]),

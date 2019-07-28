@@ -94,7 +94,6 @@ extern "C"
      const BL_FORT_FAB_ARG_3D(volume),
      BL_FORT_FAB_ARG_3D(update));
 
-  AMREX_GPU_DEVICE
   void ca_initdata
     (const int* lo, const int* hi,
      BL_FORT_FAB_ARG_3D(state),
