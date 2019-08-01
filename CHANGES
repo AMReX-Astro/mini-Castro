@@ -1,0 +1,14 @@
+# 19.08
+
+   -- mini-Castro has been substantially updated to look and feel more like
+      a mini-app. Inputs files are no longer required, and all configuration
+      is set at the command line (the only necessary selection is the number
+      of zones per dimension in the simulation). Running the mini-app with
+      no command line arguments prints information about how to run it.
+      stdout generated during the run has been substantially simplified,
+      with a simple diagnostic about the state of the code printed every
+      50 timesteps (this frequency is adjustable). Additionally, AMReX has
+      been made a git submodule of the code, so it is easy to check out the
+      code and its dependency in a single step.
+
+   -- mini-Castro has been relicensed with an MIT license.
