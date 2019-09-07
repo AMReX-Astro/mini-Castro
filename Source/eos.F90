@@ -67,163 +67,17 @@ contains
     integer,      intent(in   ) :: input
     type (eos_t), intent(inout) :: state
 
-    logical :: has_been_reset
-
     !$gpu
 
     ! Get abar, zbar, etc.
 
     call composition(state)
 
-    ! Force the inputs to be valid.
-
-    has_been_reset = .false.
-    call reset_inputs(input, state, has_been_reset)
-
     ! Call the EOS.
 
-    if (.not. has_been_reset) then
-       call actual_eos(input, state)
-    endif
+    call actual_eos(input, state)
 
   end subroutine eos
-
-
-
-  subroutine reset_inputs(input, state, has_been_reset)
-
-    use eos_type_module, only: eos_t, eos_input_rt, eos_input_re, eos_input_rp
-
-    implicit none
-
-    integer,      intent(in   ) :: input
-    type (eos_t), intent(inout) :: state
-    logical,      intent(inout) :: has_been_reset
-
-    !$gpu
-
-    ! Reset the input quantities to valid values. For inputs other than rho and T,
-    ! this will evolve an EOS call, which will negate the need to do the main EOS call.
-
-    if (input .eq. eos_input_rt) then
-
-       call reset_rho(state, has_been_reset)
-       call reset_T(state, has_been_reset)
-
-    elseif (input .eq. eos_input_rp) then
-
-       call reset_rho(state, has_been_reset)
-       call reset_p(state, has_been_reset)
-
-    elseif (input .eq. eos_input_re) then
-
-       call reset_rho(state, has_been_reset)
-       call reset_e(state, has_been_reset)
-
-    endif
-
-  end subroutine reset_inputs
-
-
-
-  ! For density, just ensure that it is within mindens and maxdens.
-
-  subroutine reset_rho(state, has_been_reset)
-
-    use eos_type_module, only: eos_t, mindens, maxdens
-
-    implicit none
-
-    type (eos_t), intent(inout) :: state
-    logical,      intent(inout) :: has_been_reset
-
-    !$gpu
-
-    state % rho = min(maxdens, max(mindens, state % rho))
-
-  end subroutine reset_rho
-
-
-
-  ! For temperature, just ensure that it is within mintemp and maxtemp.
-
-  subroutine reset_T(state, has_been_reset)
-
-    use eos_type_module, only: eos_t, mintemp, maxtemp
-
-    implicit none
-
-    type (eos_t), intent(inout) :: state
-    logical,      intent(inout) :: has_been_reset
-
-    !$gpu
-
-    state % T = min(maxtemp, max(mintemp, state % T))
-
-  end subroutine reset_T
-
-
-
-  subroutine reset_e(state, has_been_reset)
-
-    use eos_type_module, only: eos_t, mine, maxe
-
-    implicit none
-
-    type (eos_t), intent(inout) :: state
-    logical,      intent(inout) :: has_been_reset
-
-    !$gpu
-
-    if (state % e .lt. mine .or. state % e .gt. maxe) then
-       call eos_reset(state, has_been_reset)
-    endif
-
-  end subroutine reset_e
-
-
-  subroutine reset_p(state, has_been_reset)
-
-    use eos_type_module, only: eos_t, minp, maxp
-
-    implicit none
-
-    type (eos_t), intent(inout) :: state
-    logical,      intent(inout) :: has_been_reset
-
-    !$gpu
-
-    if (state % p .lt. minp .or. state % p .gt. maxp) then
-       call eos_reset(state, has_been_reset)
-    endif
-
-  end subroutine reset_p
-
-
-
-  ! Given an EOS state, ensure that rho and T are
-  ! valid, then call with eos_input_rt.
-
-  subroutine eos_reset(state, has_been_reset)
-
-    use actual_eos_module, only: actual_eos
-    use eos_type_module, only: eos_t, eos_input_rt, mintemp, maxtemp, mindens, maxdens
-
-    implicit none
-
-    type (eos_t), intent(inout) :: state
-    logical,      intent(inout) :: has_been_reset
-
-    !$gpu
-
-    state % T = min(maxtemp, max(mintemp, state % T))
-    state % rho = min(maxdens, max(mindens, state % rho))
-
-    call actual_eos(eos_input_rt, state)
-
-    has_been_reset = .true.
-
-  end subroutine eos_reset
 
 
 
