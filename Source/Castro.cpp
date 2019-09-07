@@ -78,12 +78,11 @@ Castro::initData ()
 {
     BL_PROFILE("Castro::initData()");
 
-    //
-    // Loop over grids, call FORTRAN function to init with data.
-    //
-    const Real* dx  = geom.CellSize();
-    const Real* problo = geom.ProbLo();
-    const Real* probhi = geom.ProbHi();
+    // Loop over grids and initialize data.
+
+    const auto dx = geom.CellSizeArray();
+    const auto problo = geom.ProbLoArray();
+    const auto probhi = geom.ProbHiArray();
     MultiFab& S_new = get_new_data(State_Type);
     Real cur_time   = state[State_Type].curTime();
 
@@ -99,12 +98,15 @@ Castro::initData ()
     for (MFIter mfi(S_new); mfi.isValid(); ++mfi)
     {
         const Box& box = mfi.validbox();
+        auto state_arr = S_new[mfi].array();
 
-#pragma gpu box(box) nohost
-        ca_initdata
-            (AMREX_INT_ANYD(box.loVect()), AMREX_INT_ANYD(box.hiVect()),
-             BL_TO_FORTRAN_ANYD(S_new[mfi]), AMREX_REAL_ANYD(dx),
-             AMREX_REAL_ANYD(problo), AMREX_REAL_ANYD(probhi));
+        AMREX_LAUNCH_DEVICE_LAMBDA(box, lbx,
+        {
+            ca_initdata
+                (AMREX_ARLIM_ANYD(lbx.loVect()), AMREX_ARLIM_ANYD(lbx.hiVect()),
+                 AMREX_ARR4_TO_FORTRAN_ANYD(state_arr), AMREX_ZFILL(dx.data()),
+                 AMREX_ZFILL(problo.data()), AMREX_ZFILL(probhi.data()));
+        });
     }
 }
 
@@ -515,12 +517,16 @@ Castro::errorEst (TagBoxArray& tags,
     for (MFIter mfi(*mf, true); mfi.isValid(); ++mfi)
     {
         const Box& box = mfi.validbox();
+        auto tags_arr = tags[mfi].array();
+        auto data_arr = (*mf)[mfi].array();
 
-#pragma gpu box(box) nohost
-        ca_denerror(AMREX_INT_ANYD(box.loVect()), AMREX_INT_ANYD(box.hiVect()),
-                    (int8_t*) BL_TO_FORTRAN_ANYD(tags[mfi]),
-                    BL_TO_FORTRAN_ANYD((*mf)[mfi]),
-                    set, clear);
+        AMREX_LAUNCH_DEVICE_LAMBDA(box, lbx,
+        {
+            ca_denerror(AMREX_ARLIM_ANYD(lbx.loVect()), AMREX_ARLIM_ANYD(lbx.hiVect()),
+                        (int8_t*) AMREX_ARR4_TO_FORTRAN_ANYD(tags_arr),
+                        AMREX_ARR4_TO_FORTRAN_ANYD(data_arr),
+                        set, clear);
+        });
     }
 }
 
@@ -577,25 +583,38 @@ Castro::clean_state(MultiFab& state)
     for (MFIter mfi(state, true); mfi.isValid(); ++mfi)
     {
         const Box& box = mfi.growntilebox(ng);
+        auto state_arr = state[mfi].array();
 
         // Ensure the density is larger than the density floor.
 
-#pragma gpu box(box) nohost
-	ca_enforce_minimum_density(AMREX_INT_ANYD(box.loVect()), AMREX_INT_ANYD(box.hiVect()), BL_TO_FORTRAN_ANYD(state[mfi]));
+        AMREX_LAUNCH_DEVICE_LAMBDA(box, lbx,
+        {
+            ca_enforce_minimum_density(AMREX_ARLIM_ANYD(lbx.loVect()), AMREX_ARLIM_ANYD(lbx.hiVect()),
+                                       AMREX_ARR4_TO_FORTRAN_ANYD(state_arr));
+        });
 
         // Ensure all species are normalized.
 
-#pragma gpu box(box) nohost
-        ca_normalize_species(AMREX_INT_ANYD(box.loVect()), AMREX_INT_ANYD(box.hiVect()), BL_TO_FORTRAN_ANYD(state[mfi]));
+        AMREX_LAUNCH_DEVICE_LAMBDA(box, lbx,
+        {
+            ca_normalize_species(AMREX_ARLIM_ANYD(lbx.loVect()), AMREX_ARLIM_ANYD(lbx.hiVect()),
+                                 AMREX_ARR4_TO_FORTRAN_ANYD(state_arr));
+        });
 
         // Ensure (rho e) isn't too small or negative
 
-#pragma gpu box(box) nohost
-        ca_reset_internal_e(AMREX_INT_ANYD(box.loVect()), AMREX_INT_ANYD(box.hiVect()), BL_TO_FORTRAN_ANYD(state[mfi]));
+        AMREX_LAUNCH_DEVICE_LAMBDA(box, lbx,
+        {
+            ca_reset_internal_e(AMREX_ARLIM_ANYD(lbx.loVect()), AMREX_ARLIM_ANYD(lbx.hiVect()),
+                                AMREX_ARR4_TO_FORTRAN_ANYD(state_arr));
+        });
 
         // Make the temperature be consistent with the internal energy.
 
-#pragma gpu box(box) nohost
-        ca_compute_temp(AMREX_INT_ANYD(box.loVect()), AMREX_INT_ANYD(box.hiVect()), BL_TO_FORTRAN_ANYD(state[mfi]));
+        AMREX_LAUNCH_DEVICE_LAMBDA(box, lbx,
+        {
+            ca_compute_temp(AMREX_ARLIM_ANYD(lbx.loVect()), AMREX_ARLIM_ANYD(lbx.hiVect()),
+                            AMREX_ARR4_TO_FORTRAN_ANYD(state_arr));
+        });
     }
 }

@@ -30,15 +30,19 @@ extern "C"
                   const amrex::Real* q, const int* q_lo, const int* q_hi,
                   const amrex::Real* qaux, const int* qa_lo, const int* qa_hi);
 
+  AMREX_GPU_DEVICE
   void ca_enforce_minimum_density
     (const int* lo, const int* hi, BL_FORT_FAB_ARG_3D(state));
 
+  AMREX_GPU_DEVICE
   void ca_normalize_species
     (const int* lo, const int* hi, BL_FORT_FAB_ARG_3D(state));
 
+  AMREX_GPU_DEVICE
   void ca_reset_internal_e
     (const int* lo, const int* hi, BL_FORT_FAB_ARG_3D(state));
 
+  AMREX_GPU_DEVICE
   void ca_compute_temp
     (const int* lo, const int* hi, BL_FORT_FAB_ARG_3D(state));
 
@@ -100,11 +104,13 @@ extern "C"
      const BL_FORT_FAB_ARG_3D(volume),
      BL_FORT_FAB_ARG_3D(update));
 
+  AMREX_GPU_DEVICE
   void ca_initdata
     (const int* lo, const int* hi,
      BL_FORT_FAB_ARG_3D(state),
      const amrex::Real* dx, const amrex::Real* problo, const amrex::Real* probhi);
 
+  AMREX_GPU_DEVICE
   void ca_denerror
     (const int* lo, const int* hi,
      int8_t* tag, const int* tag_lo, const int* tag_hi,
