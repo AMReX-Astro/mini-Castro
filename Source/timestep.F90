@@ -8,7 +8,7 @@ contains
 
   ! Courant-condition limited timestep
 
-  AMREX_CUDA_FORT_DEVICE subroutine ca_estdt(lo,hi,u,u_lo,u_hi,dx,dt) bind(c,name='ca_estdt')
+  AMREX_CUDA_FORT_DEVICE subroutine ca_estdt(lo,hi,u,u_lo,u_hi,dx,dt) bind(C, name='ca_estdt')
 
     use network, only: nspec
     use castro_module, only: NVAR, URHO, UMX, UMY, UMZ, UEINT, UTEMP, UFS

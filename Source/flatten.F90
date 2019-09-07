@@ -4,7 +4,7 @@ module flatten_module
 
 contains
 
-  AMREX_CUDA_FORT_DEVICE subroutine ca_uflaten(lo, hi, q, q_lo, q_hi, flatn, f_lo, f_hi) bind(c,name='ca_uflaten')
+  AMREX_CUDA_FORT_DEVICE subroutine ca_uflaten(lo, hi, q, q_lo, q_hi, flatn, f_lo, f_hi) bind(C, name='ca_uflaten')
 
     use amrex_constants_module, only: ZERO, ONE
     use amrex_fort_module, only: rt => amrex_real

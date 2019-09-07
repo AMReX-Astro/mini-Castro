@@ -18,7 +18,7 @@ contains
   AMREX_CUDA_FORT_DEVICE subroutine ca_initdata(lo, hi, &
                                                 state, s_lo, s_hi, &
                                                 dx, problo, probhi) &
-                                                bind(c,name='ca_initdata')
+                                                bind(C, name='ca_initdata')
 
     use amrex_constants_module, only: M_PI, FOUR3RD
     use castro_module , only: NVAR, URHO, UMX, UMY, UMZ, UTEMP, UEDEN, UEINT, UFS
@@ -126,7 +126,7 @@ end module initdata_module
 
 
 
-subroutine amrex_probinit (init,name,namlen,problo,probhi) bind(c)
+subroutine amrex_probinit (init,name,namlen,problo,probhi) bind(C, name='amrex_probinit')
 
   use initdata_module, only: p_ambient, dens_ambient, exp_energy, r_init, nsub
   use amrex_fort_module, only: rt => amrex_real
@@ -155,7 +155,7 @@ end subroutine amrex_probinit
 
 
 
-subroutine probinit_finalize() bind(c)
+subroutine probinit_finalize() bind(C, name='probinit_finalize')
 
   use initdata_module, only: p_ambient, dens_ambient, exp_energy, r_init, nsub
 

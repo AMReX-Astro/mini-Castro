@@ -61,7 +61,7 @@ module castro_module
 
 contains
 
-  AMREX_CUDA_FORT_DEVICE subroutine ca_enforce_minimum_density(lo, hi, state, s_lo, s_hi) bind(c,name='ca_enforce_minimum_density')
+  AMREX_CUDA_FORT_DEVICE subroutine ca_enforce_minimum_density(lo, hi, state, s_lo, s_hi) bind(C, name='ca_enforce_minimum_density')
 
     use amrex_constants_module, only: ZERO
     use network, only: nspec
@@ -161,7 +161,7 @@ contains
 
 
 
-  AMREX_CUDA_FORT_DEVICE subroutine ca_normalize_species(lo, hi, state, s_lo, s_hi) bind(c,name='ca_normalize_species')
+  AMREX_CUDA_FORT_DEVICE subroutine ca_normalize_species(lo, hi, state, s_lo, s_hi) bind(C, name='ca_normalize_species')
 
     use network, only: nspec
     use amrex_constants_module, only: ONE
@@ -196,7 +196,7 @@ contains
 
 
 
-  AMREX_CUDA_FORT_DEVICE subroutine ca_reset_internal_e(lo,hi,u,u_lo,u_hi) bind(c,name='ca_reset_internal_e')
+  AMREX_CUDA_FORT_DEVICE subroutine ca_reset_internal_e(lo,hi,u,u_lo,u_hi) bind(C, name='ca_reset_internal_e')
 
     use eos_module, only: eos_t, eos_input_re, eos_input_rt, eos
     use network, only: nspec
@@ -277,7 +277,7 @@ contains
 
 
 
-  AMREX_CUDA_FORT_DEVICE subroutine ca_compute_temp(lo,hi,state,s_lo,s_hi) bind(c,name='ca_compute_temp')
+  AMREX_CUDA_FORT_DEVICE subroutine ca_compute_temp(lo,hi,state,s_lo,s_hi) bind(C, name='ca_compute_temp')
 
     use network, only: nspec
     use eos_module, only: eos_input_re, eos_t, eos

@@ -15,7 +15,7 @@ contains
                                                        s, s_lo, s_hi, &
                                                        flatn, f_lo, f_hi, &
                                                        qm, qm_lo, qm_hi, &
-                                                       qp, qp_lo, qp_hi) bind(c,name='ca_ppm_reconstruct')
+                                                       qp, qp_lo, qp_hi) bind(C, name='ca_ppm_reconstruct')
 
     implicit none
 

@@ -15,7 +15,7 @@ contains
                                                       qint, qe_lo, qe_hi, &
                                                       flux, f_lo, f_hi, &
                                                       area, a_lo, a_hi) &
-                                                      bind(c,name='ca_construct_flux')
+                                                      bind(C, name='ca_construct_flux')
 
     use amrex_fort_module, only: rt => amrex_real
     use castro_module, only: NVAR, QVAR, NGDNV, NQAUX
@@ -122,7 +122,8 @@ contains
   AMREX_CUDA_FORT_DEVICE subroutine ca_ctoprim(lo, hi, &
                                                uin, uin_lo, uin_hi, &
                                                q,     q_lo,   q_hi, &
-                                               qaux, qa_lo,  qa_hi) bind(c,name='ca_ctoprim')
+                                               qaux, qa_lo,  qa_hi) &
+                                               bind(C, name='ca_ctoprim')
 
     use network, only: nspec
     use eos_module, only: eos_t, eos_input_re, eos
@@ -281,7 +282,7 @@ contains
 
 
 
-  AMREX_CUDA_FORT_DEVICE subroutine ca_divu(lo, hi, dx, q, q_lo, q_hi, div, d_lo, d_hi) bind(c,name='ca_divu')
+  AMREX_CUDA_FORT_DEVICE subroutine ca_divu(lo, hi, dx, q, q_lo, q_hi, div, d_lo, d_hi) bind(C, name='ca_divu')
 
     use amrex_constants_module, only: FOURTH, ONE
     use castro_module, only: QU, QV, QW, QVAR
@@ -416,7 +417,7 @@ contains
                                                               a3, a3_lo, a3_hi, &
                                                               vol, vol_lo, vol_hi, &
                                                               update, u_lo, u_hi) &
-                                                              bind(c,name='ca_construct_hydro_update')
+                                                              bind(C, name='ca_construct_hydro_update')
 
     use amrex_constants_module, only: HALF, ONE
     use castro_module, only: NVAR, UEINT, NGDNV, GDPRES, GDU, GDV, GDW

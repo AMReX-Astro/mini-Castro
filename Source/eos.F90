@@ -1005,7 +1005,7 @@ contains
 
 
 
-  subroutine eos_init() bind(c, name='eos_init')
+  subroutine eos_init() bind(C, name='eos_init')
 
     use amrex_error_module, only: amrex_error
     use amrex_paralleldescriptor_module, only: parallel_bcast => amrex_pd_bcast, amrex_pd_ioprocessor
@@ -1348,7 +1348,7 @@ contains
 
 
 
-  subroutine eos_finalize() bind(c, name='eos_finalize')
+  subroutine eos_finalize() bind(C, name='eos_finalize')
 
     implicit none
 

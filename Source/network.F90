@@ -30,7 +30,7 @@ module network
 
 contains
 
-  subroutine network_init() bind(c, name='network_init')
+  subroutine network_init() bind(C, name='network_init')
 
     implicit none
 
@@ -88,7 +88,7 @@ contains
   end subroutine network_init
 
 
-  subroutine network_finalize() bind(c, name='network_finalize')
+  subroutine network_finalize() bind(C, name='network_finalize')
 
     implicit none
 
