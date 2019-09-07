@@ -16,7 +16,6 @@ module actual_eos_module
     double precision, parameter :: mintemp = 10.0d0**tlo
     double precision, parameter :: mindens = 10.0d0**dlo
 
-    integer, allocatable :: itmax, jtmax
     double precision, allocatable :: d(:), t(:)
 
     double precision, parameter :: ttol = 1.d-8, dtol = 1.d-8
@@ -46,7 +45,6 @@ module actual_eos_module
                                      ddi_sav(:), dd2i_sav(:)
 
 #ifdef AMREX_USE_CUDA
-    attributes(managed) :: itmax, jtmax
     attributes(managed) :: d, t
     attributes(managed) :: f, fd, ft, fdd, ftt, fdt, fddt, fdtt, fddtt
     attributes(managed) :: dpdf, dpdfd, dpdft, dpdfdt
@@ -368,9 +366,9 @@ contains
 
            !..hash locate this temperature and density
            jat = int((log10(temp) - tlo)*tstpi) + 1
-           jat = max(1,min(jat,jtmax-1))
+           jat = max(1,min(jat,jmax-1))
            iat = int((log10(din) - dlo)*dstpi) + 1
-           iat = max(1,min(iat,itmax-1))
+           iat = max(1,min(iat,imax-1))
 
            !..access the table locations only once
            fi(1)  = f(iat,jat)
@@ -974,8 +972,6 @@ contains
 
         ! Allocate managed module variables
 
-        allocate(itmax)
-        allocate(jtmax)
         allocate(d(imax))
         allocate(t(jmax))
         allocate(f(imax,jmax))
@@ -1009,8 +1005,6 @@ contains
         allocate(dd2i_sav(imax))
 
         !..   read the helmholtz free energy table
-        itmax = imax
-        jtmax = jmax
 
         do j=1,jmax
            tsav = tlo + (j-1)*tstp
@@ -1264,8 +1258,6 @@ contains
 
       ! Deallocate managed module variables
 
-      deallocate(itmax)
-      deallocate(jtmax)
       deallocate(d)
       deallocate(t)
       deallocate(f)
