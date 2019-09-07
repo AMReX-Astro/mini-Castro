@@ -115,8 +115,7 @@ subroutine amrex_probinit (init,name,namlen,problo,probhi) bind(c)
 
   use initdata_module, only: p_ambient, dens_ambient, exp_energy, r_init, nsub, e_ambient
   use amrex_fort_module, only: rt => amrex_real
-  use eos_type_module, only : eos_t, eos_input_rp
-  use eos_module, only: eos
+  use eos_module, only: eos_t, eos_input_rp, eos
 
   implicit none
 

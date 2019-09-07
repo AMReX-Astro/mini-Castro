@@ -125,7 +125,7 @@ contains
                                                qaux, qa_lo,  qa_hi) bind(c,name='ca_ctoprim')
 
     use network, only: nspec
-    use eos_type_module, only: eos_t, eos_input_re
+    use eos_module, only: eos_t, eos_input_re
     use amrex_constants_module, only: ZERO, HALF, ONE
     use castro_module, only: NVAR, URHO, UMX, UMZ, &
                              UEDEN, UEINT, UTEMP, UFS, &
