@@ -5,15 +5,14 @@ module initdata_module
 
   implicit none
 
-  real(rt), allocatable, public :: p_ambient, dens_ambient, exp_energy, e_ambient
+  real(rt), allocatable, public :: p_ambient, dens_ambient, exp_energy
   real(rt), allocatable, public :: r_init
   integer,  allocatable, public :: nsub
 
 #ifdef AMREX_USE_CUDA
-  attributes(managed) :: p_ambient, dens_ambient, exp_energy, &
-                         r_init, nsub, e_ambient
+  attributes(managed) :: p_ambient, dens_ambient, exp_energy, r_init, nsub
 #endif
-  
+
 contains
 
   AMREX_CUDA_FORT_DEVICE subroutine ca_initdata(lo, hi, &
@@ -23,6 +22,11 @@ contains
 
     use amrex_constants_module, only: M_PI, FOUR3RD
     use castro_module , only: NVAR, URHO, UMX, UMY, UMZ, UTEMP, UEDEN, UEINT, UFS
+#ifdef AMREX_USE_CUDA
+    use eos_module, only: eos_t, eos_input_rp, eos => eos_device
+#else
+    use eos_module, only: eos_t, eos_input_rp, eos
+#endif
 
     implicit none
 
@@ -40,6 +44,21 @@ contains
     integer :: npert, nambient
 
     real(rt) :: center(3)
+    real(rt) :: e_ambient
+
+    type(eos_t) :: eos_state
+
+    ! Convert the ambient pressure into an ambient energy
+
+    eos_state % rho = dens_ambient
+    eos_state % p = p_ambient
+    eos_state % T = 1.e4   ! an initial guess -- needed for iteration
+    eos_state % xn(:) = 0.e0_rt
+    eos_state % xn(1) = 1.e0_rt
+
+    call eos(eos_input_rp, eos_state)
+
+    e_ambient = eos_state % e
 
     ! Set explosion energy -- we will convert the point-explosion energy into
     ! a corresponding energy distributed throughout the perturbed volume.
@@ -113,9 +132,8 @@ end module initdata_module
 
 subroutine amrex_probinit (init,name,namlen,problo,probhi) bind(c)
 
-  use initdata_module, only: p_ambient, dens_ambient, exp_energy, r_init, nsub, e_ambient
+  use initdata_module, only: p_ambient, dens_ambient, exp_energy, r_init, nsub
   use amrex_fort_module, only: rt => amrex_real
-  use eos_module, only: eos_t, eos_input_rp, eos
 
   implicit none
 
@@ -123,11 +141,8 @@ subroutine amrex_probinit (init,name,namlen,problo,probhi) bind(c)
   integer,  intent(in) :: name(namlen)
   real(rt), intent(in) :: problo(3), probhi(3)
 
-  type(eos_t) :: eos_state
-
   allocate(p_ambient)
   allocate(dens_ambient)
-  allocate(e_ambient)
   allocate(exp_energy)
   allocate(r_init)
   allocate(nsub)
@@ -139,18 +154,6 @@ subroutine amrex_probinit (init,name,namlen,problo,probhi) bind(c)
   exp_energy = 1.e52_rt       ! absolute energy of the explosion (in erg)
   r_init = 1.25e8_rt          ! initial radius of the explosion (in cm)
   nsub = 10
-
-  ! Convert the ambient pressure into an ambient energy
-
-  eos_state % rho = dens_ambient
-  eos_state % p = p_ambient
-  eos_state % T = 1.e4   ! an initial guess -- needed for iteration
-  eos_state % xn(:) = 0.e0_rt
-  eos_state % xn(1) = 1.e0_rt
-
-  call eos(eos_input_rp, eos_state)
-
-  e_ambient = eos_state % e
   
 end subroutine amrex_probinit
 
@@ -158,11 +161,10 @@ end subroutine amrex_probinit
 
 subroutine probinit_finalize() bind(c)
 
-  use initdata_module, only: p_ambient, dens_ambient, e_ambient, exp_energy, r_init, nsub
+  use initdata_module, only: p_ambient, dens_ambient, exp_energy, r_init, nsub
 
   deallocate(p_ambient)
   deallocate(dens_ambient)
-  deallocate(e_ambient)
   deallocate(exp_energy)
   deallocate(r_init)
   deallocate(nsub)
