@@ -188,14 +188,7 @@ contains
                             ddsi0t,ddsi1t,ddsi2t,ddsi0mt,ddsi1mt,ddsi2mt, &
                             z,din,fi(36)
 
-        double precision :: p_temp, e_temp
-
-        double precision :: smallt, smalld
-
         !$gpu
-
-        call eos_get_small_temp(smallt)
-        call eos_get_small_dens(smalld)
 
         temp_row = state % T
         den_row  = state % rho
@@ -721,7 +714,7 @@ contains
               if (dvar .eq. itemp) then
 
                  x = temp_row
-                 smallx = smallt
+                 smallx = mintemp
                  xtol = ttol
 
                  if (var .eq. ipres) then
@@ -743,7 +736,7 @@ contains
               else ! dvar == density
 
                  x = den_row
-                 smallx = smalld
+                 smallx = mindens
                  xtol = dtol
 
                  if (var .eq. ipres) then
@@ -857,8 +850,8 @@ contains
               rnew = max(HALF * rold, min(rnew, TWO * rold))
 
               ! Don't let us freeze or evacuate
-              tnew = max(smallt, tnew)
-              rnew = max(smalld, rnew)
+              tnew = max(mintemp, tnew)
+              rnew = max(mindens, rnew)
 
               ! Store the new temperature and density
               den_row  = rnew
@@ -1125,12 +1118,10 @@ contains
            close(unit=2)
         endif
 
-        ! Set up the minimum and maximum possible densities.
+        ! Set up the minimum possible density and temperature.
 
         mintemp = 10.d0**tlo
-        maxtemp = 10.d0**thi
         mindens = 10.d0**dlo
-        maxdens = 10.d0**dhi
 
     end subroutine actual_eos_init
 

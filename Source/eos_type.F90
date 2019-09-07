@@ -25,56 +25,14 @@ module eos_type_module
   integer, parameter :: ientr = 5
   integer, parameter :: ipres = 6
 
-  ! error codes
-  integer, parameter :: ierr_general         = 1
-  integer, parameter :: ierr_input           = 2
-  integer, parameter :: ierr_iter_conv       = 3
-  integer, parameter :: ierr_neg_e           = 4
-  integer, parameter :: ierr_neg_p           = 5
-  integer, parameter :: ierr_neg_h           = 6
-  integer, parameter :: ierr_neg_s           = 7
-  integer, parameter :: ierr_iter_var        = 8
-  integer, parameter :: ierr_init            = 9
-  integer, parameter :: ierr_init_xn         = 10
-  integer, parameter :: ierr_out_of_bounds   = 11
-  integer, parameter :: ierr_not_implemented = 12
-
   ! Minimum and maximum thermodynamic quantities permitted by the EOS.
 
   real(rt), allocatable :: mintemp
-  real(rt), allocatable :: maxtemp
   real(rt), allocatable :: mindens
-  real(rt), allocatable :: maxdens
-  real(rt), allocatable :: minx
-  real(rt), allocatable :: maxx
-  real(rt), allocatable :: minye
-  real(rt), allocatable :: maxye
-  real(rt), allocatable :: mine
-  real(rt), allocatable :: maxe
-  real(rt), allocatable :: minp
-  real(rt), allocatable :: maxp
-  real(rt), allocatable :: mins
-  real(rt), allocatable :: maxs
-  real(rt), allocatable :: minh
-  real(rt), allocatable :: maxh
 
 #ifdef AMREX_USE_CUDA
   attributes(managed) :: mintemp
-  attributes(managed) :: maxtemp
   attributes(managed) :: mindens
-  attributes(managed) :: maxdens
-  attributes(managed) :: minx
-  attributes(managed) :: maxx
-  attributes(managed) :: minye
-  attributes(managed) :: maxye
-  attributes(managed) :: mine
-  attributes(managed) :: maxe
-  attributes(managed) :: minp
-  attributes(managed) :: maxp
-  attributes(managed) :: mins
-  attributes(managed) :: maxs
-  attributes(managed) :: minh
-  attributes(managed) :: maxh
 #endif
 
   ! A generic structure holding thermodynamic quantities and their derivatives,
@@ -189,98 +147,5 @@ contains
     state % zbar = state % abar / state % mu_e
 
   end subroutine composition
-
-
-
-  ! Normalize the mass fractions: they must be individually positive
-  ! and less than one, and they must all sum to unity.
-
-  subroutine normalize_abundances(state)
-
-    use amrex_constants_module, only: ONE
-
-    implicit none
-
-    type (eos_t), intent(inout) :: state
-
-    !$gpu
-
-    state % xn = max(1.0d-30, min(ONE, state % xn))
-
-    state % xn = state % xn / sum(state % xn)
-
-  end subroutine normalize_abundances
-
-
-
-  ! Ensure that inputs are within reasonable limits.
-
-  subroutine clean_state(state)
-
-    implicit none
-
-    type (eos_t), intent(inout) :: state
-
-    !$gpu
-
-    state % T = min(maxtemp, max(mintemp, state % T))
-    state % rho = min(maxdens, max(mindens, state % rho))
-
-  end subroutine clean_state
-
-
-
-  subroutine eos_get_small_temp(small_temp_out)
-
-    implicit none
-
-    real(rt), intent(out) :: small_temp_out
-
-    !$gpu
-
-    small_temp_out = mintemp
-
-  end subroutine eos_get_small_temp
-
-
-  subroutine eos_get_small_dens(small_dens_out)
-
-    implicit none
-
-    real(rt), intent(out) :: small_dens_out
-
-    !$gpu
-
-    small_dens_out = mindens
-
-  end subroutine eos_get_small_dens
-
-
-
-  subroutine eos_get_max_temp(max_temp_out)
-
-    implicit none
-
-    real(rt), intent(out) :: max_temp_out
-
-    !$gpu
-
-    max_temp_out = maxtemp
-
-  end subroutine eos_get_max_temp
-
-
-
-  subroutine eos_get_max_dens(max_dens_out)
-
-    implicit none
-
-    real(rt), intent(out) :: max_dens_out
-
-    !$gpu
-
-    max_dens_out = maxdens
-
-  end subroutine eos_get_max_dens
 
 end module eos_type_module
