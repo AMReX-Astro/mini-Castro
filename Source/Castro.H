@@ -17,6 +17,8 @@ enum StateType { State_Type };
 
 enum Conserved { Density = 0, Xmom, Ymom, Zmom, Eden, Eint, Temp, FirstSpec, NUM_STATE = FirstSpec + NumSpec };
 
+#define AMREX_ARR4_TO_FORTRAN_ANYD(a) a.p,&((a).begin.x),amrex::GpuArray<int,3>{(a).end.x-1,(a).end.y-1,(a).end.z-1}.data()
+
 class Castro
     :
     public amrex::AmrLevel

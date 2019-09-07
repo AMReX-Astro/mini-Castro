@@ -24,6 +24,7 @@ extern "C"
 
   void ca_get_qvar(int* qvar);
 
+  AMREX_GPU_DEVICE
   void ca_ctoprim(const int* lo, const int* hi,
                   const amrex::Real* u, const int* u_lo, const int* u_hi,
                   const amrex::Real* q, const int* q_lo, const int* q_hi,
@@ -46,17 +47,20 @@ extern "C"
      const BL_FORT_FAB_ARG_3D(state),
      const amrex::Real* dx, amrex::Real* dt);
 
+  AMREX_GPU_DEVICE
   void ca_divu
     (const int* lo, const int* hi,
      const amrex::Real* dx,
      BL_FORT_FAB_ARG_3D(q),
      BL_FORT_FAB_ARG_3D(div));
 
+  AMREX_GPU_DEVICE
   void ca_uflaten
     (const int* lo, const int* hi,
      BL_FORT_FAB_ARG_3D(q),
      BL_FORT_FAB_ARG_3D(flatn));
 
+  AMREX_GPU_DEVICE
   void ca_ppm_reconstruct
     (const int* lo, const int* hi,
      BL_FORT_FAB_ARG_3D(q),
@@ -64,6 +68,7 @@ extern "C"
      BL_FORT_FAB_ARG_3D(qm),
      BL_FORT_FAB_ARG_3D(qp));
 
+  AMREX_GPU_DEVICE
   void ca_construct_flux
     (const int* lo, const int* hi,
      const int* domlo, const int* domhi,
@@ -78,6 +83,7 @@ extern "C"
      BL_FORT_FAB_ARG_3D(flux),
      BL_FORT_FAB_ARG_3D(area));
 
+  AMREX_GPU_DEVICE
   void ca_construct_hydro_update
     (const int* lo, const int* hi,
      const amrex::Real* dx, const amrex::Real dt,

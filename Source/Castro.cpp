@@ -13,8 +13,6 @@
 #include <omp.h>
 #endif
 
-#define BL_ARR4_TO_FORTRAN_ANYD(a) a.p,&((a).begin.x),amrex::GpuArray<int,3>{(a).end.x-1,(a).end.y-1,(a).end.z-1}.data()
-
 using namespace amrex;
 
 long Castro::num_zones_advanced = 0;
