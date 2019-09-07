@@ -120,7 +120,7 @@ main (int argc, char* argv[])
 
         amrex::Amr* amrptr = new amrex::Amr;
 
-        amrex::Print() << "Running simulation..." << std::endl << std::endl;
+        amrex::Print() << "Running simulation and calculating diagnostics every " << Castro::diagnostic_interval << " timesteps..." << std::endl << std::endl;
 
         amrptr->init(0.0, stop_time);
 
@@ -137,6 +137,8 @@ main (int argc, char* argv[])
 
         }
 
+        int nsteps = amrptr->levelSteps(0);
+
         delete amrptr;
 
         amrex::Real dRunTime2 = amrex::ParallelDescriptor::second();
@@ -150,6 +152,7 @@ main (int argc, char* argv[])
 
         amrex::Print() << std::endl;
         amrex::Print() << "Simulation completed!" << std::endl;
+        amrex::Print() << "Number of timesteps taken: " << nsteps << std::endl;
         amrex::Print() << std::endl;
         if (do_fom) {
             amrex::Print() << "Figure of Merit (zones / usec): " << std::fixed << std::setprecision(3) << fom << "\n";
