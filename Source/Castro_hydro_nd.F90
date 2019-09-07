@@ -125,7 +125,7 @@ contains
                                                qaux, qa_lo,  qa_hi) bind(c,name='ca_ctoprim')
 
     use network, only: nspec
-    use eos_module, only: eos_t, eos_input_re
+    use eos_module, only: eos_t, eos_input_re, eos
     use amrex_constants_module, only: ZERO, HALF, ONE
     use castro_module, only: NVAR, URHO, UMX, UMZ, &
                              UEDEN, UEINT, UTEMP, UFS, &
@@ -133,11 +133,6 @@ contains
                              QREINT, QPRES, QTEMP, QGAME, QFS, &
                              QVAR, QC, QGAMC, QDPDR, QDPDE, NQAUX, &
                              small_dens
-#ifdef AMREX_USE_CUDA
-    use eos_module, only: eos => eos_device
-#else
-    use eos_module, only: eos
-#endif
 
     implicit none
 

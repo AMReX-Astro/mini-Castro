@@ -22,11 +22,7 @@ contains
 
     use amrex_constants_module, only: M_PI, FOUR3RD
     use castro_module , only: NVAR, URHO, UMX, UMY, UMZ, UTEMP, UEDEN, UEINT, UFS
-#ifdef AMREX_USE_CUDA
-    use eos_module, only: eos_t, eos_input_rp, eos => eos_device
-#else
     use eos_module, only: eos_t, eos_input_rp, eos
-#endif
 
     implicit none
 

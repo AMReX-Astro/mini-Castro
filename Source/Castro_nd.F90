@@ -65,12 +65,7 @@ contains
 
     use amrex_constants_module, only: ZERO
     use network, only: nspec
-    use eos_module, only: eos_t, eos_input_rt
-#ifdef AMREX_USE_CUDA
-    use eos_module, only: eos => eos_device
-#else
-    use eos_module, only: eos
-#endif
+    use eos_module, only: eos_t, eos_input_rt, eos
 
     implicit none
 
@@ -203,14 +198,9 @@ contains
 
   AMREX_CUDA_FORT_DEVICE subroutine ca_reset_internal_e(lo,hi,u,u_lo,u_hi) bind(c,name='ca_reset_internal_e')
 
-    use eos_module, only: eos_t, eos_input_re, eos_input_rt
+    use eos_module, only: eos_t, eos_input_re, eos_input_rt, eos
     use network, only: nspec
     use amrex_constants_module, only: ZERO, HALF, ONE
-#ifdef AMREX_USE_CUDA
-    use eos_module, only: eos => eos_device
-#else
-    use eos_module, only: eos
-#endif
 
     implicit none
 
@@ -290,13 +280,8 @@ contains
   AMREX_CUDA_FORT_DEVICE subroutine ca_compute_temp(lo,hi,state,s_lo,s_hi) bind(c,name='ca_compute_temp')
 
     use network, only: nspec
-    use eos_module, only: eos_input_re, eos_t
+    use eos_module, only: eos_input_re, eos_t, eos
     use amrex_constants_module, only: ZERO, ONE
-#ifdef AMREX_USE_CUDA
-    use eos_module, only: eos => eos_device
-#else
-    use eos_module, only: eos
-#endif
 
     implicit none
 

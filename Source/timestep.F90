@@ -13,12 +13,11 @@ contains
     use network, only: nspec
     use castro_module, only: NVAR, URHO, UMX, UMY, UMZ, UEINT, UTEMP, UFS
     use amrex_constants_module, only: ONE
+    use eos_module, only: eos_t, eos_input_re, eos
 #ifdef AMREX_USE_CUDA
     use amrex_fort_module, only: amrex_min => amrex_min_device
-    use eos_module, only: eos_t, eos_input_re, eos => eos_device
 #else
     use amrex_fort_module, only: amrex_min
-    use eos_module, only: eos_t, eos_input_re, eos
 #endif
 
     implicit none
