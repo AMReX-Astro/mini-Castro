@@ -13,18 +13,9 @@ contains
 
   subroutine eos_init() bind(c, name='eos_init')
 
-    use eos_type_module, only: mintemp, mindens
     use actual_eos_module, only: actual_eos_init
 
     implicit none
-
-    ! Allocate and set default values
-
-    allocate(mintemp)
-    allocate(mindens)
-
-    mintemp = 1.d-200
-    mindens = 1.d-200
 
     ! Set up any specific parameters or initialization steps required by the EOS we are using.
 
@@ -62,13 +53,9 @@ contains
 
   subroutine eos_finalize() bind(c, name='eos_finalize')
 
-    use eos_type_module, only: mintemp, mindens
     use actual_eos_module, only: actual_eos_finalize
 
     implicit none
-
-    deallocate(mintemp)
-    deallocate(mindens)
 
     call actual_eos_finalize()
 

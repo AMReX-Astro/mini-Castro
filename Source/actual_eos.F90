@@ -2,13 +2,22 @@ module actual_eos_module
 
     use eos_type_module
 
-    !..for the tables, in general
     integer, parameter, private :: imax = 541, jmax = 201
+
+    double precision, parameter :: tlo = 3.0d0, thi = 13.0d0
+    double precision, parameter :: dlo = -12.0d0, dhi = 15.0d0
+
+    double precision, parameter :: tstp = (thi - tlo) / float(jmax-1)
+    double precision, parameter :: tstpi = 1.0d0 / tstp
+
+    double precision, parameter :: dstp = (dhi - dlo) / float(imax-1)
+    double precision, parameter :: dstpi = 1.0d0/dstp
+
+    double precision, parameter :: mintemp = 10.0d0**tlo
+    double precision, parameter :: mindens = 10.0d0**dlo
+
     integer, allocatable :: itmax, jtmax
     double precision, allocatable :: d(:), t(:)
-
-    double precision, allocatable :: tlo, thi, tstp, tstpi
-    double precision, allocatable :: dlo, dhi, dstp, dstpi
 
     double precision, parameter :: ttol = 1.d-8, dtol = 1.d-8
 
@@ -39,8 +48,6 @@ module actual_eos_module
 #ifdef AMREX_USE_CUDA
     attributes(managed) :: itmax, jtmax
     attributes(managed) :: d, t
-    attributes(managed) :: tlo, thi, tstp, tstpi
-    attributes(managed) :: dlo, dhi, dstp, dstpi
     attributes(managed) :: f, fd, ft, fdd, ftt, fdt, fddt, fdtt, fddtt
     attributes(managed) :: dpdf, dpdfd, dpdft, dpdfdt
     attributes(managed) :: ef, efd, eft, efdt
@@ -971,14 +978,6 @@ contains
         allocate(jtmax)
         allocate(d(imax))
         allocate(t(jmax))
-        allocate(tlo)
-        allocate(thi)
-        allocate(tstp)
-        allocate(tstpi)
-        allocate(dlo)
-        allocate(dhi)
-        allocate(dstp)
-        allocate(dstpi)
         allocate(f(imax,jmax))
         allocate(fd(imax,jmax))
         allocate(ft(imax,jmax))
@@ -1012,14 +1011,6 @@ contains
         !..   read the helmholtz free energy table
         itmax = imax
         jtmax = jmax
-        tlo   = 3.0d0
-        thi   = 13.0d0
-        tstp  = (thi - tlo)/float(jmax-1)
-        tstpi = 1.0d0/tstp
-        dlo   = -12.0d0
-        dhi   = 15.0d0
-        dstp  = (dhi - dlo)/float(imax-1)
-        dstpi = 1.0d0/dstp
 
         do j=1,jmax
            tsav = tlo + (j-1)*tstp
@@ -1117,11 +1108,6 @@ contains
         if (amrex_pd_ioprocessor()) then
            close(unit=2)
         endif
-
-        ! Set up the minimum possible density and temperature.
-
-        mintemp = 10.d0**tlo
-        mindens = 10.d0**dlo
 
     end subroutine actual_eos_init
 
@@ -1282,14 +1268,6 @@ contains
       deallocate(jtmax)
       deallocate(d)
       deallocate(t)
-      deallocate(tlo)
-      deallocate(thi)
-      deallocate(tstp)
-      deallocate(tstpi)
-      deallocate(dlo)
-      deallocate(dhi)
-      deallocate(dstp)
-      deallocate(dstpi)
       deallocate(f)
       deallocate(fd)
       deallocate(ft)

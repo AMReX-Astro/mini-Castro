@@ -25,16 +25,6 @@ module eos_type_module
   integer, parameter :: ientr = 5
   integer, parameter :: ipres = 6
 
-  ! Minimum and maximum thermodynamic quantities permitted by the EOS.
-
-  real(rt), allocatable :: mintemp
-  real(rt), allocatable :: mindens
-
-#ifdef AMREX_USE_CUDA
-  attributes(managed) :: mintemp
-  attributes(managed) :: mindens
-#endif
-
   ! A generic structure holding thermodynamic quantities and their derivatives,
   ! plus some other quantities of interest.
 
