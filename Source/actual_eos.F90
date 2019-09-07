@@ -1,5 +1,6 @@
 module actual_eos_module
 
+    use amrex_constants_module, only: M_PI
     use eos_type_module
 
     integer, parameter, private :: imax = 541, jmax = 201
@@ -58,12 +59,9 @@ module actual_eos_module
 
     ! 2006 CODATA physical constants
 
-    ! Math constants
-    double precision, parameter :: pi       = 3.1415926535897932384d0
-
     ! Physical constants
     double precision, parameter :: h       = 6.6260689633d-27
-    double precision, parameter :: hbar    = 0.5d0 * h/pi
+    double precision, parameter :: hbar    = 0.5d0 * h / M_PI
     double precision, parameter :: qe      = 4.8032042712d-10
     double precision, parameter :: avo_eos = 6.0221417930d23
     double precision, parameter :: clight  = 2.99792458d10
@@ -85,9 +83,9 @@ module actual_eos_module
     double precision, parameter :: pc      = 3.261633d0 * ly
 
     ! Some other useful combinations of the constants
-    double precision, parameter :: sioncon = (2.0d0 * pi * amu * kerg)/(h*h)
+    double precision, parameter :: sioncon = (2.0d0 * M_PI * amu * kerg)/(h*h)
     double precision, parameter :: forth   = 4.0d0/3.0d0
-    double precision, parameter :: forpi   = 4.0d0 * pi
+    double precision, parameter :: forpi   = 4.0d0 * M_PI
     double precision, parameter :: kergavo = kerg * avo_eos
     double precision, parameter :: ikavo   = 1.0d0/kergavo
     double precision, parameter :: asoli3  = asol/3.0d0
