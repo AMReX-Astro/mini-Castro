@@ -46,6 +46,7 @@ extern "C"
   void ca_compute_temp
     (const int* lo, const int* hi, BL_FORT_FAB_ARG_3D(state));
 
+  AMREX_GPU_DEVICE
   void ca_estdt
     (const int* lo, const int* hi,
      const BL_FORT_FAB_ARG_3D(state),

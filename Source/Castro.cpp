@@ -171,53 +171,26 @@ Castro::estTimeStep (Real dt_old)
 {
     BL_PROFILE("Castro::estTimeStep()");
 
-    Real max_dt = 1.e200;
-
-    Real estdt = max_dt;
-
     const MultiFab& stateMF = get_new_data(State_Type);
 
-    const Real* dx = geom.CellSize();
+    const auto dx = geom.CellSizeArray();
 
     const Real cfl = 0.5;
 
-    // Start the hydro with the max_dt value, but divide by CFL
-    // to account for the fact that we multiply by it at the end.
-    // This ensures that if max_dt is more restrictive than the hydro
-    // criterion, we will get exactly max_dt for a timestep.
+    Real estdt = amrex::ReduceMin(stateMF, 0,
+                                  [=] AMREX_GPU_DEVICE (Box const& box, FArrayBox const& statefab) noexcept -> Real
+                                  {
+                                      amrex::Real dt_loc = std::numeric_limits<amrex::Real>::max();
 
-    Real estdt_hydro = max_dt / cfl;
+                                      ca_estdt(AMREX_ARLIM_ANYD(box.loVect()), AMREX_ARLIM_ANYD(box.hiVect()),
+                                               BL_TO_FORTRAN_ANYD(statefab),
+                                               AMREX_ZFILL(dx.data()), &dt_loc);
 
-#ifdef _OPENMP
-#pragma omp parallel
-#endif
-    {
-	Real dt = max_dt / cfl;
+                                      return dt_loc;
+                                  });
 
-	for (MFIter mfi(stateMF,true); mfi.isValid(); ++mfi)
-	{
-	    const Box& box = mfi.tilebox();
-
-#pragma gpu box(box) nohost
-            ca_estdt
-                (AMREX_INT_ANYD(box.loVect()), AMREX_INT_ANYD(box.hiVect()),
-                 BL_TO_FORTRAN_ANYD(stateMF[mfi]),
-                 AMREX_REAL_ANYD(dx),
-                 AMREX_MFITER_REDUCE_MIN(&dt));
-	}
-#ifdef _OPENMP
-#pragma omp critical (castro_estdt)
-#endif
-	{
-	    estdt_hydro = std::min(estdt_hydro,dt);
-	}
-
-    }
-
-    ParallelDescriptor::ReduceRealMin(estdt_hydro);
-    estdt_hydro *= cfl;
-
-    estdt = estdt_hydro;
+    ParallelDescriptor::ReduceRealMin(estdt);
+    estdt *= cfl;
 
     return estdt;
 }
