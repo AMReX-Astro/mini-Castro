@@ -367,11 +367,7 @@ contains
                                                            bind(C, name="calculate_blast_radius")
 
     use amrex_constants_module, only: HALF, TWO
-#ifdef AMREX_USE_CUDA
-    use amrex_fort_module, only: amrex_add => amrex_add_device
-#else
-    use amrex_fort_module, only: amrex_add
-#endif
+    use reduction_module, only: reduce_add
 
     implicit none
 
@@ -401,8 +397,8 @@ contains
              x = problo(1) + (i + HALF) * dx(1) - center(1)
 
              if (abs(state(i,j,k,URHO) - max_density) / max_density <= density_tolerance) then
-                call amrex_add(blast_mass, state(i,j,k,URHO))
-                call amrex_add(blast_radius, state(i,j,k,URHO) * sqrt(x**2 + y**2 + z**2))
+                call reduce_add(blast_mass, state(i,j,k,URHO))
+                call reduce_add(blast_radius, state(i,j,k,URHO) * sqrt(x**2 + y**2 + z**2))
              end if
           end do
        end do

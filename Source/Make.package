@@ -19,3 +19,4 @@ F90EXE_sources += flatten.F90
 F90EXE_sources += eos.F90
 F90EXE_sources += network.F90
 F90EXE_sources += Prob.F90
+F90EXE_sources += reduction.F90
