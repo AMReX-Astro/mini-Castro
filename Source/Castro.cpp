@@ -173,23 +173,31 @@ Castro::estTimeStep (Real dt_old)
 
     const MultiFab& stateMF = get_new_data(State_Type);
 
+    amrex::Real estdt = std::numeric_limits<amrex::Real>::max();
+
     const auto dx = geom.CellSizeArray();
 
-    const Real cfl = 0.5;
+    for (MFIter mfi(stateMF); mfi.isValid(); ++mfi)
+    {
+        const Box& box = mfi.validbox();
 
-    Real estdt = amrex::ReduceMin(stateMF, 0,
-                                  [=] AMREX_GPU_DEVICE (Box const& box, FArrayBox const& statefab) noexcept -> Real
-                                  {
-                                      amrex::Real dt_loc = std::numeric_limits<amrex::Real>::max();
+        auto state_arr = stateMF[mfi].array();
 
-                                      ca_estdt(AMREX_ARLIM_ANYD(box.loVect()), AMREX_ARLIM_ANYD(box.hiVect()),
-                                               BL_TO_FORTRAN_ANYD(statefab),
-                                               AMREX_ZFILL(dx.data()), &dt_loc);
+        // Get a device pointer for estdt.
+        Real* estdt_loc = AMREX_MFITER_REDUCE_MIN(&estdt);
 
-                                      return dt_loc;
-                                  });
+        AMREX_LAUNCH_DEVICE_LAMBDA(box, lbx,
+        {
+            ca_estdt(AMREX_ARLIM_ANYD(lbx.loVect()), AMREX_ARLIM_ANYD(lbx.hiVect()),
+                     AMREX_ARR4_TO_FORTRAN_ANYD(state_arr),
+                     AMREX_ZFILL(dx.data()), estdt_loc);
+        });
+    }
 
+    // Reduce over all MPI ranks.
     ParallelDescriptor::ReduceRealMin(estdt);
+
+    const Real cfl = 0.5;
     estdt *= cfl;
 
     return estdt;
@@ -359,7 +367,9 @@ Castro::post_timestep (int iteration)
         MultiFab& S_new = getLevel(parent->finestLevel()).get_new_data(State_Type);
         Real max_density = S_new.max(Density);
 
-        const Real* dx = getLevel(parent->finestLevel()).geom.CellSize();
+        const auto dx = getLevel(parent->finestLevel()).geom.CellSizeArray();
+        const auto problo = geom.ProbLoArray();
+        const auto probhi = geom.ProbHiArray();
 
         Real blast_radius = 0.0;
         Real blast_mass = 0.0;
@@ -371,14 +381,23 @@ Castro::post_timestep (int iteration)
         {
             const Box& box = mfi.validbox();
 
-#pragma gpu box(box) nohost
-            calculate_blast_radius(AMREX_INT_ANYD(box.loVect()), AMREX_INT_ANYD(box.hiVect()),
-                                   BL_TO_FORTRAN_ANYD(S_new[mfi]),
-                                   AMREX_REAL_ANYD(dx), AMREX_REAL_ANYD(geom.ProbLo()), AMREX_REAL_ANYD(geom.ProbHi()),
-                                   AMREX_MFITER_REDUCE_SUM(&blast_mass), AMREX_MFITER_REDUCE_SUM(&blast_radius),
-                                   max_density);
+            auto state_arr = S_new[mfi].array();
+
+            // Get device pointers to the reduction variables.
+            Real* blast_mass_loc = AMREX_MFITER_REDUCE_SUM(&blast_mass);
+            Real* blast_radius_loc = AMREX_MFITER_REDUCE_SUM(&blast_radius);
+
+            AMREX_LAUNCH_DEVICE_LAMBDA(box, lbx,
+            {
+                calculate_blast_radius(AMREX_ARLIM_ANYD(lbx.loVect()), AMREX_ARLIM_ANYD(lbx.hiVect()),
+                                       AMREX_ARR4_TO_FORTRAN_ANYD(state_arr),
+                                       AMREX_ZFILL(dx.data()), AMREX_ZFILL(problo.data()), AMREX_ZFILL(probhi.data()),
+                                       blast_mass_loc, blast_radius_loc, max_density);
+            });
+
         }
 
+        // Reduce over MPI ranks.
         amrex::ParallelDescriptor::ReduceRealSum(blast_mass);
         amrex::ParallelDescriptor::ReduceRealSum(blast_radius);
 
