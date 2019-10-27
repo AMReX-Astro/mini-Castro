@@ -25,12 +25,13 @@ EBASE = mini-Castro
 
 DEFINES += -DCRSEGRNDOMP
 
-AMREX_HOME := ../amrex
-
 # This application only supports 3D.
 ifneq ($(DIM),3)
   $(error mini-Castro only supports DIM == 3)
 endif
+
+# If the user doesn't provide AMReX, use the git submodule version.
+AMREX_HOME ?= ../amrex
 
 # Include the AMReX make rules. Throw an error
 # if we don't have AMReX.
