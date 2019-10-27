@@ -18,6 +18,14 @@ using namespace amrex;
 long Castro::num_zones_advanced = 0;
 int Castro::diagnostic_interval = 50;
 
+// Choose tile size based on whether we're using a GPU.
+
+#ifdef AMREX_USE_GPU
+IntVect Castro::tile_size(1024000, 1024000, 1024000);
+#else
+IntVect Castro::tile_size(1024, 16, 16);
+#endif
+
 void
 Castro::variableCleanUp ()
 {
@@ -95,7 +103,10 @@ Castro::initData ()
 	amrex::Abort("We don't support dx != dy != dz");
     }
 
-    for (MFIter mfi(S_new); mfi.isValid(); ++mfi)
+#ifdef _OPENMP
+#pragma omp parallel
+#endif
+    for (MFIter mfi(S_new, tile_size); mfi.isValid(); ++mfi)
     {
         const Box& box = mfi.validbox();
         auto state_arr = S_new[mfi].array();
@@ -177,7 +188,10 @@ Castro::estTimeStep (Real dt_old)
 
     const auto dx = geom.CellSizeArray();
 
-    for (MFIter mfi(stateMF); mfi.isValid(); ++mfi)
+#ifdef _OPENMP
+#pragma omp parallel reduction(min:estdt)
+#endif
+    for (MFIter mfi(stateMF, tile_size); mfi.isValid(); ++mfi)
     {
         const Box& box = mfi.validbox();
 
@@ -375,9 +389,9 @@ Castro::post_timestep (int iteration)
         Real blast_mass = 0.0;
 
 #ifdef _OPENMP
-#pragma omp parallel reduction(sum:blast_mass,blast_radius)
+#pragma omp parallel reduction(+:blast_mass,blast_radius)
 #endif
-        for (MFIter mfi(S_new); mfi.isValid(); ++mfi)
+        for (MFIter mfi(S_new, tile_size); mfi.isValid(); ++mfi)
         {
             const Box& box = mfi.validbox();
 
@@ -506,7 +520,7 @@ Castro::errorEst (TagBoxArray& tags,
 #ifdef _OPENMP
 #pragma omp parallel
 #endif
-    for (MFIter mfi(*mf, true); mfi.isValid(); ++mfi)
+    for (MFIter mfi(*mf, tile_size); mfi.isValid(); ++mfi)
     {
         const Box& box = mfi.validbox();
         auto tags_arr = tags[mfi].array();
@@ -572,7 +586,7 @@ Castro::clean_state(MultiFab& state)
 #ifdef _OPENMP
 #pragma omp parallel
 #endif
-    for (MFIter mfi(state, true); mfi.isValid(); ++mfi)
+    for (MFIter mfi(state, tile_size); mfi.isValid(); ++mfi)
     {
         const Box& box = mfi.growntilebox(ng);
         auto state_arr = state[mfi].array();

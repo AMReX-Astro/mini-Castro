@@ -27,14 +27,6 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
 
     const Real update_scale_factor = b_mol[istage];
 
-    // Choose tile size based on whether we're using a GPU.
-  
-#ifdef AMREX_USE_GPU
-    IntVect hydro_tile_size(1024000, 1024000, 1024000);
-#else
-    IntVect hydro_tile_size(1024, 16, 16);
-#endif
-
 #ifdef _OPENMP
 #pragma omp parallel
 #endif
@@ -48,7 +40,7 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
         FArrayBox flux[3];
         FArrayBox qe[3];
 
-        for (MFIter mfi(S_new, hydro_tile_size); mfi.isValid(); ++mfi) {
+        for (MFIter mfi(S_new, tile_size); mfi.isValid(); ++mfi) {
 
             const Box& box = mfi.tilebox();
 

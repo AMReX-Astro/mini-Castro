@@ -161,6 +161,9 @@ protected:
     // Geometric data
     amrex::MultiFab volume;
     amrex::MultiFab area[3];
+
+    static amrex::IntVect tile_size;
+
 };
 
 inline
