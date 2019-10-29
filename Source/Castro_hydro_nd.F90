@@ -99,6 +99,7 @@ contains
 
     type (eos_t) :: eos_state
 
+    !$acc parallel loop gang vector collapse(3) deviceptr(uin, q)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
@@ -135,12 +136,14 @@ contains
     enddo
 
     ! Load passively advected quatities into q
+
+    !$acc parallel loop gang vector collapse(4) deviceptr(uin, q)
     do ispec = 1, nspec
-       n  = UFS + ispec - 1
-       iq = QFS + ispec - 1
        do k = lo(3), hi(3)
           do j = lo(2), hi(2)
              do i = lo(1), hi(1)
+                n  = UFS + ispec - 1
+                iq = QFS + ispec - 1
                 q(i,j,k,iq) = uin(i,j,k,n)/q(i,j,k,QRHO)
              enddo
           enddo
@@ -148,6 +151,8 @@ contains
     enddo
 
     ! get gamc, p, T, c, csml using q state
+
+    !$acc parallel loop gang vector collapse(3) deviceptr(q, qaux) private(eos_state)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
@@ -197,6 +202,7 @@ contains
     integer  :: i, j, k, n
     real(rt) :: sum, fac
 
+    !$acc parallel loop gang vector collapse(3) deviceptr(flux)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
@@ -246,6 +252,7 @@ contains
     dyinv = ONE/dx(2)
     dzinv = ONE/dx(3)
 
+    !$acc parallel loop gang vector collapse(3) deviceptr(q, div)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
@@ -305,13 +312,13 @@ contains
 
     real(rt), parameter :: difmag = 0.1d0
 
+    !$acc parallel loop gang vector collapse(4) deviceptr(div, uin, flux)
     do n = 1, NVAR
-
-       if ( n == UTEMP ) cycle
-
        do k = lo(3), hi(3)
           do j = lo(2), hi(2)
              do i = lo(1), hi(1)
+
+                if ( n == UTEMP ) cycle
 
                 if (idir .eq. 1) then
 
@@ -341,7 +348,6 @@ contains
              end do
           end do
        end do
-
     end do
 
   end subroutine apply_av
@@ -400,6 +406,7 @@ contains
     dtinv = ONE / dt
     dxinv = ONE / dx
 
+    !$acc parallel loop gang vector collapse(4) deviceptr(q1, q2, q3, f1, f2, f3, a1, a2, a3, vol, update)
     do n = 1, NVAR
        do k = lo(3), hi(3)
           do j = lo(2), hi(2)
@@ -450,6 +457,7 @@ contains
 
     integer :: i, j, k, n
 
+    !$acc parallel loop gang vector collapse(4) deviceptr(flux, area)
     do n = 1, NVAR
        do k = lo(3), hi(3)
           do j = lo(2), hi(2)
@@ -482,6 +490,7 @@ contains
 
     ! Update the total fluxes for the timestep with the contribution from this stage.
 
+    !$acc parallel loop gang vector collapse(4) deviceptr(fluxes, flux)
     do n = 1, NVAR
        do k = lo(3), hi(3)
           do j = lo(2), hi(2)
