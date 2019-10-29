@@ -99,7 +99,7 @@ contains
 
     type (eos_t) :: eos_state
 
-    !$acc parallel loop gang vector collapse(3) deviceptr(uin, q)
+    !$acc parallel loop gang vector collapse(3) deviceptr(uin, q) private(vel)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
