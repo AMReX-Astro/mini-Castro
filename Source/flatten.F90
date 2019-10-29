@@ -29,6 +29,8 @@ contains
     real(rt), parameter :: shktst = 0.33e0_rt, zcut1 = 0.75e0_rt, zcut2 = 0.85e0_rt, dzcut = ONE/(zcut2-zcut1)
 
     ! x-direction flattening coef
+
+    !$acc parallel loop gang vector collapse(3) deviceptr(q, flatn)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
@@ -86,6 +88,8 @@ contains
     end do
 
     ! y-direction flattening coef
+
+    !$acc parallel loop gang vector collapse(3) deviceptr(q, flatn)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
@@ -142,6 +146,8 @@ contains
     end do
 
     ! z-direction flattening coef
+
+    !$acc parallel loop gang vector collapse(3) deviceptr(q, flatn)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)

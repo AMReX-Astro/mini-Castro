@@ -22,8 +22,6 @@ contains
                                        flx, flx_lo, flx_hi, &
                                        qaux, qa_lo, qa_hi)
 
-    !$acc routine seq
-
     use network, only: nspec
     use amrex_fort_module, only: rt => amrex_real
     use amrex_constants_module, only: ZERO, HALF, ONE
@@ -93,6 +91,7 @@ contains
        im3 = UMY
     end if
 
+    !$acc parallel loop gang vector collapse(3) deviceptr(qm, qp, qint, qaux, flx)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)

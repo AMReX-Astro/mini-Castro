@@ -44,6 +44,7 @@ contains
     ! x-direction
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
+    !$acc parallel loop gang vector collapse(4) deviceptr(s, flatn, qm, qp)
     do n = 1, QVAR
        do k = lo(3), hi(3)
           do j = lo(2), hi(2)
@@ -140,6 +141,7 @@ contains
     ! y-direction
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
+    !$acc parallel loop gang vector collapse(4) deviceptr(s, flatn, qm, qp)
     do n = 1, QVAR
        do k = lo(3), hi(3)
           do j = lo(2), hi(2)
@@ -237,6 +239,7 @@ contains
     ! z-direction
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
+    !$acc parallel loop gang vector collapse(4) deviceptr(s, flatn, qm, qp)
     do n = 1, QVAR
        do k = lo(3), hi(3)
           do j = lo(2), hi(2)
