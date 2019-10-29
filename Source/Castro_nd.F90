@@ -172,21 +172,15 @@ contains
     integer,  intent(in   ) :: s_lo(3), s_hi(3)
     real(rt), intent(inout) :: state(s_lo(1):s_hi(1),s_lo(2):s_hi(2),s_lo(3):s_hi(3),NVAR)
 
-    ! Local variables
     integer  :: i, j, k
-    real(rt) :: xn(nspec)
 
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
 
-             xn = state(i,j,k,UFS:UFS+nspec-1)
+             state(i,j,k,UFS:UFS+nspec-1) = max(1.0d-30 * state(i,j,k,URHO), min(state(i,j,k,URHO), state(i,j,k,UFS:UFS+nspec-1)))
 
-             xn = max(1.0d-30 * state(i,j,k,URHO), min(state(i,j,k,URHO), xn))
-
-             xn = state(i,j,k,URHO) * (xn / sum(xn))
-
-             state(i,j,k,UFS:UFS+nspec-1) = xn
+             state(i,j,k,UFS:UFS+nspec-1) = state(i,j,k,UFS:UFS+nspec-1) / sum(state(i,j,k,UFS:UFS+nspec-1))
 
           enddo
        enddo
