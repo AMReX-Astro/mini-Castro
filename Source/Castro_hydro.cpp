@@ -60,7 +60,7 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
             Elixir elix_qaux = qaux.elixir();
             auto qaux_arr = qaux.array();
 
-            AMREX_LAUNCH_DEVICE_LAMBDA(qbx, lbx,
+            CASTRO_LAUNCH_LAMBDA(qbx, lbx,
             {
                 ca_ctoprim(AMREX_ARLIM_ANYD(lbx.loVect()), AMREX_ARLIM_ANYD(lbx.hiVect()),
                            AMREX_ARR4_TO_FORTRAN_ANYD(state_old_arr),
@@ -77,7 +77,7 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
 
             // Compute divergence of velocity field.
 
-            AMREX_LAUNCH_DEVICE_LAMBDA(obx, lbx,
+            CASTRO_LAUNCH_LAMBDA(obx, lbx,
             {
                 ca_divu(AMREX_ARLIM_ANYD(lbx.loVect()), AMREX_ARLIM_ANYD(lbx.hiVect()),
                         AMREX_ZFILL(dx.data()),
@@ -91,7 +91,7 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
 
             // Compute flattening coefficient for slope calculations.
 
-            AMREX_LAUNCH_DEVICE_LAMBDA(obx, lbx,
+            CASTRO_LAUNCH_LAMBDA(obx, lbx,
             {
                 ca_uflaten
                     (AMREX_ARLIM_ANYD(lbx.loVect()), AMREX_ARLIM_ANYD(lbx.hiVect()),
@@ -109,7 +109,7 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
 
             // Do PPM reconstruction to the zone edges.
 
-            AMREX_LAUNCH_DEVICE_LAMBDA(obx, lbx,
+            CASTRO_LAUNCH_LAMBDA(obx, lbx,
             {
                 ca_ppm_reconstruct
                     (AMREX_ARLIM_ANYD(lbx.loVect()), AMREX_ARLIM_ANYD(lbx.hiVect()),
@@ -156,7 +156,7 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
                 auto qe_arr   = qe[idir].array();
                 auto area_arr = area[idir][mfi].array();
 
-                AMREX_LAUNCH_DEVICE_LAMBDA(ebx, lbx,
+                CASTRO_LAUNCH_LAMBDA(ebx, lbx,
                 {
                     ca_construct_flux
                         (AMREX_ARLIM_ANYD(lbx.loVect()), AMREX_ARLIM_ANYD(lbx.hiVect()),
@@ -195,7 +195,7 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
             auto volume_arr = volume[mfi].array();
             auto hydro_source_arr = hydro_source[mfi].array();
 
-            AMREX_LAUNCH_DEVICE_LAMBDA(box, lbx,
+            CASTRO_LAUNCH_LAMBDA(box, lbx,
             {
                 ca_construct_hydro_update
                     (AMREX_ARLIM_ANYD(lbx.loVect()), AMREX_ARLIM_ANYD(lbx.hiVect()),

@@ -117,6 +117,14 @@ module eos_module
   attributes(managed) :: xf, xfd, xft, xfdt
 #endif
 
+  !$acc declare create(d, t)
+  !$acc declare create(dt, dt2, dti, dt2i)
+  !$acc declare create(dd, dd2, ddi, dd2i)
+  !$acc declare create(f, fd, fdd, ft, ftt, fdt, fddt, fdtt, fddtt)
+  !$acc declare create(dpdf, dpdfd, dpdft, dpdfdt)
+  !$acc declare create(ef, efd, eft, efdt)
+  !$acc declare create(xf, xfd, xft, xfdt)
+
   integer, parameter :: max_newton = 100
 
   ! Physical constants
@@ -156,7 +164,9 @@ contains
   !..
   !..references: cox & giuli chapter 24 ; timmes & swesty apj 1999
 
-  AMREX_CUDA_FORT_DEVICE subroutine eos(input, state)
+  CASTRO_FORT_DEVICE subroutine eos(input, state)
+
+    !$acc routine seq
 
     use amrex_constants_module, only: ZERO, HALF, ONE, TWO
     use network, only: aion, aion_inv, zion
@@ -1139,13 +1149,23 @@ contains
        dd2i(i) = 1.0d0 / dd2(i)
     end do
 
+    !$acc update device(d, t)
+    !$acc update device(dt, dt2, dti, dt2i)
+    !$acc update device(dd, dd2, ddi, dd2i)
+    !$acc update device(f, fd, fdd, ft, ftt, fdt, fddt, fdtt, fddtt)
+    !$acc update device(dpdf, dpdfd, dpdft, dpdfdt)
+    !$acc update device(ef, efd, eft, efdt)
+    !$acc update device(xf, xfd, xft, xfdt)
+
   end subroutine eos_init
 
 
 
   ! quintic hermite polynomial functions
   ! psi0 and its derivatives
-  AMREX_CUDA_FORT_DEVICE pure function psi0(z) result(psi0r)
+  CASTRO_FORT_DEVICE pure function psi0(z) result(psi0r)
+
+    !$acc routine seq
 
     implicit none
 
@@ -1156,7 +1176,9 @@ contains
 
   end function psi0
 
-  AMREX_CUDA_FORT_DEVICE pure function dpsi0(z) result(dpsi0r)
+  CASTRO_FORT_DEVICE pure function dpsi0(z) result(dpsi0r)
+
+    !$acc routine seq
 
     implicit none
 
@@ -1167,7 +1189,9 @@ contains
 
   end function dpsi0
 
-  AMREX_CUDA_FORT_DEVICE pure function ddpsi0(z) result(ddpsi0r)
+  CASTRO_FORT_DEVICE pure function ddpsi0(z) result(ddpsi0r)
+
+    !$acc routine seq
 
     implicit none
 
@@ -1179,7 +1203,9 @@ contains
   end function ddpsi0
 
   ! psi1 and its derivatives
-  AMREX_CUDA_FORT_DEVICE pure function psi1(z) result(psi1r)
+  CASTRO_FORT_DEVICE pure function psi1(z) result(psi1r)
+
+    !$acc routine seq
 
     implicit none
 
@@ -1190,7 +1216,9 @@ contains
 
   end function psi1
 
-  AMREX_CUDA_FORT_DEVICE pure function dpsi1(z) result(dpsi1r)
+  CASTRO_FORT_DEVICE pure function dpsi1(z) result(dpsi1r)
+
+    !$acc routine seq
 
     implicit none
 
@@ -1201,7 +1229,9 @@ contains
 
   end function dpsi1
 
-  AMREX_CUDA_FORT_DEVICE pure function ddpsi1(z) result(ddpsi1r)
+  CASTRO_FORT_DEVICE pure function ddpsi1(z) result(ddpsi1r)
+
+    !$acc routine seq
 
     implicit none
 
@@ -1213,7 +1243,9 @@ contains
   end function ddpsi1
 
   ! psi2  and its derivatives
-  AMREX_CUDA_FORT_DEVICE pure function psi2(z) result(psi2r)
+  CASTRO_FORT_DEVICE pure function psi2(z) result(psi2r)
+
+    !$acc routine seq
 
     implicit none
 
@@ -1224,7 +1256,9 @@ contains
 
   end function psi2
 
-  AMREX_CUDA_FORT_DEVICE pure function dpsi2(z) result(dpsi2r)
+  CASTRO_FORT_DEVICE pure function dpsi2(z) result(dpsi2r)
+
+    !$acc routine seq
 
     implicit none
 
@@ -1235,7 +1269,9 @@ contains
 
   end function dpsi2
 
-  AMREX_CUDA_FORT_DEVICE pure function ddpsi2(z) result(ddpsi2r)
+  CASTRO_FORT_DEVICE pure function ddpsi2(z) result(ddpsi2r)
+
+    !$acc routine seq
 
     implicit none
 
@@ -1248,7 +1284,9 @@ contains
 
 
   ! biquintic hermite polynomial function
-  AMREX_CUDA_FORT_DEVICE pure function h5(fi,w0t,w1t,w2t,w0mt,w1mt,w2mt,w0d,w1d,w2d,w0md,w1md,w2md) result(h5r)
+  CASTRO_FORT_DEVICE pure function h5(fi,w0t,w1t,w2t,w0mt,w1mt,w2mt,w0d,w1d,w2d,w0md,w1md,w2md) result(h5r)
+
+    !$acc routine seq
 
     implicit none
 
@@ -1280,7 +1318,9 @@ contains
 
   ! cubic hermite polynomial functions
   ! psi0 & derivatives
-  AMREX_CUDA_FORT_DEVICE pure function xpsi0(z) result(xpsi0r)
+  CASTRO_FORT_DEVICE pure function xpsi0(z) result(xpsi0r)
+
+    !$acc routine seq
 
     implicit none
 
@@ -1291,7 +1331,9 @@ contains
 
   end function xpsi0
 
-  AMREX_CUDA_FORT_DEVICE pure function xdpsi0(z) result(xdpsi0r)
+  CASTRO_FORT_DEVICE pure function xdpsi0(z) result(xdpsi0r)
+
+    !$acc routine seq
 
     implicit none
 
@@ -1304,7 +1346,9 @@ contains
 
 
   ! psi1 & derivatives
-  AMREX_CUDA_FORT_DEVICE pure function xpsi1(z) result(xpsi1r)
+  CASTRO_FORT_DEVICE pure function xpsi1(z) result(xpsi1r)
+
+    !$acc routine seq
 
     implicit none
 
@@ -1315,7 +1359,9 @@ contains
 
   end function xpsi1
 
-  AMREX_CUDA_FORT_DEVICE pure function xdpsi1(z) result(xdpsi1r)
+  CASTRO_FORT_DEVICE pure function xdpsi1(z) result(xdpsi1r)
+
+    !$acc routine seq
 
     implicit none
 
@@ -1327,7 +1373,9 @@ contains
   end function xdpsi1
 
   ! bicubic hermite polynomial function
-  AMREX_CUDA_FORT_DEVICE pure function h3(fi,w0t,w1t,w0mt,w1mt,w0d,w1d,w0md,w1md) result(h3r)
+  CASTRO_FORT_DEVICE pure function h3(fi,w0t,w1t,w0mt,w1mt,w0d,w1d,w0md,w1md) result(h3r)
+
+    !$acc routine seq
 
     implicit none
 

@@ -11,11 +11,11 @@ module ppm_module
 
 contains
 
-  AMREX_CUDA_FORT_DEVICE subroutine ca_ppm_reconstruct(lo, hi, &
-                                                       s, s_lo, s_hi, &
-                                                       flatn, f_lo, f_hi, &
-                                                       qm, qm_lo, qm_hi, &
-                                                       qp, qp_lo, qp_hi) bind(C, name='ca_ppm_reconstruct')
+  CASTRO_FORT_DEVICE subroutine ca_ppm_reconstruct(lo, hi, &
+                                                   s, s_lo, s_hi, &
+                                                   flatn, f_lo, f_hi, &
+                                                   qm, qm_lo, qm_hi, &
+                                                   qp, qp_lo, qp_hi) bind(C, name='ca_ppm_reconstruct')
 
     implicit none
 

@@ -6,7 +6,9 @@ module reduction_module
 
 contains
 
-  AMREX_CUDA_FORT_DEVICE subroutine reduce_add(x, y)
+  CASTRO_FORT_DEVICE subroutine reduce_add(x, y)
+
+    !$acc routine seq
 
     implicit none
 
@@ -17,7 +19,7 @@ contains
 
     real(rt) :: t
 
-#ifdef AMREX_USE_CUDA
+#if defined(AMREX_USE_CUDA) && !defined(AMREX_USE_ACC)
     t = atomicAdd(x, y)
 #else
     x = x + y
@@ -27,7 +29,9 @@ contains
 
 
 
-  AMREX_CUDA_FORT_DEVICE subroutine reduce_min(x, y)
+  CASTRO_FORT_DEVICE subroutine reduce_min(x, y)
+
+    !$acc routine seq
 
     implicit none
 
@@ -38,7 +42,7 @@ contains
 
     real(rt) :: t
 
-#ifdef AMREX_USE_CUDA
+#if defined(AMREX_USE_CUDA) && !defined(AMREX_USE_ACC)
     t = atomicMin(x, y)
 #else
     x = min(x, y)

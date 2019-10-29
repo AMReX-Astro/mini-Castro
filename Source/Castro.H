@@ -19,6 +19,14 @@ enum Conserved { Density = 0, Xmom, Ymom, Zmom, Eden, Eint, Temp, FirstSpec, NUM
 
 #define AMREX_ARR4_TO_FORTRAN_ANYD(a) a.p,&((a).begin.x),amrex::GpuArray<int,3>{(a).end.x-1,(a).end.y-1,(a).end.z-1}.data()
 
+// If we are using OpenACC, disable AMReX from launching CUDA kernels for our code.
+
+#ifdef AMREX_USE_ACC
+#define CASTRO_LAUNCH_LAMBDA(box, lbx, lambda) { Box lbx = box; lambda; }
+#else
+#define CASTRO_LAUNCH_LAMBDA(box, lbx, lambda) AMREX_LAUNCH_DEVICE_LAMBDA(box, lbx, lambda)
+#endif
+
 class Castro
     :
     public amrex::AmrLevel

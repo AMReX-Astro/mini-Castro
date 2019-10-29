@@ -6,16 +6,16 @@ module hydro_module
 
 contains
 
-  AMREX_CUDA_FORT_DEVICE subroutine ca_construct_flux(lo, hi, domlo, domhi, dx, dt, idir, &
-                                                      uin, uin_lo, uin_hi, &
-                                                      div, div_lo, div_hi, &
-                                                      qaux, qa_lo, qa_hi, &
-                                                      qm, qm_lo, qm_hi, &
-                                                      qp, qp_lo, qp_hi, &
-                                                      qint, qe_lo, qe_hi, &
-                                                      flux, f_lo, f_hi, &
-                                                      area, a_lo, a_hi) &
-                                                      bind(C, name='ca_construct_flux')
+  CASTRO_FORT_DEVICE subroutine ca_construct_flux(lo, hi, domlo, domhi, dx, dt, idir, &
+                                                  uin, uin_lo, uin_hi, &
+                                                  div, div_lo, div_hi, &
+                                                  qaux, qa_lo, qa_hi, &
+                                                  qm, qm_lo, qm_hi, &
+                                                  qp, qp_lo, qp_hi, &
+                                                  qint, qe_lo, qe_hi, &
+                                                  flux, f_lo, f_hi, &
+                                                  area, a_lo, a_hi) &
+                                                  bind(C, name='ca_construct_flux')
 
     use amrex_fort_module, only: rt => amrex_real
     use castro_module, only: NVAR, QVAR, NGDNV, NQAUX
@@ -56,74 +56,11 @@ contains
 
 
 
-  AMREX_CUDA_FORT_DEVICE subroutine compute_cfl(lo, hi, dt, dx, courno, &
-                                                q, q_lo, q_hi, &
-                                                qaux, qa_lo, qa_hi) &
-                                                bind(C, name = "compute_cfl")
-
-    use amrex_constants_module, only: ZERO, ONE
-    use castro_module, only: QVAR, QRHO, QU, QV, QW, QC, NQAUX
-#ifdef AMREX_USE_CUDA
-    use amrex_fort_module, only: amrex_max => amrex_max_device
-#else
-    use amrex_fort_module, only: amrex_max
-#endif
-
-    implicit none
-
-    integer,  intent(in   ) :: lo(3), hi(3)
-    integer,  intent(in   ) :: q_lo(3), q_hi(3)
-    integer,  intent(in   ) :: qa_lo(3), qa_hi(3)
-
-    real(rt), intent(in   ) :: q(q_lo(1):q_hi(1),q_lo(2):q_hi(2),q_lo(3):q_hi(3),QVAR)
-    real(rt), intent(in   ) :: qaux(qa_lo(1):qa_hi(1),qa_lo(2):qa_hi(2),qa_lo(3):qa_hi(3),NQAUX)
-    real(rt), intent(in   ) :: dt, dx(3)
-    real(rt), intent(inout) :: courno
-
-    real(rt) :: courx, coury, courz, courmx, courmy, courmz, courtmp
-    real(rt) :: dtdx, dtdy, dtdz
-    integer  :: i, j, k
-
-    ! Compute running max of Courant number over grids
-
-    courmx = courno
-    courmy = courno
-    courmz = courno
-
-    dtdx = dt / dx(1)
-    dtdy = dt / dx(2)
-    dtdz = dt / dx(3)
-
-    do k = lo(3), hi(3)
-       do j = lo(2), hi(2)
-          do i = lo(1), hi(1)
-
-             courx = ( qaux(i,j,k,QC) + abs(q(i,j,k,QU)) ) * dtdx
-             coury = ( qaux(i,j,k,QC) + abs(q(i,j,k,QV)) ) * dtdy
-             courz = ( qaux(i,j,k,QC) + abs(q(i,j,k,QW)) ) * dtdz
-
-             courmx = max( courmx, courx )
-             courmy = max( courmy, coury )
-             courmz = max( courmz, courz )
-
-             ! method-of-lines constraint
-             courtmp = courx + coury + courz
-
-             call amrex_max(courno, courtmp)
-
-          enddo
-       enddo
-    enddo
-
-  end subroutine compute_cfl
-
-
-
-  AMREX_CUDA_FORT_DEVICE subroutine ca_ctoprim(lo, hi, &
-                                               uin, uin_lo, uin_hi, &
-                                               q,     q_lo,   q_hi, &
-                                               qaux, qa_lo,  qa_hi) &
-                                               bind(C, name='ca_ctoprim')
+  CASTRO_FORT_DEVICE subroutine ca_ctoprim(lo, hi, &
+                                           uin, uin_lo, uin_hi, &
+                                           q,     q_lo,   q_hi, &
+                                           qaux, qa_lo,  qa_hi) &
+                                           bind(C, name='ca_ctoprim')
 
     use network, only: nspec
     use eos_module, only: eos_t, eos_input_re, eos
@@ -234,7 +171,7 @@ contains
 
 
 
-  AMREX_CUDA_FORT_DEVICE subroutine normalize_species_fluxes(lo, hi, flux, f_lo, f_hi)
+  CASTRO_FORT_DEVICE subroutine normalize_species_fluxes(lo, hi, flux, f_lo, f_hi)
 
     ! Normalize the fluxes of the mass fractions so that
     ! they sum to 0.  This is essentially the CMA procedure that is
@@ -282,7 +219,7 @@ contains
 
 
 
-  AMREX_CUDA_FORT_DEVICE subroutine ca_divu(lo, hi, dx, q, q_lo, q_hi, div, d_lo, d_hi) bind(C, name='ca_divu')
+  CASTRO_FORT_DEVICE subroutine ca_divu(lo, hi, dx, q, q_lo, q_hi, div, d_lo, d_hi) bind(C, name='ca_divu')
 
     use amrex_constants_module, only: FOURTH, ONE
     use castro_module, only: QU, QV, QW, QVAR
@@ -335,10 +272,10 @@ contains
 
 
 
-  AMREX_CUDA_FORT_DEVICE subroutine apply_av(lo, hi, idir, dx, &
-                                             div, div_lo, div_hi, &
-                                             uin, uin_lo, uin_hi, &
-                                             flux, f_lo, f_hi)
+  CASTRO_FORT_DEVICE subroutine apply_av(lo, hi, idir, dx, &
+                                         div, div_lo, div_hi, &
+                                         uin, uin_lo, uin_hi, &
+                                         flux, f_lo, f_hi)
 
     use amrex_constants_module, only: ZERO, FOURTH
     use castro_module, only: NVAR, UTEMP
@@ -405,19 +342,19 @@ contains
 
 
 
-  AMREX_CUDA_FORT_DEVICE subroutine ca_construct_hydro_update(lo, hi, dx, dt, stage_weight, &
-                                                              q1, q1_lo, q1_hi, &
-                                                              q2, q2_lo, q2_hi, &
-                                                              q3, q3_lo, q3_hi, &
-                                                              f1, f1_lo, f1_hi, &
-                                                              f2, f2_lo, f2_hi, &
-                                                              f3, f3_lo, f3_hi, &
-                                                              a1, a1_lo, a1_hi, &
-                                                              a2, a2_lo, a2_hi, &
-                                                              a3, a3_lo, a3_hi, &
-                                                              vol, vol_lo, vol_hi, &
-                                                              update, u_lo, u_hi) &
-                                                              bind(C, name='ca_construct_hydro_update')
+  CASTRO_FORT_DEVICE subroutine ca_construct_hydro_update(lo, hi, dx, dt, stage_weight, &
+                                                          q1, q1_lo, q1_hi, &
+                                                          q2, q2_lo, q2_hi, &
+                                                          q3, q3_lo, q3_hi, &
+                                                          f1, f1_lo, f1_hi, &
+                                                          f2, f2_lo, f2_hi, &
+                                                          f3, f3_lo, f3_hi, &
+                                                          a1, a1_lo, a1_hi, &
+                                                          a2, a2_lo, a2_hi, &
+                                                          a3, a3_lo, a3_hi, &
+                                                          vol, vol_lo, vol_hi, &
+                                                          update, u_lo, u_hi) &
+                                                          bind(C, name='ca_construct_hydro_update')
 
     use amrex_constants_module, only: HALF, ONE
     use castro_module, only: NVAR, UEINT, NGDNV, GDPRES, GDU, GDV, GDW
@@ -491,7 +428,7 @@ contains
 
 
 
-  AMREX_CUDA_FORT_DEVICE subroutine scale_flux(lo, hi, flux, f_lo, f_hi, area, a_lo, a_hi, dt)
+  CASTRO_FORT_DEVICE subroutine scale_flux(lo, hi, flux, f_lo, f_hi, area, a_lo, a_hi, dt)
 
     use castro_module, only: NVAR
 

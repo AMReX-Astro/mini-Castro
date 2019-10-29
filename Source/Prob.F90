@@ -13,12 +13,14 @@ module initdata_module
   attributes(managed) :: p_ambient, dens_ambient, exp_energy, r_init, nsub
 #endif
 
+  !$acc declare create(p_ambient, dens_ambient, exp_energy, r_init, nsub)
+
 contains
 
-  AMREX_CUDA_FORT_DEVICE subroutine ca_initdata(lo, hi, &
-                                                state, s_lo, s_hi, &
-                                                dx, problo, probhi) &
-                                                bind(C, name='ca_initdata')
+  CASTRO_FORT_DEVICE subroutine ca_initdata(lo, hi, &
+                                            state, s_lo, s_hi, &
+                                            dx, problo, probhi) &
+                                            bind(C, name='ca_initdata')
 
     use amrex_constants_module, only: M_PI, FOUR3RD
     use castro_module , only: NVAR, URHO, UMX, UMY, UMZ, UTEMP, UEDEN, UEINT, UFS
@@ -150,7 +152,9 @@ subroutine amrex_probinit (init,name,namlen,problo,probhi) bind(C, name='amrex_p
   exp_energy = 1.e52_rt       ! absolute energy of the explosion (in erg)
   r_init = 1.25e8_rt          ! initial radius of the explosion (in cm)
   nsub = 10
-  
+
+  !$acc update device(p_ambient, dens_ambient, exp_energy, r_init, nsub)
+
 end subroutine amrex_probinit
 
 

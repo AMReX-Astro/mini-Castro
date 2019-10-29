@@ -15,12 +15,14 @@ module riemann_module
 
 contains
 
-  AMREX_CUDA_FORT_DEVICE subroutine cmpflx(lo, hi, domlo, domhi, idir, &
-                                           qm, qm_lo, qm_hi, &
-                                           qp, qp_lo, qp_hi, &
-                                           qint, qe_lo, qe_hi, &
-                                           flx, flx_lo, flx_hi, &
-                                           qaux, qa_lo, qa_hi)
+  CASTRO_FORT_DEVICE subroutine cmpflx(lo, hi, domlo, domhi, idir, &
+                                       qm, qm_lo, qm_hi, &
+                                       qp, qp_lo, qp_hi, &
+                                       qint, qe_lo, qe_hi, &
+                                       flx, flx_lo, flx_hi, &
+                                       qaux, qa_lo, qa_hi)
+
+    !$acc routine seq
 
     use network, only: nspec
     use amrex_fort_module, only: rt => amrex_real

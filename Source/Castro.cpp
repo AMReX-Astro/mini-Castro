@@ -111,7 +111,7 @@ Castro::initData ()
         const Box& box = mfi.validbox();
         auto state_arr = S_new[mfi].array();
 
-        AMREX_LAUNCH_DEVICE_LAMBDA(box, lbx,
+        CASTRO_LAUNCH_LAMBDA(box, lbx,
         {
             ca_initdata
                 (AMREX_ARLIM_ANYD(lbx.loVect()), AMREX_ARLIM_ANYD(lbx.hiVect()),
@@ -200,7 +200,7 @@ Castro::estTimeStep (Real dt_old)
         // Get a device pointer for estdt.
         Real* estdt_loc = AMREX_MFITER_REDUCE_MIN(&estdt);
 
-        AMREX_LAUNCH_DEVICE_LAMBDA(box, lbx,
+        CASTRO_LAUNCH_LAMBDA(box, lbx,
         {
             ca_estdt(AMREX_ARLIM_ANYD(lbx.loVect()), AMREX_ARLIM_ANYD(lbx.hiVect()),
                      AMREX_ARR4_TO_FORTRAN_ANYD(state_arr),
@@ -401,7 +401,7 @@ Castro::post_timestep (int iteration)
             Real* blast_mass_loc = AMREX_MFITER_REDUCE_SUM(&blast_mass);
             Real* blast_radius_loc = AMREX_MFITER_REDUCE_SUM(&blast_radius);
 
-            AMREX_LAUNCH_DEVICE_LAMBDA(box, lbx,
+            CASTRO_LAUNCH_LAMBDA(box, lbx,
             {
                 calculate_blast_radius(AMREX_ARLIM_ANYD(lbx.loVect()), AMREX_ARLIM_ANYD(lbx.hiVect()),
                                        AMREX_ARR4_TO_FORTRAN_ANYD(state_arr),
@@ -526,7 +526,7 @@ Castro::errorEst (TagBoxArray& tags,
         auto tags_arr = tags[mfi].array();
         auto data_arr = (*mf)[mfi].array();
 
-        AMREX_LAUNCH_DEVICE_LAMBDA(box, lbx,
+        CASTRO_LAUNCH_LAMBDA(box, lbx,
         {
             ca_denerror(AMREX_ARLIM_ANYD(lbx.loVect()), AMREX_ARLIM_ANYD(lbx.hiVect()),
                         (int8_t*) AMREX_ARR4_TO_FORTRAN_ANYD(tags_arr),
@@ -593,7 +593,7 @@ Castro::clean_state(MultiFab& state)
 
         // Ensure the density is larger than the density floor.
 
-        AMREX_LAUNCH_DEVICE_LAMBDA(box, lbx,
+        CASTRO_LAUNCH_LAMBDA(box, lbx,
         {
             ca_enforce_minimum_density(AMREX_ARLIM_ANYD(lbx.loVect()), AMREX_ARLIM_ANYD(lbx.hiVect()),
                                        AMREX_ARR4_TO_FORTRAN_ANYD(state_arr));
@@ -601,7 +601,7 @@ Castro::clean_state(MultiFab& state)
 
         // Ensure all species are normalized.
 
-        AMREX_LAUNCH_DEVICE_LAMBDA(box, lbx,
+        CASTRO_LAUNCH_LAMBDA(box, lbx,
         {
             ca_normalize_species(AMREX_ARLIM_ANYD(lbx.loVect()), AMREX_ARLIM_ANYD(lbx.hiVect()),
                                  AMREX_ARR4_TO_FORTRAN_ANYD(state_arr));
@@ -609,7 +609,7 @@ Castro::clean_state(MultiFab& state)
 
         // Ensure (rho e) isn't too small or negative
 
-        AMREX_LAUNCH_DEVICE_LAMBDA(box, lbx,
+        CASTRO_LAUNCH_LAMBDA(box, lbx,
         {
             ca_reset_internal_e(AMREX_ARLIM_ANYD(lbx.loVect()), AMREX_ARLIM_ANYD(lbx.hiVect()),
                                 AMREX_ARR4_TO_FORTRAN_ANYD(state_arr));
@@ -617,7 +617,7 @@ Castro::clean_state(MultiFab& state)
 
         // Make the temperature be consistent with the internal energy.
 
-        AMREX_LAUNCH_DEVICE_LAMBDA(box, lbx,
+        CASTRO_LAUNCH_LAMBDA(box, lbx,
         {
             ca_compute_temp(AMREX_ARLIM_ANYD(lbx.loVect()), AMREX_ARLIM_ANYD(lbx.hiVect()),
                             AMREX_ARR4_TO_FORTRAN_ANYD(state_arr));

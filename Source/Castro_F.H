@@ -24,48 +24,48 @@ extern "C"
 
   void ca_get_qvar(int* qvar);
 
-  AMREX_GPU_DEVICE
+  CASTRO_DEVICE
   void ca_ctoprim(const int* lo, const int* hi,
                   const amrex::Real* u, const int* u_lo, const int* u_hi,
                   const amrex::Real* q, const int* q_lo, const int* q_hi,
                   const amrex::Real* qaux, const int* qa_lo, const int* qa_hi);
 
-  AMREX_GPU_DEVICE
+  CASTRO_DEVICE
   void ca_enforce_minimum_density
     (const int* lo, const int* hi, BL_FORT_FAB_ARG_3D(state));
 
-  AMREX_GPU_DEVICE
+  CASTRO_DEVICE
   void ca_normalize_species
     (const int* lo, const int* hi, BL_FORT_FAB_ARG_3D(state));
 
-  AMREX_GPU_DEVICE
+  CASTRO_DEVICE
   void ca_reset_internal_e
     (const int* lo, const int* hi, BL_FORT_FAB_ARG_3D(state));
 
-  AMREX_GPU_DEVICE
+  CASTRO_DEVICE
   void ca_compute_temp
     (const int* lo, const int* hi, BL_FORT_FAB_ARG_3D(state));
 
-  AMREX_GPU_DEVICE
+  CASTRO_DEVICE
   void ca_estdt
     (const int* lo, const int* hi,
      const BL_FORT_FAB_ARG_3D(state),
      const amrex::Real* dx, amrex::Real* dt);
 
-  AMREX_GPU_DEVICE
+  CASTRO_DEVICE
   void ca_divu
     (const int* lo, const int* hi,
      const amrex::Real* dx,
      BL_FORT_FAB_ARG_3D(q),
      BL_FORT_FAB_ARG_3D(div));
 
-  AMREX_GPU_DEVICE
+  CASTRO_DEVICE
   void ca_uflaten
     (const int* lo, const int* hi,
      BL_FORT_FAB_ARG_3D(q),
      BL_FORT_FAB_ARG_3D(flatn));
 
-  AMREX_GPU_DEVICE
+  CASTRO_DEVICE
   void ca_ppm_reconstruct
     (const int* lo, const int* hi,
      BL_FORT_FAB_ARG_3D(q),
@@ -73,7 +73,7 @@ extern "C"
      BL_FORT_FAB_ARG_3D(qm),
      BL_FORT_FAB_ARG_3D(qp));
 
-  AMREX_GPU_DEVICE
+  CASTRO_DEVICE
   void ca_construct_flux
     (const int* lo, const int* hi,
      const int* domlo, const int* domhi,
@@ -88,7 +88,7 @@ extern "C"
      BL_FORT_FAB_ARG_3D(flux),
      BL_FORT_FAB_ARG_3D(area));
 
-  AMREX_GPU_DEVICE
+  CASTRO_DEVICE
   void ca_construct_hydro_update
     (const int* lo, const int* hi,
      const amrex::Real* dx, const amrex::Real dt,
@@ -105,20 +105,20 @@ extern "C"
      const BL_FORT_FAB_ARG_3D(volume),
      BL_FORT_FAB_ARG_3D(update));
 
-  AMREX_GPU_DEVICE
+  CASTRO_DEVICE
   void ca_initdata
     (const int* lo, const int* hi,
      BL_FORT_FAB_ARG_3D(state),
      const amrex::Real* dx, const amrex::Real* problo, const amrex::Real* probhi);
 
-  AMREX_GPU_DEVICE
+  CASTRO_DEVICE
   void ca_denerror
     (const int* lo, const int* hi,
      int8_t* tag, const int* tag_lo, const int* tag_hi,
      const amrex::Real* den, const int* den_lo, const int* den_hi,
      const int8_t tagval, const int8_t clearval);
 
-  AMREX_GPU_DEVICE
+  CASTRO_DEVICE
   void calculate_blast_radius
     (const int* lo, const int* hi,
      BL_FORT_FAB_ARG_3D(state),
