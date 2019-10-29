@@ -81,6 +81,7 @@ contains
 
     max_dens = ZERO
 
+    !$acc parallel loop gang vector collapse(3) deviceptr(state) private(eos_state)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
@@ -174,6 +175,7 @@ contains
 
     integer  :: i, j, k
 
+    !$acc parallel loop gang vector collapse(3) deviceptr(state)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
@@ -212,6 +214,7 @@ contains
 
     ! Reset internal energy
 
+    !$acc parallel loop gang vector collapse(3) deviceptr(u) private(eos_state)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
@@ -288,6 +291,7 @@ contains
 
     type (eos_t) :: eos_state
 
+    !$acc parallel loop gang vector collapse(3) deviceptr(state) private(eos_state)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
@@ -333,6 +337,8 @@ contains
     real(rt), parameter :: dengrad_rel = 0.25d0
 
     ! Tag on regions of high density gradient
+
+    !$acc parallel loop gang vector collapse(3) deviceptr(tag, den)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
@@ -383,12 +389,13 @@ contains
 
     center = (probhi - problo) / TWO
 
+    !$acc parallel loop gang vector collapse(3) deviceptr(state) reduction(+:blast_mass, blast_radius)
     do k = lo(3), hi(3)
-       z = problo(3) + (k + HALF) * dx(3) - center(3)
        do j = lo(2), hi(2)
-          y = problo(2) + (j + HALF) * dx(2) - center(2)
           do i = lo(1), hi(1)
              x = problo(1) + (i + HALF) * dx(1) - center(1)
+             y = problo(2) + (j + HALF) * dx(2) - center(2)
+             z = problo(3) + (k + HALF) * dx(3) - center(3)
 
              if (abs(state(i,j,k,URHO) - max_density) / max_density <= density_tolerance) then
                 call reduce_add(blast_mass, state(i,j,k,URHO))
