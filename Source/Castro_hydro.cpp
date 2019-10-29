@@ -153,6 +153,7 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
                 int idir_f = idir + 1;
 
                 auto flux_arr = flux[idir].array();
+                auto fluxes_arr = fluxes[idir]->array(mfi);
                 auto qe_arr   = qe[idir].array();
                 auto area_arr = area[idir][mfi].array();
 
@@ -163,6 +164,7 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
                          AMREX_ARLIM_ANYD(domain_lo), AMREX_ARLIM_ANYD(domain_hi),
                          AMREX_ZFILL(dx.data()), dt,
                          idir_f,
+                         update_scale_factor,
                          AMREX_ARR4_TO_FORTRAN_ANYD(state_old_arr),
                          AMREX_ARR4_TO_FORTRAN_ANYD(div_arr),
                          AMREX_ARR4_TO_FORTRAN_ANYD(qaux_arr),
@@ -170,15 +172,8 @@ Castro::construct_mol_hydro_source(Real time, Real dt, int istage, int nstages)
                          AMREX_ARR4_TO_FORTRAN_ANYD(qp_arr),
                          AMREX_ARR4_TO_FORTRAN_ANYD(qe_arr),
                          AMREX_ARR4_TO_FORTRAN_ANYD(flux_arr),
+                         AMREX_ARR4_TO_FORTRAN_ANYD(fluxes_arr),
                          AMREX_ARR4_TO_FORTRAN_ANYD(area_arr));
-                });
-
-                Array4<Real> fluxes_arr = (*fluxes[idir]).array(mfi);
-                const int numcomp = NUM_STATE;
-
-                AMREX_HOST_DEVICE_FOR_4D(ebx, numcomp, i, j, k, n,
-                {
-                    fluxes_arr(i,j,k,n) += update_scale_factor * flux_arr(i,j,k,n);
                 });
 
             }

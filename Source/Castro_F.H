@@ -79,6 +79,7 @@ extern "C"
      const int* domlo, const int* domhi,
      const amrex::Real* dx, const amrex::Real dt,
      const int idir,
+     const amrex::Real update_scale_factor,
      const BL_FORT_FAB_ARG_3D(statein),
      BL_FORT_FAB_ARG_3D(div),
      BL_FORT_FAB_ARG_3D(qaux),
@@ -86,6 +87,7 @@ extern "C"
      BL_FORT_FAB_ARG_3D(qp),
      BL_FORT_FAB_ARG_3D(qe),
      BL_FORT_FAB_ARG_3D(flux),
+     BL_FORT_FAB_ARG_3D(fluxes),
      BL_FORT_FAB_ARG_3D(area));
 
   CASTRO_DEVICE
