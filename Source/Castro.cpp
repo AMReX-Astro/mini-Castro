@@ -198,7 +198,7 @@ Castro::estTimeStep (Real dt_old)
         auto state_arr = stateMF[mfi].array();
 
         // Get a device pointer for estdt.
-        Real* estdt_loc = AMREX_MFITER_REDUCE_MIN(&estdt);
+        Real* estdt_loc = CASTRO_MFITER_REDUCE_MIN(&estdt);
 
         CASTRO_LAUNCH_LAMBDA(box, lbx,
         {
@@ -398,8 +398,8 @@ Castro::post_timestep (int iteration)
             auto state_arr = S_new[mfi].array();
 
             // Get device pointers to the reduction variables.
-            Real* blast_mass_loc = AMREX_MFITER_REDUCE_SUM(&blast_mass);
-            Real* blast_radius_loc = AMREX_MFITER_REDUCE_SUM(&blast_radius);
+            Real* blast_mass_loc = CASTRO_MFITER_REDUCE_SUM(&blast_mass);
+            Real* blast_radius_loc = CASTRO_MFITER_REDUCE_SUM(&blast_radius);
 
             CASTRO_LAUNCH_LAMBDA(box, lbx,
             {

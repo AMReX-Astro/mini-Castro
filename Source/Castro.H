@@ -23,8 +23,12 @@ enum Conserved { Density = 0, Xmom, Ymom, Zmom, Eden, Eint, Temp, FirstSpec, NUM
 
 #ifdef AMREX_USE_ACC
 #define CASTRO_LAUNCH_LAMBDA(box, lbx, lambda) { Box lbx = box; lambda; }
+#define CASTRO_MFITER_REDUCE_MIN(x) x
+#define CASTRO_MFITER_REDUCE_SUM(x) x
 #else
 #define CASTRO_LAUNCH_LAMBDA(box, lbx, lambda) AMREX_LAUNCH_DEVICE_LAMBDA(box, lbx, lambda)
+#define CASTRO_MFITER_REDUCE_MIN(x) AMREX_MFITER_REDUCE_MIN(x)
+#define CASTRO_MFITER_REDUCE_SUM(x) AMREX_MFITER_REDUCE_SUM(x)
 #endif
 
 class Castro
