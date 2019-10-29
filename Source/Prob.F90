@@ -68,14 +68,13 @@ contains
 
     center(:) = (problo(:)+probhi(:)) / 2.e0_rt
 
+    !$acc parallel loop gang vector collapse(3) deviceptr(state)
     do k = lo(3), hi(3)
-       zmin = problo(3) + dx(3) * dble(k)
-
        do j = lo(2), hi(2)
-          ymin = problo(2) + dx(2) * dble(j)
-
           do i = lo(1), hi(1)
              xmin = problo(1) + dx(1) * dble(i)
+             ymin = problo(2) + dx(2) * dble(j)
+             zmin = problo(3) + dx(3) * dble(k)
 
              npert = 0
              nambient = 0

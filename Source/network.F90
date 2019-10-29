@@ -26,6 +26,8 @@ module network
   attributes(managed) :: aion, zion, aion_inv
 #endif
 
+  !$acc declare create(aion, zion, aion_inv)
+
   character(len=5), save :: short_spec_names(nspec)
 
 contains
@@ -84,6 +86,8 @@ contains
     short_spec_names(icr48) = 'cr48'
     short_spec_names(ife52) = 'fe52'
     short_spec_names(ini56) = 'ni56'
+
+    !$acc update device(aion, zion, aion_inv)
 
   end subroutine network_init
 
