@@ -1,5 +1,7 @@
 module flatten_module
 
+  use amrex_acc_module, only: acc_stream
+
   implicit none
 
 contains
@@ -30,7 +32,7 @@ contains
 
     ! x-direction flattening coef
 
-    !$acc parallel loop gang vector collapse(3) deviceptr(q, flatn)
+    !$acc parallel loop gang vector collapse(3) deviceptr(q, flatn) async(acc_stream)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
@@ -89,7 +91,7 @@ contains
 
     ! y-direction flattening coef
 
-    !$acc parallel loop gang vector collapse(3) deviceptr(q, flatn)
+    !$acc parallel loop gang vector collapse(3) deviceptr(q, flatn) async(acc_stream)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
@@ -147,7 +149,7 @@ contains
 
     ! z-direction flattening coef
 
-    !$acc parallel loop gang vector collapse(3) deviceptr(q, flatn)
+    !$acc parallel loop gang vector collapse(3) deviceptr(q, flatn) async(acc_stream)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)

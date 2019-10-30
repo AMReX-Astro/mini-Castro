@@ -8,6 +8,7 @@ module riemann_module
                            NGDNV, GDRHO, GDPRES, GDGAME, &
                            QC, QGAMC, &
                            small_dens, small_temp
+  use amrex_acc_module, only: acc_stream
 
   implicit none
 
@@ -91,7 +92,7 @@ contains
        im3 = UMY
     end if
 
-    !$acc parallel loop gang vector collapse(3) deviceptr(qm, qp, qint, qaux, flx)
+    !$acc parallel loop gang vector collapse(3) deviceptr(qm, qp, qint, qaux, flx) async(acc_stream)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)

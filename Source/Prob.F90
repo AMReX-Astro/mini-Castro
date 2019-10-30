@@ -2,6 +2,7 @@
 module initdata_module
 
   use amrex_fort_module, only: rt => amrex_real
+  use amrex_acc_module, only: acc_stream
 
   implicit none
 
@@ -68,7 +69,7 @@ contains
 
     center(:) = (problo(:)+probhi(:)) / 2.e0_rt
 
-    !$acc parallel loop gang vector collapse(3) deviceptr(state)
+    !$acc parallel loop gang vector collapse(3) deviceptr(state) async(acc_stream)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)

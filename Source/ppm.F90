@@ -5,6 +5,7 @@ module ppm_module
 
   use amrex_constants_module, only: ZERO, SIXTH, HALF, ONE, TWO, THREE
   use amrex_fort_module, only: rt => amrex_real
+  use amrex_acc_module, only: acc_stream
   use castro_module, only: QVAR
 
   implicit none
@@ -44,7 +45,7 @@ contains
     ! x-direction
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-    !$acc parallel loop gang vector collapse(4) deviceptr(s, flatn, qm, qp)
+    !$acc parallel loop gang vector collapse(4) deviceptr(s, flatn, qm, qp) async(acc_stream)
     do n = 1, QVAR
        do k = lo(3), hi(3)
           do j = lo(2), hi(2)
@@ -141,7 +142,7 @@ contains
     ! y-direction
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-    !$acc parallel loop gang vector collapse(4) deviceptr(s, flatn, qm, qp)
+    !$acc parallel loop gang vector collapse(4) deviceptr(s, flatn, qm, qp) async(acc_stream)
     do n = 1, QVAR
        do k = lo(3), hi(3)
           do j = lo(2), hi(2)
@@ -239,7 +240,7 @@ contains
     ! z-direction
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-    !$acc parallel loop gang vector collapse(4) deviceptr(s, flatn, qm, qp)
+    !$acc parallel loop gang vector collapse(4) deviceptr(s, flatn, qm, qp) async(acc_stream)
     do n = 1, QVAR
        do k = lo(3), hi(3)
           do j = lo(2), hi(2)

@@ -1,6 +1,7 @@
 module hydro_module
 
   use amrex_fort_module, only: rt => amrex_real
+  use amrex_acc_module, only: acc_stream
 
   implicit none
 
@@ -99,7 +100,7 @@ contains
 
     type (eos_t) :: eos_state
 
-    !$acc parallel loop gang vector collapse(3) deviceptr(uin, q) private(vel)
+    !$acc parallel loop gang vector collapse(3) deviceptr(uin, q) private(vel) async(acc_stream)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
@@ -137,7 +138,7 @@ contains
 
     ! Load passively advected quatities into q
 
-    !$acc parallel loop gang vector collapse(4) deviceptr(uin, q)
+    !$acc parallel loop gang vector collapse(4) deviceptr(uin, q) async(acc_stream)
     do ispec = 1, nspec
        do k = lo(3), hi(3)
           do j = lo(2), hi(2)
@@ -152,7 +153,7 @@ contains
 
     ! get gamc, p, T, c, csml using q state
 
-    !$acc parallel loop gang vector collapse(3) deviceptr(q, qaux) private(eos_state)
+    !$acc parallel loop gang vector collapse(3) deviceptr(q, qaux) private(eos_state) async(acc_stream)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
@@ -202,7 +203,7 @@ contains
     integer  :: i, j, k, n
     real(rt) :: sum, fac
 
-    !$acc parallel loop gang vector collapse(3) deviceptr(flux)
+    !$acc parallel loop gang vector collapse(3) deviceptr(flux) async(acc_stream)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
@@ -252,7 +253,7 @@ contains
     dyinv = ONE/dx(2)
     dzinv = ONE/dx(3)
 
-    !$acc parallel loop gang vector collapse(3) deviceptr(q, div)
+    !$acc parallel loop gang vector collapse(3) deviceptr(q, div) async(acc_stream)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
@@ -312,7 +313,7 @@ contains
 
     real(rt), parameter :: difmag = 0.1d0
 
-    !$acc parallel loop gang vector collapse(4) deviceptr(div, uin, flux)
+    !$acc parallel loop gang vector collapse(4) deviceptr(div, uin, flux) async(acc_stream)
     do n = 1, NVAR
        do k = lo(3), hi(3)
           do j = lo(2), hi(2)
@@ -406,7 +407,7 @@ contains
     dtinv = ONE / dt
     dxinv = ONE / dx
 
-    !$acc parallel loop gang vector collapse(4) deviceptr(q1, q2, q3, f1, f2, f3, a1, a2, a3, vol, update)
+    !$acc parallel loop gang vector collapse(4) deviceptr(q1, q2, q3, f1, f2, f3, a1, a2, a3, vol, update) async(acc_stream)
     do n = 1, NVAR
        do k = lo(3), hi(3)
           do j = lo(2), hi(2)
@@ -457,7 +458,7 @@ contains
 
     integer :: i, j, k, n
 
-    !$acc parallel loop gang vector collapse(4) deviceptr(flux, area)
+    !$acc parallel loop gang vector collapse(4) deviceptr(flux, area) async(acc_stream)
     do n = 1, NVAR
        do k = lo(3), hi(3)
           do j = lo(2), hi(2)
@@ -490,7 +491,7 @@ contains
 
     ! Update the total fluxes for the timestep with the contribution from this stage.
 
-    !$acc parallel loop gang vector collapse(4) deviceptr(fluxes, flux)
+    !$acc parallel loop gang vector collapse(4) deviceptr(fluxes, flux) async(acc_stream)
     do n = 1, NVAR
        do k = lo(3), hi(3)
           do j = lo(2), hi(2)

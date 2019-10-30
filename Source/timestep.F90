@@ -1,6 +1,7 @@
 module timestep_module
 
   use amrex_fort_module, only: rt => amrex_real
+  use amrex_acc_module, only: acc_stream
 
   implicit none
 
@@ -31,7 +32,7 @@ contains
 
     ! Call EOS for the purpose of computing sound speed
 
-    !$acc parallel loop gang vector collapse(3) deviceptr(u) private(eos_state) reduction(min:dt)
+    !$acc parallel loop gang vector collapse(3) deviceptr(u) private(eos_state) reduction(min:dt) async(acc_stream)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
