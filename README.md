@@ -23,12 +23,18 @@ AMReX library as a submodule.
 ## Compiling
 
 mini-Castro depends on the AMReX library and uses its build system. Compiling
-is done in the Exec/ directory using `make`. By default a serial build will
+is done in the Exec/ directory using `make`. By default a serial (CPU) build will
 be generated. MPI can be enabled with `make USE_MPI=TRUE`, which will require
 valid MPI C/C++/Fortran compilers in your PATH. CUDA can be enabled by adding
 `USE_CUDA=TRUE`, which will require both `nvcc` and a CUDA Fortran compiler
-(either `pgfortran` or `xlf`). Parallel builds with `make -j` are acceptable.
-The compiler used is specified with COMP (PGI or IBM respectively).
+(either `pgfortran` or `xlf`). OpenACC can be enabled by adding `USE_ACC=TRUE`.
+The OpenACC build still requires you to have the CUDA toolkit for the compilation
+(the C++ is compiled with `nvcc` to ensure that AMReX backend functionality is on
+the GPU, so make sure it is in your PATH). The compiler used is specified with `COMP`;
+for GPUs, only `COMP=PGI` and `COMP=IBM` are supported for the CUDA Fortran build, and
+only `COMP=PGI` is supported for the OpenACC build.
+
+Parallel builds with `make -j` are acceptable.
 
 Below are instructions for compiling on various systems. Although we are focusing
 primarily on CUDA, it is straightforward to build a CPU version -- just leave off

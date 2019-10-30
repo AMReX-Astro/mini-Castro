@@ -1,3 +1,10 @@
+# 19.11
+
+   -- OpenACC is now supported as an option for GPU acceleration. If `USE_ACC=TRUE`
+      then the Fortran physics routines will be accelerated with OpenACC parallel
+      regions. CUDA is still required for the C++ components of the build since
+      AMReX will still use it in the backend for its internal operations.
+
 # 19.08
 
    -- mini-Castro has been substantially updated to look and feel more like
