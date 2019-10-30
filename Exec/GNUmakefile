@@ -17,6 +17,15 @@ USE_ACC    = FALSE
 
 CUDA_VERBOSE = FALSE
 
+# We only support OpenACC if CUDA is also defined.
+# This is required because AMReX uses CUDA internally
+# for its operations, and those would massively slow
+# down the code on GPUs if they're not accelerated.
+
+ifeq ($(USE_ACC),TRUE)
+  USE_CUDA = TRUE
+endif
+
 ifeq ($(USE_ACC),TRUE)
   DEFINES += -DCASTRO_DEVICE=
   DEFINES += -DCASTRO_FORT_DEVICE=
