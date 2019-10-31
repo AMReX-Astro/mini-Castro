@@ -76,19 +76,22 @@ public:
     void initialize_advance(amrex::Real time, amrex::Real dt);
 
     // Prepare for the MOL iteration
-    void initialize_do_advance(amrex::Real time, amrex::Real dt, int sub_iteration, int sub_ncycle);
+    void initialize_do_advance(amrex::Real time, amrex::Real dt);
 
     // Do the MOL iteration
-    amrex::Real do_advance (amrex::Real time, amrex::Real dt, int sub_iteration, int sub_ncycle);
+    amrex::Real do_advance (amrex::Real time, amrex::Real dt);
 
-    // Clean up after the MOL iteration
-    void finalize_do_advance(amrex::Real time, amrex::Real dt, int sub_iteration, int sub_ncycle);
+    // Clean up after the advance
+    void finalize_do_advance(amrex::Real time, amrex::Real dt);
 
     // Clean up after the advance
     void finalize_advance(amrex::Real time, amrex::Real dt);
 
-    // Construct the (instantaneous) hydrodynamic source term
-    void construct_mol_hydro_source(amrex::Real time, amrex::Real dt, int istage, int nstages);
+    // Convert conservative variables to primitive variables
+    void cons_to_prim(const amrex::Real time);
+    
+    // Construct the hydrodynamic source term
+    void construct_hydro_source(amrex::Real time, amrex::Real dt);
 
     // Check if our state has any NaN's
     void check_for_nan(amrex::MultiFab& state, int check_ghost=0);
