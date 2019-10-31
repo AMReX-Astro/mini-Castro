@@ -9,10 +9,7 @@ using std::string;
 using namespace amrex;
 
 Real
-Castro::advance (Real time,
-                 Real dt,
-                 int  amr_iteration,
-                 int  amr_ncycle)
+Castro::advance (Real time, Real dt, int  amr_iteration, int  amr_ncycle)
 
   // the main driver for a single level.  This will do either the SDC
   // algorithm or the Strang-split reactions algorithm.
@@ -60,10 +57,10 @@ Castro::initialize_do_advance(Real time, Real dt)
     MultiFab& S_old = get_old_data(State_Type);
 
     // for the CTU unsplit method, we always start with the old state
-    Sborder.define(grids, dmap, NUM_STATE, NUM_GROW, MFInfo().SetTag("Sborder"));
+    Sborder.define(grids, dmap, NUM_STATE, 4);
     const Real prev_time = state[State_Type].prevTime();
-    clean_state(S_old, prev_time, 0);
-    expand_state(Sborder, prev_time, NUM_GROW);
+    clean_state(S_old);
+    expand_state(Sborder, prev_time, 4);
 
 }
 
@@ -83,16 +80,6 @@ Castro::initialize_advance(Real time, Real dt)
 {
     BL_PROFILE("Castro::initialize_advance()");
 
-    // Save the current iteration.
-
-    iteration = amr_iteration;
-
-    do_subcycle = false;
-    sub_iteration = 0;
-    sub_ncycle = 0;
-    dt_subcycle = 1.e200;
-    dt_advance = dt;
-
     // Swap the new data from the last timestep into the old state data.
 
     swap_state_time_levels(dt);
@@ -106,19 +93,13 @@ Castro::initialize_advance(Real time, Real dt)
     MultiFab& S_old = get_old_data(State_Type);
     clean_state(S_old);
 
-    // Initialize the previous state data container now, so that we can
-    // always ask if it has valid data.
-
-    for (int k = 0; k < num_state_type; ++k)
-        prev_state[k].reset(new StateData());
-
     hydro_source.define(grids,dmap,NUM_STATE,0);
 
     // Allocate space for the primitive variables.
 
-    q.define(grids, dmap, NQ, NUM_GROW);
+    q.define(grids, dmap, QVAR, 4);
     q.setVal(0.0);
-    qaux.define(grids, dmap, NQAUX, NUM_GROW);
+    qaux.define(grids, dmap, NQAUX, 4);
 
     // Zero out the current fluxes.
 
@@ -152,7 +133,7 @@ Castro::finalize_advance(Real time, Real dt)
 
 
 Real
-Castro::do_advance (Real time, Real dt, int sub_iteration, int sub_ncycle)
+Castro::do_advance (Real time, Real dt)
 {
 
     // this routine will advance the old state data (called S_old here)

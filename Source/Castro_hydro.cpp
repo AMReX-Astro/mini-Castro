@@ -16,7 +16,7 @@ Castro::cons_to_prim(const Real time)
 #endif
     for (MFIter mfi(S_new, tile_size); mfi.isValid(); ++mfi) {
 
-        const Box& qbx = mfi.growntilebox(NUM_GROW);
+        const Box& qbx = mfi.growntilebox(4);
 
         // Convert the conservative state to the primitive variable state.
         // This fills both q and qaux.
@@ -70,6 +70,7 @@ Castro::construct_hydro_source(Real time, Real dt)
     FArrayBox qzm, qzp;
     FArrayBox div;
     FArrayBox q_int;
+    FArrayBox ftmp1, ftmp2;
     FArrayBox qgdnvtmp1, qgdnvtmp2;
     FArrayBox ql, qr;
     FArrayBox flux[3], qe[3];
@@ -97,7 +98,7 @@ Castro::construct_hydro_source(Real time, Real dt)
 
       ca_uflatten(AMREX_ARLIM_ANYD(obx.loVect()), AMREX_ARLIM_ANYD(obx.hiVect()),
                   BL_TO_FORTRAN_ANYD(q[mfi]),
-                  BL_TO_FORTRAN_ANYD(flatn), QPRES+1);
+                  BL_TO_FORTRAN_ANYD(flatn));
 
       const Box& xbx = amrex::surroundingNodes(bx, 0);
       const Box& gxbx = amrex::grow(xbx, 1);
@@ -111,22 +112,22 @@ Castro::construct_hydro_source(Real time, Real dt)
       shk.resize(obx, 1);
       Elixir elix_shk = shk.elixir();
 
-      qxm.resize(obx, NQ);
+      qxm.resize(obx, QVAR);
       Elixir elix_qxm = qxm.elixir();
 
-      qxp.resize(obx, NQ);
+      qxp.resize(obx, QVAR);
       Elixir elix_qxp = qxp.elixir();
 
-      qym.resize(obx, NQ);
+      qym.resize(obx, QVAR);
       Elixir elix_qym = qym.elixir();
 
-      qyp.resize(obx, NQ);
+      qyp.resize(obx, QVAR);
       Elixir elix_qyp = qyp.elixir();
 
-      qzm.resize(obx, NQ);
+      qzm.resize(obx, QVAR);
       Elixir elix_qzm = qzm.elixir();
 
-      qzp.resize(obx, NQ);
+      qzp.resize(obx, QVAR);
       Elixir elix_qzp = qzp.elixir();
 
       ctu_ppm_states(AMREX_ARLIM_ANYD(obx.loVect()), AMREX_ARLIM_ANYD(obx.hiVect()),
@@ -134,7 +135,6 @@ Castro::construct_hydro_source(Real time, Real dt)
                      BL_TO_FORTRAN_ANYD(q[mfi]),
                      BL_TO_FORTRAN_ANYD(flatn),
                      BL_TO_FORTRAN_ANYD(qaux[mfi]),
-                     BL_TO_FORTRAN_ANYD(src_q[mfi]),
                      BL_TO_FORTRAN_ANYD(qxm),
                      BL_TO_FORTRAN_ANYD(qxp),
                      BL_TO_FORTRAN_ANYD(qym),
@@ -153,7 +153,7 @@ Castro::construct_hydro_source(Real time, Real dt)
            AMREX_ZFILL(dx),
            BL_TO_FORTRAN_ANYD(div));
 
-      q_int.resize(obx, NQ);
+      q_int.resize(obx, QVAR);
       Elixir elix_q_int = q_int.elixir();
 
       flux[0].resize(gxbx, NUM_STATE);
@@ -186,10 +186,10 @@ Castro::construct_hydro_source(Real time, Real dt)
       qgdnvtmp2.resize(obx, NGDNV);
       Elixir elix_qgdnvtmp2 = qgdnvtmp2.elixir();
 
-      ql.resize(obx, NQ);
+      ql.resize(obx, QVAR);
       Elixir elix_ql = ql.elixir();
 
-      qr.resize(obx, NQ);
+      qr.resize(obx, QVAR);
       Elixir elix_qr = qr.elixir();
 
       const amrex::Real hdt = 0.5*dt;
@@ -222,10 +222,10 @@ Castro::construct_hydro_source(Real time, Real dt)
       // [lo(1), lo(2), lo(3)-1], [hi(1), hi(2)+1, hi(3)+1]
       const Box& tyxbx = amrex::grow(ybx, IntVect(AMREX_D_DECL(0,0,1)));
 
-      qmyx.resize(tyxbx, NQ);
+      qmyx.resize(tyxbx, QVAR);
       Elixir elix_qmyx = qmyx.elixir();
 
-      qpyx.resize(tyxbx, NQ);
+      qpyx.resize(tyxbx, QVAR);
       Elixir elix_qpyx = qpyx.elixir();
 
       // ftmp1 = fx
@@ -244,10 +244,10 @@ Castro::construct_hydro_source(Real time, Real dt)
       // [lo(1), lo(2)-1, lo(3)], [hi(1), hi(2)+1, hi(3)+1]
       const Box& tzxbx = amrex::grow(zbx, IntVect(AMREX_D_DECL(0,1,0)));
 
-      qmzx.resize(tzxbx, NQ);
+      qmzx.resize(tzxbx, QVAR);
       Elixir elix_qmzx = qmzx.elixir();
 
-      qpzx.resize(tzxbx, NQ);
+      qpzx.resize(tzxbx, QVAR);
       Elixir elix_qpzx = qpzx.elixir();
 
       transx_on_zstates(AMREX_ARLIM_ANYD(tzxbx.loVect()), AMREX_ARLIM_ANYD(tzxbx.hiVect()),
@@ -280,10 +280,10 @@ Castro::construct_hydro_source(Real time, Real dt)
       // [lo(1), lo(2), lo(3)-1], [hi(1)+1, hi(2), lo(3)+1]
       const Box& txybx = amrex::grow(xbx, IntVect(AMREX_D_DECL(0,0,1)));
 
-      qmxy.resize(txybx, NQ);
+      qmxy.resize(txybx, QVAR);
       Elixir elix_qmxy = qmxy.elixir();
 
-      qpxy.resize(txybx, NQ);
+      qpxy.resize(txybx, QVAR);
       Elixir elix_qpxy = qpxy.elixir();
 
       // ftmp1 = fy
@@ -302,10 +302,10 @@ Castro::construct_hydro_source(Real time, Real dt)
       // [lo(1)-1, lo(2), lo(3)], [hi(1)+1, hi(2), lo(3)+1]
       const Box& tzybx = amrex::grow(zbx, IntVect(AMREX_D_DECL(1,0,0)));
 
-      qmzy.resize(tzybx, NQ);
+      qmzy.resize(tzybx, QVAR);
       Elixir elix_qmzy = qmzy.elixir();
 
-      qpzy.resize(tzybx, NQ);
+      qpzy.resize(tzybx, QVAR);
       Elixir elix_qpzy = qpzy.elixir();
 
       // ftmp1 = fy
@@ -341,10 +341,10 @@ Castro::construct_hydro_source(Real time, Real dt)
       // [lo(1)-1, lo(2)-1, lo(3)], [hi(1)+1, hi(2)+1, lo(3)]
       const Box& txzbx = amrex::grow(xbx, IntVect(AMREX_D_DECL(0,1,0)));
 
-      qmxz.resize(txzbx, NQ);
+      qmxz.resize(txzbx, QVAR);
       Elixir elix_qmxz = qmxz.elixir();
 
-      qpxz.resize(txzbx, NQ);
+      qpxz.resize(txzbx, QVAR);
       Elixir elix_qpxz = qpxz.elixir();
 
       // ftmp1 = fz
@@ -363,10 +363,10 @@ Castro::construct_hydro_source(Real time, Real dt)
       // [lo(1)-1, lo(2), lo(3)], [hi(1)+1, hi(2)+1, lo(3)]
       const Box& tyzbx = amrex::grow(ybx, IntVect(AMREX_D_DECL(1,0,0)));
 
-      qmyz.resize(tyzbx, NQ);
+      qmyz.resize(tyzbx, QVAR);
       Elixir elix_qmyz = qmyz.elixir();
 
-      qpyz.resize(tyzbx, NQ);
+      qpyz.resize(tyzbx, QVAR);
       Elixir elix_qpyz = qpyz.elixir();
 
       // ftmp1 = fz

@@ -69,6 +69,9 @@ public:
     // Initialize data on this level after regridding if old level did not previously exist
     virtual void init () override;
 
+    // Swap new and old data.
+    void swap_state_time_levels (const amrex::Real dt);
+
     // Advance grids at this level in time
     virtual amrex::Real advance (amrex::Real time, amrex::Real dt, int iteration, int ncycle) override;
 
@@ -143,6 +146,12 @@ public:
     // Apply a number of corrections to ensure consistency in the state
     void clean_state (amrex::MultiFab& state);
 
+    // Initialize the flux register with coarse data.
+    void FluxRegCrseInit();
+
+    // Update the flux register with fine data.
+    void FluxRegFineAdd();
+    
     // Update coarse levels with flux correction from fine levels
     void reflux (int crse_level, int fine_level);
 
@@ -160,8 +169,11 @@ protected:
     // A state array with ghost zones
     amrex::MultiFab Sborder;
 
-    // A state array for the post burn state to be used in MOL integration
-    amrex::MultiFab Sburn;
+    // The primitive variable state array.
+    amrex::MultiFab q;
+
+    // The auxiliary primitive variable state array.
+    amrex::MultiFab qaux;
 
     // Source term representing hydrodynamics update
     amrex::MultiFab hydro_source;
@@ -169,9 +181,6 @@ protected:
     // Hydrodynamic fluxes
     amrex::Vector<std::unique_ptr<amrex::MultiFab> > fluxes;
     amrex::FluxRegister flux_reg;
-
-    // Storage for the method of lines stages
-    amrex::Vector<std::unique_ptr<amrex::MultiFab> > k_mol;
 
     // Geometric data
     amrex::MultiFab volume;
