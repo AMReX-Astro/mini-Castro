@@ -20,189 +20,114 @@ contains
     real(rt), intent(in   ) :: q(q_lo(1):q_hi(1),q_lo(2):q_hi(2),q_lo(3):q_hi(3),QVAR)
     real(rt), intent(inout) :: flatn(f_lo(1):f_hi(1),f_lo(2):f_hi(2),f_lo(3):f_hi(3))
 
-    integer :: i, j, k, ishft
+    integer :: i, j, k, ishft, idir
 
     real(rt), parameter :: small_pres = 1.e-200_rt
 
-    real(rt) :: denom, zeta, tst, tmp, ftmp
-    real(rt) :: dp, z, z2, chi, chi2
+    real(rt) :: denom, zeta, tst, tmp
+    real(rt) :: pl, pr, dp, dp2, du, z, z2, chi, chi2
 
     ! Knobs for detection of strong shock
     real(rt), parameter :: shktst = 0.33e0_rt, zcut1 = 0.75e0_rt, zcut2 = 0.85e0_rt, dzcut = ONE/(zcut2-zcut1)
 
     ! x-direction flattening coef
 
+    idir = 1
+    
     !$acc parallel loop gang vector collapse(3) deviceptr(q, flatn) async(acc_stream)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
 
-             dp = q(i+1,j,k,QPRES) - q(i-1,j,k,QPRES)
+             flatn(i,j,k) = ONE
 
-             if (dp .gt. ZERO) then
-                ishft = 1
-             else
-                ishft = -1
-             endif
+             do idir = 1, 3
 
-             denom = max(small_pres, abs(q(i+2,j,k,QPRES)-q(i-2,j,k,QPRES)))
-             zeta = abs(dp) / denom
-             z = min(ONE, max(ZERO, dzcut * (zeta - zcut1)))
+                if (idir == 1) then
+                   pr = q(i+1,j,k,QPRES)
+                   pl = q(i-1,j,k,QPRES)
+                   dp2 = q(i+2,j,k,QPRES) - q(i-2,j,k,QPRES)
+                   du = q(i+1,j,k,QU) - q(i-1,j,k,QU)
+                else if (idir == 2) then
+                   pr = q(i,j+1,k,QPRES)
+                   pl = q(i,j-1,k,QPRES)
+                   dp2 = q(i,j+2,k,QPRES) - q(i,j-2,k,QPRES)
+                   du = q(i,j+1,k,QV) - q(i,j-1,k,QV)
+                else
+                   pr = q(i,j,k+1,QPRES)
+                   pl = q(i,j,k-1,QPRES)
+                   dp2 = q(i,j,k+2,QPRES) - q(i,j,k-2,QPRES)
+                   du = q(i,j,k+1,QW) - q(i,j,k-1,QW)
+                end if
+                dp = pr - pl
 
-             if (q(i-1,j,k,QU)-q(i+1,j,k,QU) .ge. ZERO) then
-                tst = ONE
-             else
-                tst = ZERO
-             endif
+                if (pr - pl .gt. ZERO) then
+                   ishft = 1
+                else
+                   ishft = -1
+                endif
 
-             tmp = min(q(i+1,j,k,QPRES), q(i-1,j,k,QPRES))
+                denom = max(small_pres, abs(dp2))
+                zeta = abs(dp) / denom
+                z = min(ONE, max(ZERO, dzcut * (zeta - zcut1)))
 
-             if ((abs(dp)/tmp) .gt. shktst) then
-                chi = tst
-             else
-                chi = ZERO
-             endif
+                if (du .le. ZERO) then
+                   tst = ONE
+                else
+                   tst = ZERO
+                endif
 
-             dp = q(i+1-ishft,j,k,QPRES) - q(i-1-ishft,j,k,QPRES)
+                tmp = min(pr, pl)
 
-             denom = max(small_pres, abs(q(i+2-ishft,j,k,QPRES)-q(i-2-ishft,j,k,QPRES)))
-             zeta = abs(dp) / denom
-             z2 = min(ONE, max(ZERO, dzcut * (zeta - zcut1)))
+                if ((abs(dp)/tmp) .gt. shktst) then
+                   chi = tst
+                else
+                   chi = ZERO
+                endif
 
-             if (q(i-1-ishft,j,k,QU)-q(i+1-ishft,j,k,QU) .ge. ZERO) then
-                tst = ONE
-             else
-                tst = ZERO
-             endif
+                if (idir == 1) then
+                   pr = q(i+1-ishft,j,k,QPRES)
+                   pl = q(i-1-ishft,j,k,QPRES)
+                   dp2 = q(i+2-ishft,j,k,QPRES) - q(i-2-ishft,j,k,QPRES)
+                   du = q(i+1-ishft,j,k,QU) - q(i-1-ishft,j,k,QU)
+                else if (idir == 2) then
+                   pr = q(i,j+1-ishft,k,QPRES)
+                   pl = q(i,j-1-ishft,k,QPRES)
+                   dp2 = q(i,j+2-ishft,k,QPRES) - q(i,j-2-ishft,k,QPRES)
+                   du = q(i,j+1-ishft,k,QV) - q(i,j-1-ishft,k,QV)
+                else
+                   pr = q(i,j,k+1-ishft,QPRES)
+                   pl = q(i,j,k-1-ishft,QPRES)
+                   dp2 = q(i,j,k+2-ishft,QPRES) - q(i,j,k-2-ishft,QPRES)
+                   du = q(i,j,k+1-ishft,QW) - q(i,j,k-1-ishft,QW)
+                end if
+                dp = pr - pl
 
-             tmp = min(q(i+1-ishft,j,k,QPRES), q(i-1-ishft,j,k,QPRES))
+                denom = max(small_pres, abs(dp2))
+                zeta = abs(dp) / denom
+                z2 = min(ONE, max(ZERO, dzcut * (zeta - zcut1)))
 
-             if ((abs(dp)/tmp) .gt. shktst) then
-                chi2 = tst
-             else
-                chi2 = ZERO
-             endif
+                if (du .le. ZERO) then
+                   tst = ONE
+                else
+                   tst = ZERO
+                endif
 
-             flatn(i,j,k) = ONE - max(chi2 * z2, chi * z)
+                tmp = min(pr, pl)
+
+                if ((abs(dp)/tmp) .gt. shktst) then
+                   chi2 = tst
+                else
+                   chi2 = ZERO
+                endif
+
+                flatn(i,j,k) = min(flatn(i,j,k), ONE - max(chi2 * z2, chi * z))
+
+             end do
 
           end do
        end do
     end do
-
-    ! y-direction flattening coef
-
-    !$acc parallel loop gang vector collapse(3) deviceptr(q, flatn) async(acc_stream)
-    do k = lo(3), hi(3)
-       do j = lo(2), hi(2)
-          do i = lo(1), hi(1)
-
-             dp = q(i,j+1,k,QPRES) - q(i,j-1,k,QPRES)
-
-             if (dp .gt. ZERO) then
-                ishft = 1
-             else
-                ishft = -1
-             endif
-
-             denom = max(small_pres, abs(q(i,j+2,k,QPRES)-q(i,j-2,k,QPRES)))
-             zeta = abs(dp) / denom
-             z = min(ONE, max(ZERO, dzcut * (zeta - zcut1)))
-
-             if (q(i,j-1,k,QV)-q(i,j+1,k,QV) .ge. ZERO) then
-                tst = ONE
-             else
-                tst = ZERO
-             endif
-
-             tmp = min(q(i,j+1,k,QPRES), q(i,j-1,k,QPRES))
-             if ((abs(dp)/tmp) .gt. shktst) then
-                chi = tst
-             else
-                chi = ZERO
-             endif
-
-             dp = q(i,j+1-ishft,k,QPRES) - q(i,j-1-ishft,k,QPRES)
-
-             denom = max(small_pres, abs(q(i,j+2-ishft,k,QPRES)-q(i,j-2-ishft,k,QPRES)))
-             zeta = abs(dp) / denom
-             z2 = min(ONE, max(ZERO, dzcut * (zeta - zcut1)))
-
-             if (q(i,j-1-ishft,k,QV)-q(i,j+1-ishft,k,QV) .ge. ZERO) then
-                tst = ONE
-             else
-                tst = ZERO
-             endif
-
-             tmp = min(q(i,j+1-ishft,k,QPRES), q(i,j-1-ishft,k,QPRES))
-             if ((abs(dp)/tmp) .gt. shktst) then
-                chi2 = tst
-             else
-                chi2 = ZERO
-             endif
-
-             ftmp = ONE - max(chi2 * z2, chi * z)
-             flatn(i,j,k) = min(flatn(i,j,k), ftmp)
-
-          end do
-       end do
-    end do
-
-    ! z-direction flattening coef
-
-    !$acc parallel loop gang vector collapse(3) deviceptr(q, flatn) async(acc_stream)
-    do k = lo(3), hi(3)
-       do j = lo(2), hi(2)
-          do i = lo(1), hi(1)
-
-             dp = q(i,j,k+1,QPRES) - q(i,j,k-1,QPRES)
-
-             if(dp .gt. ZERO) then
-                ishft = 1
-             else
-                ishft = -1
-             endif
-
-             denom = max(small_pres, abs(q(i,j,k+2,QPRES)-q(i,j,k-2,QPRES)))
-             zeta = abs(dp) / denom
-             z = min(ONE, max(ZERO, dzcut * (zeta - zcut1)))
-
-             if (q(i,j,k-1,QW)-q(i,j,k+1,QW) .ge. ZERO) then
-                tst = ONE
-             else
-                tst = ZERO
-             endif
-
-             tmp = min(q(i,j,k+1,QPRES),q(i,j,k-1,QPRES))
-             if ((abs(dp)/tmp) .gt. shktst) then
-                chi = tst
-             else
-                chi = ZERO
-             endif
-
-             dp = q(i,j,k+1-ishft,QPRES) - q(i,j,k-1-ishft,QPRES)
-
-             denom = max(small_pres, abs(q(i,j,k+2-ishft,QPRES)-q(i,j,k-2-ishft,QPRES)))
-             zeta = abs(dp) / denom
-             z2 = min(ONE, max(ZERO, dzcut * (zeta - zcut1)))
-
-             if (q(i,j,k-1-ishft,QW)-q(i,j,k+1-ishft,QW) .ge. ZERO) then
-                tst = ONE
-             else
-                tst = ZERO
-             endif
-
-             tmp = min(q(i,j,k+1-ishft,QPRES),q(i,j,k-1-ishft,QPRES))
-             if ((abs(dp)/tmp) .gt. shktst) then
-                chi2 = tst
-             else
-                chi2 = ZERO
-             endif
-
-             ftmp = ONE - max(chi2 * z2, chi * z)
-             flatn(i,j,k) = min(flatn(i,j,k), ftmp)
-          enddo
-       enddo
-    enddo
 
   end subroutine ca_uflaten
 
