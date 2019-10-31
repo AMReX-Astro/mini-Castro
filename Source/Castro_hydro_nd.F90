@@ -100,7 +100,7 @@ contains
 
     type (eos_t) :: eos_state
 
-    !$acc parallel loop gang vector collapse(3) deviceptr(uin, q) private(vel) async(acc_stream)
+    !$acc parallel loop gang vector collapse(3) deviceptr(uin, q, qaux) private(vel, eos_state) async(acc_stream)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
@@ -132,31 +132,16 @@ contains
              ! then subtract off the rotation component here.
 
              q(i,j,k,QTEMP) = uin(i,j,k,UTEMP)
-          enddo
-       enddo
-    enddo
 
-    ! Load passively advected quatities into q
+             ! Load passively advected quantities into q
 
-    !$acc parallel loop gang vector collapse(4) deviceptr(uin, q) async(acc_stream)
-    do ispec = 1, nspec
-       do k = lo(3), hi(3)
-          do j = lo(2), hi(2)
-             do i = lo(1), hi(1)
+             do ispec = 1, nspec
                 n  = UFS + ispec - 1
                 iq = QFS + ispec - 1
                 q(i,j,k,iq) = uin(i,j,k,n)/q(i,j,k,QRHO)
              enddo
-          enddo
-       enddo
-    enddo
 
-    ! get gamc, p, T, c, csml using q state
-
-    !$acc parallel loop gang vector collapse(3) deviceptr(q, qaux) private(eos_state) async(acc_stream)
-    do k = lo(3), hi(3)
-       do j = lo(2), hi(2)
-          do i = lo(1), hi(1)
+             ! get gamc, p, T, c, csml using q state
 
              eos_state % T   = q(i,j,k,QTEMP )
              eos_state % rho = q(i,j,k,QRHO  )
@@ -175,6 +160,7 @@ contains
 
              qaux(i,j,k,QGAMC)  = eos_state % gam1
              qaux(i,j,k,QC   )  = eos_state % cs
+
           enddo
        enddo
     enddo
