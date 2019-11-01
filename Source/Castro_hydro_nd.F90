@@ -7,6 +7,311 @@ module hydro_module
 
 contains
 
+  subroutine apply_av(lo, hi, idir, dx, &
+                      div, div_lo, div_hi, &
+                      uin, uin_lo, uin_hi, &
+                      flux, f_lo, f_hi) bind(c, name="apply_av")
+
+    use amrex_constants_module, only: ZERO, FOURTH
+    use castro_module, only: NVAR, UTEMP
+
+    implicit none
+
+    integer,  intent(in   ) :: lo(3), hi(3)
+    integer,  intent(in   ) :: div_lo(3), div_hi(3)
+    integer,  intent(in   ) :: uin_lo(3), uin_hi(3)
+    integer,  intent(in   ) :: f_lo(3), f_hi(3)
+    real(rt), intent(in   ) :: dx(3)
+    integer,  intent(in   ), value :: idir
+
+    real(rt), intent(in   ) :: div(div_lo(1):div_hi(1),div_lo(2):div_hi(2),div_lo(3):div_hi(3))
+    real(rt), intent(in   ) :: uin(uin_lo(1):uin_hi(1),uin_lo(2):uin_hi(2),uin_lo(3):uin_hi(3),NVAR)
+    real(rt), intent(inout) :: flux(f_lo(1):f_hi(1),f_lo(2):f_hi(2),f_lo(3):f_hi(3),NVAR)
+
+    integer :: i, j, k, n
+
+    real(rt) :: div1
+
+    real(rt), parameter :: difmag = 0.1d0
+
+    do n = 1, NVAR
+
+       if ( n == UTEMP ) cycle
+
+       do k = lo(3), hi(3)
+          do j = lo(2), hi(2)
+             do i = lo(1), hi(1)
+
+                if (idir .eq. 1) then
+
+                   div1 = FOURTH * (div(i,j,k  ) + div(i,j+1,k) + &
+                                    div(i,j,k+1) + div(i,j+1,k))
+                   div1 = difmag * min(ZERO, div1)
+                   div1 = div1 * (uin(i,j,k,n) - uin(i-1,j,k,n))
+
+                else if (idir .eq. 2) then
+
+                   div1 = FOURTH * (div(i,j,k  ) + div(i+1,j,k) + &
+                                    div(i,j,k+1) + div(i+1,j,k))
+                   div1 = difmag * min(ZERO, div1)
+                   div1 = div1 * (uin(i,j,k,n) - uin(i,j-1,k,n))
+
+                else
+
+                   div1 = FOURTH * (div(i,j  ,k) + div(i+1,j  ,k) + &
+                                    div(i,j+1,k) + div(i+1,j+1,k))
+                   div1 = difmag * min(ZERO, div1)
+                   div1 = div1 * (uin(i,j,k,n) - uin(i,j,k-1,n))
+
+                end if
+
+                flux(i,j,k,n) = flux(i,j,k,n) + dx(idir) * div1
+
+             end do
+          end do
+       end do
+
+    end do
+
+  end subroutine apply_av
+
+  
+  subroutine normalize_species_fluxes(lo, hi, flux, f_lo, f_hi) bind(c, name="normalize_species_fluxes")
+    ! Normalize the fluxes of the mass fractions so that
+    ! they sum to 0.  This is essentially the CMA procedure that is
+    ! defined in Plewa & Muller, 1999, A&A, 342, 179.
+
+    use network, only: nspec
+    use amrex_constants_module, only: ZERO, ONE
+    use amrex_fort_module, only: rt => amrex_real
+    use castro_module, only: NVAR, URHO, UFS
+
+    implicit none
+
+    integer,  intent(in   ) :: lo(3), hi(3)
+    integer,  intent(in   ) :: f_lo(3), f_hi(3)
+    real(rt), intent(inout) :: flux(f_lo(1):f_hi(1),f_lo(2):f_hi(2),f_lo(3):f_hi(3),NVAR)
+
+    ! Local variables
+    integer  :: i, j, k, n
+    real(rt) :: sum, fac
+
+    do k = lo(3), hi(3)
+       do j = lo(2), hi(2)
+          do i = lo(1), hi(1)
+
+             sum = ZERO
+
+             do n = UFS, UFS+nspec-1
+                sum = sum + flux(i,j,k,n)
+             end do
+
+             if (sum .ne. ZERO) then
+                fac = flux(i,j,k,URHO) / sum
+             else
+                fac = ONE
+             end if
+
+             do n = UFS, UFS+nspec-1
+                flux(i,j,k,n) = flux(i,j,k,n) * fac
+             end do
+
+          end do
+       end do
+    end do
+
+  end subroutine normalize_species_fluxes
+
+
+
+  subroutine calc_pdivu(lo, hi, &
+                        q1, q1_lo, q1_hi, &
+                        area1, a1_lo, a1_hi, &
+                        q2, q2_lo, q2_hi, &
+                        area2, a2_lo, a2_hi, &
+                        q3, q3_lo, q3_hi, &
+                        area3, a3_lo, a3_hi, &
+                        vol, v_lo, v_hi, &
+                        dx, pdivu, div_lo, div_hi)
+    ! this computes the cell-centered p div(U) term from the
+    ! edge-centered Godunov state.  This is used in the internal energy
+    ! update
+
+    use castro_module, only: NGDNV, GDPRES, GDU, GDV, GDW
+    use amrex_constants_module, only: HALF
+    use amrex_fort_module, only: rt => amrex_real
+
+    implicit none
+
+    integer, intent(in) :: lo(3), hi(3)
+    integer, intent(in) :: div_lo(3), div_hi(3)
+    real(rt), intent(in) :: dx(3)
+    real(rt), intent(inout) :: pdivu(div_lo(1):div_hi(1),div_lo(2):div_hi(2),div_lo(3):div_hi(3))
+    integer, intent(in) :: q1_lo(3), q1_hi(3)
+    integer, intent(in) :: a1_lo(3), a1_hi(3)
+    real(rt), intent(in) :: q1(q1_lo(1):q1_hi(1),q1_lo(2):q1_hi(2),q1_lo(3):q1_hi(3),NGDNV)
+    real(rt), intent(in) :: area1(a1_lo(1):a1_hi(1),a1_lo(2):a1_hi(2),a1_lo(3):a1_hi(3))
+    integer, intent(in) :: q2_lo(3), q2_hi(3)
+    integer, intent(in) :: a2_lo(3), a2_hi(3)
+    real(rt), intent(in) :: q2(q2_lo(1):q2_hi(1),q2_lo(2):q2_hi(2),q2_lo(3):q2_hi(3),NGDNV)
+    real(rt), intent(in) :: area2(a2_lo(1):a2_hi(1),a1_lo(2):a1_hi(2),a1_lo(3):a1_hi(3))
+    integer, intent(in) :: q3_lo(3), q3_hi(3)
+    integer, intent(in) :: a3_lo(3), a3_hi(3)
+    real(rt), intent(in) :: q3(q3_lo(1):q3_hi(1),q3_lo(2):q3_hi(2),q3_lo(3):q3_hi(3),NGDNV)
+    real(rt), intent(in) :: area3(a3_lo(1):a3_hi(1),a1_lo(2):a1_hi(2),a1_lo(3):a1_hi(3))
+    integer, intent(in) :: v_lo(3), v_hi(3)
+    real(rt), intent(in) :: vol(v_lo(1):v_hi(1),v_lo(2):v_hi(2),v_lo(3):v_hi(3))
+
+    integer  :: i, j, k
+
+    do k = lo(3), hi(3)
+       do j = lo(2), hi(2)
+          do i = lo(1), hi(1)
+
+             pdivu(i,j,k) = &
+                  HALF*(q1(i+1,j,k,GDPRES) + q1(i,j,k,GDPRES)) * &
+                  (q1(i+1,j,k,GDU) - q1(i,j,k,GDU))/dx(1) + &
+                  HALF*(q2(i,j+1,k,GDPRES) + q2(i,j,k,GDPRES)) * &
+                  (q2(i,j+1,k,GDV) - q2(i,j,k,GDV))/dx(2) + &
+                  HALF*(q3(i,j,k+1,GDPRES) + q3(i,j,k,GDPRES)) * &
+                  (q3(i,j,k+1,GDW) - q3(i,j,k,GDW))/dx(3)
+
+          enddo
+       enddo
+    enddo
+
+  end subroutine calc_pdivu
+
+  
+
+  subroutine ctu_consup(lo, hi, &
+                        uin, uin_lo, uin_hi, &
+                        q, q_lo, q_hi, &
+                        update, updt_lo, updt_hi, &
+                        flux1, flux1_lo, flux1_hi, &
+                        flux2, flux2_lo, flux2_hi, &
+                        flux3, flux3_lo, flux3_hi, &
+                        qx, qx_lo, qx_hi, &
+                        qy, qy_lo, qy_hi, &
+                        qz, qz_lo, qz_hi, &
+                        area1, area1_lo, area1_hi, &
+                        area2, area2_lo, area2_hi, &
+                        area3, area3_lo, area3_hi, &
+                        vol, vol_lo, vol_hi, &
+                        pdivu, pdivu_lo, pdivu_hi, &
+                        dx, dt) bind(C, name="ctu_consup")
+
+    use castro_module, only: NVAR, URHO, UMX, UMY, UMZ, UEDEN, &
+                             UEINT, UTEMP, NGDNV, QVAR, GDPRES
+    use amrex_constants_module, only: ZERO, ONE, TWO, FOURTH, HALF
+
+    integer, intent(in) ::       lo(3),       hi(3)
+    integer, intent(in) ::   uin_lo(3),   uin_hi(3)
+    integer, intent(in) ::     q_lo(3),     q_hi(3)
+    integer, intent(in) ::  updt_lo(3),  updt_hi(3)
+    integer, intent(in) :: flux1_lo(3), flux1_hi(3)
+    integer, intent(in) :: area1_lo(3), area1_hi(3)
+    integer, intent(in) :: flux2_lo(3), flux2_hi(3)
+    integer, intent(in) :: area2_lo(3), area2_hi(3)
+    integer, intent(in) ::    qy_lo(3),    qy_hi(3)
+    integer, intent(in) :: flux3_lo(3), flux3_hi(3)
+    integer, intent(in) :: area3_lo(3), area3_hi(3)
+    integer, intent(in) ::    qz_lo(3),    qz_hi(3)
+    integer, intent(in) ::    qx_lo(3),    qx_hi(3)
+    integer, intent(in) ::   vol_lo(3),   vol_hi(3)
+    integer, intent(in) ::   pdivu_lo(3),   pdivu_hi(3)
+
+    real(rt), intent(in) :: uin(uin_lo(1):uin_hi(1),uin_lo(2):uin_hi(2),uin_lo(3):uin_hi(3),NVAR)
+    real(rt), intent(in) :: q(q_lo(1):q_hi(1),q_lo(2):q_hi(2),q_lo(3):q_hi(3),QVAR)
+    real(rt), intent(inout) :: update(updt_lo(1):updt_hi(1),updt_lo(2):updt_hi(2),updt_lo(3):updt_hi(3),NVAR)
+    real(rt), intent(in) :: flux1(flux1_lo(1):flux1_hi(1),flux1_lo(2):flux1_hi(2),flux1_lo(3):flux1_hi(3),NVAR)
+    real(rt), intent(in) :: area1(area1_lo(1):area1_hi(1),area1_lo(2):area1_hi(2),area1_lo(3):area1_hi(3))
+    real(rt), intent(in) ::    qx(qx_lo(1):qx_hi(1),qx_lo(2):qx_hi(2),qx_lo(3):qx_hi(3),NGDNV)
+    real(rt), intent(in) :: flux2(flux2_lo(1):flux2_hi(1),flux2_lo(2):flux2_hi(2),flux2_lo(3):flux2_hi(3),NVAR)
+    real(rt), intent(in) :: area2(area2_lo(1):area2_hi(1),area2_lo(2):area2_hi(2),area2_lo(3):area2_hi(3))
+    real(rt), intent(in) ::    qy(qy_lo(1):qy_hi(1),qy_lo(2):qy_hi(2),qy_lo(3):qy_hi(3),NGDNV)
+    real(rt), intent(in) :: flux3(flux3_lo(1):flux3_hi(1),flux3_lo(2):flux3_hi(2),flux3_lo(3):flux3_hi(3),NVAR)
+    real(rt), intent(in) :: area3(area3_lo(1):area3_hi(1),area3_lo(2):area3_hi(2),area3_lo(3):area3_hi(3))
+    real(rt), intent(in) ::    qz(qz_lo(1):qz_hi(1),qz_lo(2):qz_hi(2),qz_lo(3):qz_hi(3),NGDNV)
+    real(rt), intent(in) :: vol(vol_lo(1):vol_hi(1),vol_lo(2):vol_hi(2),vol_lo(3):vol_hi(3))
+    real(rt), intent(inout) :: pdivu(pdivu_lo(1):pdivu_hi(1),pdivu_lo(2):pdivu_hi(2),pdivu_lo(3):pdivu_hi(3))
+    real(rt), intent(in) :: dx(3)
+    real(rt), intent(in), value :: dt
+
+    integer :: i, j, g, k, n
+    integer :: domlo(3), domhi(3)
+    real(rt) :: volInv
+
+    call calc_pdivu(lo, hi, &
+                    qx, qx_lo, qx_hi, &
+                    area1, area1_lo, area1_hi, &
+                    qy, qy_lo, qy_hi, &
+                    area2, area2_lo, area2_hi, &
+                    qz, qz_lo, qz_hi, &
+                    area3, area3_lo, area3_hi, &
+                    vol, vol_lo, vol_hi, &
+                    dx, pdivu, pdivu_lo, pdivu_hi)
+
+    ! For hydro, we will create an update source term that is
+    ! essentially the flux divergence.  This can be added with dt to
+    ! get the update.
+
+    do n = 1, NVAR
+       do k = lo(3), hi(3)
+          do j = lo(2), hi(2)
+             do i = lo(1), hi(1)
+
+                volinv = ONE / vol(i,j,k)
+
+                update(i,j,k,n) = update(i,j,k,n) + &
+                     ( flux1(i,j,k,n) * area1(i,j,k) - flux1(i+1,j,k,n) * area1(i+1,j,k) &
+                     + flux2(i,j,k,n) * area2(i,j,k) - flux2(i,j+1,k,n) * area2(i,j+1,k) &
+                     + flux3(i,j,k,n) * area3(i,j,k) - flux3(i,j,k+1,n) * area3(i,j,k+1) &
+                     ) * volinv
+
+                ! Add the p div(u) source term to (rho e).
+                if (n .eq. UEINT) then
+                   update(i,j,k,n) = update(i,j,k,n) - pdivu(i,j,k)
+                endif
+
+             enddo
+          enddo
+       enddo
+    enddo
+
+  end subroutine ctu_consup
+
+
+  subroutine scale_flux(lo, hi, &
+                        flux, f_lo, f_hi, &
+                        area, a_lo, a_hi, dt) bind(c, name="scale_flux")
+
+    use castro_module, only: NVAR, GDPRES, UMX, NGDNV
+
+    implicit none
+
+    integer,  intent(in   ) :: lo(3), hi(3)
+    integer,  intent(in   ) :: f_lo(3), f_hi(3)
+    integer,  intent(in   ) :: a_lo(3), a_hi(3)
+    real(rt), intent(in   ), value :: dt
+
+    real(rt), intent(inout) :: flux(f_lo(1):f_hi(1),f_lo(2):f_hi(2),f_lo(3):f_hi(3),NVAR)
+    real(rt), intent(in   ) :: area(a_lo(1):a_hi(1),a_lo(2):a_hi(2),a_lo(3):a_hi(3))
+
+    integer :: i, j, k, n
+
+    do n = 1, NVAR
+       do k = lo(3), hi(3)
+          do j = lo(2), hi(2)
+             do i = lo(1), hi(1)
+                flux(i,j,k,n) = dt * flux(i,j,k,n) * area(i,j,k)
+             enddo
+          enddo
+       enddo
+    enddo
+
+  end subroutine scale_flux
+
   CASTRO_FORT_DEVICE subroutine ca_construct_flux(lo, hi, domlo, domhi, dx, dt, &
                                                   idir, stage_weight, &
                                                   uin, uin_lo, uin_hi, &
@@ -54,9 +359,9 @@ contains
 
     call cmpflx(lo, hi, domlo, domhi, idir, qm, qm_lo, qm_hi, qp, qp_lo, qp_hi, &
                 qint, qe_lo, qe_hi, flux, f_lo, f_hi, qaux, qa_lo, qa_hi)
-    call apply_av(lo, hi, idir, dx, div, div_lo, div_hi, uin, uin_lo, uin_hi, flux, f_lo, f_hi)
-    call normalize_species_fluxes(lo, hi, flux, f_lo, f_hi)
-    call scale_flux(lo, hi, flux, f_lo, f_hi, area, a_lo, a_hi, dt)
+!    call apply_av(lo, hi, idir, dx, div, div_lo, div_hi, uin, uin_lo, uin_hi, flux, f_lo, f_hi)
+!    call normalize_species_fluxes(lo, hi, flux, f_lo, f_hi)
+!    call scale_flux(lo, hi, flux, f_lo, f_hi, area, a_lo, a_hi, dt)
     call update_fluxes(lo, hi, fluxes, fs_lo, fs_hi, flux, f_lo, f_hi, stage_weight)
 
   end subroutine ca_construct_flux
@@ -169,55 +474,6 @@ contains
 
 
 
-  CASTRO_FORT_DEVICE subroutine normalize_species_fluxes(lo, hi, flux, f_lo, f_hi)
-
-    ! Normalize the fluxes of the mass fractions so that
-    ! they sum to 0.  This is essentially the CMA procedure that is
-    ! defined in Plewa & Muller, 1999, A&A, 342, 179.
-
-    use network, only: nspec
-    use amrex_constants_module, only: ZERO, ONE
-    use castro_module, only: NVAR, URHO, UFS
-
-    implicit none
-
-    integer,  intent(in   ) :: lo(3), hi(3)
-    integer,  intent(in   ) :: f_lo(3), f_hi(3)
-    real(rt), intent(inout) :: flux(f_lo(1):f_hi(1),f_lo(2):f_hi(2),f_lo(3):f_hi(3),NVAR)
-
-    ! Local variables
-    integer  :: i, j, k, n
-    real(rt) :: sum, fac
-
-    !$acc parallel loop gang vector collapse(3) deviceptr(flux) async(acc_stream)
-    do k = lo(3), hi(3)
-       do j = lo(2), hi(2)
-          do i = lo(1), hi(1)
-
-             sum = ZERO
-
-             do n = UFS, UFS+nspec-1
-                sum = sum + flux(i,j,k,n)
-             end do
-
-             if (sum .ne. ZERO) then
-                fac = flux(i,j,k,URHO) / sum
-             else
-                fac = ONE
-             end if
-
-             do n = UFS, UFS+nspec-1
-                flux(i,j,k,n) = flux(i,j,k,n) * fac
-             end do
-
-          end do
-       end do
-    end do
-
-  end subroutine normalize_species_fluxes
-
-
-
   CASTRO_FORT_DEVICE subroutine ca_divu(lo, hi, dx, q, q_lo, q_hi, div, d_lo, d_hi) bind(C, name='ca_divu')
 
     use amrex_constants_module, only: FOURTH, ONE
@@ -269,75 +525,6 @@ contains
     enddo
 
   end subroutine ca_divu
-
-
-
-  CASTRO_FORT_DEVICE subroutine apply_av(lo, hi, idir, dx, &
-                                         div, div_lo, div_hi, &
-                                         uin, uin_lo, uin_hi, &
-                                         flux, f_lo, f_hi)
-
-    use amrex_constants_module, only: ZERO, FOURTH
-    use castro_module, only: NVAR, UTEMP
-
-    implicit none
-
-    integer,  intent(in   ) :: lo(3), hi(3)
-    integer,  intent(in   ) :: div_lo(3), div_hi(3)
-    integer,  intent(in   ) :: uin_lo(3), uin_hi(3)
-    integer,  intent(in   ) :: f_lo(3), f_hi(3)
-    real(rt), intent(in   ) :: dx(3)
-    integer,  intent(in   ), value :: idir
-
-    real(rt), intent(in   ) :: div(div_lo(1):div_hi(1),div_lo(2):div_hi(2),div_lo(3):div_hi(3))
-    real(rt), intent(in   ) :: uin(uin_lo(1):uin_hi(1),uin_lo(2):uin_hi(2),uin_lo(3):uin_hi(3),NVAR)
-    real(rt), intent(inout) :: flux(f_lo(1):f_hi(1),f_lo(2):f_hi(2),f_lo(3):f_hi(3),NVAR)
-
-    integer :: i, j, k, n
-
-    real(rt) :: div1
-
-    real(rt), parameter :: difmag = 0.1d0
-
-    !$acc parallel loop gang vector collapse(4) deviceptr(div, uin, flux) async(acc_stream)
-    do n = 1, NVAR
-       do k = lo(3), hi(3)
-          do j = lo(2), hi(2)
-             do i = lo(1), hi(1)
-
-                if ( n == UTEMP ) cycle
-
-                if (idir .eq. 1) then
-
-                   div1 = FOURTH * (div(i,j,k  ) + div(i,j+1,k  ) + &
-                        div(i,j,k+1) + div(i,j+1,k+1))
-                   div1 = difmag * min(ZERO, div1)
-                   div1 = div1 * (uin(i,j,k,n) - uin(i-1,j,k,n))
-
-                else if (idir .eq. 2) then
-
-                   div1 = FOURTH * (div(i,j,k  ) + div(i+1,j,k  ) + &
-                        div(i,j,k+1) + div(i+1,j,k+1))
-                   div1 = difmag * min(ZERO, div1)
-                   div1 = div1 * (uin(i,j,k,n) - uin(i,j-1,k,n))
-
-                else
-
-                   div1 = FOURTH * (div(i,j  ,k) + div(i+1,j,k  ) + &
-                        div(i,j+1,k) + div(i+1,j+1,k))
-                   div1 = difmag * min(ZERO, div1)
-                   div1 = div1 * (uin(i,j,k,n)-uin(i,j,k-1,n))
-
-                end if
-
-                flux(i,j,k,n) = flux(i,j,k,n) + dx(idir) * div1
-
-             end do
-          end do
-       end do
-    end do
-
-  end subroutine apply_av
 
 
 
@@ -425,37 +612,6 @@ contains
     enddo
 
   end subroutine ca_construct_hydro_update
-
-
-
-  CASTRO_FORT_DEVICE subroutine scale_flux(lo, hi, flux, f_lo, f_hi, area, a_lo, a_hi, dt)
-
-    use castro_module, only: NVAR
-
-    implicit none
-
-    integer,  intent(in   ) :: lo(3), hi(3)
-    integer,  intent(in   ) :: f_lo(3), f_hi(3)
-    integer,  intent(in   ) :: a_lo(3), a_hi(3)
-    real(rt), intent(in   ), value :: dt
-
-    real(rt), intent(inout) :: flux(f_lo(1):f_hi(1),f_lo(2):f_hi(2),f_lo(3):f_hi(3),NVAR)
-    real(rt), intent(in   ) :: area(a_lo(1):a_hi(1),a_lo(2):a_hi(2),a_lo(3):a_hi(3))
-
-    integer :: i, j, k, n
-
-    !$acc parallel loop gang vector collapse(4) deviceptr(flux, area) async(acc_stream)
-    do n = 1, NVAR
-       do k = lo(3), hi(3)
-          do j = lo(2), hi(2)
-             do i = lo(1), hi(1)
-                flux(i,j,k,n) = dt * flux(i,j,k,n) * area(i,j,k)
-             enddo
-          enddo
-       enddo
-    enddo
-
-  end subroutine scale_flux
 
 
 
