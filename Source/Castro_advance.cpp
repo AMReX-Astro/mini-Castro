@@ -37,80 +37,69 @@ Castro::advance (Real time, Real dt, int  amr_iteration, int  amr_ncycle)
     hydro_source.define(grids,dmap,NUM_STATE,0);
     q.define(grids, dmap, QVAR, 4);
     qaux.define(grids, dmap, NQAUX, 4);
+    Sborder.define(grids, dmap, NUM_STATE, 4);
 
     // Zero out the current fluxes.
 
     for (int dir = 0; dir < 3; ++dir)
 	fluxes[dir]->setVal(0.0);
 
-    // Do the advance.
-
-    do_advance(time, dt);
-
-    // Update the flux registers.
-
-    FluxRegCrseInit();
-    FluxRegFineAdd();
-
-    // Clear our temporary arrays.
-
-    hydro_source.clear();
-    q.clear();
-    qaux.clear();
-
-    // Record how many zones we have advanced.
-
-    num_zones_advanced += grids.numPts() / getLevel(0).grids.numPts();
-
-    return dt;
-}
-
-Real
-Castro::do_advance (Real time, Real dt)
-{
-
-    // this routine will advance the old state data (called S_old here)
-    // to the new time, for a single level.  The new data is called
-    // S_new here.  The update includes reactions (if we are not doing
-    // SDC), hydro, and the source terms.
-
-    BL_PROFILE("Castro::do_advance()");
-
     const Real prev_time = state[State_Type].prevTime();
-    const Real  cur_time = state[State_Type].curTime();
 
     MultiFab& S_old = get_old_data(State_Type);
     MultiFab& S_new = get_new_data(State_Type);
 
     // Clean the old-time state, in case we came in after a regrid
     // where the state could be thermodynamically inconsistent.
+
     clean_state(S_old);
+
+    // Initialize the new-time data from the old time data.
+
+    MultiFab::Copy(S_new, S_old, 0, 0, NUM_STATE, S_new.nGrow());
 
     // For the hydrodynamics update we need to have NUM_GROW ghost
     // zones available, but the state data does not carry ghost
     // zones. So we use a FillPatch using the state data to give us
     // Sborder, which does have ghost zones.
-    Sborder.define(grids, dmap, NUM_STATE, 4);
+
     AmrLevel::FillPatch(*this, Sborder, 4, prev_time, State_Type, 0, NUM_STATE);
+
+    // Make the temporarily expanded state thermodynamically consistent after the fill.
+
     clean_state(Sborder);
 
-    // Initialize the new-time data from the old time data.
+    // Construct the primitive variables (including over the 4 ghost zones).
 
-    MultiFab::Copy(S_new, Sborder, 0, 0, NUM_STATE, S_new.nGrow());
-
-    // Do the hydro update.
-
-    // Construct the primitive variables.
     cons_to_prim(time);
 
     // Construct the hydro source.
+
     construct_hydro_source(time, dt);
+
+    // Add it to the state, scaled by the timestep.
+
     MultiFab::Saxpy(S_new, dt, hydro_source, 0, 0, NUM_STATE, 0);
+
+    // Make the state thermodynamically consistent.
+
     clean_state(S_new);
 
-    // Clean up our temporary MultiFab.
+    // Update the flux registers.
+
+    FluxRegCrseInit();
+    FluxRegFineAdd();
+
+    // Clear our temporary MultiFabs.
+
+    hydro_source.clear();
+    q.clear();
+    qaux.clear();
     Sborder.clear();
 
-    return dt;
+    // Record how many zones we have advanced.
 
+    num_zones_advanced += grids.numPts() / getLevel(0).grids.numPts();
+
+    return dt;
 }

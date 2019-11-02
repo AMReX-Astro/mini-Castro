@@ -72,9 +72,6 @@ public:
     // Advance grids at this level in time
     virtual amrex::Real advance (amrex::Real time, amrex::Real dt, int iteration, int ncycle) override;
 
-    // Do the MOL iteration
-    amrex::Real do_advance (amrex::Real time, amrex::Real dt);
-
     // Convert conservative variables to primitive variables
     void cons_to_prim(const amrex::Real time);
     
