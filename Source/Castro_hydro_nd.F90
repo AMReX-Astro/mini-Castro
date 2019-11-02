@@ -254,59 +254,12 @@ contains
   end subroutine cmpflx_plus_godunov
 
   subroutine cmpflx(lo, hi, &
-                    qm, qm_lo, qm_hi, &
-                    qp, qp_lo, qp_hi, &
+                    ql, ql_lo, ql_hi, &
+                    qr, qr_lo, qr_hi, &
                     flx, flx_lo, flx_hi, &
                     qint, q_lo, q_hi, &
                     qaux, qa_lo, qa_hi, &
                     idir)
-
-    use castro_module, only: NVAR, QVAR, NQAUX
-
-    implicit none
-
-    ! note: lo, hi necessarily the limits of the valid (no ghost
-    ! cells) domain, but could be hi+1 in some dimensions.  We rely on
-    ! the caller to specific the interfaces over which to solve the
-    ! Riemann problems
-
-    integer, intent(in) :: lo(3), hi(3)
-
-    integer, intent(in) :: qm_lo(3), qm_hi(3)
-    integer, intent(in) :: qp_lo(3), qp_hi(3)
-    integer, intent(in) :: flx_lo(3), flx_hi(3)
-    integer, intent(in) :: q_lo(3), q_hi(3)
-    integer, intent(in) :: qa_lo(3), qa_hi(3)
-
-    integer, intent(in) :: idir
-
-    real(rt), intent(inout) :: qm(qm_lo(1):qm_hi(1),qm_lo(2):qm_hi(2),qm_lo(3):qm_hi(3),QVAR)
-    real(rt), intent(inout) :: qp(qp_lo(1):qp_hi(1),qp_lo(2):qp_hi(2),qp_lo(3):qp_hi(3),QVAR)
-
-    real(rt), intent(inout) :: flx(flx_lo(1):flx_hi(1),flx_lo(2):flx_hi(2),flx_lo(3):flx_hi(3),NVAR)
-    real(rt), intent(inout) :: qint(q_lo(1):q_hi(1),q_lo(2):q_hi(2),q_lo(3):q_hi(3),QVAR)
-
-    real(rt), intent(in) :: qaux(qa_lo(1):qa_hi(1),qa_lo(2):qa_hi(2),qa_lo(3):qa_hi(3),NQAUX)
-
-    ! Solve Riemann problem to get the fluxes
-
-    call riemann_state(qm, qm_lo, qm_hi, &
-                       qp, qp_lo, qp_hi, &
-                       qint, q_lo, q_hi, &
-                       flx, flx_lo, flx_hi, &
-                       qaux, qa_lo, qa_hi, &
-                       idir, lo, hi)
-
-  end subroutine cmpflx
-
-
-
-  subroutine riemann_state(ql, ql_lo, ql_hi, &
-                           qr, qr_lo, qr_hi, &
-                           qint, q_lo, q_hi, &
-                           flx, flx_lo, flx_hi, &
-                           qaux, qa_lo, qa_hi, &
-                           idir, lo, hi)
 
     use castro_module, only: QVAR, QRHO, QU, QV, QW, QPRES, QC, QGAMC, QGAME, QFS, QREINT, &
                              NQAUX, NVAR, URHO, UMX, UMY, UMZ, UEDEN, UEINT, UTEMP, UFS, &
@@ -315,27 +268,28 @@ contains
 
     implicit none
 
-    integer, intent(in) :: ql_lo(3), ql_hi(3)
-    integer, intent(in) :: qr_lo(3), qr_hi(3)
-    integer, intent(in) :: q_lo(3), q_hi(3)
-    integer, intent(in) :: flx_lo(3), flx_hi(3)
-    integer, intent(in) :: qa_lo(3), qa_hi(3)
-
-    integer, intent(in) :: idir
-    integer, intent(in) :: lo(3), hi(3)
-
-    real(rt), intent(inout) :: ql(ql_lo(1):ql_hi(1),ql_lo(2):ql_hi(2),ql_lo(3):ql_hi(3),QVAR)
-    real(rt), intent(inout) :: qr(qr_lo(1):qr_hi(1),qr_lo(2):qr_hi(2),qr_lo(3):qr_hi(3),QVAR)
-
-    real(rt), intent(inout) :: qint(q_lo(1):q_hi(1),q_lo(2):q_hi(2),q_lo(3):q_hi(3),QVAR)
-    real(rt), intent(inout) :: flx(flx_lo(1):flx_hi(1),flx_lo(2):flx_hi(2),flx_lo(3):flx_hi(3),NVAR)
-
-    real(rt), intent(in) :: qaux(qa_lo(1):qa_hi(1),qa_lo(2):qa_hi(2),qa_lo(3):qa_hi(3),NQAUX)
-
     ! Solve Riemann problem with the Colella, Glaz, and Ferguson solver.
     ! This is a 2-shock solver that uses a very simple approximation for the
     ! star state, and carries an auxiliary jump condition for (rho e) to
     ! deal with a real gas.
+
+    integer, intent(in) :: lo(3), hi(3)
+
+    integer, intent(in) :: ql_lo(3), ql_hi(3)
+    integer, intent(in) :: qr_lo(3), qr_hi(3)
+    integer, intent(in) :: flx_lo(3), flx_hi(3)
+    integer, intent(in) :: q_lo(3), q_hi(3)
+    integer, intent(in) :: qa_lo(3), qa_hi(3)
+
+    integer, intent(in) :: idir
+
+    real(rt), intent(inout) :: ql(ql_lo(1):ql_hi(1),ql_lo(2):ql_hi(2),ql_lo(3):ql_hi(3),QVAR)
+    real(rt), intent(inout) :: qr(qr_lo(1):qr_hi(1),qr_lo(2):qr_hi(2),qr_lo(3):qr_hi(3),QVAR)
+
+    real(rt), intent(inout) :: flx(flx_lo(1):flx_hi(1),flx_lo(2):flx_hi(2),flx_lo(3):flx_hi(3),NVAR)
+    real(rt), intent(inout) :: qint(q_lo(1):q_hi(1),q_lo(2):q_hi(2),q_lo(3):q_hi(3),QVAR)
+
+    real(rt), intent(in) :: qaux(qa_lo(1):qa_hi(1),qa_lo(2):qa_hi(2),qa_lo(3):qa_hi(3),NQAUX)
 
     integer :: i, j, k
     integer :: n, nqp
@@ -626,7 +580,7 @@ contains
        end do
     end do
 
-  end subroutine riemann_state
+  end subroutine cmpflx
 
 
 
