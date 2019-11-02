@@ -18,10 +18,6 @@ extern "C"
 
   void probinit_finalize();
 
-  void get_num_spec(int* nspec);
-
-  void get_qvar(int* qvar);
-
   CASTRO_DEVICE
   void ctoprim(const int* lo, const int* hi,
                const amrex::Real* u, const int* u_lo, const int* u_hi,
