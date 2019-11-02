@@ -71,9 +71,6 @@ public:
     // Advance grids at this level in time
     virtual amrex::Real advance (amrex::Real time, amrex::Real dt, int iteration, int ncycle) override;
 
-    // Convert conservative variables to primitive variables
-    void cons_to_prim();
-    
     // Construct the hydrodynamic source term
     void construct_hydro_source(amrex::Real dt);
 
@@ -141,12 +138,6 @@ protected:
 
     // A state array with ghost zones
     amrex::MultiFab Sborder;
-
-    // The primitive variable state array.
-    amrex::MultiFab q;
-
-    // The auxiliary primitive variable state array.
-    amrex::MultiFab qaux;
 
     // Source term representing hydrodynamics update
     amrex::MultiFab hydro_source;

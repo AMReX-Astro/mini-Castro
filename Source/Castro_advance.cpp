@@ -35,8 +35,6 @@ Castro::advance (Real time, Real dt, int  amr_iteration, int  amr_ncycle)
     // Allocate space for the MultiFabs we need during the step.
 
     hydro_source.define(grids,dmap,NUM_STATE,0);
-    q.define(grids, dmap, QVAR, 4);
-    qaux.define(grids, dmap, NQAUX, 4);
     Sborder.define(grids, dmap, NUM_STATE, 4);
 
     // Zero out the current fluxes.
@@ -67,10 +65,6 @@ Castro::advance (Real time, Real dt, int  amr_iteration, int  amr_ncycle)
 
     clean_state(Sborder);
 
-    // Construct the primitive variables (including over the 4 ghost zones).
-
-    cons_to_prim();
-
     // Construct the hydro source.
 
     construct_hydro_source(dt);
@@ -96,8 +90,6 @@ Castro::advance (Real time, Real dt, int  amr_iteration, int  amr_ncycle)
     // Clear our temporary MultiFabs.
 
     hydro_source.clear();
-    q.clear();
-    qaux.clear();
     Sborder.clear();
 
     // Record how many zones we have advanced.

@@ -4,33 +4,6 @@
 using namespace amrex;
 
 void
-Castro::cons_to_prim()
-{
-
-    BL_PROFILE("Castro::cons_to_prim()");
-
-    MultiFab& S_new = get_new_data(State_Type);
-
-#ifdef _OPENMP
-#pragma omp parallel
-#endif
-    for (MFIter mfi(S_new, tile_size); mfi.isValid(); ++mfi) {
-
-        const Box& qbx = mfi.growntilebox(4);
-
-        // Convert the conservative state to the primitive variable state.
-        // This fills both q and qaux.
-
-        ca_ctoprim(AMREX_INT_ANYD(qbx.loVect()), AMREX_INT_ANYD(qbx.hiVect()),
-                   BL_TO_FORTRAN_ANYD(Sborder[mfi]),
-                   BL_TO_FORTRAN_ANYD(q[mfi]),
-                   BL_TO_FORTRAN_ANYD(qaux[mfi]));
-
-    }
-
-}
-
-void
 Castro::construct_hydro_source(Real dt)
 {
 
@@ -64,6 +37,8 @@ Castro::construct_hydro_source(Real dt)
 
     FArrayBox flatn;
     FArrayBox dq;
+    FArrayBox q;
+    FArrayBox qaux;
 
     // The terms of qm and qp with i == j are the edge states that
     // come out of the PPM edge state prediction. The terms with
@@ -90,6 +65,21 @@ Castro::construct_hydro_source(Real dt)
 
       const Box& obx = amrex::grow(bx, 1);
 
+      const Box& qbx = mfi.growntilebox(4);
+
+      q.resize(qbx, QVAR);
+      Elixir elix_q = q.elixir();
+
+      qaux.resize(qbx, NQAUX);
+      Elixir elix_qaux = qaux.elixir();
+
+      // Convert the conservative state to the primitive variable state.
+
+      ca_ctoprim(AMREX_INT_ANYD(qbx.loVect()), AMREX_INT_ANYD(qbx.hiVect()),
+                 BL_TO_FORTRAN_ANYD(Sborder[mfi]),
+                 BL_TO_FORTRAN_ANYD(q),
+                 BL_TO_FORTRAN_ANYD(qaux));
+
       flatn.resize(obx, 1);
       Elixir elix_flatn = flatn.elixir();
 
@@ -98,7 +88,7 @@ Castro::construct_hydro_source(Real dt)
       Array4<Real> const flatn_arr = flatn.array();
 
       ca_uflatten(AMREX_ARLIM_ANYD(obx.loVect()), AMREX_ARLIM_ANYD(obx.hiVect()),
-                  BL_TO_FORTRAN_ANYD(q[mfi]),
+                  BL_TO_FORTRAN_ANYD(q),
                   BL_TO_FORTRAN_ANYD(flatn));
 
       Elixir elix_flux[3];
@@ -140,9 +130,9 @@ Castro::construct_hydro_source(Real dt)
 
       ctu_ppm_states(AMREX_ARLIM_ANYD(obx.loVect()), AMREX_ARLIM_ANYD(obx.hiVect()),
                      AMREX_ARLIM_ANYD(bx.loVect()), AMREX_ARLIM_ANYD(bx.hiVect()),
-                     BL_TO_FORTRAN_ANYD(q[mfi]),
+                     BL_TO_FORTRAN_ANYD(q),
                      BL_TO_FORTRAN_ANYD(flatn),
-                     BL_TO_FORTRAN_ANYD(qaux[mfi]),
+                     BL_TO_FORTRAN_ANYD(qaux),
                      BL_TO_FORTRAN_ANYD(qm[0][0]),
                      BL_TO_FORTRAN_ANYD(qp[0][0]),
                      BL_TO_FORTRAN_ANYD(qm[1][1]),
@@ -157,7 +147,7 @@ Castro::construct_hydro_source(Real dt)
 
       // compute divu -- we'll use this later when doing the artifical viscosity
       divu(AMREX_ARLIM_ANYD(obx.loVect()), AMREX_ARLIM_ANYD(obx.hiVect()),
-           BL_TO_FORTRAN_ANYD(q[mfi]),
+           BL_TO_FORTRAN_ANYD(q),
            AMREX_ZFILL(dx),
            BL_TO_FORTRAN_ANYD(div));
 
@@ -203,7 +193,7 @@ Castro::construct_hydro_source(Real dt)
                           BL_TO_FORTRAN_ANYD(ftmp1),
                           BL_TO_FORTRAN_ANYD(q_int),
                           BL_TO_FORTRAN_ANYD(qgdnvtmp1),
-                          BL_TO_FORTRAN_ANYD(qaux[mfi]),
+                          BL_TO_FORTRAN_ANYD(qaux),
                           1, AMREX_ARLIM_ANYD(domain_lo), AMREX_ARLIM_ANYD(domain_hi));
 
       // ftmp1 = fx
@@ -214,7 +204,7 @@ Castro::construct_hydro_source(Real dt)
                         BL_TO_FORTRAN_ANYD(qm[1][0]),
                         BL_TO_FORTRAN_ANYD(qp[1][1]),
                         BL_TO_FORTRAN_ANYD(qp[1][0]),
-                        BL_TO_FORTRAN_ANYD(qaux[mfi]),
+                        BL_TO_FORTRAN_ANYD(qaux),
                         BL_TO_FORTRAN_ANYD(ftmp1),
                         BL_TO_FORTRAN_ANYD(qgdnvtmp1),
                         hdt, cdtdx);
@@ -224,7 +214,7 @@ Castro::construct_hydro_source(Real dt)
                         BL_TO_FORTRAN_ANYD(qm[2][0]),
                         BL_TO_FORTRAN_ANYD(qp[2][2]),
                         BL_TO_FORTRAN_ANYD(qp[2][0]),
-                        BL_TO_FORTRAN_ANYD(qaux[mfi]),
+                        BL_TO_FORTRAN_ANYD(qaux),
                         BL_TO_FORTRAN_ANYD(ftmp1),
                         BL_TO_FORTRAN_ANYD(qgdnvtmp1),
                         hdt, cdtdx);
@@ -240,7 +230,7 @@ Castro::construct_hydro_source(Real dt)
                           BL_TO_FORTRAN_ANYD(ftmp1),
                           BL_TO_FORTRAN_ANYD(q_int),
                           BL_TO_FORTRAN_ANYD(qgdnvtmp1),
-                          BL_TO_FORTRAN_ANYD(qaux[mfi]),
+                          BL_TO_FORTRAN_ANYD(qaux),
                           2, AMREX_ARLIM_ANYD(domain_lo), AMREX_ARLIM_ANYD(domain_hi));
 
       // ftmp1 = fy
@@ -251,7 +241,7 @@ Castro::construct_hydro_source(Real dt)
                         BL_TO_FORTRAN_ANYD(qm[0][1]),
                         BL_TO_FORTRAN_ANYD(qp[0][0]),
                         BL_TO_FORTRAN_ANYD(qp[0][1]),
-                        BL_TO_FORTRAN_ANYD(qaux[mfi]),
+                        BL_TO_FORTRAN_ANYD(qaux),
                         BL_TO_FORTRAN_ANYD(ftmp1),
                         BL_TO_FORTRAN_ANYD(qgdnvtmp1),
                         cdtdy);
@@ -264,7 +254,7 @@ Castro::construct_hydro_source(Real dt)
                         BL_TO_FORTRAN_ANYD(qm[2][1]),
                         BL_TO_FORTRAN_ANYD(qp[2][2]),
                         BL_TO_FORTRAN_ANYD(qp[2][1]),
-                        BL_TO_FORTRAN_ANYD(qaux[mfi]),
+                        BL_TO_FORTRAN_ANYD(qaux),
                         BL_TO_FORTRAN_ANYD(ftmp1),
                         BL_TO_FORTRAN_ANYD(qgdnvtmp1),
                         cdtdy);
@@ -280,7 +270,7 @@ Castro::construct_hydro_source(Real dt)
                           BL_TO_FORTRAN_ANYD(ftmp1),
                           BL_TO_FORTRAN_ANYD(q_int),
                           BL_TO_FORTRAN_ANYD(qgdnvtmp1),
-                          BL_TO_FORTRAN_ANYD(qaux[mfi]),
+                          BL_TO_FORTRAN_ANYD(qaux),
                           3, AMREX_ARLIM_ANYD(domain_lo), AMREX_ARLIM_ANYD(domain_hi));
 
       // ftmp1 = fz
@@ -291,7 +281,7 @@ Castro::construct_hydro_source(Real dt)
                         BL_TO_FORTRAN_ANYD(qm[0][2]),
                         BL_TO_FORTRAN_ANYD(qp[0][0]),
                         BL_TO_FORTRAN_ANYD(qp[0][2]),
-                        BL_TO_FORTRAN_ANYD(qaux[mfi]),
+                        BL_TO_FORTRAN_ANYD(qaux),
                         BL_TO_FORTRAN_ANYD(ftmp1),
                         BL_TO_FORTRAN_ANYD(qgdnvtmp1),
                         cdtdz);
@@ -304,7 +294,7 @@ Castro::construct_hydro_source(Real dt)
                         BL_TO_FORTRAN_ANYD(qm[1][2]),
                         BL_TO_FORTRAN_ANYD(qp[1][1]),
                         BL_TO_FORTRAN_ANYD(qp[1][2]),
-                        BL_TO_FORTRAN_ANYD(qaux[mfi]),
+                        BL_TO_FORTRAN_ANYD(qaux),
                         BL_TO_FORTRAN_ANYD(ftmp1),
                         BL_TO_FORTRAN_ANYD(qgdnvtmp1),
                         cdtdz);
@@ -326,7 +316,7 @@ Castro::construct_hydro_source(Real dt)
                           BL_TO_FORTRAN_ANYD(ftmp1),
                           BL_TO_FORTRAN_ANYD(q_int),
                           BL_TO_FORTRAN_ANYD(qgdnvtmp1),
-                          BL_TO_FORTRAN_ANYD(qaux[mfi]),
+                          BL_TO_FORTRAN_ANYD(qaux),
                           2, AMREX_ARLIM_ANYD(domain_lo), AMREX_ARLIM_ANYD(domain_hi));
 
       // compute F^{z|y}
@@ -340,7 +330,7 @@ Castro::construct_hydro_source(Real dt)
                           BL_TO_FORTRAN_ANYD(ftmp2),
                           BL_TO_FORTRAN_ANYD(q_int),
                           BL_TO_FORTRAN_ANYD(qgdnvtmp2),
-                          BL_TO_FORTRAN_ANYD(qaux[mfi]),
+                          BL_TO_FORTRAN_ANYD(qaux),
                           3, AMREX_ARLIM_ANYD(domain_lo), AMREX_ARLIM_ANYD(domain_hi));
 
       // compute the corrected x interface states and fluxes
@@ -351,7 +341,7 @@ Castro::construct_hydro_source(Real dt)
               BL_TO_FORTRAN_ANYD(ql),
               BL_TO_FORTRAN_ANYD(qp[0][0]),
               BL_TO_FORTRAN_ANYD(qr),
-              BL_TO_FORTRAN_ANYD(qaux[mfi]),
+              BL_TO_FORTRAN_ANYD(qaux),
               BL_TO_FORTRAN_ANYD(ftmp1),
               BL_TO_FORTRAN_ANYD(ftmp2),
               BL_TO_FORTRAN_ANYD(qgdnvtmp1),
@@ -364,7 +354,7 @@ Castro::construct_hydro_source(Real dt)
                           BL_TO_FORTRAN_ANYD(flux[0]),
                           BL_TO_FORTRAN_ANYD(q_int),
                           BL_TO_FORTRAN_ANYD(qe[0]),
-                          BL_TO_FORTRAN_ANYD(qaux[mfi]),
+                          BL_TO_FORTRAN_ANYD(qaux),
                           1, AMREX_ARLIM_ANYD(domain_lo), AMREX_ARLIM_ANYD(domain_hi));
 
       //
@@ -382,7 +372,7 @@ Castro::construct_hydro_source(Real dt)
                           BL_TO_FORTRAN_ANYD(ftmp1),
                           BL_TO_FORTRAN_ANYD(q_int),
                           BL_TO_FORTRAN_ANYD(qgdnvtmp1),
-                          BL_TO_FORTRAN_ANYD(qaux[mfi]),
+                          BL_TO_FORTRAN_ANYD(qaux),
                           3, AMREX_ARLIM_ANYD(domain_lo), AMREX_ARLIM_ANYD(domain_hi));
 
       // compute F^{x|z}
@@ -396,7 +386,7 @@ Castro::construct_hydro_source(Real dt)
                           BL_TO_FORTRAN_ANYD(ftmp2),
                           BL_TO_FORTRAN_ANYD(q_int),
                           BL_TO_FORTRAN_ANYD(qgdnvtmp2),
-                          BL_TO_FORTRAN_ANYD(qaux[mfi]),
+                          BL_TO_FORTRAN_ANYD(qaux),
                           1, AMREX_ARLIM_ANYD(domain_lo), AMREX_ARLIM_ANYD(domain_hi));
 
       // Compute the corrected y interface states and fluxes
@@ -407,7 +397,7 @@ Castro::construct_hydro_source(Real dt)
               BL_TO_FORTRAN_ANYD(ql),
               BL_TO_FORTRAN_ANYD(qp[1][1]),
               BL_TO_FORTRAN_ANYD(qr),
-              BL_TO_FORTRAN_ANYD(qaux[mfi]),
+              BL_TO_FORTRAN_ANYD(qaux),
               BL_TO_FORTRAN_ANYD(ftmp2),
               BL_TO_FORTRAN_ANYD(ftmp1),
               BL_TO_FORTRAN_ANYD(qgdnvtmp2),
@@ -422,7 +412,7 @@ Castro::construct_hydro_source(Real dt)
                           BL_TO_FORTRAN_ANYD(flux[1]),
                           BL_TO_FORTRAN_ANYD(q_int),
                           BL_TO_FORTRAN_ANYD(qe[1]),
-                          BL_TO_FORTRAN_ANYD(qaux[mfi]),
+                          BL_TO_FORTRAN_ANYD(qaux),
                           2, AMREX_ARLIM_ANYD(domain_lo), AMREX_ARLIM_ANYD(domain_hi));
 
       //
@@ -440,7 +430,7 @@ Castro::construct_hydro_source(Real dt)
                           BL_TO_FORTRAN_ANYD(ftmp1),
                           BL_TO_FORTRAN_ANYD(q_int),
                           BL_TO_FORTRAN_ANYD(qgdnvtmp1),
-                          BL_TO_FORTRAN_ANYD(qaux[mfi]),
+                          BL_TO_FORTRAN_ANYD(qaux),
                           1, AMREX_ARLIM_ANYD(domain_lo), AMREX_ARLIM_ANYD(domain_hi));
 
       // compute F^{y|x}
@@ -454,7 +444,7 @@ Castro::construct_hydro_source(Real dt)
                           BL_TO_FORTRAN_ANYD(ftmp2),
                           BL_TO_FORTRAN_ANYD(q_int),
                           BL_TO_FORTRAN_ANYD(qgdnvtmp2),
-                          BL_TO_FORTRAN_ANYD(qaux[mfi]),
+                          BL_TO_FORTRAN_ANYD(qaux),
                           2, AMREX_ARLIM_ANYD(domain_lo), AMREX_ARLIM_ANYD(domain_hi));
 
       // compute the corrected z interface states and fluxes
@@ -465,7 +455,7 @@ Castro::construct_hydro_source(Real dt)
               BL_TO_FORTRAN_ANYD(ql),
               BL_TO_FORTRAN_ANYD(qp[2][2]),
               BL_TO_FORTRAN_ANYD(qr),
-              BL_TO_FORTRAN_ANYD(qaux[mfi]),
+              BL_TO_FORTRAN_ANYD(qaux),
               BL_TO_FORTRAN_ANYD(ftmp1),
               BL_TO_FORTRAN_ANYD(ftmp2),
               BL_TO_FORTRAN_ANYD(qgdnvtmp1),
@@ -481,7 +471,7 @@ Castro::construct_hydro_source(Real dt)
                           BL_TO_FORTRAN_ANYD(flux[2]),
                           BL_TO_FORTRAN_ANYD(q_int),
                           BL_TO_FORTRAN_ANYD(qe[2]),
-                          BL_TO_FORTRAN_ANYD(qaux[mfi]),
+                          BL_TO_FORTRAN_ANYD(qaux),
                           3, AMREX_ARLIM_ANYD(domain_lo), AMREX_ARLIM_ANYD(domain_hi));
 
       for (int idir = 0; idir < AMREX_SPACEDIM; ++idir) {
@@ -512,7 +502,7 @@ Castro::construct_hydro_source(Real dt)
 
       ctu_consup(AMREX_ARLIM_ANYD(bx.loVect()), AMREX_ARLIM_ANYD(bx.hiVect()),
                  BL_TO_FORTRAN_ANYD(Sborder[mfi]),
-                 BL_TO_FORTRAN_ANYD(q[mfi]),
+                 BL_TO_FORTRAN_ANYD(q),
                  BL_TO_FORTRAN_ANYD(hydro_source[mfi]),
                  BL_TO_FORTRAN_ANYD(flux[0]),
                  BL_TO_FORTRAN_ANYD(flux[1]),
