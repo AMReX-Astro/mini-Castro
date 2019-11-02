@@ -2693,7 +2693,7 @@ contains
     ! vlo and vhi are the bounds of the valid box (no ghost cells)
 
     use network, only: nspec
-    use castro_module, only: QVAR, QU, QV, QW, UFS
+    use castro_module, only: QVAR, QU, QV, QW, QFS
 
     implicit none
 
@@ -2720,7 +2720,7 @@ contains
 
     ! the passive stuff is the same regardless of the tracing
     do ispec = 1, nspec
-       n = UFS + ispec - 1
+       n = QFS + ispec - 1
 
        ! Plus state on face i
        if ((idir == 1 .and. i >= vlo(1)) .or. &
