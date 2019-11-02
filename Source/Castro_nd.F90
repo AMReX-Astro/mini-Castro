@@ -197,7 +197,7 @@ contains
 
 
 
-  CASTRO_FORT_DEVICE subroutine reset_internal_e(lo,hi,u,u_lo,u_hi) bind(C, name='reset_internal_e')
+  CASTRO_FORT_DEVICE subroutine reset_internal_e(lo, hi, u, u_lo, u_hi) bind(C, name='reset_internal_e')
 
     use eos_module, only: eos_t, eos_input_re, eos_input_rt, eos
     use network, only: nspec
@@ -279,7 +279,7 @@ contains
 
 
 
-  CASTRO_FORT_DEVICE subroutine compute_temp(lo,hi,state,s_lo,s_hi) bind(C, name='compute_temp')
+  CASTRO_FORT_DEVICE subroutine compute_temp(lo, hi, state, s_lo, s_hi) bind(C, name='compute_temp')
 
     use network, only: nspec
     use eos_module, only: eos_input_re, eos_t, eos
@@ -414,7 +414,7 @@ contains
 
 
 
-  subroutine get_spec_names(spec_names,ispec,len) bind(C, name="get_spec_names")
+  subroutine get_spec_names(spec_names, ispec, len) bind(C, name="get_spec_names")
 
     use network, only: nspec, short_spec_names
 
