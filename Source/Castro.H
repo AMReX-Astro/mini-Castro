@@ -120,12 +120,6 @@ public:
 
     // Apply a number of corrections to ensure consistency in the state
     void clean_state (amrex::MultiFab& state);
-
-    // Initialize the flux register with coarse data.
-    void FluxRegCrseInit();
-
-    // Update the flux register with fine data.
-    void FluxRegFineAdd();
     
     // Update coarse levels with flux correction from fine levels
     void reflux (int crse_level, int fine_level);

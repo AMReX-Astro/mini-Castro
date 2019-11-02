@@ -85,8 +85,13 @@ Castro::advance (Real time, Real dt, int  amr_iteration, int  amr_ncycle)
 
     // Update the flux registers.
 
-    FluxRegCrseInit();
-    FluxRegFineAdd();
+    if (level < parent->finestLevel())
+        for (int i = 0; i < 3; ++i)
+            getLevel(level+1).flux_reg.CrseInit(*fluxes[i], i, 0, 0, NUM_STATE, -1.0);
+
+    if (level > 0)
+        for (int i = 0; i < 3; ++i)
+            flux_reg.FineAdd(*fluxes[i], i, 0, 0, NUM_STATE, 1.0);
 
     // Clear our temporary MultiFabs.
 
