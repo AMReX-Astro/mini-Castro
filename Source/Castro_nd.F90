@@ -58,6 +58,10 @@ module castro_module
 
   real(rt), parameter :: small_dens = 1.0d-12
   real(rt), parameter :: small_temp = 1.0d3
+  real(rt), parameter :: small_pres = 1.e-200_rt
+  real(rt), parameter :: smallu = 1.e-12_rt
+  real(rt), parameter :: small = 1.e-8_rt
+  real(rt), parameter :: dual_energy_eta1 = 1.e0_rt
   real(rt), parameter :: cfl = 0.5d0
 
 contains
