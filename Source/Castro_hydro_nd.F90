@@ -158,96 +158,6 @@ contains
 
 
 
-  subroutine compute_flux_q(lo, hi, &
-                            qint, q_lo, q_hi, &
-                            F, F_lo, F_hi, &
-                            idir)
-    ! given a primitive state, compute the flux in direction idir
-
-    use castro_module, only : QVAR, NVAR, NQAUX, &
-                              URHO, UMX, UMY, UMZ, &
-                              UEDEN, UEINT, UTEMP, UFS, &
-                              QRHO, QU, QV, QW, &
-                              QPRES, QGAME, QREINT, &
-                              QC, QGAMC, QFS
-    use network, only: nspec
-
-    integer, intent(in) :: lo(3), hi(3)
-    integer, intent(in) :: idir
-    integer, intent(in) :: q_lo(3), q_hi(3)
-    integer, intent(in) :: F_lo(3), F_hi(3)
-
-    real(rt), intent(in) :: qint(q_lo(1):q_hi(1), q_lo(2):q_hi(2), q_lo(3):q_hi(3), QVAR)
-    real(rt), intent(out) :: F(F_lo(1):F_hi(1), F_lo(2):F_hi(2), F_lo(3):F_hi(3), NVAR)
-
-    integer :: iu, iv1, iv2, im1, im2, im3
-    integer :: g, n, ispec, nqp
-    real(rt) :: u_adv, rhoetot, rhoeint
-    integer :: i, j, k
-
-    if (idir == 1) then
-       iu = QU
-       iv1 = QV
-       iv2 = QW
-       im1 = UMX
-       im2 = UMY
-       im3 = UMZ
-    else if (idir == 2) then
-       iu = QV
-       iv1 = QU
-       iv2 = QW
-       im1 = UMY
-       im2 = UMX
-       im3 = UMZ
-    else
-       iu = QW
-       iv1 = QU
-       iv2 = QV
-       im1 = UMZ
-       im2 = UMX
-       im3 = UMY
-    end if
-
-    do k = lo(3), hi(3)
-       do j = lo(2), hi(2)
-          do i = lo(1), hi(1)
-
-             u_adv = qint(i,j,k,iu)
-
-             rhoeint = qint(i,j,k,QREINT)
-
-             ! Compute fluxes, order as conserved state (not q)
-             F(i,j,k,URHO) = qint(i,j,k,QRHO)*u_adv
-
-             F(i,j,k,im1) = F(i,j,k,URHO)*qint(i,j,k,iu)
-             F(i,j,k,im2) = F(i,j,k,URHO)*qint(i,j,k,iv1)
-             F(i,j,k,im3) = F(i,j,k,URHO)*qint(i,j,k,iv2)
-
-             rhoetot = rhoeint + &
-                  HALF*qint(i,j,k,QRHO)*(qint(i,j,k,iu)**2 + &
-                  qint(i,j,k,iv1)**2 + &
-                  qint(i,j,k,iv2)**2)
-
-             F(i,j,k,UEDEN) = u_adv*(rhoetot + qint(i,j,k,QPRES))
-             F(i,j,k,UEINT) = u_adv*rhoeint
-
-             F(i,j,k,UTEMP) = ZERO
-
-             ! passively advected quantities
-             do ispec = 1, nspec
-                n  = UFS + ispec - 1
-                nqp = QFS + ispec - 1
-                F(i,j,k,n) = F(i,j,k,URHO)*qint(i,j,k,nqp)
-             end do
-
-          end do
-       end do
-    end do
-
-  end subroutine compute_flux_q
-
-
-
   subroutine ca_store_godunov_state(lo, hi, &
                                     qint, qi_lo, qi_hi, &
                                     qgdnv, qg_lo, qg_hi) bind(C, name="ca_store_godunov_state")
@@ -383,27 +293,24 @@ contains
     call riemann_state(qm, qm_lo, qm_hi, &
                        qp, qp_lo, qp_hi, &
                        qint, q_lo, q_hi, &
+                       flx, flx_lo, flx_hi, &
                        qaux, qa_lo, qa_hi, &
                        idir, lo, hi)
 
-    call compute_flux_q(lo, hi, &
-                        qint, q_lo, q_hi, &
-                        flx, flx_lo, flx_hi, &
-                        idir)
-
   end subroutine cmpflx
-
 
 
 
   subroutine riemann_state(ql, ql_lo, ql_hi, &
                            qr, qr_lo, qr_hi, &
                            qint, q_lo, q_hi, &
+                           flx, flx_lo, flx_hi, &
                            qaux, qa_lo, qa_hi, &
                            idir, lo, hi)
 
     use castro_module, only: QVAR, QRHO, QU, QV, QW, QPRES, QC, QGAMC, QGAME, QFS, QREINT, &
-                             NQAUX, URHO, UMX, UMY, UMZ, UFS, small, small_dens, smallu, small_pres
+                             NQAUX, NVAR, URHO, UMX, UMY, UMZ, UEDEN, UEINT, UTEMP, UFS, &
+                             small, small_dens, smallu, small_pres
     use network, only: nspec
 
     implicit none
@@ -411,6 +318,7 @@ contains
     integer, intent(in) :: ql_lo(3), ql_hi(3)
     integer, intent(in) :: qr_lo(3), qr_hi(3)
     integer, intent(in) :: q_lo(3), q_hi(3)
+    integer, intent(in) :: flx_lo(3), flx_hi(3)
     integer, intent(in) :: qa_lo(3), qa_hi(3)
 
     integer, intent(in) :: idir
@@ -420,6 +328,7 @@ contains
     real(rt), intent(inout) :: qr(qr_lo(1):qr_hi(1),qr_lo(2):qr_hi(2),qr_lo(3):qr_hi(3),QVAR)
 
     real(rt), intent(inout) :: qint(q_lo(1):q_hi(1),q_lo(2):q_hi(2),q_lo(3):q_hi(3),QVAR)
+    real(rt), intent(inout) :: flx(flx_lo(1):flx_hi(1),flx_lo(2):flx_hi(2),flx_lo(3):flx_hi(3),NVAR)
 
     real(rt), intent(in) :: qaux(qa_lo(1):qa_hi(1),qa_lo(2):qa_hi(2),qa_lo(3):qa_hi(3),NQAUX)
 
@@ -443,6 +352,7 @@ contains
 
     integer :: iu, iv1, iv2, im1, im2, im3
     real(rt) :: wwinv, roinv, co2inv
+    real(rt) :: u_adv, rhoeint, rhoetot
 
     integer :: ispec
 
@@ -682,6 +592,34 @@ contains
                    qint(i,j,k,nqp) = qavg
                 end if
 
+             end do
+
+             ! Compute fluxes, order as conserved state (not q)
+
+             u_adv = qint(i,j,k,iu)
+             rhoeint = qint(i,j,k,QREINT)
+
+             flx(i,j,k,URHO) = qint(i,j,k,QRHO) * u_adv
+
+             flx(i,j,k,im1) = flx(i,j,k,URHO) * qint(i,j,k,iu)
+             flx(i,j,k,im2) = flx(i,j,k,URHO) * qint(i,j,k,iv1)
+             flx(i,j,k,im3) = flx(i,j,k,URHO) * qint(i,j,k,iv2)
+
+             rhoetot = rhoeint + HALF * qint(i,j,k,QRHO) * &
+                                 (qint(i,j,k,iu)**2 + &
+                                  qint(i,j,k,iv1)**2 + &
+                                  qint(i,j,k,iv2)**2)
+
+             flx(i,j,k,UEDEN) = u_adv * (rhoetot + qint(i,j,k,QPRES))
+             flx(i,j,k,UEINT) = u_adv * rhoeint
+
+             flx(i,j,k,UTEMP) = ZERO
+
+             ! passively advected quantities
+             do ispec = 1, nspec
+                n  = UFS + ispec - 1
+                nqp = QFS + ispec - 1
+                flx(i,j,k,n) = flx(i,j,k,URHO) * qint(i,j,k,nqp)
              end do
 
           end do
