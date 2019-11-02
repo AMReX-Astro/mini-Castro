@@ -187,20 +187,17 @@ extern "C"
      const amrex::Real* dx,
      BL_FORT_FAB_ARG_3D(div));
 
-  void ctu_ppm_states
+  void trace_ppm
      (const int* lo, const int* hi,
       const int* vlo, const int* vhi,
+      const int idir,
       const BL_FORT_FAB_ARG_3D(q),
-      const BL_FORT_FAB_ARG_3D(flatn),
       const BL_FORT_FAB_ARG_3D(qaux),
-      BL_FORT_FAB_ARG_3D(qxm),
-      BL_FORT_FAB_ARG_3D(qxp),
-      BL_FORT_FAB_ARG_3D(qym),
-      BL_FORT_FAB_ARG_3D(qyp),
-      BL_FORT_FAB_ARG_3D(qzm),
-      BL_FORT_FAB_ARG_3D(qzp),
-      const amrex::Real* dx, const amrex::Real dt,
-      const int* domlo, const int* domhi);
+      const BL_FORT_FAB_ARG_3D(flatn),
+      BL_FORT_FAB_ARG_3D(qm),
+      BL_FORT_FAB_ARG_3D(qp),
+      const int* domlo, const int* domhi,
+      const amrex::Real* dx, const amrex::Real dt);
 
   CASTRO_DEVICE
   void ca_initdata

@@ -132,24 +132,10 @@ Castro::construct_hydro_source(Real dt)
       int idir_t1, idir_t1_f;
       int idir_t2, idir_t2_f;
 
-      ctu_ppm_states(AMREX_ARLIM_ANYD(obx.loVect()), AMREX_ARLIM_ANYD(obx.hiVect()),
-                     AMREX_ARLIM_ANYD(bx.loVect()), AMREX_ARLIM_ANYD(bx.hiVect()),
-                     BL_TO_FORTRAN_ANYD(q),
-                     BL_TO_FORTRAN_ANYD(flatn),
-                     BL_TO_FORTRAN_ANYD(qaux),
-                     BL_TO_FORTRAN_ANYD(qm[0][0]),
-                     BL_TO_FORTRAN_ANYD(qp[0][0]),
-                     BL_TO_FORTRAN_ANYD(qm[1][1]),
-                     BL_TO_FORTRAN_ANYD(qp[1][1]),
-                     BL_TO_FORTRAN_ANYD(qm[2][2]),
-                     BL_TO_FORTRAN_ANYD(qp[2][2]),
-                     AMREX_ZFILL(dx), dt,
-                     AMREX_ARLIM_ANYD(domain_lo), AMREX_ARLIM_ANYD(domain_hi));
-
       div.resize(obx, 1);
       Elixir elix_div = div.elixir();
 
-      // compute divu -- we'll use this later when doing the artifical viscosity
+      // compute divu -- we'll use this later when doing the artificial viscosity
       divu(AMREX_ARLIM_ANYD(obx.loVect()), AMREX_ARLIM_ANYD(obx.hiVect()),
            BL_TO_FORTRAN_ANYD(q),
            AMREX_ZFILL(dx),
@@ -178,6 +164,23 @@ Castro::construct_hydro_source(Real dt)
 
       const amrex::Real hdtdx[3] = {0.5*dt/dx[0], 0.5*dt/dx[1], 0.5*dt/dx[2]};
       const amrex::Real cdtdx[3] = {dt/dx[0]/3.0, dt/dx[1]/3.0, dt/dx[2]/3.0};
+
+      for (idir = 0; idir < 3; ++idir) {
+
+          idir_f = idir + 1;
+
+          trace_ppm(AMREX_ARLIM_ANYD(obx.loVect()), AMREX_ARLIM_ANYD(obx.hiVect()),
+                    AMREX_ARLIM_ANYD(bx.loVect()), AMREX_ARLIM_ANYD(bx.hiVect()),
+                    idir_f,
+                    BL_TO_FORTRAN_ANYD(q),
+                    BL_TO_FORTRAN_ANYD(qaux),
+                    BL_TO_FORTRAN_ANYD(flatn),
+                    BL_TO_FORTRAN_ANYD(qm[idir][idir]),
+                    BL_TO_FORTRAN_ANYD(qp[idir][idir]),
+                    AMREX_ARLIM_ANYD(domain_lo), AMREX_ARLIM_ANYD(domain_hi),
+                    AMREX_ZFILL(dx), dt);
+
+      }
 
       for (idir = 0; idir < 3; ++idir) {
 

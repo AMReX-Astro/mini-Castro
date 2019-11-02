@@ -170,13 +170,14 @@ contains
 
 
   subroutine trace_ppm(lo, hi, &
+                       vlo, vhi, &
                        idir, &
                        q, qd_lo, qd_hi, &
                        qaux, qa_lo, qa_hi, &
                        flatn, f_lo, f_hi, &
                        qm, qm_lo, qm_hi, &
                        qp, qp_lo, qp_hi, &
-                       vlo, vhi, domlo, domhi, &
+                       domlo, domhi, &
                        dx, dt) bind(C, name='trace_ppm')
 
     use network, only: nspec
@@ -185,25 +186,25 @@ contains
 
     implicit none
 
-    integer, intent(in) :: idir
+    integer, intent(in) :: lo(3), hi(3)
+    integer, intent(in) :: vlo(3), vhi(3)
+    integer, intent(in), value :: idir
     integer, intent(in) :: qd_lo(3), qd_hi(3)
     integer, intent(in) :: qa_lo(3), qa_hi(3)
     integer, intent(in) :: f_lo(3), f_hi(3)
     integer, intent(in) :: qm_lo(3), qm_hi(3)
     integer, intent(in) :: qp_lo(3), qp_hi(3)
-
-    integer, intent(in) :: lo(3), hi(3)
-    integer, intent(in) :: vlo(3), vhi(3)
     integer, intent(in) :: domlo(3), domhi(3)
 
-    real(rt), intent(in) ::     q(qd_lo(1):qd_hi(1),qd_lo(2):qd_hi(2),qd_lo(3):qd_hi(3),QVAR)
-    real(rt), intent(in) ::  qaux(qa_lo(1):qa_hi(1),qa_lo(2):qa_hi(2),qa_lo(3):qa_hi(3),NQAUX)
-    real(rt), intent(in) ::  flatn(f_lo(1):f_hi(1),f_lo(2):f_hi(2),f_lo(3):f_hi(3))
+    real(rt), intent(in) :: q(qd_lo(1):qd_hi(1),qd_lo(2):qd_hi(2),qd_lo(3):qd_hi(3),QVAR)
+    real(rt), intent(in) :: qaux(qa_lo(1):qa_hi(1),qa_lo(2):qa_hi(2),qa_lo(3):qa_hi(3),NQAUX)
+    real(rt), intent(in) :: flatn(f_lo(1):f_hi(1),f_lo(2):f_hi(2),f_lo(3):f_hi(3))
 
     real(rt), intent(inout) :: qm(qm_lo(1):qm_hi(1),qm_lo(2):qm_hi(2),qm_lo(3):qm_hi(3),QVAR)
     real(rt), intent(inout) :: qp(qp_lo(1):qp_hi(1),qp_lo(2):qp_hi(2),qp_lo(3):qp_hi(3),QVAR)
 
-    real(rt), intent(in) :: dt, dx(3)
+    real(rt), intent(in) :: dx(3)
+    real(rt), intent(in), value :: dt
 
     ! Local variables
 
@@ -580,97 +581,5 @@ contains
     end do
 
   end subroutine trace_ppm
-
-
-
-  subroutine ctu_ppm_states(lo, hi, &
-                            vlo, vhi, &
-                            q, qd_lo, qd_hi, &
-                            flatn, f_lo, f_hi, &
-                            qaux, qa_lo, qa_hi, &
-                            qxm, qxm_lo, qxm_hi, &
-                            qxp, qxp_lo, qxp_hi, &
-                            qym, qym_lo, qym_hi, &
-                            qyp, qyp_lo, qyp_hi, &
-                            qzm, qzm_lo, qzm_hi, &
-                            qzp, qzp_lo, qzp_hi, &
-                            dx, dt, &
-                            domlo, domhi) bind(C, name="ctu_ppm_states")
-    ! Compute the normal interface states by reconstructing
-    ! the primitive variables using the piecewise parabolic method
-    ! and doing characteristic tracing.  We do not apply the
-    ! transverse terms here.
-
-    use castro_module, only: QVAR, NVAR, &
-                             QFS, QTEMP, QREINT, &
-                             QC, QGAMC, NQAUX, QGAME, QREINT, &
-                             NGDNV, GDU, GDV, GDW, GDPRES
-
-    implicit none
-
-    integer, intent(in) :: lo(3), hi(3)
-    integer, intent(in) :: vlo(3), vhi(3)
-    integer, intent(in) :: qd_lo(3), qd_hi(3)
-    integer, intent(in) :: f_lo(3), f_hi(3)
-    integer, intent(in) :: qa_lo(3), qa_hi(3)
-    integer, intent(in) :: qxm_lo(3), qxm_hi(3)
-    integer, intent(in) :: qxp_lo(3), qxp_hi(3)
-    integer, intent(in) :: qym_lo(3), qym_hi(3)
-    integer, intent(in) :: qyp_lo(3), qyp_hi(3)
-    integer, intent(in) :: qzm_lo(3), qzm_hi(3)
-    integer, intent(in) :: qzp_lo(3), qzp_hi(3)
-    real(rt), intent(in) :: dx(3)   ! grid spacing in X, Y, Z direction
-    real(rt), intent(in), value :: dt    ! time stepsize
-    integer, intent(in) :: domlo(3), domhi(3)
-
-    real(rt), intent(in) ::     q(qd_lo(1):qd_hi(1),qd_lo(2):qd_hi(2),qd_lo(3):qd_hi(3),QVAR)   ! input state, primitives
-    real(rt), intent(in) ::  qaux(qa_lo(1):qa_hi(1),qa_lo(2):qa_hi(2),qa_lo(3):qa_hi(3),NQAUX)   ! auxiliary hydro data
-    real(rt), intent(in) :: flatn(f_lo(1):f_hi(1),f_lo(2):f_hi(2),f_lo(3):f_hi(3))   ! flattening parameter
-
-    real(rt), intent(inout) :: qxm(qxm_lo(1):qxm_hi(1), qxm_lo(2):qxm_hi(2), qxm_lo(3):qxm_hi(3), QVAR)
-    real(rt), intent(inout) :: qxp(qxp_lo(1):qxp_hi(1), qxp_lo(2):qxp_hi(2), qxp_lo(3):qxp_hi(3), QVAR)
-    real(rt), intent(inout) :: qym(qym_lo(1):qym_hi(1), qym_lo(2):qym_hi(2), qym_lo(3):qym_hi(3), QVAR)
-    real(rt), intent(inout) :: qyp(qyp_lo(1):qyp_hi(1), qyp_lo(2):qyp_hi(2), qyp_lo(3):qyp_hi(3), QVAR)
-    real(rt), intent(inout) :: qzm(qzm_lo(1):qzm_hi(1), qzm_lo(2):qzm_hi(2), qzm_lo(3):qzm_hi(3), QVAR)
-    real(rt), intent(inout) :: qzp(qzp_lo(1):qzp_hi(1), qzp_lo(2):qzp_hi(2), qzp_lo(3):qzp_hi(3), QVAR)
-
-    real(rt) :: hdt
-    integer :: i, j, k, n, idir
-
-    hdt = HALF * dt
-
-    ! compute the interface states
-
-    call trace_ppm(lo, hi, &
-                   1, &
-                   q, qd_lo, qd_hi, &
-                   qaux, qa_lo, qa_hi, &
-                   flatn, f_lo, f_hi, &
-                   qxm, qxm_lo, qxm_hi, &
-                   qxp, qxp_lo, qxp_hi, &
-                   vlo, vhi, domlo, domhi, &
-                   dx, dt)
-
-    call trace_ppm(lo, hi, &
-                   2, &
-                   q, qd_lo, qd_hi, &
-                   qaux, qa_lo, qa_hi, &
-                   flatn, f_lo, f_hi, &
-                   qym, qym_lo, qym_hi, &
-                   qyp, qyp_lo, qyp_hi, &
-                   vlo, vhi, domlo, domhi, &
-                   dx, dt)
-
-    call trace_ppm(lo, hi, &
-                   3, &
-                   q, qd_lo, qd_hi, &
-                   qaux, qa_lo, qa_hi, &
-                   flatn, f_lo, f_hi, &
-                   qzm, qzm_lo, qzm_hi, &
-                   qzp, qzp_lo, qzp_hi, &
-                   vlo, vhi, domlo, domhi, &
-                   dx, dt)
-
-  end subroutine ctu_ppm_states
 
 end module ppm_module
