@@ -20,8 +20,6 @@ extern "C"
 
   void get_num_spec(int* nspec);
 
-  void get_spec_names(int* spec_names, int* ispec, int* len);
-
   void get_qvar(int* qvar);
 
   CASTRO_DEVICE

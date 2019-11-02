@@ -71,26 +71,19 @@ Castro::variableSetUp()
     cnt++; bcs[cnt] = bc; name[cnt] = "rho_E";
     cnt++; bcs[cnt] = bc; name[cnt] = "rho_e";
     cnt++; bcs[cnt] = bc; name[cnt] = "Temp";
-
-    // Get the species names from the network model.
-    std::vector<std::string> spec_names;
-    for (int i = 0; i < NumSpec; i++) {
-        int len = 20;
-        Vector<int> int_spec_names(len);
-        // This call return the actual length of each string in "len"
-        get_spec_names(int_spec_names.dataPtr(),&i,&len);
-        char char_spec_names[len+1];
-        for (int j = 0; j < len; j++)
-            char_spec_names[j] = int_spec_names[j];
-        char_spec_names[len] = '\0';
-        spec_names.push_back(std::string(char_spec_names));
-    }
-
-    for (int i = 0; i < NumSpec; ++i) {
-        cnt++;
-        bcs[cnt] = bc;
-        name[cnt] = "rho_" + spec_names[i];
-    }
+    cnt++; bcs[cnt] = bc; name[cnt] = "rho_he4";
+    cnt++; bcs[cnt] = bc; name[cnt] = "rho_c12";
+    cnt++; bcs[cnt] = bc; name[cnt] = "rho_o16";
+    cnt++; bcs[cnt] = bc; name[cnt] = "rho_ne20";
+    cnt++; bcs[cnt] = bc; name[cnt] = "rho_mg24";
+    cnt++; bcs[cnt] = bc; name[cnt] = "rho_si28";
+    cnt++; bcs[cnt] = bc; name[cnt] = "rho_s32";
+    cnt++; bcs[cnt] = bc; name[cnt] = "rho_ar36";
+    cnt++; bcs[cnt] = bc; name[cnt] = "rho_ca40";
+    cnt++; bcs[cnt] = bc; name[cnt] = "rho_ti44";
+    cnt++; bcs[cnt] = bc; name[cnt] = "rho_cr48";
+    cnt++; bcs[cnt] = bc; name[cnt] = "rho_fe52";
+    cnt++; bcs[cnt] = bc; name[cnt] = "rho_ni56";
 
     desc_lst.setComponent(State_Type, Density, name, bcs, BndryFunc(denfill, hypfill));
 

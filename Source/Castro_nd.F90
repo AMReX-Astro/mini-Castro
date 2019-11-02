@@ -411,27 +411,5 @@ contains
     end do
 
   end subroutine calculate_blast_radius
-
-
-
-  subroutine get_spec_names(spec_names, ispec, len) bind(C, name="get_spec_names")
-
-    use network, only: nspec, short_spec_names
-
-    implicit none
-
-    integer, intent(in   ) :: ispec
-    integer, intent(inout) :: len
-    integer, intent(inout) :: spec_names(len)
-
-    integer :: i
-
-    len = len_trim(short_spec_names(ispec+1))
-
-    do i = 1, len
-       spec_names(i) = ichar(short_spec_names(ispec+1)(i:i))
-    end do
-
-  end subroutine get_spec_names
   
 end module castro_module
