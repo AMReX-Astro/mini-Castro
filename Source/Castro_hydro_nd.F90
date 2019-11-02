@@ -297,7 +297,7 @@ contains
                                  qint, q_lo, q_hi, &
                                  qgdnv, qg_lo, qg_hi, &
                                  qaux, qa_lo, qa_hi, &
-                                 idir, domlo, domhi) bind(C, name="cmpflx_plus_godunov")
+                                 idir) bind(C, name="cmpflx_plus_godunov")
 
     use castro_module, only: NVAR, QVAR, NQAUX, NGDNV
     
@@ -319,8 +319,6 @@ contains
 
     integer, intent(in), value :: idir
 
-    integer, intent(in) :: domlo(3),domhi(3)
-
     real(rt), intent(inout) :: qm(qm_lo(1):qm_hi(1),qm_lo(2):qm_hi(2),qm_lo(3):qm_hi(3),QVAR)
     real(rt), intent(inout) :: qp(qp_lo(1):qp_hi(1),qp_lo(2):qp_hi(2),qp_lo(3):qp_hi(3),QVAR)
 
@@ -337,7 +335,7 @@ contains
                 flx, flx_lo, flx_hi, &
                 qint, q_lo, q_hi, &
                 qaux, qa_lo, qa_hi, &
-                idir, domlo, domhi)
+                idir)
 
     call ca_store_godunov_state(lo, hi, &
                                 qint, q_lo, q_hi, &
@@ -351,7 +349,7 @@ contains
                     flx, flx_lo, flx_hi, &
                     qint, q_lo, q_hi, &
                     qaux, qa_lo, qa_hi, &
-                    idir, domlo, domhi)
+                    idir)
 
     use castro_module, only: NVAR, QVAR, NQAUX
 
@@ -372,8 +370,6 @@ contains
 
     integer, intent(in) :: idir
 
-    integer, intent(in) :: domlo(3),domhi(3)
-
     real(rt), intent(inout) :: qm(qm_lo(1):qm_hi(1),qm_lo(2):qm_hi(2),qm_lo(3):qm_hi(3),QVAR)
     real(rt), intent(inout) :: qp(qp_lo(1):qp_hi(1),qp_lo(2):qp_hi(2),qp_lo(3):qp_hi(3),QVAR)
 
@@ -388,8 +384,7 @@ contains
                        qp, qp_lo, qp_hi, &
                        qint, q_lo, q_hi, &
                        qaux, qa_lo, qa_hi, &
-                       idir, lo, hi, &
-                       domlo, domhi)
+                       idir, lo, hi)
 
     call compute_flux_q(lo, hi, &
                         qint, q_lo, q_hi, &
@@ -401,62 +396,11 @@ contains
 
 
 
-  subroutine riemann_state(qm, qm_lo, qm_hi, &
-                           qp, qp_lo, qp_hi, &
+  subroutine riemann_state(ql, ql_lo, ql_hi, &
+                           qr, qr_lo, qr_hi, &
                            qint, q_lo, q_hi, &
                            qaux, qa_lo, qa_hi, &
-                           idir, lo, hi, domlo, domhi)
-    ! just compute the hydrodynamic state on the interfaces
-    ! don't compute the fluxes
-
-    use castro_module, only: QVAR, NQAUX
-
-    implicit none
-
-    integer, intent(in) :: qm_lo(3), qm_hi(3)
-    integer, intent(in) :: qp_lo(3), qp_hi(3)
-    integer, intent(in) :: q_lo(3), q_hi(3)
-    integer, intent(in) :: qa_lo(3), qa_hi(3)
-
-    integer, intent(in) :: idir
-    ! note: lo, hi are not necessarily the limits of the valid (no
-    ! ghost cells) domain, but could be hi+1 in some dimensions.  We
-    ! rely on the caller to specific the interfaces over which to
-    ! solve the Riemann problems
-    integer, intent(in) :: lo(3), hi(3)
-    integer, intent(in) :: domlo(3), domhi(3)
-
-    real(rt), intent(inout) :: qm(qm_lo(1):qm_hi(1),qm_lo(2):qm_hi(2),qm_lo(3):qm_hi(3),QVAR)
-    real(rt), intent(inout) :: qp(qp_lo(1):qp_hi(1),qp_lo(2):qp_hi(2),qp_lo(3):qp_hi(3),QVAR)
-
-    real(rt), intent(inout) :: qint(q_lo(1):q_hi(1),q_lo(2):q_hi(2),q_lo(3):q_hi(3),QVAR)
-
-    real(rt), intent(in) :: qaux(qa_lo(1):qa_hi(1),qa_lo(2):qa_hi(2),qa_lo(3):qa_hi(3),NQAUX)
-
-    ! Solve Riemann problem
-
-    call riemannus(qm, qm_lo, qm_hi, &
-                   qp, qp_lo, qp_hi, &
-                   qaux, qa_lo, qa_hi, &
-                   qint, q_lo, q_hi, &
-                   idir, lo, hi, &
-                   domlo, domhi)
-
-  end subroutine riemann_state
-
-
-
-  subroutine riemannus(ql, ql_lo, ql_hi, &
-                       qr, qr_lo, qr_hi, &
-                       qaux, qa_lo, qa_hi, &
-                       qint, q_lo, q_hi, &
-                       idir, lo, hi, &
-                       domlo, domhi)
-    ! Colella, Glaz, and Ferguson solver
-    !
-    ! this is a 2-shock solver that uses a very simple approximation for the
-    ! star state, and carries an auxiliary jump condition for (rho e) to
-    ! deal with a real gas
+                           idir, lo, hi)
 
     use castro_module, only: QVAR, QRHO, QU, QV, QW, QPRES, QC, QGAMC, QGAME, QFS, QREINT, &
                              NQAUX, URHO, UMX, UMY, UMZ, UFS, small, small_dens, smallu, small_pres
@@ -466,16 +410,23 @@ contains
 
     integer, intent(in) :: ql_lo(3), ql_hi(3)
     integer, intent(in) :: qr_lo(3), qr_hi(3)
-    integer, intent(in) :: qa_lo(3), qa_hi(3)
     integer, intent(in) :: q_lo(3), q_hi(3)
-    integer, intent(in) :: idir, lo(3), hi(3)
-    integer, intent(in) :: domlo(3),domhi(3)
+    integer, intent(in) :: qa_lo(3), qa_hi(3)
 
-    real(rt), intent(in) :: ql(ql_lo(1):ql_hi(1),ql_lo(2):ql_hi(2),ql_lo(3):ql_hi(3),QVAR)
-    real(rt), intent(in) :: qr(qr_lo(1):qr_hi(1),qr_lo(2):qr_hi(2),qr_lo(3):qr_hi(3),QVAR)
+    integer, intent(in) :: idir
+    integer, intent(in) :: lo(3), hi(3)
+
+    real(rt), intent(inout) :: ql(ql_lo(1):ql_hi(1),ql_lo(2):ql_hi(2),ql_lo(3):ql_hi(3),QVAR)
+    real(rt), intent(inout) :: qr(qr_lo(1):qr_hi(1),qr_lo(2):qr_hi(2),qr_lo(3):qr_hi(3),QVAR)
+
+    real(rt), intent(inout) :: qint(q_lo(1):q_hi(1),q_lo(2):q_hi(2),q_lo(3):q_hi(3),QVAR)
 
     real(rt), intent(in) :: qaux(qa_lo(1):qa_hi(1),qa_lo(2):qa_hi(2),qa_lo(3):qa_hi(3),NQAUX)
-    real(rt), intent(inout) :: qint(q_lo(1):q_hi(1),q_lo(2):q_hi(2),q_lo(3):q_hi(3),QVAR)
+
+    ! Solve Riemann problem with the Colella, Glaz, and Ferguson solver.
+    ! This is a 2-shock solver that uses a very simple approximation for the
+    ! star state, and carries an auxiliary jump condition for (rho e) to
+    ! deal with a real gas.
 
     integer :: i, j, k
     integer :: n, nqp
@@ -737,7 +688,7 @@ contains
        end do
     end do
 
-  end subroutine riemannus
+  end subroutine riemann_state
 
 
 
@@ -909,7 +860,6 @@ contains
     real(rt), intent(in), value :: dt
 
     integer :: i, j, g, k, n
-    integer :: domlo(3), domhi(3)
     real(rt) :: volInv
     real(rt) :: pdivu
 

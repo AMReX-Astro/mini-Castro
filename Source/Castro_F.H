@@ -174,7 +174,7 @@ extern "C"
      BL_FORT_FAB_ARG_3D(q_int),
      BL_FORT_FAB_ARG_3D(qe),
      const BL_FORT_FAB_ARG_3D(qaux),
-     const int idir, const int* domlo, const int* domhi);
+     const int idir);
 
   void divu
     (const int* lo, const int* hi,

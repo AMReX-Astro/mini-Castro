@@ -207,7 +207,7 @@ Castro::construct_hydro_source(Real dt)
                               BL_TO_FORTRAN_ANYD(q_int),
                               BL_TO_FORTRAN_ANYD(qgdnvtmp1),
                               BL_TO_FORTRAN_ANYD(qaux),
-                              idir_f, AMREX_ARLIM_ANYD(domain_lo), AMREX_ARLIM_ANYD(domain_hi));
+                              idir_f);
 
           trans1(AMREX_ARLIM_ANYD(tbx[idir_t1][idir].loVect()), AMREX_ARLIM_ANYD(tbx[idir_t1][idir].hiVect()),
                  idir_f, idir_t1_f,
@@ -260,7 +260,7 @@ Castro::construct_hydro_source(Real dt)
                               BL_TO_FORTRAN_ANYD(q_int),
                               BL_TO_FORTRAN_ANYD(qgdnvtmp1),
                               BL_TO_FORTRAN_ANYD(qaux),
-                              idir_t1_f, AMREX_ARLIM_ANYD(domain_lo), AMREX_ARLIM_ANYD(domain_hi));
+                              idir_t1_f);
 
           // compute F^{2|1}
           cmpflx_plus_godunov(AMREX_ARLIM_ANYD(tbx[idir_t2][idir_t1].loVect()), AMREX_ARLIM_ANYD(tbx[idir_t2][idir_t1].hiVect()),
@@ -270,7 +270,7 @@ Castro::construct_hydro_source(Real dt)
                               BL_TO_FORTRAN_ANYD(q_int),
                               BL_TO_FORTRAN_ANYD(qgdnvtmp2),
                               BL_TO_FORTRAN_ANYD(qaux),
-                              idir_t2_f, AMREX_ARLIM_ANYD(domain_lo), AMREX_ARLIM_ANYD(domain_hi));
+                              idir_t2_f);
 
           // Compute the corrected idir interface states and fluxes
           trans2(AMREX_ARLIM_ANYD(ebx[idir].loVect()), AMREX_ARLIM_ANYD(ebx[idir].hiVect()),
@@ -294,7 +294,7 @@ Castro::construct_hydro_source(Real dt)
                               BL_TO_FORTRAN_ANYD(q_int),
                               BL_TO_FORTRAN_ANYD(qe[idir]),
                               BL_TO_FORTRAN_ANYD(qaux),
-                              idir_f, AMREX_ARLIM_ANYD(domain_lo), AMREX_ARLIM_ANYD(domain_hi));
+                              idir_f);
 
       }
 
