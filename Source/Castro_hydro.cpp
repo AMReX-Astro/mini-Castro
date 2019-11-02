@@ -73,7 +73,6 @@ Castro::construct_hydro_source(Real dt)
 
     amrex::Array<Box, 3> ebx;
     amrex::Array<Box, 3> gebx;
-    amrex::Array<amrex::Array<Box, 3>, 3> qbx;
     amrex::Array<amrex::Array<Box, 3>, 3> tbx;
 
     FArrayBox div;
