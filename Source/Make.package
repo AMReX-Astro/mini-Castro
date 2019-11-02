@@ -20,3 +20,4 @@ F90EXE_sources += Prob.F90
 F90EXE_sources += reduction.F90
 F90EXE_sources += ppm.F90
 F90EXE_sources += trans.F90
+F90EXE_sources += riemann.F90
