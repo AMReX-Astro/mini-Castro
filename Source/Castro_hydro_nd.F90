@@ -2681,21 +2681,19 @@ contains
 
 
 
-  subroutine trace_ppm_rhoe(lo, hi, &
-                            idir, &
-                            q, qd_lo, qd_hi, &
-                            qaux, qa_lo, qa_hi, &
-                            flatn, f_lo, f_hi, &
-                            qm, qm_lo, qm_hi, &
-                            qp, qp_lo, qp_hi, &
-                            vlo, vhi, domlo, domhi, &
-                            reconstruct_state, &
-                            dx, dt)
+  subroutine trace_ppm(lo, hi, &
+                       idir, &
+                       q, qd_lo, qd_hi, &
+                       qaux, qa_lo, qa_hi, &
+                       flatn, f_lo, f_hi, &
+                       qm, qm_lo, qm_hi, &
+                       qp, qp_lo, qp_hi, &
+                       vlo, vhi, domlo, domhi, &
+                       dx, dt)
 
     use network, only: nspec
-    use castro_module, only: QVAR, NQAUX, QRHO, QU, QV, QW, QFS, &
-                             QREINT, QPRES, QGAME, QC, QGAMC, &
-                             small_dens
+    use castro_module, only: QVAR, NQAUX, QRHO, QU, QV, QW, QC, QGAMC, QGAME, &
+                             QREINT, QTEMP, QFS, QPRES, small_dens
 
     implicit none
 
@@ -2703,7 +2701,6 @@ contains
     integer, intent(in) :: qd_lo(3), qd_hi(3)
     integer, intent(in) :: qa_lo(3), qa_hi(3)
     integer, intent(in) :: f_lo(3), f_hi(3)
-
     integer, intent(in) :: qm_lo(3), qm_hi(3)
     integer, intent(in) :: qp_lo(3), qp_hi(3)
 
@@ -2720,10 +2717,11 @@ contains
 
     real(rt), intent(in) :: dt, dx(3)
 
-    logical, intent(in) :: reconstruct_state(QVAR)
-
     ! Local variables
-    integer :: i, j, k, n, ispec
+
+    integer :: n, i, j, k, ispec
+
+    logical :: reconstruct_state(QVAR)
 
     real(rt) :: hdt, dtdx
 
@@ -2790,6 +2788,11 @@ contains
        QUT = QU
        QUTT = QV
     endif
+
+    ! We don't need to reconstruct all of the QVAR state variables.
+    reconstruct_state(:) = .true.
+    reconstruct_state(QGAME) = .false.
+    reconstruct_state(QTEMP) = .false.
 
     ! Trace to left and right edges using upwind PPM
     do k = lo(3), hi(3)
@@ -3087,68 +3090,6 @@ contains
           end do
        end do
     end do
-
-
-  end subroutine trace_ppm_rhoe
-
-
-
-  subroutine trace_ppm(lo, hi, &
-                       idir, &
-                       q, qd_lo, qd_hi, &
-                       qaux, qa_lo, qa_hi, &
-                       flatn, f_lo, f_hi, &
-                       qm, qm_lo, qm_hi, &
-                       qp, qp_lo, qp_hi, &
-                       vlo, vhi, domlo, domhi, &
-                       dx, dt)
-    ! here, lo and hi are the range we loop over -- this can include ghost cells
-    ! vlo and vhi are the bounds of the valid box (no ghost cells)
-
-    use network, only: nspec
-    use castro_module, only: QVAR, NQAUX, QU, QV, QW, QGAME, QREINT, QTEMP
-
-    implicit none
-
-    integer, intent(in) :: idir
-    integer, intent(in) :: qd_lo(3), qd_hi(3)
-    integer, intent(in) :: qa_lo(3), qa_hi(3)
-    integer, intent(in) :: f_lo(3), f_hi(3)
-    integer, intent(in) :: qm_lo(3), qm_hi(3)
-    integer, intent(in) :: qp_lo(3), qp_hi(3)
-
-    integer, intent(in) :: lo(3), hi(3)
-    integer, intent(in) :: vlo(3), vhi(3)
-    integer, intent(in) :: domlo(3), domhi(3)
-
-    real(rt), intent(in) ::     q(qd_lo(1):qd_hi(1),qd_lo(2):qd_hi(2),qd_lo(3):qd_hi(3),QVAR)
-    real(rt), intent(in) ::  qaux(qa_lo(1):qa_hi(1),qa_lo(2):qa_hi(2),qa_lo(3):qa_hi(3),NQAUX)
-    real(rt), intent(in) ::  flatn(f_lo(1):f_hi(1),f_lo(2):f_hi(2),f_lo(3):f_hi(3))
-
-    real(rt), intent(inout) :: qm(qm_lo(1):qm_hi(1),qm_lo(2):qm_hi(2),qm_lo(3):qm_hi(3),QVAR)
-    real(rt), intent(inout) :: qp(qp_lo(1):qp_hi(1),qp_lo(2):qp_hi(2),qp_lo(3):qp_hi(3),QVAR)
-
-    real(rt), intent(in) :: dt, dx(3)
-
-    integer :: n, i, j, k
-
-    logical :: reconstruct_state(QVAR)
-
-    ! we don't need to reconstruct all of the QVAR state variables
-    reconstruct_state(:) = .true.
-    reconstruct_state(QGAME) = .false.
-    reconstruct_state(QTEMP) = .false.
-
-    call trace_ppm_rhoe(lo, hi, &
-                        idir, &
-                        q, qd_lo, qd_hi, &
-                        qaux, qa_lo, qa_hi, &
-                        flatn, f_lo, f_hi, &
-                        qm, qm_lo, qm_hi, &
-                        qp, qp_lo, qp_hi, &
-                        vlo, vhi, domlo, domhi, &
-                        reconstruct_state, &
-                        dx, dt)
 
   end subroutine trace_ppm
 
