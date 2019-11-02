@@ -316,9 +316,17 @@ Castro::construct_hydro_source(Real dt)
           normalize_species_fluxes(AMREX_ARLIM_ANYD(ebx[idir].loVect()), AMREX_ARLIM_ANYD(ebx[idir].hiVect()),
                                    BL_TO_FORTRAN_ANYD(flux[idir]));
 
+          // Store the fluxes from this advance; we'll use these in
+          // the flux register for doing the coarse-fine level sync.
+          // The flux is scaled by dt * dA.
+
+          store_flux(AMREX_ARLIM_ANYD(ebx[idir].loVect()), AMREX_ARLIM_ANYD(ebx[idir].hiVect()),
+                     BL_TO_FORTRAN_ANYD((*fluxes[idir])[mfi]),
+                     BL_TO_FORTRAN_ANYD(flux[idir]),
+                     BL_TO_FORTRAN_ANYD(area[idir][mfi]),
+                     dt);
+
       }
-
-
 
       pdivu.resize(bx, 1);
       Elixir elix_pdivu = pdivu.elixir();
@@ -341,20 +349,6 @@ Castro::construct_hydro_source(Real dt)
                  BL_TO_FORTRAN_ANYD(volume[mfi]),
                  BL_TO_FORTRAN_ANYD(pdivu),
                  AMREX_ZFILL(dx), dt);
-
-      for (int idir = 0; idir < AMREX_SPACEDIM; ++idir) {
-
-        scale_flux(AMREX_ARLIM_ANYD(ebx[idir].loVect()), AMREX_ARLIM_ANYD(ebx[idir].hiVect()),
-                   BL_TO_FORTRAN_ANYD(flux[idir]),
-                   BL_TO_FORTRAN_ANYD(area[idir][mfi]), dt);
-
-        // Store the fluxes from this advance.
-
-        store_flux(AMREX_ARLIM_ANYD(ebx[idir].loVect()), AMREX_ARLIM_ANYD(ebx[idir].hiVect()),
-                   BL_TO_FORTRAN_ANYD((*fluxes[idir])[mfi]),
-                   BL_TO_FORTRAN_ANYD(flux[idir]));
-
-      } // idir loop
 
     } // MFIter loop
 

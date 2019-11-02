@@ -107,16 +107,12 @@ extern "C"
      const BL_FORT_FAB_ARG_3D(volume),
      BL_FORT_FAB_ARG_3D(update));
 
-  void scale_flux
-    (const int* lo, const int* hi,
-     BL_FORT_FAB_ARG_3D(flux),
-     BL_FORT_FAB_ARG_3D(area),
-     const amrex::Real dt);
-
   void store_flux
     (const int* lo, const int* hi,
      BL_FORT_FAB_ARG_3D(flux_out),
-     BL_FORT_FAB_ARG_3D(flux_in));
+     BL_FORT_FAB_ARG_3D(flux_in),
+     BL_FORT_FAB_ARG_3D(area),
+     const amrex::Real dt);
 
   void ctu_consup
     (const int* lo, const int* hi,
