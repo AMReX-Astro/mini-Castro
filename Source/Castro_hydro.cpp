@@ -101,9 +101,18 @@ Castro::construct_hydro_source(Real dt)
                   BL_TO_FORTRAN_ANYD(q[mfi]),
                   BL_TO_FORTRAN_ANYD(flatn));
 
+      Elixir elix_flux[3];
+      Elixir elix_qe[3];
+
       for (int i = 0; i < 3; ++i) {
           ebx[i] = amrex::surroundingNodes(bx, i);
           gebx[i] = amrex::grow(ebx[i], 1);
+
+          flux[i].resize(gebx[i], NUM_STATE);
+          elix_flux[i] = flux[i].elixir();
+
+          qe[i].resize(gebx[i], NGDNV);
+          elix_qe[i] = qe[i].elixir();
       }
 
       tbx[0][0] = amrex::grow(bx, 1);
@@ -154,24 +163,6 @@ Castro::construct_hydro_source(Real dt)
 
       q_int.resize(obx, QVAR);
       Elixir elix_q_int = q_int.elixir();
-
-      flux[0].resize(gebx[0], NUM_STATE);
-      Elixir elix_flux_x = flux[0].elixir();
-
-      qe[0].resize(gebx[0], NGDNV);
-      Elixir elix_qe_x = qe[0].elixir();
-
-      flux[1].resize(gebx[1], NUM_STATE);
-      Elixir elix_flux_y = flux[1].elixir();
-
-      qe[1].resize(gebx[1], NGDNV);
-      Elixir elix_qe_y = qe[1].elixir();
-
-      flux[2].resize(gebx[2], NUM_STATE);
-      Elixir elix_flux_z = flux[2].elixir();
-
-      qe[2].resize(gebx[2], NGDNV);
-      Elixir elix_qe_z = qe[2].elixir();
 
       ftmp1.resize(obx, NUM_STATE);
       Elixir elix_ftmp1 = ftmp1.elixir();
