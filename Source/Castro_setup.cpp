@@ -12,15 +12,15 @@ using namespace amrex;
 // the boundary conditions are periodic for mini-Castro. However
 // the function signatures need to exist so that we can compile.
 
-void ca_hypfill(BL_FORT_FAB_ARG(state),
-                const int dlo[], const int dhi[],
-                const amrex::Real dx[], const amrex::Real glo[],
-                const amrex::Real* time, const int bc[]) {}
+void hypfill(BL_FORT_FAB_ARG(state),
+             const int dlo[], const int dhi[],
+             const amrex::Real dx[], const amrex::Real glo[],
+             const amrex::Real* time, const int bc[]) {}
 
-void ca_denfill(BL_FORT_FAB_ARG(state),
-                const int dlo[], const int dhi[],
-                const amrex::Real dx[], const amrex::Real glo[],
-                const amrex::Real* time, const int bc[]) {}
+void denfill(BL_FORT_FAB_ARG(state),
+             const int dlo[], const int dhi[],
+             const amrex::Real dx[], const amrex::Real glo[],
+             const amrex::Real* time, const int bc[]) {}
 
 typedef StateDescriptor::BndryFunc BndryFunc;
 
@@ -78,7 +78,7 @@ Castro::variableSetUp()
         int len = 20;
         Vector<int> int_spec_names(len);
         // This call return the actual length of each string in "len"
-        ca_get_spec_names(int_spec_names.dataPtr(),&i,&len);
+        get_spec_names(int_spec_names.dataPtr(),&i,&len);
         char char_spec_names[len+1];
         for (int j = 0; j < len; j++)
             char_spec_names[j] = int_spec_names[j];
@@ -92,7 +92,7 @@ Castro::variableSetUp()
         name[cnt] = "rho_" + spec_names[i];
     }
 
-    desc_lst.setComponent(State_Type, Density, name, bcs, BndryFunc(ca_denfill, ca_hypfill));
+    desc_lst.setComponent(State_Type, Density, name, bcs, BndryFunc(denfill, hypfill));
 
     // Update the diagnostic interval.
     ParmParse pp;

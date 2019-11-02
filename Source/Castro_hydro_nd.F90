@@ -64,10 +64,10 @@ contains
 
 
 
-  subroutine ca_ctoprim(lo, hi, &
-                        uin, uin_lo, uin_hi, &
-                        q,     q_lo,   q_hi, &
-                        qaux, qa_lo,  qa_hi) bind(c,name='ca_ctoprim')
+  subroutine ctoprim(lo, hi, &
+                     uin, uin_lo, uin_hi, &
+                     q,     q_lo,   q_hi, &
+                     qaux, qa_lo,  qa_hi) bind(c,name='ctoprim')
 
     use network, only: nspec
     use eos_module, only: eos_t, eos_input_re, eos
@@ -154,7 +154,7 @@ contains
        enddo
     enddo
 
-  end subroutine ca_ctoprim
+  end subroutine ctoprim
 
 
 
@@ -274,21 +274,21 @@ contains
 
   
 
-  subroutine ctu_consup(lo, hi, &
-                        uin, uin_lo, uin_hi, &
-                        q, q_lo, q_hi, &
-                        update, updt_lo, updt_hi, &
-                        flux1, flux1_lo, flux1_hi, &
-                        flux2, flux2_lo, flux2_hi, &
-                        flux3, flux3_lo, flux3_hi, &
-                        qx, qx_lo, qx_hi, &
-                        qy, qy_lo, qy_hi, &
-                        qz, qz_lo, qz_hi, &
-                        area1, area1_lo, area1_hi, &
-                        area2, area2_lo, area2_hi, &
-                        area3, area3_lo, area3_hi, &
-                        vol, vol_lo, vol_hi, &
-                        dx, dt) bind(C, name="ctu_consup")
+  subroutine consup(lo, hi, &
+                    uin, uin_lo, uin_hi, &
+                    q, q_lo, q_hi, &
+                    update, updt_lo, updt_hi, &
+                    flux1, flux1_lo, flux1_hi, &
+                    flux2, flux2_lo, flux2_hi, &
+                    flux3, flux3_lo, flux3_hi, &
+                    qx, qx_lo, qx_hi, &
+                    qy, qy_lo, qy_hi, &
+                    qz, qz_lo, qz_hi, &
+                    area1, area1_lo, area1_hi, &
+                    area2, area2_lo, area2_hi, &
+                    area3, area3_lo, area3_hi, &
+                    vol, vol_lo, vol_hi, &
+                    dx, dt) bind(C, name="consup")
 
     use castro_module, only: NVAR, URHO, UMX, UMY, UMZ, UEDEN, &
                              UEINT, UTEMP, NGDNV, QVAR, &
@@ -363,7 +363,7 @@ contains
        enddo
     enddo
 
-  end subroutine ctu_consup
+  end subroutine consup
 
 
 

@@ -74,10 +74,10 @@ Castro::construct_hydro_source(Real dt)
 
       // Convert the conservative state to the primitive variable state.
 
-      ca_ctoprim(AMREX_INT_ANYD(qbx.loVect()), AMREX_INT_ANYD(qbx.hiVect()),
-                 BL_TO_FORTRAN_ANYD(Sborder[mfi]),
-                 BL_TO_FORTRAN_ANYD(q),
-                 BL_TO_FORTRAN_ANYD(qaux));
+      ctoprim(AMREX_INT_ANYD(qbx.loVect()), AMREX_INT_ANYD(qbx.hiVect()),
+              BL_TO_FORTRAN_ANYD(Sborder[mfi]),
+              BL_TO_FORTRAN_ANYD(q),
+              BL_TO_FORTRAN_ANYD(qaux));
 
       flatn.resize(obx, 1);
       Elixir elix_flatn = flatn.elixir();
@@ -86,9 +86,9 @@ Castro::construct_hydro_source(Real dt)
 
       Array4<Real> const flatn_arr = flatn.array();
 
-      ca_uflatten(AMREX_ARLIM_ANYD(obx.loVect()), AMREX_ARLIM_ANYD(obx.hiVect()),
-                  BL_TO_FORTRAN_ANYD(q),
-                  BL_TO_FORTRAN_ANYD(flatn));
+      uflatten(AMREX_ARLIM_ANYD(obx.loVect()), AMREX_ARLIM_ANYD(obx.hiVect()),
+               BL_TO_FORTRAN_ANYD(q),
+               BL_TO_FORTRAN_ANYD(flatn));
 
       Elixir elix_flux[3];
       Elixir elix_qe[3];
@@ -329,21 +329,21 @@ Castro::construct_hydro_source(Real dt)
 
       // conservative update
 
-      ctu_consup(AMREX_ARLIM_ANYD(bx.loVect()), AMREX_ARLIM_ANYD(bx.hiVect()),
-                 BL_TO_FORTRAN_ANYD(Sborder[mfi]),
-                 BL_TO_FORTRAN_ANYD(q),
-                 BL_TO_FORTRAN_ANYD(hydro_source[mfi]),
-                 BL_TO_FORTRAN_ANYD(flux[0]),
-                 BL_TO_FORTRAN_ANYD(flux[1]),
-                 BL_TO_FORTRAN_ANYD(flux[2]),
-                 BL_TO_FORTRAN_ANYD(qe[0]),
-                 BL_TO_FORTRAN_ANYD(qe[1]),
-                 BL_TO_FORTRAN_ANYD(qe[2]),
-                 BL_TO_FORTRAN_ANYD(area[0][mfi]),
-                 BL_TO_FORTRAN_ANYD(area[1][mfi]),
-                 BL_TO_FORTRAN_ANYD(area[2][mfi]),
-                 BL_TO_FORTRAN_ANYD(volume[mfi]),
-                 AMREX_ZFILL(dx), dt);
+      consup(AMREX_ARLIM_ANYD(bx.loVect()), AMREX_ARLIM_ANYD(bx.hiVect()),
+             BL_TO_FORTRAN_ANYD(Sborder[mfi]),
+             BL_TO_FORTRAN_ANYD(q),
+             BL_TO_FORTRAN_ANYD(hydro_source[mfi]),
+             BL_TO_FORTRAN_ANYD(flux[0]),
+             BL_TO_FORTRAN_ANYD(flux[1]),
+             BL_TO_FORTRAN_ANYD(flux[2]),
+             BL_TO_FORTRAN_ANYD(qe[0]),
+             BL_TO_FORTRAN_ANYD(qe[1]),
+             BL_TO_FORTRAN_ANYD(qe[2]),
+             BL_TO_FORTRAN_ANYD(area[0][mfi]),
+             BL_TO_FORTRAN_ANYD(area[1][mfi]),
+             BL_TO_FORTRAN_ANYD(area[2][mfi]),
+             BL_TO_FORTRAN_ANYD(volume[mfi]),
+             AMREX_ZFILL(dx), dt);
 
     } // MFIter loop
 

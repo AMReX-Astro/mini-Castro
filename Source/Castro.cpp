@@ -113,10 +113,9 @@ Castro::initData ()
 
         CASTRO_LAUNCH_LAMBDA(box, lbx,
         {
-            ca_initdata
-                (AMREX_ARLIM_ANYD(lbx.loVect()), AMREX_ARLIM_ANYD(lbx.hiVect()),
-                 AMREX_ARR4_TO_FORTRAN_ANYD(state_arr), AMREX_ZFILL(dx.data()),
-                 AMREX_ZFILL(problo.data()), AMREX_ZFILL(probhi.data()));
+            initdata(AMREX_ARLIM_ANYD(lbx.loVect()), AMREX_ARLIM_ANYD(lbx.hiVect()),
+                     AMREX_ARR4_TO_FORTRAN_ANYD(state_arr), AMREX_ZFILL(dx.data()),
+                     AMREX_ZFILL(problo.data()), AMREX_ZFILL(probhi.data()));
         });
     }
 }
@@ -184,7 +183,7 @@ Castro::estTimeStep (Real dt_old)
 
     const MultiFab& stateMF = get_new_data(State_Type);
 
-    amrex::Real estdt = std::numeric_limits<amrex::Real>::max();
+    amrex::Real dt = std::numeric_limits<amrex::Real>::max();
 
     const auto dx = geom.CellSizeArray();
 
@@ -198,23 +197,23 @@ Castro::estTimeStep (Real dt_old)
         auto state_arr = stateMF[mfi].array();
 
         // Get a device pointer for estdt.
-        Real* estdt_loc = CASTRO_MFITER_REDUCE_MIN(&estdt);
+        Real* dt_loc = CASTRO_MFITER_REDUCE_MIN(&dt);
 
         CASTRO_LAUNCH_LAMBDA(box, lbx,
         {
-            ca_estdt(AMREX_ARLIM_ANYD(lbx.loVect()), AMREX_ARLIM_ANYD(lbx.hiVect()),
-                     AMREX_ARR4_TO_FORTRAN_ANYD(state_arr),
-                     AMREX_ZFILL(dx.data()), estdt_loc);
+            estdt(AMREX_ARLIM_ANYD(lbx.loVect()), AMREX_ARLIM_ANYD(lbx.hiVect()),
+                  AMREX_ARR4_TO_FORTRAN_ANYD(state_arr),
+                  AMREX_ZFILL(dx.data()), dt_loc);
         });
     }
 
     // Reduce over all MPI ranks.
-    ParallelDescriptor::ReduceRealMin(estdt);
+    ParallelDescriptor::ReduceRealMin(dt);
 
     const Real cfl = 0.5;
-    estdt *= cfl;
+    dt *= cfl;
 
-    return estdt;
+    return dt;
 }
 
 void
@@ -528,10 +527,10 @@ Castro::errorEst (TagBoxArray& tags,
 
         CASTRO_LAUNCH_LAMBDA(box, lbx,
         {
-            ca_denerror(AMREX_ARLIM_ANYD(lbx.loVect()), AMREX_ARLIM_ANYD(lbx.hiVect()),
-                        (int8_t*) AMREX_ARR4_TO_FORTRAN_ANYD(tags_arr),
-                        AMREX_ARR4_TO_FORTRAN_ANYD(data_arr),
-                        set, clear);
+            denerror(AMREX_ARLIM_ANYD(lbx.loVect()), AMREX_ARLIM_ANYD(lbx.hiVect()),
+                     (int8_t*) AMREX_ARR4_TO_FORTRAN_ANYD(tags_arr),
+                     AMREX_ARR4_TO_FORTRAN_ANYD(data_arr),
+                     set, clear);
         });
     }
 }
@@ -558,32 +557,32 @@ Castro::clean_state(MultiFab& state)
 
         CASTRO_LAUNCH_LAMBDA(box, lbx,
         {
-            ca_enforce_minimum_density(AMREX_ARLIM_ANYD(lbx.loVect()), AMREX_ARLIM_ANYD(lbx.hiVect()),
-                                       AMREX_ARR4_TO_FORTRAN_ANYD(state_arr));
+            enforce_minimum_density(AMREX_ARLIM_ANYD(lbx.loVect()), AMREX_ARLIM_ANYD(lbx.hiVect()),
+                                    AMREX_ARR4_TO_FORTRAN_ANYD(state_arr));
         });
 
         // Ensure all species are normalized.
 
         CASTRO_LAUNCH_LAMBDA(box, lbx,
         {
-            ca_normalize_species(AMREX_ARLIM_ANYD(lbx.loVect()), AMREX_ARLIM_ANYD(lbx.hiVect()),
-                                 AMREX_ARR4_TO_FORTRAN_ANYD(state_arr));
+            normalize_species(AMREX_ARLIM_ANYD(lbx.loVect()), AMREX_ARLIM_ANYD(lbx.hiVect()),
+                              AMREX_ARR4_TO_FORTRAN_ANYD(state_arr));
         });
 
         // Ensure (rho e) isn't too small or negative
 
         CASTRO_LAUNCH_LAMBDA(box, lbx,
         {
-            ca_reset_internal_e(AMREX_ARLIM_ANYD(lbx.loVect()), AMREX_ARLIM_ANYD(lbx.hiVect()),
-                                AMREX_ARR4_TO_FORTRAN_ANYD(state_arr));
+            reset_internal_e(AMREX_ARLIM_ANYD(lbx.loVect()), AMREX_ARLIM_ANYD(lbx.hiVect()),
+                             AMREX_ARR4_TO_FORTRAN_ANYD(state_arr));
         });
 
         // Make the temperature be consistent with the internal energy.
 
         CASTRO_LAUNCH_LAMBDA(box, lbx,
         {
-            ca_compute_temp(AMREX_ARLIM_ANYD(lbx.loVect()), AMREX_ARLIM_ANYD(lbx.hiVect()),
-                            AMREX_ARR4_TO_FORTRAN_ANYD(state_arr));
+            compute_temp(AMREX_ARLIM_ANYD(lbx.loVect()), AMREX_ARLIM_ANYD(lbx.hiVect()),
+                         AMREX_ARR4_TO_FORTRAN_ANYD(state_arr));
         });
     }
 }

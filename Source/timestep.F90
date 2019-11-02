@@ -9,7 +9,7 @@ contains
 
   ! Courant-condition limited timestep
 
-  CASTRO_FORT_DEVICE subroutine ca_estdt(lo,hi,u,u_lo,u_hi,dx,dt) bind(C, name='ca_estdt')
+  CASTRO_FORT_DEVICE subroutine estdt(lo,hi,u,u_lo,u_hi,dx,dt) bind(C, name='estdt')
 
     use network, only: nspec
     use castro_module, only: NVAR, URHO, UMX, UMY, UMZ, UEINT, UTEMP, UFS
@@ -65,6 +65,6 @@ contains
        enddo
     enddo
 
-  end subroutine ca_estdt
+  end subroutine estdt
 
 end module timestep_module

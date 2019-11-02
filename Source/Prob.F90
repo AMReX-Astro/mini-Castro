@@ -18,10 +18,10 @@ module initdata_module
 
 contains
 
-  CASTRO_FORT_DEVICE subroutine ca_initdata(lo, hi, &
-                                            state, s_lo, s_hi, &
-                                            dx, problo, probhi) &
-                                            bind(C, name='ca_initdata')
+  CASTRO_FORT_DEVICE subroutine initdata(lo, hi, &
+                                         state, s_lo, s_hi, &
+                                         dx, problo, probhi) &
+                                         bind(C, name='initdata')
 
     use amrex_constants_module, only: M_PI, FOUR3RD
     use castro_module , only: NVAR, URHO, UMX, UMY, UMZ, UTEMP, UEDEN, UEINT, UFS
@@ -122,7 +122,7 @@ contains
        enddo
     enddo
 
-  end subroutine ca_initdata
+  end subroutine initdata
 
 end module initdata_module
 
