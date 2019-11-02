@@ -64,21 +64,21 @@ Castro::construct_hydro_source(Real dt)
 
     FArrayBox flatn;
     FArrayBox dq;
-    FArrayBox qxm, qxp;
-    FArrayBox qym, qyp;
-    FArrayBox qzm, qzp;
+
+    // The terms of qm and qp with i == j are the edge states that
+    // come out of the PPM edge state prediction. The terms with
+    // i /= j include transverse corrections.
+
+    FArrayBox qm[3][3], qp[3][3];
+
+    Box qbx[3][3], ebx[3], gebx[3], tbx[3][3];
+
     FArrayBox div;
     FArrayBox q_int;
     FArrayBox ftmp1, ftmp2;
     FArrayBox qgdnvtmp1, qgdnvtmp2;
     FArrayBox ql, qr;
     FArrayBox flux[3], qe[3];
-    FArrayBox qmyx, qpyx;
-    FArrayBox qmzx, qpzx;
-    FArrayBox qmxy, qpxy;
-    FArrayBox qmzy, qpzy;
-    FArrayBox qmxz, qpxz;
-    FArrayBox qmyz, qpyz;
     FArrayBox pdivu;
 
     for (MFIter mfi(S_new, tile_size); mfi.isValid(); ++mfi) {
@@ -99,44 +99,88 @@ Castro::construct_hydro_source(Real dt)
                   BL_TO_FORTRAN_ANYD(q[mfi]),
                   BL_TO_FORTRAN_ANYD(flatn));
 
-      const Box& xbx = amrex::surroundingNodes(bx, 0);
-      const Box& gxbx = amrex::grow(xbx, 1);
+      for (int i = 0; i < 3; ++i) {
+          ebx[i] = amrex::surroundingNodes(bx, i);
+          gebx[i] = amrex::grow(ebx[i], 1);
+      }
 
-      const Box& ybx = amrex::surroundingNodes(bx, 1);
-      const Box& gybx = amrex::grow(ybx, 1);
+      qm[0][0].resize(obx, QVAR);
+      Elixir elix_qxm = qm[0][0].elixir();
 
-      const Box& zbx = amrex::surroundingNodes(bx, 2);
-      const Box& gzbx = amrex::grow(zbx, 1);
+      qp[0][0].resize(obx, QVAR);
+      Elixir elix_qxp = qp[0][0].elixir();
 
-      qxm.resize(obx, QVAR);
-      Elixir elix_qxm = qxm.elixir();
+      qm[1][1].resize(obx, QVAR);
+      Elixir elix_qym = qm[1][1].elixir();
 
-      qxp.resize(obx, QVAR);
-      Elixir elix_qxp = qxp.elixir();
+      qp[1][1].resize(obx, QVAR);
+      Elixir elix_qyp = qp[1][1].elixir();
 
-      qym.resize(obx, QVAR);
-      Elixir elix_qym = qym.elixir();
+      qm[2][2].resize(obx, QVAR);
+      Elixir elix_qzm = qm[2][2].elixir();
 
-      qyp.resize(obx, QVAR);
-      Elixir elix_qyp = qyp.elixir();
+      qp[2][2].resize(obx, QVAR);
+      Elixir elix_qzp = qp[2][2].elixir();
 
-      qzm.resize(obx, QVAR);
-      Elixir elix_qzm = qzm.elixir();
+      tbx[1][0] = amrex::grow(ebx[1], IntVect(AMREX_D_DECL(0,0,1)));
 
-      qzp.resize(obx, QVAR);
-      Elixir elix_qzp = qzp.elixir();
+      qm[1][0].resize(tbx[1][0], QVAR);
+      Elixir elix_qmyx = qm[1][0].elixir();
+
+      qp[1][0].resize(tbx[1][0], QVAR);
+      Elixir elix_qpyx = qp[1][0].elixir();
+
+      tbx[2][0] = amrex::grow(ebx[2], IntVect(AMREX_D_DECL(0,1,0)));
+
+      qm[2][0].resize(tbx[2][0], QVAR);
+      Elixir elix_qmzx = qm[2][0].elixir();
+
+      qp[2][0].resize(tbx[2][0], QVAR);
+      Elixir elix_qpzx = qp[2][0].elixir();
+
+      tbx[0][1] = amrex::grow(ebx[0], IntVect(AMREX_D_DECL(0,0,1)));
+
+      qm[0][1].resize(tbx[0][1], QVAR);
+      Elixir elix_qmxy = qm[0][1].elixir();
+
+      qp[0][1].resize(tbx[0][1], QVAR);
+      Elixir elix_qpxy = qp[0][1].elixir();
+
+      tbx[2][1] = amrex::grow(ebx[2], IntVect(AMREX_D_DECL(1,0,0)));
+
+      qm[2][1].resize(tbx[2][1], QVAR);
+      Elixir elix_qmzy = qm[2][1].elixir();
+
+      qp[2][1].resize(tbx[2][1], QVAR);
+      Elixir elix_qpzy = qp[2][1].elixir();
+
+      tbx[0][2] = amrex::grow(ebx[0], IntVect(AMREX_D_DECL(0,1,0)));
+
+      qm[0][2].resize(tbx[0][2], QVAR);
+      Elixir elix_qmxz = qm[0][2].elixir();
+
+      qp[0][2].resize(tbx[0][2], QVAR);
+      Elixir elix_qpxz = qp[0][2].elixir();
+
+      tbx[1][2] = amrex::grow(ebx[1], IntVect(AMREX_D_DECL(1,0,0)));
+
+      qm[1][2].resize(tbx[1][2], QVAR);
+      Elixir elix_qmyz = qm[1][2].elixir();
+
+      qp[1][2].resize(tbx[1][2], QVAR);
+      Elixir elix_qpyz = qp[1][2].elixir();
 
       ctu_ppm_states(AMREX_ARLIM_ANYD(obx.loVect()), AMREX_ARLIM_ANYD(obx.hiVect()),
                      AMREX_ARLIM_ANYD(bx.loVect()), AMREX_ARLIM_ANYD(bx.hiVect()),
                      BL_TO_FORTRAN_ANYD(q[mfi]),
                      BL_TO_FORTRAN_ANYD(flatn),
                      BL_TO_FORTRAN_ANYD(qaux[mfi]),
-                     BL_TO_FORTRAN_ANYD(qxm),
-                     BL_TO_FORTRAN_ANYD(qxp),
-                     BL_TO_FORTRAN_ANYD(qym),
-                     BL_TO_FORTRAN_ANYD(qyp),
-                     BL_TO_FORTRAN_ANYD(qzm),
-                     BL_TO_FORTRAN_ANYD(qzp),
+                     BL_TO_FORTRAN_ANYD(qm[0][0]),
+                     BL_TO_FORTRAN_ANYD(qp[0][0]),
+                     BL_TO_FORTRAN_ANYD(qm[1][1]),
+                     BL_TO_FORTRAN_ANYD(qp[1][1]),
+                     BL_TO_FORTRAN_ANYD(qm[2][2]),
+                     BL_TO_FORTRAN_ANYD(qp[2][2]),
                      AMREX_ZFILL(dx), dt,
                      AMREX_ARLIM_ANYD(domain_lo), AMREX_ARLIM_ANYD(domain_hi));
 
@@ -152,22 +196,22 @@ Castro::construct_hydro_source(Real dt)
       q_int.resize(obx, QVAR);
       Elixir elix_q_int = q_int.elixir();
 
-      flux[0].resize(gxbx, NUM_STATE);
+      flux[0].resize(gebx[0], NUM_STATE);
       Elixir elix_flux_x = flux[0].elixir();
 
-      qe[0].resize(gxbx, NGDNV);
+      qe[0].resize(gebx[0], NGDNV);
       Elixir elix_qe_x = qe[0].elixir();
 
-      flux[1].resize(gybx, NUM_STATE);
+      flux[1].resize(gebx[1], NUM_STATE);
       Elixir elix_flux_y = flux[1].elixir();
 
-      qe[1].resize(gybx, NGDNV);
+      qe[1].resize(gebx[1], NGDNV);
       Elixir elix_qe_y = qe[1].elixir();
 
-      flux[2].resize(gzbx, NUM_STATE);
+      flux[2].resize(gebx[2], NUM_STATE);
       Elixir elix_flux_z = flux[2].elixir();
 
-      qe[2].resize(gzbx, NGDNV);
+      qe[2].resize(gebx[2], NGDNV);
       Elixir elix_qe_z = qe[2].elixir();
 
       ftmp1.resize(obx, NUM_STATE);
@@ -200,56 +244,38 @@ Castro::construct_hydro_source(Real dt)
 
       // compute F^x
       // [lo(1), lo(2)-1, lo(3)-1], [hi(1)+1, hi(2)+1, hi(3)+1]
-      const Box& cxbx = amrex::grow(xbx, IntVect(AMREX_D_DECL(0,1,1)));
+      const Box& cxbx = amrex::grow(ebx[0], IntVect(AMREX_D_DECL(0,1,1)));
 
       // ftmp1 = fx
       // rftmp1 = rfx
       // qgdnvtmp1 = qgdnxv
       cmpflx_plus_godunov(AMREX_ARLIM_ANYD(cxbx.loVect()), AMREX_ARLIM_ANYD(cxbx.hiVect()),
-                          BL_TO_FORTRAN_ANYD(qxm),
-                          BL_TO_FORTRAN_ANYD(qxp), 1, 1,
+                          BL_TO_FORTRAN_ANYD(qm[0][0]),
+                          BL_TO_FORTRAN_ANYD(qp[0][0]), 1, 1,
                           BL_TO_FORTRAN_ANYD(ftmp1),
                           BL_TO_FORTRAN_ANYD(q_int),
                           BL_TO_FORTRAN_ANYD(qgdnvtmp1),
                           BL_TO_FORTRAN_ANYD(qaux[mfi]),
                           1, AMREX_ARLIM_ANYD(domain_lo), AMREX_ARLIM_ANYD(domain_hi));
 
-      // [lo(1), lo(2), lo(3)-1], [hi(1), hi(2)+1, hi(3)+1]
-      const Box& tyxbx = amrex::grow(ybx, IntVect(AMREX_D_DECL(0,0,1)));
-
-      qmyx.resize(tyxbx, QVAR);
-      Elixir elix_qmyx = qmyx.elixir();
-
-      qpyx.resize(tyxbx, QVAR);
-      Elixir elix_qpyx = qpyx.elixir();
-
       // ftmp1 = fx
       // rftmp1 = rfx
       // qgdnvtmp1 = qgdnvx
-      transx_on_ystates(AMREX_ARLIM_ANYD(tyxbx.loVect()), AMREX_ARLIM_ANYD(tyxbx.hiVect()),
-                        BL_TO_FORTRAN_ANYD(qym),
-                        BL_TO_FORTRAN_ANYD(qmyx),
-                        BL_TO_FORTRAN_ANYD(qyp),
-                        BL_TO_FORTRAN_ANYD(qpyx),
+      transx_on_ystates(AMREX_ARLIM_ANYD(tbx[1][0].loVect()), AMREX_ARLIM_ANYD(tbx[1][0].hiVect()),
+                        BL_TO_FORTRAN_ANYD(qm[1][1]),
+                        BL_TO_FORTRAN_ANYD(qm[1][0]),
+                        BL_TO_FORTRAN_ANYD(qp[1][1]),
+                        BL_TO_FORTRAN_ANYD(qp[1][0]),
                         BL_TO_FORTRAN_ANYD(qaux[mfi]),
                         BL_TO_FORTRAN_ANYD(ftmp1),
                         BL_TO_FORTRAN_ANYD(qgdnvtmp1),
                         hdt, cdtdx);
 
-      // [lo(1), lo(2)-1, lo(3)], [hi(1), hi(2)+1, hi(3)+1]
-      const Box& tzxbx = amrex::grow(zbx, IntVect(AMREX_D_DECL(0,1,0)));
-
-      qmzx.resize(tzxbx, QVAR);
-      Elixir elix_qmzx = qmzx.elixir();
-
-      qpzx.resize(tzxbx, QVAR);
-      Elixir elix_qpzx = qpzx.elixir();
-
-      transx_on_zstates(AMREX_ARLIM_ANYD(tzxbx.loVect()), AMREX_ARLIM_ANYD(tzxbx.hiVect()),
-                        BL_TO_FORTRAN_ANYD(qzm),
-                        BL_TO_FORTRAN_ANYD(qmzx),
-                        BL_TO_FORTRAN_ANYD(qzp),
-                        BL_TO_FORTRAN_ANYD(qpzx),
+      transx_on_zstates(AMREX_ARLIM_ANYD(tbx[2][0].loVect()), AMREX_ARLIM_ANYD(tbx[2][0].hiVect()),
+                        BL_TO_FORTRAN_ANYD(qm[2][2]),
+                        BL_TO_FORTRAN_ANYD(qm[2][0]),
+                        BL_TO_FORTRAN_ANYD(qp[2][2]),
+                        BL_TO_FORTRAN_ANYD(qp[2][0]),
                         BL_TO_FORTRAN_ANYD(qaux[mfi]),
                         BL_TO_FORTRAN_ANYD(ftmp1),
                         BL_TO_FORTRAN_ANYD(qgdnvtmp1),
@@ -257,59 +283,41 @@ Castro::construct_hydro_source(Real dt)
 
       // compute F^y
       // [lo(1)-1, lo(2), lo(3)-1], [hi(1)+1, hi(2)+1, hi(3)+1]
-      const Box& cybx = amrex::grow(ybx, IntVect(AMREX_D_DECL(1,0,1)));
+      const Box& cybx = amrex::grow(ebx[1], IntVect(AMREX_D_DECL(1,0,1)));
 
       // ftmp1 = fy
       // rftmp1 = rfy
       // qgdnvtmp1 = qgdnvy
       cmpflx_plus_godunov(AMREX_ARLIM_ANYD(cybx.loVect()), AMREX_ARLIM_ANYD(cybx.hiVect()),
-                          BL_TO_FORTRAN_ANYD(qym),
-                          BL_TO_FORTRAN_ANYD(qyp), 1, 1,
+                          BL_TO_FORTRAN_ANYD(qm[1][1]),
+                          BL_TO_FORTRAN_ANYD(qp[1][1]), 1, 1,
                           BL_TO_FORTRAN_ANYD(ftmp1),
                           BL_TO_FORTRAN_ANYD(q_int),
                           BL_TO_FORTRAN_ANYD(qgdnvtmp1),
                           BL_TO_FORTRAN_ANYD(qaux[mfi]),
                           2, AMREX_ARLIM_ANYD(domain_lo), AMREX_ARLIM_ANYD(domain_hi));
 
-      // [lo(1), lo(2), lo(3)-1], [hi(1)+1, hi(2), lo(3)+1]
-      const Box& txybx = amrex::grow(xbx, IntVect(AMREX_D_DECL(0,0,1)));
-
-      qmxy.resize(txybx, QVAR);
-      Elixir elix_qmxy = qmxy.elixir();
-
-      qpxy.resize(txybx, QVAR);
-      Elixir elix_qpxy = qpxy.elixir();
-
       // ftmp1 = fy
       // rftmp1 = rfy
       // qgdnvtmp1 = qgdnvy
-      transy_on_xstates(AMREX_ARLIM_ANYD(txybx.loVect()), AMREX_ARLIM_ANYD(txybx.hiVect()),
-                        BL_TO_FORTRAN_ANYD(qxm),
-                        BL_TO_FORTRAN_ANYD(qmxy),
-                        BL_TO_FORTRAN_ANYD(qxp),
-                        BL_TO_FORTRAN_ANYD(qpxy),
+      transy_on_xstates(AMREX_ARLIM_ANYD(tbx[0][1].loVect()), AMREX_ARLIM_ANYD(tbx[0][1].hiVect()),
+                        BL_TO_FORTRAN_ANYD(qm[0][0]),
+                        BL_TO_FORTRAN_ANYD(qm[0][1]),
+                        BL_TO_FORTRAN_ANYD(qp[0][0]),
+                        BL_TO_FORTRAN_ANYD(qp[0][1]),
                         BL_TO_FORTRAN_ANYD(qaux[mfi]),
                         BL_TO_FORTRAN_ANYD(ftmp1),
                         BL_TO_FORTRAN_ANYD(qgdnvtmp1),
                         cdtdy);
 
-      // [lo(1)-1, lo(2), lo(3)], [hi(1)+1, hi(2), lo(3)+1]
-      const Box& tzybx = amrex::grow(zbx, IntVect(AMREX_D_DECL(1,0,0)));
-
-      qmzy.resize(tzybx, QVAR);
-      Elixir elix_qmzy = qmzy.elixir();
-
-      qpzy.resize(tzybx, QVAR);
-      Elixir elix_qpzy = qpzy.elixir();
-
       // ftmp1 = fy
       // rftmp1 = rfy
       // qgdnvtmp1 = qgdnvy
-      transy_on_zstates(AMREX_ARLIM_ANYD(tzybx.loVect()), AMREX_ARLIM_ANYD(tzybx.hiVect()),
-                        BL_TO_FORTRAN_ANYD(qzm),
-                        BL_TO_FORTRAN_ANYD(qmzy),
-                        BL_TO_FORTRAN_ANYD(qzp),
-                        BL_TO_FORTRAN_ANYD(qpzy),
+      transy_on_zstates(AMREX_ARLIM_ANYD(tbx[2][1].loVect()), AMREX_ARLIM_ANYD(tbx[2][1].hiVect()),
+                        BL_TO_FORTRAN_ANYD(qm[2][2]),
+                        BL_TO_FORTRAN_ANYD(qm[2][1]),
+                        BL_TO_FORTRAN_ANYD(qp[2][2]),
+                        BL_TO_FORTRAN_ANYD(qp[2][1]),
                         BL_TO_FORTRAN_ANYD(qaux[mfi]),
                         BL_TO_FORTRAN_ANYD(ftmp1),
                         BL_TO_FORTRAN_ANYD(qgdnvtmp1),
@@ -317,59 +325,41 @@ Castro::construct_hydro_source(Real dt)
 
       // compute F^z
       // [lo(1)-1, lo(2)-1, lo(3)], [hi(1)+1, hi(2)+1, hi(3)+1]
-      const Box& czbx = amrex::grow(zbx, IntVect(AMREX_D_DECL(1,1,0)));
+      const Box& czbx = amrex::grow(ebx[2], IntVect(AMREX_D_DECL(1,1,0)));
 
       // ftmp1 = fz
       // rftmp1 = rfz
       // qgdnvtmp1 = qgdnvz
       cmpflx_plus_godunov(AMREX_ARLIM_ANYD(czbx.loVect()), AMREX_ARLIM_ANYD(czbx.hiVect()),
-                          BL_TO_FORTRAN_ANYD(qzm),
-                          BL_TO_FORTRAN_ANYD(qzp), 1, 1,
+                          BL_TO_FORTRAN_ANYD(qm[2][2]),
+                          BL_TO_FORTRAN_ANYD(qp[2][2]), 1, 1,
                           BL_TO_FORTRAN_ANYD(ftmp1),
                           BL_TO_FORTRAN_ANYD(q_int),
                           BL_TO_FORTRAN_ANYD(qgdnvtmp1),
                           BL_TO_FORTRAN_ANYD(qaux[mfi]),
                           3, AMREX_ARLIM_ANYD(domain_lo), AMREX_ARLIM_ANYD(domain_hi));
 
-      // [lo(1)-1, lo(2)-1, lo(3)], [hi(1)+1, hi(2)+1, lo(3)]
-      const Box& txzbx = amrex::grow(xbx, IntVect(AMREX_D_DECL(0,1,0)));
-
-      qmxz.resize(txzbx, QVAR);
-      Elixir elix_qmxz = qmxz.elixir();
-
-      qpxz.resize(txzbx, QVAR);
-      Elixir elix_qpxz = qpxz.elixir();
-
       // ftmp1 = fz
       // rftmp1 = rfz
       // qgdnvtmp1 = qgdnvz
-      transz_on_xstates(AMREX_ARLIM_ANYD(txzbx.loVect()), AMREX_ARLIM_ANYD(txzbx.hiVect()),
-                        BL_TO_FORTRAN_ANYD(qxm),
-                        BL_TO_FORTRAN_ANYD(qmxz),
-                        BL_TO_FORTRAN_ANYD(qxp),
-                        BL_TO_FORTRAN_ANYD(qpxz),
+      transz_on_xstates(AMREX_ARLIM_ANYD(tbx[0][2].loVect()), AMREX_ARLIM_ANYD(tbx[0][2].hiVect()),
+                        BL_TO_FORTRAN_ANYD(qm[0][0]),
+                        BL_TO_FORTRAN_ANYD(qm[0][2]),
+                        BL_TO_FORTRAN_ANYD(qp[0][0]),
+                        BL_TO_FORTRAN_ANYD(qp[0][2]),
                         BL_TO_FORTRAN_ANYD(qaux[mfi]),
                         BL_TO_FORTRAN_ANYD(ftmp1),
                         BL_TO_FORTRAN_ANYD(qgdnvtmp1),
                         cdtdz);
 
-      // [lo(1)-1, lo(2), lo(3)], [hi(1)+1, hi(2)+1, lo(3)]
-      const Box& tyzbx = amrex::grow(ybx, IntVect(AMREX_D_DECL(1,0,0)));
-
-      qmyz.resize(tyzbx, QVAR);
-      Elixir elix_qmyz = qmyz.elixir();
-
-      qpyz.resize(tyzbx, QVAR);
-      Elixir elix_qpyz = qpyz.elixir();
-
       // ftmp1 = fz
       // rftmp1 = rfz
       // qgdnvtmp1 = qgdnvz
-      transz_on_ystates(AMREX_ARLIM_ANYD(tyzbx.loVect()), AMREX_ARLIM_ANYD(tyzbx.hiVect()),
-                        BL_TO_FORTRAN_ANYD(qym),
-                        BL_TO_FORTRAN_ANYD(qmyz),
-                        BL_TO_FORTRAN_ANYD(qyp),
-                        BL_TO_FORTRAN_ANYD(qpyz),
+      transz_on_ystates(AMREX_ARLIM_ANYD(tbx[1][2].loVect()), AMREX_ARLIM_ANYD(tbx[1][2].hiVect()),
+                        BL_TO_FORTRAN_ANYD(qm[1][1]),
+                        BL_TO_FORTRAN_ANYD(qm[1][2]),
+                        BL_TO_FORTRAN_ANYD(qp[1][1]),
+                        BL_TO_FORTRAN_ANYD(qp[1][2]),
                         BL_TO_FORTRAN_ANYD(qaux[mfi]),
                         BL_TO_FORTRAN_ANYD(ftmp1),
                         BL_TO_FORTRAN_ANYD(qgdnvtmp1),
@@ -383,14 +373,14 @@ Castro::construct_hydro_source(Real dt)
 
       // compute F^{y|z}
       // [lo(1)-1, lo(2), lo(3)], [hi(1)+1, hi(2)+1, hi(3)]
-      const Box& cyzbx = amrex::grow(ybx, IntVect(AMREX_D_DECL(1,0,0)));
+      const Box& cyzbx = amrex::grow(ebx[1], IntVect(AMREX_D_DECL(1,0,0)));
 
       // ftmp1 = fyz
       // rftmp1 = rfyz
       // qgdnvtmp1 = qgdnvyz
       cmpflx_plus_godunov(AMREX_ARLIM_ANYD(cyzbx.loVect()), AMREX_ARLIM_ANYD(cyzbx.hiVect()),
-                          BL_TO_FORTRAN_ANYD(qmyz),
-                          BL_TO_FORTRAN_ANYD(qpyz), 1, 1,
+                          BL_TO_FORTRAN_ANYD(qm[1][2]),
+                          BL_TO_FORTRAN_ANYD(qp[1][2]), 1, 1,
                           BL_TO_FORTRAN_ANYD(ftmp1),
                           BL_TO_FORTRAN_ANYD(q_int),
                           BL_TO_FORTRAN_ANYD(qgdnvtmp1),
@@ -399,14 +389,14 @@ Castro::construct_hydro_source(Real dt)
 
       // compute F^{z|y}
       // [lo(1)-1, lo(2), lo(3)], [hi(1)+1, hi(2), hi(3)+1]
-      const Box& czybx = amrex::grow(zbx, IntVect(AMREX_D_DECL(1,0,0)));
+      const Box& czybx = amrex::grow(ebx[2], IntVect(AMREX_D_DECL(1,0,0)));
 
       // ftmp2 = fzy
       // rftmp2 = rfzy
       // qgdnvtmp2 = qgdnvzy
       cmpflx_plus_godunov(AMREX_ARLIM_ANYD(czybx.loVect()), AMREX_ARLIM_ANYD(czybx.hiVect()),
-                          BL_TO_FORTRAN_ANYD(qmzy),
-                          BL_TO_FORTRAN_ANYD(qpzy), 1, 1,
+                          BL_TO_FORTRAN_ANYD(qm[2][1]),
+                          BL_TO_FORTRAN_ANYD(qp[2][1]), 1, 1,
                           BL_TO_FORTRAN_ANYD(ftmp2),
                           BL_TO_FORTRAN_ANYD(q_int),
                           BL_TO_FORTRAN_ANYD(qgdnvtmp2),
@@ -416,10 +406,10 @@ Castro::construct_hydro_source(Real dt)
       // compute the corrected x interface states and fluxes
       // [lo(1), lo(2), lo(3)], [hi(1)+1, hi(2), hi(3)]
 
-      transyz(AMREX_ARLIM_ANYD(xbx.loVect()), AMREX_ARLIM_ANYD(xbx.hiVect()),
-              BL_TO_FORTRAN_ANYD(qxm),
+      transyz(AMREX_ARLIM_ANYD(ebx[0].loVect()), AMREX_ARLIM_ANYD(ebx[0].hiVect()),
+              BL_TO_FORTRAN_ANYD(qm[0][0]),
               BL_TO_FORTRAN_ANYD(ql),
-              BL_TO_FORTRAN_ANYD(qxp),
+              BL_TO_FORTRAN_ANYD(qp[0][0]),
               BL_TO_FORTRAN_ANYD(qr),
               BL_TO_FORTRAN_ANYD(qaux[mfi]),
               BL_TO_FORTRAN_ANYD(ftmp1),
@@ -428,7 +418,7 @@ Castro::construct_hydro_source(Real dt)
               BL_TO_FORTRAN_ANYD(qgdnvtmp2),
               hdt, hdtdy, hdtdz);
 
-      cmpflx_plus_godunov(AMREX_ARLIM_ANYD(xbx.loVect()), AMREX_ARLIM_ANYD(xbx.hiVect()),
+      cmpflx_plus_godunov(AMREX_ARLIM_ANYD(ebx[0].loVect()), AMREX_ARLIM_ANYD(ebx[0].hiVect()),
                           BL_TO_FORTRAN_ANYD(ql),
                           BL_TO_FORTRAN_ANYD(qr), 1, 1,
                           BL_TO_FORTRAN_ANYD(flux[0]),
@@ -443,14 +433,14 @@ Castro::construct_hydro_source(Real dt)
 
       // compute F^{z|x}
       // [lo(1), lo(2)-1, lo(3)], [hi(1), hi(2)+1, hi(3)+1]
-      const Box& czxbx = amrex::grow(zbx, IntVect(AMREX_D_DECL(0,1,0)));
+      const Box& czxbx = amrex::grow(ebx[2], IntVect(AMREX_D_DECL(0,1,0)));
 
       // ftmp1 = fzx
       // rftmp1 = rfzx
       // qgdnvtmp1 = qgdnvzx
       cmpflx_plus_godunov(AMREX_ARLIM_ANYD(czxbx.loVect()), AMREX_ARLIM_ANYD(czxbx.hiVect()),
-                          BL_TO_FORTRAN_ANYD(qmzx),
-                          BL_TO_FORTRAN_ANYD(qpzx), 1, 1,
+                          BL_TO_FORTRAN_ANYD(qm[2][0]),
+                          BL_TO_FORTRAN_ANYD(qp[2][0]), 1, 1,
                           BL_TO_FORTRAN_ANYD(ftmp1),
                           BL_TO_FORTRAN_ANYD(q_int),
                           BL_TO_FORTRAN_ANYD(qgdnvtmp1),
@@ -459,14 +449,14 @@ Castro::construct_hydro_source(Real dt)
 
       // compute F^{x|z}
       // [lo(1), lo(2)-1, lo(3)], [hi(1)+1, hi(2)+1, hi(3)]
-      const Box& cxzbx = amrex::grow(xbx, IntVect(AMREX_D_DECL(0,1,0)));
+      const Box& cxzbx = amrex::grow(ebx[0], IntVect(AMREX_D_DECL(0,1,0)));
 
       // ftmp2 = fxz
       // rftmp2 = rfxz
       // qgdnvtmp2 = qgdnvxz
       cmpflx_plus_godunov(AMREX_ARLIM_ANYD(cxzbx.loVect()), AMREX_ARLIM_ANYD(cxzbx.hiVect()),
-                          BL_TO_FORTRAN_ANYD(qmxz),
-                          BL_TO_FORTRAN_ANYD(qpxz), 1, 1,
+                          BL_TO_FORTRAN_ANYD(qm[0][2]),
+                          BL_TO_FORTRAN_ANYD(qp[0][2]), 1, 1,
                           BL_TO_FORTRAN_ANYD(ftmp2),
                           BL_TO_FORTRAN_ANYD(q_int),
                           BL_TO_FORTRAN_ANYD(qgdnvtmp2),
@@ -476,10 +466,10 @@ Castro::construct_hydro_source(Real dt)
       // Compute the corrected y interface states and fluxes
       // [lo(1), lo(2), lo(3)], [hi(1), hi(2)+1, hi(3)]
 
-      transxz(AMREX_ARLIM_ANYD(ybx.loVect()), AMREX_ARLIM_ANYD(ybx.hiVect()),
-              BL_TO_FORTRAN_ANYD(qym),
+      transxz(AMREX_ARLIM_ANYD(ebx[1].loVect()), AMREX_ARLIM_ANYD(ebx[1].hiVect()),
+              BL_TO_FORTRAN_ANYD(qm[1][1]),
               BL_TO_FORTRAN_ANYD(ql),
-              BL_TO_FORTRAN_ANYD(qyp),
+              BL_TO_FORTRAN_ANYD(qp[1][1]),
               BL_TO_FORTRAN_ANYD(qr),
               BL_TO_FORTRAN_ANYD(qaux[mfi]),
               BL_TO_FORTRAN_ANYD(ftmp2),
@@ -490,7 +480,7 @@ Castro::construct_hydro_source(Real dt)
 
       // Compute the final F^y
       // [lo(1), lo(2), lo(3)], [hi(1), hi(2)+1, hi(3)]
-      cmpflx_plus_godunov(AMREX_ARLIM_ANYD(ybx.loVect()), AMREX_ARLIM_ANYD(ybx.hiVect()),
+      cmpflx_plus_godunov(AMREX_ARLIM_ANYD(ebx[1].loVect()), AMREX_ARLIM_ANYD(ebx[1].hiVect()),
                           BL_TO_FORTRAN_ANYD(ql),
                           BL_TO_FORTRAN_ANYD(qr), 1, 1,
                           BL_TO_FORTRAN_ANYD(flux[1]),
@@ -505,14 +495,14 @@ Castro::construct_hydro_source(Real dt)
 
       // compute F^{x|y}
       // [lo(1), lo(2), lo(3)-1], [hi(1)+1, hi(2), hi(3)+1]
-      const Box& cxybx = amrex::grow(xbx, IntVect(AMREX_D_DECL(0,0,1)));
+      const Box& cxybx = amrex::grow(ebx[0], IntVect(AMREX_D_DECL(0,0,1)));
 
       // ftmp1 = fxy
       // rftmp1 = rfxy
       // qgdnvtmp1 = qgdnvxy
       cmpflx_plus_godunov(AMREX_ARLIM_ANYD(cxybx.loVect()), AMREX_ARLIM_ANYD(cxybx.hiVect()),
-                          BL_TO_FORTRAN_ANYD(qmxy),
-                          BL_TO_FORTRAN_ANYD(qpxy), 1, 1,
+                          BL_TO_FORTRAN_ANYD(qm[0][1]),
+                          BL_TO_FORTRAN_ANYD(qp[0][1]), 1, 1,
                           BL_TO_FORTRAN_ANYD(ftmp1),
                           BL_TO_FORTRAN_ANYD(q_int),
                           BL_TO_FORTRAN_ANYD(qgdnvtmp1),
@@ -521,14 +511,14 @@ Castro::construct_hydro_source(Real dt)
 
       // compute F^{y|x}
       // [lo(1), lo(2), lo(3)-1], [hi(1), hi(2)+dg(2), hi(3)+1]
-      const Box& cyxbx = amrex::grow(ybx, IntVect(AMREX_D_DECL(0,0,1)));
+      const Box& cyxbx = amrex::grow(ebx[1], IntVect(AMREX_D_DECL(0,0,1)));
 
       // ftmp2 = fyx
       // rftmp2 = rfyx
       // qgdnvtmp2 = qgdnvyx
       cmpflx_plus_godunov(AMREX_ARLIM_ANYD(cyxbx.loVect()), AMREX_ARLIM_ANYD(cyxbx.hiVect()),
-                          BL_TO_FORTRAN_ANYD(qmyx),
-                          BL_TO_FORTRAN_ANYD(qpyx), 1, 1,
+                          BL_TO_FORTRAN_ANYD(qm[1][0]),
+                          BL_TO_FORTRAN_ANYD(qp[1][0]), 1, 1,
                           BL_TO_FORTRAN_ANYD(ftmp2),
                           BL_TO_FORTRAN_ANYD(q_int),
                           BL_TO_FORTRAN_ANYD(qgdnvtmp2),
@@ -538,10 +528,10 @@ Castro::construct_hydro_source(Real dt)
       // compute the corrected z interface states and fluxes
       // [lo(1), lo(2), lo(3)], [hi(1), hi(2), hi(3)+1]
 
-      transxy(AMREX_ARLIM_ANYD(zbx.loVect()), AMREX_ARLIM_ANYD(zbx.hiVect()),
-              BL_TO_FORTRAN_ANYD(qzm),
+      transxy(AMREX_ARLIM_ANYD(ebx[2].loVect()), AMREX_ARLIM_ANYD(ebx[2].hiVect()),
+              BL_TO_FORTRAN_ANYD(qm[2][2]),
               BL_TO_FORTRAN_ANYD(ql),
-              BL_TO_FORTRAN_ANYD(qzp),
+              BL_TO_FORTRAN_ANYD(qp[2][2]),
               BL_TO_FORTRAN_ANYD(qr),
               BL_TO_FORTRAN_ANYD(qaux[mfi]),
               BL_TO_FORTRAN_ANYD(ftmp1),
@@ -553,7 +543,7 @@ Castro::construct_hydro_source(Real dt)
       // compute the final z fluxes F^z
       // [lo(1), lo(2), lo(3)], [hi(1), hi(2), hi(3)+1]
 
-      cmpflx_plus_godunov(AMREX_ARLIM_ANYD(zbx.loVect()), AMREX_ARLIM_ANYD(zbx.hiVect()),
+      cmpflx_plus_godunov(AMREX_ARLIM_ANYD(ebx[2].loVect()), AMREX_ARLIM_ANYD(ebx[2].hiVect()),
                           BL_TO_FORTRAN_ANYD(ql),
                           BL_TO_FORTRAN_ANYD(qr), 1, 1,
                           BL_TO_FORTRAN_ANYD(flux[2]),
