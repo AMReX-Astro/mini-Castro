@@ -8,7 +8,6 @@
 #include <AMReX_FluxRegister.H>
 
 #define NumSpec 13
-#define MOL_STAGES 2
 #define NQAUX 4
 #define NGDNV 6
 #define QVAR 21
