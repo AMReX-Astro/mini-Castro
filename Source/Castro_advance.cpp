@@ -27,43 +27,15 @@ Castro::advance (Real time, Real dt, int  amr_iteration, int  amr_ncycle)
 {
     BL_PROFILE("Castro::advance()");
 
-    Real dt_new = dt;
-
-    initialize_advance(time, dt);
-
-    // Do the advance.
-
-    dt_new = std::min(dt_new, do_advance(time, dt));
-
-    finalize_advance(time, dt);
-
-    return dt_new;
-}
-
-void
-Castro::initialize_advance(Real time, Real dt)
-{
-    BL_PROFILE("Castro::initialize_advance()");
-
     // Swap the new data from the last timestep into the old state data.
 
-    swap_state_time_levels(dt);
+    state[0].allocOldData();
+    state[0].swapTimeLevels(dt);
 
-    // Ensure data is valid before beginning advance. This addresses
-    // the fact that we may have new data on this level that was interpolated
-    // from a coarser level, and the interpolation in general cannot be
-    // trusted to respect the consistency between certain state variables
-    // (e.g. UEINT and UEDEN) that we demand in every zone.
-
-    MultiFab& S_old = get_old_data(State_Type);
-    clean_state(S_old);
+    // Allocate space for the MultiFabs we need during the step.
 
     hydro_source.define(grids,dmap,NUM_STATE,0);
-
-    // Allocate space for the primitive variables.
-
     q.define(grids, dmap, QVAR, 4);
-    q.setVal(0.0);
     qaux.define(grids, dmap, NQAUX, 4);
 
     // Zero out the current fluxes.
@@ -71,19 +43,16 @@ Castro::initialize_advance(Real time, Real dt)
     for (int dir = 0; dir < 3; ++dir)
 	fluxes[dir]->setVal(0.0);
 
-}
+    // Do the advance.
 
+    do_advance(time, dt);
 
-
-void
-Castro::finalize_advance(Real time, Real dt)
-{
-    BL_PROFILE("Castro::finalize_advance()");
+    // Update the flux registers.
 
     FluxRegCrseInit();
     FluxRegFineAdd();
 
-    Real cur_time = state[State_Type].curTime();
+    // Clear our temporary arrays.
 
     hydro_source.clear();
     q.clear();
@@ -93,9 +62,8 @@ Castro::finalize_advance(Real time, Real dt)
 
     num_zones_advanced += grids.numPts() / getLevel(0).grids.numPts();
 
+    return dt;
 }
-
-
 
 Real
 Castro::do_advance (Real time, Real dt)

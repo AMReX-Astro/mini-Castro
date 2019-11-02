@@ -69,20 +69,11 @@ public:
     // Initialize data on this level after regridding if old level did not previously exist
     virtual void init () override;
 
-    // Swap new and old data.
-    void swap_state_time_levels (const amrex::Real dt);
-
     // Advance grids at this level in time
     virtual amrex::Real advance (amrex::Real time, amrex::Real dt, int iteration, int ncycle) override;
 
-    // Prepare for the advance
-    void initialize_advance(amrex::Real time, amrex::Real dt);
-
     // Do the MOL iteration
     amrex::Real do_advance (amrex::Real time, amrex::Real dt);
-
-    // Clean up after the advance
-    void finalize_advance(amrex::Real time, amrex::Real dt);
 
     // Convert conservative variables to primitive variables
     void cons_to_prim(const amrex::Real time);
