@@ -2681,80 +2681,6 @@ contains
 
 
 
-  subroutine trace_ppm_species(i, j, k, &
-                               idir, &
-                               q, qd_lo, qd_hi, &
-                               Ip, Im, &
-                               qm, qm_lo, qm_hi, &
-                               qp, qp_lo, qp_hi, &
-                               vlo, vhi, domlo, domhi, &
-                               dx, dt)
-    ! here, lo and hi are the range we loop over -- this can include ghost cells
-    ! vlo and vhi are the bounds of the valid box (no ghost cells)
-
-    use network, only: nspec
-    use castro_module, only: QVAR, QU, QV, QW, QFS
-
-    implicit none
-
-    integer, intent(in) :: idir
-    integer, intent(in) :: qd_lo(3), qd_hi(3)
-    integer, intent(in) :: qp_lo(3), qp_hi(3)
-    integer, intent(in) :: qm_lo(3), qm_hi(3)
-
-    integer, intent(in) :: vlo(3), vhi(3)
-    integer, intent(in) :: domlo(3), domhi(3)
-
-    real(rt), intent(in) :: q(qd_lo(1):qd_hi(1),qd_lo(2):qd_hi(2),qd_lo(3):qd_hi(3),QVAR)
-
-    real(rt), intent(in) :: Ip(1:3,QVAR)
-    real(rt), intent(in) :: Im(1:3,QVAR)
-
-    real(rt), intent(inout) :: qm(qm_lo(1):qm_hi(1),qm_lo(2):qm_hi(2),qm_lo(3):qm_hi(3),QVAR)
-    real(rt), intent(inout) :: qp(qp_lo(1):qp_hi(1),qp_lo(2):qp_hi(2),qp_lo(3):qp_hi(3),QVAR)
-    real(rt), intent(in) :: dt, dx(3)
-
-    integer, intent(in) :: i, j, k
-
-    integer :: ispec, n
-
-    ! the passive stuff is the same regardless of the tracing
-    do ispec = 1, nspec
-       n = QFS + ispec - 1
-
-       ! Plus state on face i
-       if ((idir == 1 .and. i >= vlo(1)) .or. &
-           (idir == 2 .and. j >= vlo(2)) .or. &
-           (idir == 3 .and. k >= vlo(3))) then
-
-          ! We have
-          !
-          ! q_l = q_ref - Proj{(q_ref - I)}
-          !
-          ! and Proj{} represents the characteristic projection.
-          ! But for these, there is only 1-wave that matters, the u
-          ! wave, so no projection is needed.  Since we are not
-          ! projecting, the reference state doesn't matter
-
-          qp(i,j,k,n) = Im(2,n)
-
-       end if
-
-       ! Minus state on face i+1
-       if (idir == 1 .and. i <= vhi(1)) then
-          qm(i+1,j,k,n) = Ip(2,n)
-       else if (idir == 2 .and. j <= vhi(2)) then
-          qm(i,j+1,k,n) = Ip(2,n)
-       else if (idir == 3 .and. k <= vhi(3)) then
-          qm(i,j,k+1,n) = Ip(2,n)
-       end if
-
-    end do
-
-  end subroutine trace_ppm_species
-
-
-
   subroutine trace_ppm_rhoe(lo, hi, &
                             idir, &
                             q, qd_lo, qd_hi, &
@@ -2767,7 +2693,7 @@ contains
                             dx, dt)
 
     use network, only: nspec
-    use castro_module, only: QVAR, NQAUX, QRHO, QU, QV, QW, &
+    use castro_module, only: QVAR, NQAUX, QRHO, QU, QV, QW, QFS, &
                              QREINT, QPRES, QGAME, QC, QGAMC, &
                              small_dens
 
@@ -2797,7 +2723,7 @@ contains
     logical, intent(in) :: reconstruct_state(QVAR)
 
     ! Local variables
-    integer :: i, j, k, n
+    integer :: i, j, k, n, ispec
 
     real(rt) :: hdt, dtdx
 
@@ -2910,14 +2836,39 @@ contains
              call ppm_int_profile(sm, sp, s(0), un, cc, dtdx, Ip_gc, Im_gc)
 
              ! do the passives separately
-             call trace_ppm_species(i, j, k, &
-                                    idir, &
-                                    q, qd_lo, qd_hi, &
-                                    Ip, Im, &
-                                    qm, qm_lo, qm_hi, &
-                                    qp, qp_lo, qp_hi, &
-                                    vlo, vhi, domlo, domhi, &
-                                    dx, dt)
+             do ispec = 1, nspec
+                n = QFS + ispec - 1
+
+                ! Plus state on face i
+                if ((idir == 1 .and. i >= vlo(1)) .or. &
+                    (idir == 2 .and. j >= vlo(2)) .or. &
+                    (idir == 3 .and. k >= vlo(3))) then
+
+                   ! We have
+                   !
+                   ! q_l = q_ref - Proj{(q_ref - I)}
+                   !
+                   ! and Proj{} represents the characteristic projection.
+                   ! But for these, there is only 1 wave that matters, the u
+                   ! wave, so no projection is needed.  Since we are not
+                   ! projecting, the reference state doesn't matter
+
+                   qp(i,j,k,n) = Im(2,n)
+
+                end if
+
+                ! Minus state on face i+1
+                if (idir == 1 .and. i <= vhi(1)) then
+                   qm(i+1,j,k,n) = Ip(2,n)
+                else if (idir == 2 .and. j <= vhi(2)) then
+                   qm(i,j+1,k,n) = Ip(2,n)
+                else if (idir == 3 .and. k <= vhi(3)) then
+                   qm(i,j,k+1,n) = Ip(2,n)
+                end if
+
+             end do
+
+
 
              !-------------------------------------------------------------------
              ! plus state on face i
