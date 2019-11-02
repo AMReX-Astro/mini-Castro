@@ -486,13 +486,11 @@ Castro::construct_hydro_source(Real dt)
 
       for (int idir = 0; idir < AMREX_SPACEDIM; ++idir) {
 
-          const Box& nbx = amrex::surroundingNodes(bx, idir);
-
           int idir_f = idir + 1;
 
           // Apply artificial viscosity to the fluxes.
 
-          apply_av(AMREX_ARLIM_ANYD(nbx.loVect()), AMREX_ARLIM_ANYD(nbx.hiVect()),
+          apply_av(AMREX_ARLIM_ANYD(ebx[idir].loVect()), AMREX_ARLIM_ANYD(ebx[idir].hiVect()),
                    idir_f, AMREX_ZFILL(dx),
                    BL_TO_FORTRAN_ANYD(div),
                    BL_TO_FORTRAN_ANYD(Sborder[mfi]),
@@ -500,7 +498,7 @@ Castro::construct_hydro_source(Real dt)
 
           // Ensure species fluxes are normalized properly.
 
-          normalize_species_fluxes(AMREX_ARLIM_ANYD(nbx.loVect()), AMREX_ARLIM_ANYD(nbx.hiVect()),
+          normalize_species_fluxes(AMREX_ARLIM_ANYD(ebx[idir].loVect()), AMREX_ARLIM_ANYD(ebx[idir].hiVect()),
                                    BL_TO_FORTRAN_ANYD(flux[idir]));
 
       }
@@ -531,15 +529,13 @@ Castro::construct_hydro_source(Real dt)
 
       for (int idir = 0; idir < AMREX_SPACEDIM; ++idir) {
 
-        const Box& nbx = amrex::surroundingNodes(bx, idir);
-
-        scale_flux(AMREX_ARLIM_ANYD(nbx.loVect()), AMREX_ARLIM_ANYD(nbx.hiVect()),
+        scale_flux(AMREX_ARLIM_ANYD(ebx[idir].loVect()), AMREX_ARLIM_ANYD(ebx[idir].hiVect()),
                    BL_TO_FORTRAN_ANYD(flux[idir]),
                    BL_TO_FORTRAN_ANYD(area[idir][mfi]), dt);
 
         // Store the fluxes from this advance.
 
-        store_flux(AMREX_ARLIM_ANYD(nbx.loVect()), AMREX_ARLIM_ANYD(nbx.hiVect()),
+        store_flux(AMREX_ARLIM_ANYD(ebx[idir].loVect()), AMREX_ARLIM_ANYD(ebx[idir].hiVect()),
                    BL_TO_FORTRAN_ANYD((*fluxes[idir])[mfi]),
                    BL_TO_FORTRAN_ANYD(flux[idir]));
 
