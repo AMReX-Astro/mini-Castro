@@ -625,7 +625,6 @@ Castro::clean_state(MultiFab& state)
     }
 }
 
-
 void
 Castro::FluxRegCrseInit() {
 
@@ -638,8 +637,6 @@ Castro::FluxRegCrseInit() {
 
 }
 
-
-
 void
 Castro::FluxRegFineAdd() {
 
@@ -649,5 +646,16 @@ Castro::FluxRegFineAdd() {
 
     for (int i = 0; i < BL_SPACEDIM; ++i)
 	flux_reg.FineAdd(*fluxes[i], i, 0, 0, NUM_STATE, 1.0);
+
+}
+
+void
+Castro::swap_state_time_levels(const Real dt)
+{
+
+    BL_PROFILE("Castro::swap_state_time_levels()");
+
+    state[0].allocOldData();
+    state[0].swapTimeLevels(dt);
 
 }
