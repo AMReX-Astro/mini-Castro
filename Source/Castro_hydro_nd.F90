@@ -235,17 +235,21 @@ contains
 
 
 
-  subroutine transyz(lo, hi, &
-                     qm, qm_lo, qm_hi, &
-                     qmo, qmo_lo, qmo_hi, &
-                     qp, qp_lo, qp_hi, &
-                     qpo, qpo_lo, qpo_hi, &
-                     qaux, qa_lo, qa_hi, &
-                     fyz, fyz_lo, fyz_hi, &
-                     fzy, fzy_lo, fzy_hi, &
-                     qy, qy_lo, qy_hi, &
-                     qz, qz_lo, qz_hi, &
-                     hdt, cdtdy, cdtdz) bind(C, name="transyz")
+  ! Add the transverse corrections from directions 2 and 3
+  ! to the states in direction 1.
+
+  subroutine trans2(lo, hi, &
+                    idir1, idir2, idir3, &
+                    qm1, qm1_lo, qm1_hi, &
+                    qm1o, qm1o_lo, qm1o_hi, &
+                    qp1, qp1_lo, qp1_hi, &
+                    qp1o, qp1o_lo, qp1o_hi, &
+                    qaux, qa_lo, qa_hi, &
+                    f2, f2_lo, f2_hi, &
+                    f3, f3_lo, f3_hi, &
+                    q2, q2_lo, q2_hi, &
+                    q3, q3_lo, q3_hi, &
+                    cdtdx1, cdtdx2, cdtdx3) bind(C, name="trans2")
 
     use network, only: nspec
     use castro_module, only: QVAR, NVAR, NQAUX, QRHO, QU, QV, QW, &
@@ -254,276 +258,236 @@ contains
                              URHO, UMX, UMY, UMZ, UEDEN, UEINT, UFS, &
                              NGDNV, GDPRES, GDU, GDV, GDW, GDGAME
 
-    integer, intent(in) :: qm_lo(3), qm_hi(3)
-    integer, intent(in) :: qmo_lo(3), qmo_hi(3)
-    integer, intent(in) :: qp_lo(3), qp_hi(3)
-    integer, intent(in) :: qpo_lo(3), qpo_hi(3)
+    integer, intent(in) :: qm1_lo(3), qm1_hi(3)
+    integer, intent(in) :: qm1o_lo(3), qm1o_hi(3)
+    integer, intent(in) :: qp1_lo(3), qp1_hi(3)
+    integer, intent(in) :: qp1o_lo(3), qp1o_hi(3)
     integer, intent(in) :: qa_lo(3),qa_hi(3)
-    integer, intent(in) :: fyz_lo(3), fyz_hi(3)
-    integer, intent(in) :: fzy_lo(3), fzy_hi(3)
-    integer, intent(in) :: qy_lo(3), qy_hi(3)
-    integer, intent(in) :: qz_lo(3), qz_hi(3)
+    integer, intent(in) :: f2_lo(3), f2_hi(3)
+    integer, intent(in) :: f3_lo(3), f3_hi(3)
+    integer, intent(in) :: q2_lo(3), q2_hi(3)
+    integer, intent(in) :: q3_lo(3), q3_hi(3)
     integer, intent(in) :: lo(3), hi(3)
+    integer, intent(in), value :: idir1, idir2, idir3
 
-    real(rt), intent(in), value :: hdt, cdtdy, cdtdz
+    real(rt), intent(in), value :: cdtdx1, cdtdx2, cdtdx3
 
-    real(rt), intent(in) :: qm(qm_lo(1):qm_hi(1),qm_lo(2):qm_hi(2),qm_lo(3):qm_hi(3),QVAR)
-    real(rt), intent(in) :: qp(qp_lo(1):qp_hi(1),qp_lo(2):qp_hi(2),qp_lo(3):qp_hi(3),QVAR)
-    real(rt), intent(out) :: qmo(qmo_lo(1):qmo_hi(1),qmo_lo(2):qmo_hi(2),qmo_lo(3):qmo_hi(3),QVAR)
-    real(rt), intent(out) :: qpo(qpo_lo(1):qpo_hi(1),qpo_lo(2):qpo_hi(2),qpo_lo(3):qpo_hi(3),QVAR)
+    real(rt), intent(in) :: qm1(qm1_lo(1):qm1_hi(1),qm1_lo(2):qm1_hi(2),qm1_lo(3):qm1_hi(3),QVAR)
+    real(rt), intent(in) :: qp1(qp1_lo(1):qp1_hi(1),qp1_lo(2):qp1_hi(2),qp1_lo(3):qp1_hi(3),QVAR)
+    real(rt), intent(out) :: qm1o(qm1o_lo(1):qm1o_hi(1),qm1o_lo(2):qm1o_hi(2),qm1o_lo(3):qm1o_hi(3),QVAR)
+    real(rt), intent(out) :: qp1o(qp1o_lo(1):qp1o_hi(1),qp1o_lo(2):qp1o_hi(2),qp1o_lo(3):qp1o_hi(3),QVAR)
 
     real(rt), intent(in) :: qaux(qa_lo(1):qa_hi(1),qa_lo(2):qa_hi(2),qa_lo(3):qa_hi(3),NQAUX)
 
-    real(rt), intent(in) :: fyz(fyz_lo(1):fyz_hi(1),fyz_lo(2):fyz_hi(2),fyz_lo(3):fyz_hi(3),NVAR)
-    real(rt), intent(in) :: fzy(fzy_lo(1):fzy_hi(1),fzy_lo(2):fzy_hi(2),fzy_lo(3):fzy_hi(3),NVAR)
-    real(rt), intent(in) :: qy(qy_lo(1):qy_hi(1),qy_lo(2):qy_hi(2),qy_lo(3):qy_hi(3),NGDNV)
-    real(rt), intent(in) :: qz(qz_lo(1):qz_hi(1),qz_lo(2):qz_hi(2),qz_lo(3):qz_hi(3),NGDNV)
+    real(rt), intent(in) :: f2(f2_lo(1):f2_hi(1),f2_lo(2):f2_hi(2),f2_lo(3):f2_hi(3),NVAR)
+    real(rt), intent(in) :: f3(f3_lo(1):f3_hi(1),f3_lo(2):f3_hi(2),f3_lo(3):f3_hi(3),NVAR)
+    real(rt), intent(in) :: q2(q2_lo(1):q2_hi(1),q2_lo(2):q2_hi(2),q2_lo(3):q2_hi(3),NGDNV)
+    real(rt), intent(in) :: q3(q3_lo(1):q3_hi(1),q3_lo(2):q3_hi(2),q3_lo(3):q3_hi(3),NGDNV)
 
-    integer  :: i, j, k, n, nqp, ispec
+    integer :: i, j, k, n, nqp, ispec
+    integer :: d
+    integer :: il1, jl1, kl1, ir1, jr1, kr1, il2, jl2, kl2, ir2, jr2, kr2, il3, jl3, kl3, ir3, jr3, kr3
+
+    real(rt) :: lqo(QVAR), lq(QVAR)
 
     real(rt) :: rrr, rur, rvr, rwr, rer, ekenr, rhoekenr
     real(rt) :: rrl, rul, rvl, rwl, rel, ekenl, rhoekenl
     real(rt) :: rrnewr, runewr, rvnewr, rwnewr, renewr
     real(rt) :: rrnewl, runewl, rvnewl, rwnewl, renewl
     real(rt) :: pnewr, pnewl
-    real(rt) :: pgyp, pgym, ugyp, ugym, gegyp, gegym, duyp, pyav, duy, pynew, geynew
-    real(rt) :: pgzp, pgzm, ugzp, ugzm, gegzp, gegzm, duzp, pzav, duz, pznew, geznew
-    real(rt) :: uyav, geyav, dgey, uzav, gezav, dgez
+    real(rt) :: pg2p, pg2m, ug2p, ug2m, geg2p, geg2m, du2p, p2av, du2, p2new, ge2new
+    real(rt) :: pg3p, pg3m, ug3p, ug3m, geg3p, geg3m, du3p, p3av, du3, p3new, ge3new
+    real(rt) :: u2av, ge2av, dge2, u3av, ge3av, dge3
     real(rt) :: compr, compl, compnr, compnl
 
     logical :: reset_state
 
-    !-------------------------------------------------------------------------
-    ! update all of the passively-advected quantities with the
-    ! transerse term and convert back to the primitive quantity
-    !-------------------------------------------------------------------------
-
-    do ispec = 1, nspec
-       n  = UFS + ispec - 1
-       nqp = QFS + ispec - 1
-
-       do k = lo(3), hi(3)
-          do j = lo(2), hi(2)
-             do i = lo(1), hi(1)
-
-                rrr = qp(i,j,k,QRHO)
-                compr = rrr*qp(i,j,k,nqp)
-                rrnewr = rrr - cdtdy*(fyz(i,j+1,k,URHO) - fyz(i,j,k,URHO)) &
-                             - cdtdz*(fzy(i,j  ,k+1,URHO) - fzy(i,j,k,URHO))
-                compnr = compr - cdtdy*(fyz(i,j+1,k,n   ) - fyz(i,j,k,n)) &
-                               - cdtdz*(fzy(i,j  ,k+1,n   ) - fzy(i,j,k,n))
-
-                qpo(i  ,j,k,nqp) = compnr/rrnewr
-
-                rrl = qm(i,j,k,QRHO)
-                compl = rrl*qm(i,j,k,nqp)
-                rrnewl = rrl - cdtdy*(fyz(i-1,j+1,k,URHO) - fyz(i-1,j,k,URHO)) &
-                             - cdtdz*(fzy(i-1,j  ,k+1,URHO) - fzy(i-1,j,k,URHO))
-                compnl = compl - cdtdy*(fyz(i-1,j+1,k,n   ) - fyz(i-1,j,k,n)) &
-                               - cdtdz*(fzy(i-1,j  ,k+1,n   ) - fzy(i-1,j,k,n))
-
-                qmo(i,j,k,nqp) = compnl/rrnewl
-             end do
-          end do
-       end do
-
-    end do
-
     !-------------------------------------------------------------------
-    ! add the transverse yz and zy differences to the x-states for the
-    ! fluid variables
+    ! add the transverse differences to the states for the fluid variables
+    ! the states we're updating are determined by the 1-index, while the
+    ! transverse differences come from the 2 and 3 indices
     !-------------------------------------------------------------------
 
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
 
-             !-------------------------------------------------------------------
-             ! qxpo state
-             !-------------------------------------------------------------------
+             do d = -1, 0
 
-             pgyp  = qy(i,j+1,k,GDPRES)
-             pgym  = qy(i,j,k,GDPRES)
-             ugyp  = qy(i,j+1,k,GDV)
-             ugym  = qy(i,j,k,GDV)
-             gegyp = qy(i,j+1,k,GDGAME)
-             gegym = qy(i,j,k,GDGAME)
+                il1 = i
+                jl1 = j
+                kl1 = k
 
-             pgzp  = qz(i,j,k+1,GDPRES)
-             pgzm  = qz(i,j,k,GDPRES)
-             ugzp  = qz(i,j,k+1,GDW)
-             ugzm  = qz(i,j,k,GDW)
-             gegzp = qz(i,j,k+1,GDGAME)
-             gegzm = qz(i,j,k,GDGAME)
+                il2 = i
+                jl2 = j
+                kl2 = k
 
-             duyp = pgyp*ugyp - pgym*ugym
-             pyav = HALF*(pgyp+pgym)
-             uyav = HALF*(ugyp+ugym)
-             geyav = HALF*(gegyp+gegym)
-             duy = ugyp-ugym
-             dgey = gegyp-gegym
+                il3 = i
+                jl3 = j
+                kl3 = k
 
-             pynew = cdtdy*(duyp + pyav*duy*(qaux(i,j,k,QGAMC) - ONE))
-             geynew = cdtdy*( (geyav-ONE)*(geyav - qaux(i,j,k,QGAMC))*duy - uyav*dgey )
+                if (idir1 == 1) then
+                   ir2 = i+d
+                   jr2 = j+1
+                   kr2 = k
 
-             duzp = pgzp*ugzp - pgzm*ugzm
-             pzav = HALF*(pgzp+pgzm)
-             uzav = HALF*(ugzp+ugzm)
-             gezav = HALF*(gegzp+gegzm)
-             duz = ugzp-ugzm
-             dgez = gegzp-gegzm
+                   ir3 = i+d
+                   jr3 = j
+                   kr3 = k+1
 
-             pznew = cdtdz*(duzp + pzav*duz*(qaux(i,j,k,QGAMC) - ONE))
-             geznew = cdtdz*( (gezav-ONE)*(gezav - qaux(i,j,k,QGAMC))*duz - uzav*dgez )
+                   il1 = i+d
+                   il2 = i+d
+                   il3 = i+d
+                else if (idir1 == 2) then
+                   ir2 = i+1
+                   jr2 = j+d
+                   kr2 = k
 
-             ! Convert to conservation form
-             rrr = qp(i,j,k,QRHO)
-             rur = rrr*qp(i,j,k,QU)
-             rvr = rrr*qp(i,j,k,QV)
-             rwr = rrr*qp(i,j,k,QW)
-             ekenr = HALF*rrr*sum(qp(i,j,k,QU:QW)**2)
-             rer = qp(i,j,k,QREINT) + ekenr
+                   ir3 = i
+                   jr3 = j+d
+                   kr3 = k+1
 
-             ! Add transverse predictor
-             rrnewr = rrr - cdtdy*(fyz(i,j+1,k,URHO) - fyz(i,j,k,URHO)) &
-                          - cdtdz*(fzy(i,j,k+1,URHO) - fzy(i,j,k,URHO))
-             runewr = rur - cdtdy*(fyz(i,j+1,k,UMX) - fyz(i,j,k,UMX)) &
-                          - cdtdz*(fzy(i,j,k+1,UMX) - fzy(i,j,k,UMX))
-             rvnewr = rvr - cdtdy*(fyz(i,j+1,k,UMY) - fyz(i,j,k,UMY)) &
-                          - cdtdz*(fzy(i,j,k+1,UMY) - fzy(i,j,k,UMY))
-             rwnewr = rwr - cdtdy*(fyz(i,j+1,k,UMZ) - fyz(i,j,k,UMZ)) &
-                          - cdtdz*(fzy(i,j,k+1,UMZ) - fzy(i,j,k,UMZ))
-             renewr = rer - cdtdy*(fyz(i,j+1,k,UEDEN) - fyz(i,j,k,UEDEN)) &
-                          - cdtdz*(fzy(i,j,k+1,UEDEN) - fzy(i,j,k,UEDEN))
+                   jl1 = j+d
+                   jl2 = j+d
+                   jl3 = j+d
+                else
+                   ir2 = i+1
+                   jr2 = j
+                   kr2 = k+d
 
-             ! Reset to original value if adding transverse terms
-             ! made density negative
-             reset_state = .false.
-             if (rrnewr < ZERO) then
-                rrnewr = rrr
-                runewr = rur
-                rvnewr = rvr
-                rwnewr = rwr
-                renewr = rer
-                reset_state = .true.
-             end if
+                   ir3 = i
+                   jr3 = j+1
+                   kr3 = k+d
 
-             qpo(i,j,k,QRHO  ) = rrnewr
-             qpo(i,j,k,QU    ) = runewr/rrnewr
-             qpo(i,j,k,QV    ) = rvnewr/rrnewr
-             qpo(i,j,k,QW    ) = rwnewr/rrnewr
+                   kl1 = k+d
+                   kl2 = k+d
+                   kl3 = k+d
+                end if
 
-             ! note: we run the risk of (rho e) being negative here
-             rhoekenr = HALF*(runewr**2 + rvnewr**2 + rwnewr**2)/rrnewr
-             qpo(i,j,k,QREINT) = renewr - rhoekenr
+                if (d == -1) then
+                   lq(:) = qm1(i,j,k,:)
+                else
+                   lq(:) = qp1(i,j,k,:)
+                end if
 
-             if (.not. reset_state) then
-                ! add the transverse term to the p evolution eq here
-                pnewr = qp(i,j,k,QPRES) - pynew - pznew
-                qpo(i,j,k,QPRES) = pnewr
-             else
-                qpo(i,j,k,QPRES) = qp(i,j,k,QPRES)
-                qpo(i,j,k,QGAME) = qp(i,j,k,QGAME)
-             endif
+                !-------------------------------------------------------------------------
+                ! update all of the passively-advected quantities with the
+                ! transerse term and convert back to the primitive quantity
+                !-------------------------------------------------------------------------
 
-             qpo(i,j,k,QPRES) = max(qpo(i,j,k,QPRES), small_pres)
+                do ispec = 1, nspec
+                   n  = UFS + ispec - 1
+                   nqp = QFS + ispec - 1
 
+                   rrr = lq(QRHO)
+                   compr = rrr*lq(nqp)
+                   rrnewr = rrr - cdtdx2*(f2(ir2,jr2,kr2,URHO) - f2(il2,jl2,kl2,URHO)) &
+                                - cdtdx3*(f3(ir3,jr3,kr3,URHO) - f3(il3,jl3,kl3,URHO))
+                   compnr = compr - cdtdx2*(f2(ir2,jr2,kr2,n) - f2(il2,jl2,kl2,n)) &
+                                  - cdtdx3*(f3(ir3,jr3,kr3,n) - f3(il3,jl3,kl3,n))
 
+                   lqo(nqp) = compnr/rrnewr
+                end do
 
-             !-------------------------------------------------------------------
-             ! qxmo state
-             !-------------------------------------------------------------------
+                pg2p  = q2(ir2,jr2,kr2,GDPRES)
+                pg2m  = q2(il2,jl2,kl2,GDPRES)
+                ug2p  = q2(ir2,jr2,kr2,GDU+idir2-1)
+                ug2m  = q2(il2,jl2,kl2,GDU+idir2-1)
+                geg2p = q2(ir2,jr2,kr2,GDGAME)
+                geg2m = q2(il2,jl2,kl2,GDGAME)
 
-             pgyp  = qy(i-1,j+1,k,GDPRES)
-             pgym  = qy(i-1,j,k,GDPRES)
-             ugyp  = qy(i-1,j+1,k,GDV)
-             ugym  = qy(i-1,j,k,GDV)
-             gegyp = qy(i-1,j+1,k,GDGAME)
-             gegym = qy(i-1,j,k,GDGAME)
+                du2p = pg2p*ug2p - pg2m*ug2m
+                p2av = HALF*(pg2p+pg2m)
+                u2av = HALF*(ug2p+ug2m)
+                ge2av = HALF*(geg2p+geg2m)
+                du2 = ug2p-ug2m
+                dge2 = geg2p-geg2m
 
-             pgzp  = qz(i-1,j,k+1,GDPRES)
-             pgzm  = qz(i-1,j,k,GDPRES)
-             ugzp  = qz(i-1,j,k+1,GDW)
-             ugzm  = qz(i-1,j,k,GDW)
-             gegzp = qz(i-1,j,k+1,GDGAME)
-             gegzm = qz(i-1,j,k,GDGAME)
+                p2new = cdtdx2*(du2p + p2av*du2*(qaux(il1,jl1,kl1,QGAMC) - ONE))
+                ge2new = cdtdx2*( (ge2av-ONE)*(ge2av - qaux(il1,jl1,kl1,QGAMC))*du2 - u2av*dge2 )
 
-             duyp = pgyp*ugyp - pgym*ugym
-             pyav = HALF*(pgyp+pgym)
-             uyav = HALF*(ugyp+ugym)
-             geyav = HALF*(gegyp+gegym)
-             duy = ugyp-ugym
-             dgey = gegyp-gegym
+                pg3p  = q3(ir3,jr3,kr3,GDPRES)
+                pg3m  = q3(il3,jl3,kl3,GDPRES)
+                ug3p  = q3(ir3,jr3,kr3,GDU+idir3-1)
+                ug3m  = q3(il3,jl3,kl3,GDU+idir3-1)
+                geg3p = q3(ir3,jr3,kr3,GDGAME)
+                geg3m = q3(il3,jl3,kl3,GDGAME)
 
-             pynew = cdtdy*(duyp + pyav*duy*(qaux(i-1,j,k,QGAMC) - ONE))
-             geynew = cdtdy*( (geyav-ONE)*(geyav - qaux(i-1,j,k,QGAMC))*duy - uyav*dgey )
+                du3p = pg3p*ug3p - pg3m*ug3m
+                p3av = HALF*(pg3p+pg3m)
+                u3av = HALF*(ug3p+ug3m)
+                ge3av = HALF*(geg3p+geg3m)
+                du3 = ug3p-ug3m
+                dge3 = geg3p-geg3m
 
-             duzp = pgzp*ugzp - pgzm*ugzm
-             pzav = HALF*(pgzp+pgzm)
-             uzav = HALF*(ugzp+ugzm)
-             gezav = HALF*(gegzp+gegzm)
-             duz = ugzp-ugzm
-             dgez = gegzp-gegzm
+                p3new = cdtdx3*(du3p + p3av*du3*(qaux(il1,jl1,kl1,QGAMC) - ONE))
+                ge3new = cdtdx3*( (ge3av-ONE)*(ge3av - qaux(il1,jl1,kl1,QGAMC))*du3 - u3av*dge3 )
 
-             pznew = cdtdz*(duzp + pzav*duz*(qaux(i-1,j,k,QGAMC) - ONE))
-             geznew = cdtdz*( (gezav-ONE)*(gezav - qaux(i-1,j,k,QGAMC))*duz - uzav*dgez )
+                ! Convert to conservation form
+                rrr = lq(QRHO)
+                rur = rrr*lq(QU)
+                rvr = rrr*lq(QV)
+                rwr = rrr*lq(QW)
+                ekenr = HALF*rrr*sum(lq(QU:QW)**2)
+                rer = lq(QREINT) + ekenr
 
-             ! Convert to conservation form
-             rrl = qm(i,j,k,QRHO)
-             rul = rrl*qm(i,j,k,QU)
-             rvl = rrl*qm(i,j,k,QV)
-             rwl = rrl*qm(i,j,k,QW)
-             ekenl = HALF*rrl*sum(qm(i,j,k,QU:QW)**2)
-             rel = qm(i,j,k,QREINT) + ekenl
+                ! Add transverse predictor
+                rrnewr = rrr - cdtdx2*(f2(ir2,jr2,kr2,URHO) - f2(il2,jl2,kl2,URHO)) &
+                             - cdtdx3*(f3(ir3,jr3,kr3,URHO) - f3(il3,jl3,kl3,URHO))
+                runewr = rur - cdtdx2*(f2(ir2,jr2,kr2,UMX) - f2(il2,jl2,kl2,UMX)) &
+                             - cdtdx3*(f3(ir3,jr3,kr3,UMX) - f3(il3,jl3,kl3,UMX))
+                rvnewr = rvr - cdtdx2*(f2(ir2,jr2,kr2,UMY) - f2(il2,jl2,kl2,UMY)) &
+                             - cdtdx3*(f3(ir3,jr3,kr3,UMY) - f3(il3,jl3,kl3,UMY))
+                rwnewr = rwr - cdtdx2*(f2(ir2,jr2,kr2,UMZ) - f2(il2,jl2,kl2,UMZ)) &
+                             - cdtdx3*(f3(ir3,jr3,kr3,UMZ) - f3(il3,jl3,kl3,UMZ))
+                renewr = rer - cdtdx2*(f2(ir2,jr2,kr2,UEDEN) - f2(il2,jl2,kl2,UEDEN)) &
+                             - cdtdx3*(f3(ir3,jr3,kr3,UEDEN) - f3(il3,jl3,kl3,UEDEN))
 
-             ! Add transverse predictor
-             rrnewl = rrl - cdtdy*(fyz(i-1,j+1,k,URHO) - fyz(i-1,j,k,URHO)) &
-                          - cdtdz*(fzy(i-1,j,k+1,URHO) - fzy(i-1,j,k,URHO))
-             runewl = rul - cdtdy*(fyz(i-1,j+1,k,UMX) - fyz(i-1,j,k,UMX)) &
-                          - cdtdz*(fzy(i-1,j,k+1,UMX) - fzy(i-1,j,k,UMX))
-             rvnewl = rvl - cdtdy*(fyz(i-1,j+1,k,UMY) - fyz(i-1,j,k,UMY)) &
-                          - cdtdz*(fzy(i-1,j,k+1,UMY) - fzy(i-1,j,k,UMY))
-             rwnewl = rwl - cdtdy*(fyz(i-1,j+1,k,UMZ) - fyz(i-1,j,k,UMZ)) &
-                          - cdtdz*(fzy(i-1,j,k+1,UMZ) - fzy(i-1,j,k,UMZ))
-             renewl = rel - cdtdy*(fyz(i-1,j+1,k,UEDEN) - fyz(i-1,j,k,UEDEN)) &
-                          - cdtdz*(fzy(i-1,j,k+1,UEDEN) - fzy(i-1,j,k,UEDEN))
+                ! Reset to original value if adding transverse terms
+                ! made density negative
+                reset_state = .false.
+                if (rrnewr < ZERO) then
+                   rrnewr = rrr
+                   runewr = rur
+                   rvnewr = rvr
+                   rwnewr = rwr
+                   renewr = rer
+                   reset_state = .true.
+                end if
 
-             ! Reset to original value if adding transverse terms made density negative
-             reset_state = .false.
-             if (rrnewl < ZERO) then
-                rrnewl = rrl
-                runewl = rul
-                rvnewl = rvl
-                rwnewl = rwl
-                renewl = rel
-                reset_state = .true.
-             endif
+                lqo(QRHO  ) = rrnewr
+                lqo(QU    ) = runewr/rrnewr
+                lqo(QV    ) = rvnewr/rrnewr
+                lqo(QW    ) = rwnewr/rrnewr
 
-             qmo(i,j,k,QRHO   ) = rrnewl
-             qmo(i,j,k,QU     ) = runewl/rrnewl
-             qmo(i,j,k,QV     ) = rvnewl/rrnewl
-             qmo(i,j,k,QW     ) = rwnewl/rrnewl
+                ! note: we run the risk of (rho e) being negative here
+                rhoekenr = HALF*(runewr**2 + rvnewr**2 + rwnewr**2)/rrnewr
+                lqo(QREINT) = renewr - rhoekenr
 
-             ! note: we run the risk of (rho e) being negative here
-             rhoekenl = HALF*(runewl**2 + rvnewl**2 + rwnewl**2)/rrnewl
-             qmo(i,j,k,QREINT ) = renewl - rhoekenl
+                if (.not. reset_state) then
+                   ! add the transverse term to the p evolution eq here
+                   pnewr = lq(QPRES) - p2new - p3new
+                   lqo(QPRES) = pnewr
+                else
+                   lqo(QPRES) = lq(QPRES)
+                   lqo(QGAME) = lq(QGAME)
+                endif
 
-             if (.not. reset_state) then
-                ! add the transverse term to the p evolution eq here
-                pnewl = qm(i,j,k,QPRES) - pynew - pznew
-                qmo(i,j,k,QPRES  ) = pnewl
-             else
-                qmo(i,j,k,QPRES  ) = qm(i,j,k,QPRES)
-                qmo(i,j,k,QGAME) = qm(i,j,k,QGAME)
-             endif
+                lqo(QPRES) = max(lqo(QPRES), small_pres)
 
-             qmo(i,j,k,QPRES) = max(qmo(i,j,k,QPRES), small_pres)
+                if (d == -1) then
+                   qm1o(i,j,k,:) = lqo(:)
+                else
+                   qp1o(i,j,k,:) = lqo(:)
+                end if
+
+             end do
 
           end do
        end do
     end do
 
-  end subroutine transyz
+  end subroutine trans2
 
 
 

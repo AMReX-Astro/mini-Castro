@@ -158,41 +158,18 @@ extern "C"
                          const BL_FORT_FAB_ARG_3D(q1),
                          const amrex::Real cdtdx);
 
-  void transyz(const int* lo, const int* hi,
-               const BL_FORT_FAB_ARG_3D(qm),
-               BL_FORT_FAB_ARG_3D(qmo),
-               const BL_FORT_FAB_ARG_3D(qp),
-               BL_FORT_FAB_ARG_3D(qpo),
-               const BL_FORT_FAB_ARG_3D(qaux),
-               const BL_FORT_FAB_ARG_3D(fyz),
-               const BL_FORT_FAB_ARG_3D(fzy),
-               const BL_FORT_FAB_ARG_3D(qy),
-               const BL_FORT_FAB_ARG_3D(qz),
-               const amrex::Real hdt, const amrex::Real cdtdy, const amrex::Real cdtdz);
-
-  void transxz(const int* lo, const int* hi,
-               const BL_FORT_FAB_ARG_3D(qm),
-               BL_FORT_FAB_ARG_3D(qmo),
-               const BL_FORT_FAB_ARG_3D(qp),
-               BL_FORT_FAB_ARG_3D(qpo),
-               const BL_FORT_FAB_ARG_3D(qaux),
-               const BL_FORT_FAB_ARG_3D(fxz),
-               const BL_FORT_FAB_ARG_3D(fzx),
-               const BL_FORT_FAB_ARG_3D(qx),
-               const BL_FORT_FAB_ARG_3D(qz),
-               const amrex::Real hdt, const amrex::Real cdtdx, const amrex::Real cdtdz);
-
-  void transxy(const int* lo, const int* hi,
-               const BL_FORT_FAB_ARG_3D(qm),
-               BL_FORT_FAB_ARG_3D(qmo),
-               const BL_FORT_FAB_ARG_3D(qp),
-               BL_FORT_FAB_ARG_3D(qpo),
-               const BL_FORT_FAB_ARG_3D(qaux),
-               const BL_FORT_FAB_ARG_3D(fxy),
-               const BL_FORT_FAB_ARG_3D(fyx),
-               const BL_FORT_FAB_ARG_3D(qx),
-               const BL_FORT_FAB_ARG_3D(qy),
-               const amrex::Real hdt, const amrex::Real cdtdx, const amrex::Real cdtdy);
+  void trans2(const int* lo, const int* hi,
+              const int idir1, const int idir2, const int idir3,
+              const BL_FORT_FAB_ARG_3D(qm),
+              BL_FORT_FAB_ARG_3D(qmo),
+              const BL_FORT_FAB_ARG_3D(qp),
+              BL_FORT_FAB_ARG_3D(qpo),
+              const BL_FORT_FAB_ARG_3D(qaux),
+              const BL_FORT_FAB_ARG_3D(fyz),
+              const BL_FORT_FAB_ARG_3D(fzy),
+              const BL_FORT_FAB_ARG_3D(qy),
+              const BL_FORT_FAB_ARG_3D(qz),
+              const amrex::Real hdtdx, const amrex::Real cdtdy, const amrex::Real cdtdz);
 
   void cmpflx_plus_godunov
     (const int* lo, const int* hi,
