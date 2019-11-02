@@ -158,111 +158,18 @@ contains
 
 
 
-  subroutine ca_store_godunov_state(lo, hi, &
-                                    qint, qi_lo, qi_hi, &
-                                    qgdnv, qg_lo, qg_hi) bind(C, name="ca_store_godunov_state")
-    ! this copies the full interface state (NQ -- one for each primitive
-    ! variable) over to a smaller subset of size NGDNV for use later in the
-    ! hydro advancement.
-
-    use castro_module, only: QVAR, NVAR, NQAUX, &
-                             URHO, &
-                             QRHO, QU, QV, QW, &
-                             QPRES, QGAME, &
-                             NGDNV, GDRHO, GDPRES, GDGAME, &
-                             GDRHO, GDU, GDV, GDW
-
-    integer, intent(in) :: lo(3), hi(3)
-    integer, intent(in) :: qi_lo(3), qi_hi(3)
-    integer, intent(in) :: qg_lo(3), qg_hi(3)
-    real(rt), intent(in) :: qint(qi_lo(1):qi_hi(1), qi_lo(2):qi_hi(2), qi_lo(3):qi_hi(3), QVAR)
-    real(rt), intent(inout) :: qgdnv(qg_lo(1):qg_hi(1), qg_lo(2):qg_hi(2), qg_lo(3):qg_hi(3), NGDNV)
-
-    integer :: i, j, k
-
-    do k = lo(3), hi(3)
-       do j = lo(2), hi(2)
-          do i = lo(1), hi(1)
-
-             ! the hybrid routine uses the Godunov indices, not the full NQ state
-             qgdnv(i,j,k,GDRHO) = qint(i,j,k,QRHO)
-             qgdnv(i,j,k,GDU) = qint(i,j,k,QU)
-             qgdnv(i,j,k,GDV) = qint(i,j,k,QV)
-             qgdnv(i,j,k,GDW) = qint(i,j,k,QW)
-             qgdnv(i,j,k,GDPRES) = qint(i,j,k,QPRES)
-             qgdnv(i,j,k,GDGAME) = qint(i,j,k,QGAME)
-
-          end do
-       end do
-    end do
-
-  end subroutine ca_store_godunov_state
-
-
-  
   subroutine cmpflx_plus_godunov(lo, hi, &
-                                 qm, qm_lo, qm_hi, &
-                                 qp, qp_lo, qp_hi, &
+                                 ql, ql_lo, ql_hi, &
+                                 qr, qr_lo, qr_hi, &
                                  flx, flx_lo, flx_hi, &
                                  qint, q_lo, q_hi, &
                                  qgdnv, qg_lo, qg_hi, &
                                  qaux, qa_lo, qa_hi, &
                                  idir) bind(C, name="cmpflx_plus_godunov")
 
-    use castro_module, only: NVAR, QVAR, NQAUX, NGDNV
-    
-    implicit none
-
-    ! note: lo, hi necessarily the limits of the valid (no ghost
-    ! cells) domain, but could be hi+1 in some dimensions.  We rely on
-    ! the caller to specify the interfaces over which to solve the
-    ! Riemann problems
-
-    integer, intent(in) :: lo(3), hi(3)
-
-    integer, intent(in) :: qm_lo(3), qm_hi(3)
-    integer, intent(in) :: qp_lo(3), qp_hi(3)
-    integer, intent(in) :: flx_lo(3), flx_hi(3)
-    integer, intent(in) :: q_lo(3), q_hi(3)
-    integer, intent(in) :: qa_lo(3), qa_hi(3)
-    integer, intent(in) :: qg_lo(3), qg_hi(3)
-
-    integer, intent(in), value :: idir
-
-    real(rt), intent(inout) :: qm(qm_lo(1):qm_hi(1),qm_lo(2):qm_hi(2),qm_lo(3):qm_hi(3),QVAR)
-    real(rt), intent(inout) :: qp(qp_lo(1):qp_hi(1),qp_lo(2):qp_hi(2),qp_lo(3):qp_hi(3),QVAR)
-
-    real(rt), intent(inout) :: flx(flx_lo(1):flx_hi(1),flx_lo(2):flx_hi(2),flx_lo(3):flx_hi(3),NVAR)
-    real(rt), intent(inout) :: qint(q_lo(1):q_hi(1),q_lo(2):q_hi(2),q_lo(3):q_hi(3),QVAR)
-
-    real(rt), intent(in) :: qaux(qa_lo(1):qa_hi(1),qa_lo(2):qa_hi(2),qa_lo(3):qa_hi(3),NQAUX)
-
-    real(rt), intent(inout) :: qgdnv(qg_lo(1):qg_hi(1), qg_lo(2):qg_hi(2), qg_lo(3):qg_hi(3), NGDNV)
-
-    call cmpflx(lo, hi, &
-                qm, qm_lo, qm_hi, &
-                qp, qp_lo, qp_hi, &
-                flx, flx_lo, flx_hi, &
-                qint, q_lo, q_hi, &
-                qaux, qa_lo, qa_hi, &
-                idir)
-
-    call ca_store_godunov_state(lo, hi, &
-                                qint, q_lo, q_hi, &
-                                qgdnv, qg_lo, qg_hi)
-
-  end subroutine cmpflx_plus_godunov
-
-  subroutine cmpflx(lo, hi, &
-                    ql, ql_lo, ql_hi, &
-                    qr, qr_lo, qr_hi, &
-                    flx, flx_lo, flx_hi, &
-                    qint, q_lo, q_hi, &
-                    qaux, qa_lo, qa_hi, &
-                    idir)
-
     use castro_module, only: QVAR, QRHO, QU, QV, QW, QPRES, QC, QGAMC, QGAME, QFS, QREINT, &
                              NQAUX, NVAR, URHO, UMX, UMY, UMZ, UEDEN, UEINT, UTEMP, UFS, &
+                             NGDNV, GDRHO, GDPRES, GDGAME, GDRHO, GDU, GDV, GDW, &
                              small, small_dens, smallu, small_pres
     use network, only: nspec
 
@@ -280,16 +187,19 @@ contains
     integer, intent(in) :: flx_lo(3), flx_hi(3)
     integer, intent(in) :: q_lo(3), q_hi(3)
     integer, intent(in) :: qa_lo(3), qa_hi(3)
+    integer, intent(in) :: qg_lo(3), qg_hi(3)
 
-    integer, intent(in) :: idir
+    integer, intent(in), value :: idir
 
-    real(rt), intent(inout) :: ql(ql_lo(1):ql_hi(1),ql_lo(2):ql_hi(2),ql_lo(3):ql_hi(3),QVAR)
-    real(rt), intent(inout) :: qr(qr_lo(1):qr_hi(1),qr_lo(2):qr_hi(2),qr_lo(3):qr_hi(3),QVAR)
+    real(rt), intent(in   ) :: ql(ql_lo(1):ql_hi(1),ql_lo(2):ql_hi(2),ql_lo(3):ql_hi(3),QVAR)
+    real(rt), intent(in   ) :: qr(qr_lo(1):qr_hi(1),qr_lo(2):qr_hi(2),qr_lo(3):qr_hi(3),QVAR)
 
     real(rt), intent(inout) :: flx(flx_lo(1):flx_hi(1),flx_lo(2):flx_hi(2),flx_lo(3):flx_hi(3),NVAR)
     real(rt), intent(inout) :: qint(q_lo(1):q_hi(1),q_lo(2):q_hi(2),q_lo(3):q_hi(3),QVAR)
 
     real(rt), intent(in) :: qaux(qa_lo(1):qa_hi(1),qa_lo(2):qa_hi(2),qa_lo(3):qa_hi(3),NQAUX)
+
+    real(rt), intent(inout) :: qgdnv(qg_lo(1):qg_hi(1), qg_lo(2):qg_hi(2), qg_lo(3):qg_hi(3), NGDNV)
 
     integer :: i, j, k
     integer :: n, nqp
@@ -548,6 +458,15 @@ contains
 
              end do
 
+             ! Store results in the Godunov state
+
+             qgdnv(i,j,k,GDRHO) = qint(i,j,k,QRHO)
+             qgdnv(i,j,k,GDU) = qint(i,j,k,QU)
+             qgdnv(i,j,k,GDV) = qint(i,j,k,QV)
+             qgdnv(i,j,k,GDW) = qint(i,j,k,QW)
+             qgdnv(i,j,k,GDPRES) = qint(i,j,k,QPRES)
+             qgdnv(i,j,k,GDGAME) = qint(i,j,k,QGAME)
+
              ! Compute fluxes, order as conserved state (not q)
 
              u_adv = qint(i,j,k,iu)
@@ -580,7 +499,7 @@ contains
        end do
     end do
 
-  end subroutine cmpflx
+  end subroutine cmpflx_plus_godunov
 
 
 
