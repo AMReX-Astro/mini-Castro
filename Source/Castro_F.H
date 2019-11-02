@@ -113,6 +113,11 @@ extern "C"
      BL_FORT_FAB_ARG_3D(area),
      const amrex::Real dt);
 
+  void store_flux
+    (const int* lo, const int* hi,
+     BL_FORT_FAB_ARG_3D(flux_out),
+     BL_FORT_FAB_ARG_3D(flux_in));
+
   void ctu_consup
     (const int* lo, const int* hi,
      const BL_FORT_FAB_ARG_3D(Sborder),

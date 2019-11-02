@@ -3380,7 +3380,7 @@ contains
                         flux, f_lo, f_hi, &
                         area, a_lo, a_hi, dt) bind(c, name="scale_flux")
 
-    use castro_module, only: NVAR, GDPRES, UMX, NGDNV
+    use castro_module, only: NVAR
 
     implicit none
 
@@ -3405,5 +3405,36 @@ contains
     enddo
 
   end subroutine scale_flux
+
+
+
+  subroutine store_flux(lo, hi, &
+                        flux_out, fo_lo, fo_hi, &
+                        flux_in, fi_lo, fi_hi) bind(C, name="store_flux")
+
+    use castro_module, only: NVAR
+
+    implicit none
+
+    integer,  intent(in   ) :: lo(3), hi(3)
+    integer,  intent(in   ) :: fo_lo(3), fo_hi(3)
+    integer,  intent(in   ) :: fi_lo(3), fi_hi(3)
+
+    real(rt), intent(inout) :: flux_out(fo_lo(1):fo_hi(1),fo_lo(2):fo_hi(2),fo_lo(3):fo_hi(3),NVAR)
+    real(rt), intent(inout) :: flux_in(fi_lo(1):fi_hi(1),fi_lo(2):fi_hi(2),fi_lo(3):fi_hi(3),NVAR)
+
+    integer :: i, j, k, n
+
+    do n = 1, NVAR
+       do k = lo(3), hi(3)
+          do j = lo(2), hi(2)
+             do i = lo(1), hi(1)
+                flux_out(i,j,k,n) = flux_in(i,j,k,n)
+             enddo
+          enddo
+       enddo
+    enddo
+
+  end subroutine store_flux
 
 end module hydro_module

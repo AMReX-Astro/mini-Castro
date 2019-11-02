@@ -617,19 +617,9 @@ Castro::construct_hydro_source(Real dt)
 
         // Store the fluxes from this advance.
 
-        // For normal integration we want to add the fluxes from this advance
-        // since we may be subcycling the timestep. But for simplified SDC integration
-        // we want to copy the fluxes since we expect that there will not be
-        // subcycling and we only want the last iteration's fluxes.
-
-        Array4<Real> const flux_fab = (flux[idir]).array();
-        Array4<Real> fluxes_fab = (*fluxes[idir]).array(mfi);
-        const int numcomp = NUM_STATE;
-
-        AMREX_HOST_DEVICE_FOR_4D(mfi.nodaltilebox(idir), numcomp, i, j, k, n,
-        {
-            fluxes_fab(i,j,k,n) += flux_fab(i,j,k,n);
-        });
+        store_flux(AMREX_ARLIM_ANYD(nbx.loVect()), AMREX_ARLIM_ANYD(nbx.hiVect()),
+                   BL_TO_FORTRAN_ANYD((*fluxes[idir])[mfi]),
+                   BL_TO_FORTRAN_ANYD(flux[idir]));
 
       } // idir loop
 
