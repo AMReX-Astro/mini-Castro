@@ -90,9 +90,6 @@ public:
     // Construct the hydrodynamic source term
     void construct_hydro_source(amrex::Real time, amrex::Real dt);
 
-    // Check if our state has any NaN's
-    void check_for_nan(amrex::MultiFab& state, int check_ghost=0);
-
     // Estimate time step
     amrex::Real estTimeStep (amrex::Real dt_old);
 

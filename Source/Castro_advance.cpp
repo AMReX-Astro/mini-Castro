@@ -118,10 +118,6 @@ Castro::do_advance (Real time, Real dt)
     // where the state could be thermodynamically inconsistent.
     clean_state(S_old);
 
-    // Check for NaN's.
-
-    // check_for_nan(S_old);
-
     // For the hydrodynamics update we need to have NUM_GROW ghost
     // zones available, but the state data does not carry ghost
     // zones. So we use a FillPatch using the state data to give us
@@ -143,10 +139,6 @@ Castro::do_advance (Real time, Real dt)
     construct_hydro_source(time, dt);
     MultiFab::Saxpy(S_new, dt, hydro_source, 0, 0, NUM_STATE, 0);
     clean_state(S_new);
-
-    // Check for NaN's.
-
-    // check_for_nan(S_new);
 
     // Clean up our temporary MultiFab.
     Sborder.clear();

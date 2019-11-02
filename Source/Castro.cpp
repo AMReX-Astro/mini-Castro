@@ -536,29 +536,6 @@ Castro::errorEst (TagBoxArray& tags,
     }
 }
 
-void
-Castro::check_for_nan(MultiFab& state, int check_ghost)
-{
-  BL_PROFILE("Castro::check_for_nan()");
-
-  int ng = 0;
-  if (check_ghost == 1) {
-    ng = state.nComp();
-  }
-
-  if (state.contains_nan(Density,state.nComp(),ng,true))
-    {
-      for (int i = 0; i < state.nComp(); i++)
-        {
-	  if (state.contains_nan(Density + i, 1, ng, true))
-            {
-	      std::string abort_string = std::string("State has NaNs in the ") + desc_lst[State_Type].name(i) + std::string(" component::check_for_nan()");
-	      amrex::Abort(abort_string.c_str());
-            }
-        }
-    }
-}
-
 // Given State_Type state data, perform a number of cleaning steps to make
 // sure the data is sensible.
 
