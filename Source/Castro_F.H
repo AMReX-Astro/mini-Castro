@@ -112,11 +112,11 @@ extern "C"
      BL_FORT_FAB_ARG_3D(flux),
      BL_FORT_FAB_ARG_3D(area),
      const amrex::Real dt);
+
   void ctu_consup
     (const int* lo, const int* hi,
      const BL_FORT_FAB_ARG_3D(Sborder),
      const BL_FORT_FAB_ARG_3D(q),
-     const BL_FORT_FAB_ARG_3D(shk),
      BL_FORT_FAB_ARG_3D(hydro_source),
      const BL_FORT_FAB_ARG_3D(flux0),
      const BL_FORT_FAB_ARG_3D(flux1),
@@ -246,7 +246,6 @@ extern "C"
      BL_FORT_FAB_ARG_3D(q_int),
      BL_FORT_FAB_ARG_3D(qe),
      const BL_FORT_FAB_ARG_3D(qaux),
-     const BL_FORT_FAB_ARG_3D(shk),
      const int idir, const int* domlo, const int* domhi);
 
   void divu
