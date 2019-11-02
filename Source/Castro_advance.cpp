@@ -40,41 +40,6 @@ Castro::advance (Real time, Real dt, int  amr_iteration, int  amr_ncycle)
     return dt_new;
 }
 
-
-
-void
-Castro::initialize_do_advance(Real time, Real dt)
-{
-    BL_PROFILE("Castro::initialize_do_advance()");
-
-    int finest_level = parent->finestLevel();
-
-    // For the hydrodynamics update we need to have NUM_GROW ghost
-    // zones available, but the state data does not carry ghost
-    // zones. So we use a FillPatch using the state data to give us
-    // Sborder, which does have ghost zones.
-
-    MultiFab& S_old = get_old_data(State_Type);
-
-    // for the CTU unsplit method, we always start with the old state
-    Sborder.define(grids, dmap, NUM_STATE, 4);
-    const Real prev_time = state[State_Type].prevTime();
-    clean_state(S_old);
-    expand_state(Sborder, prev_time, 4);
-
-}
-
-void
-Castro::finalize_do_advance(Real time, Real dt)
-{
-    BL_PROFILE("Castro::finalize_do_advance()");
-
-    Sborder.clear();
-
-}
-
-
-
 void
 Castro::initialize_advance(Real time, Real dt)
 {
@@ -149,15 +114,22 @@ Castro::do_advance (Real time, Real dt)
     MultiFab& S_old = get_old_data(State_Type);
     MultiFab& S_new = get_new_data(State_Type);
 
-    // Perform initialization steps.
-
-    initialize_do_advance(time, dt);
+    // Clean the old-time state, in case we came in after a regrid
+    // where the state could be thermodynamically inconsistent.
+    clean_state(S_old);
 
     // Check for NaN's.
 
     // check_for_nan(S_old);
 
-    // Initialize the new-time data.
+    // For the hydrodynamics update we need to have NUM_GROW ghost
+    // zones available, but the state data does not carry ghost
+    // zones. So we use a FillPatch using the state data to give us
+    // Sborder, which does have ghost zones.
+    Sborder.define(grids, dmap, NUM_STATE, 4);
+    expand_state(Sborder, prev_time, 4);
+
+    // Initialize the new-time data from the old time data.
 
     MultiFab::Copy(S_new, Sborder, 0, 0, NUM_STATE, S_new.nGrow());
 
@@ -175,7 +147,8 @@ Castro::do_advance (Real time, Real dt)
 
     // check_for_nan(S_new);
 
-    finalize_do_advance(time, dt);
+    // Clean up our temporary MultiFab.
+    Sborder.clear();
 
     return dt;
 

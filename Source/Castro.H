@@ -78,14 +78,8 @@ public:
     // Prepare for the advance
     void initialize_advance(amrex::Real time, amrex::Real dt);
 
-    // Prepare for the MOL iteration
-    void initialize_do_advance(amrex::Real time, amrex::Real dt);
-
     // Do the MOL iteration
     amrex::Real do_advance (amrex::Real time, amrex::Real dt);
-
-    // Clean up after the advance
-    void finalize_do_advance(amrex::Real time, amrex::Real dt);
 
     // Clean up after the advance
     void finalize_advance(amrex::Real time, amrex::Real dt);
