@@ -134,9 +134,6 @@ public:
 			   int                 n_error_buf = 0,
 			   int                 ngrow = 0) override;
 
-    // Create a version of the state data that has ghost zones
-    void expand_state(amrex::MultiFab& state, amrex::Real time, int ng);
-
     // Apply a number of corrections to ensure consistency in the state
     void clean_state (amrex::MultiFab& state);
 

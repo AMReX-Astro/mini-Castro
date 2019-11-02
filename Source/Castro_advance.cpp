@@ -127,7 +127,8 @@ Castro::do_advance (Real time, Real dt)
     // zones. So we use a FillPatch using the state data to give us
     // Sborder, which does have ghost zones.
     Sborder.define(grids, dmap, NUM_STATE, 4);
-    expand_state(Sborder, prev_time, 4);
+    AmrLevel::FillPatch(*this, Sborder, 4, prev_time, State_Type, 0, NUM_STATE);
+    clean_state(Sborder);
 
     // Initialize the new-time data from the old time data.
 

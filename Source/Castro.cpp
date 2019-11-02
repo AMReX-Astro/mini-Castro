@@ -536,20 +536,6 @@ Castro::errorEst (TagBoxArray& tags,
     }
 }
 
-// Fill a version of the state with ng ghost zones from the state data.
-void
-Castro::expand_state(MultiFab& S, Real time, int ng)
-{
-    BL_PROFILE("Castro::expand_state()");
-
-    BL_ASSERT(S.nGrow() >= ng);
-
-    AmrLevel::FillPatch(*this,S,ng,time,State_Type,0,NUM_STATE);
-
-    clean_state(S);
-}
-
-
 void
 Castro::check_for_nan(MultiFab& state, int check_ghost)
 {
