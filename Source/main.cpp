@@ -139,6 +139,13 @@ main (int argc, char* argv[])
 
         int nsteps = amrptr->levelSteps(0);
 
+        // Start calculating the figure of merit for this run: average number of zones
+        // advanced per microsecond. This must be done before we delete the Amr
+        // object because we need to scale it by the number of zones on the coarse grid.
+
+        long numPtsCoarseGrid = amrptr->getLevel(0).boxArray().numPts();
+        amrex::Real fom = Castro::num_zones_advanced * numPtsCoarseGrid;
+
         delete amrptr;
 
         amrex::Real dRunTime2 = amrex::ParallelDescriptor::second();
@@ -148,7 +155,7 @@ main (int argc, char* argv[])
         const int IOProc = amrex::ParallelDescriptor::IOProcessorNumber();
         amrex::ParallelDescriptor::ReduceRealMax(runtime, IOProc);
 
-        amrex::Real fom = Castro::num_zones_advanced / runtime / 1.e6;
+        fom = fom / runtime / 1.e6;
 
         amrex::Print() << std::endl;
         amrex::Print() << "Simulation completed!" << std::endl;

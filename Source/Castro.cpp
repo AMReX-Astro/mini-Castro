@@ -15,7 +15,7 @@
 
 using namespace amrex;
 
-long Castro::num_zones_advanced = 0;
+Real Castro::num_zones_advanced = 0.0;
 int Castro::diagnostic_interval = 50;
 
 // Choose tile size based on whether we're using a GPU.
