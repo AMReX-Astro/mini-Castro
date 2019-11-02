@@ -129,7 +129,6 @@ extern "C"
      const BL_FORT_FAB_ARG_3D(area1),
      const BL_FORT_FAB_ARG_3D(area2),
      const BL_FORT_FAB_ARG_3D(volume),
-     const BL_FORT_FAB_ARG_3D(pdivu),
      const amrex::Real* dx, const amrex::Real dt);
 
   void normalize_species_fluxes

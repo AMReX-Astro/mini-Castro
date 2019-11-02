@@ -56,7 +56,6 @@ Castro::construct_hydro_source(Real dt)
     FArrayBox qgdnvtmp1, qgdnvtmp2;
     FArrayBox ql, qr;
     FArrayBox flux[3], qe[3];
-    FArrayBox pdivu;
 
     for (MFIter mfi(S_new, tile_size); mfi.isValid(); ++mfi) {
 
@@ -328,9 +327,6 @@ Castro::construct_hydro_source(Real dt)
 
       }
 
-      pdivu.resize(bx, 1);
-      Elixir elix_pdivu = pdivu.elixir();
-
       // conservative update
 
       ctu_consup(AMREX_ARLIM_ANYD(bx.loVect()), AMREX_ARLIM_ANYD(bx.hiVect()),
@@ -347,7 +343,6 @@ Castro::construct_hydro_source(Real dt)
                  BL_TO_FORTRAN_ANYD(area[1][mfi]),
                  BL_TO_FORTRAN_ANYD(area[2][mfi]),
                  BL_TO_FORTRAN_ANYD(volume[mfi]),
-                 BL_TO_FORTRAN_ANYD(pdivu),
                  AMREX_ZFILL(dx), dt);
 
     } // MFIter loop
