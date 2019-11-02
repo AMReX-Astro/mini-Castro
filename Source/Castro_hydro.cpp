@@ -128,6 +128,10 @@ Castro::construct_hydro_source(Real dt)
           }
       }
 
+      int idir, idir_f;
+      int idir_t1, idir_t1_f;
+      int idir_t2, idir_t2_f;
+
       ctu_ppm_states(AMREX_ARLIM_ANYD(obx.loVect()), AMREX_ARLIM_ANYD(obx.hiVect()),
                      AMREX_ARLIM_ANYD(bx.loVect()), AMREX_ARLIM_ANYD(bx.hiVect()),
                      BL_TO_FORTRAN_ANYD(q),
@@ -172,13 +176,8 @@ Castro::construct_hydro_source(Real dt)
       qr.resize(obx, QVAR);
       Elixir elix_qr = qr.elixir();
 
-      const amrex::Real hdtdx = 0.5*dt/dx[0];
-      const amrex::Real hdtdy = 0.5*dt/dx[1];
-      const amrex::Real hdtdz = 0.5*dt/dx[2];
-
-      const amrex::Real cdtdx = dt/dx[0]/3.0;
-      const amrex::Real cdtdy = dt/dx[1]/3.0;
-      const amrex::Real cdtdz = dt/dx[2]/3.0;
+      const amrex::Real hdtdx[3] = {0.5*dt/dx[0], 0.5*dt/dx[1], 0.5*dt/dx[2]};
+      const amrex::Real cdtdx[3] = {dt/dx[0]/3.0, dt/dx[1]/3.0, dt/dx[2]/3.0};
 
       // compute F^x
 
@@ -206,7 +205,7 @@ Castro::construct_hydro_source(Real dt)
              BL_TO_FORTRAN_ANYD(qaux),
              BL_TO_FORTRAN_ANYD(ftmp1),
              BL_TO_FORTRAN_ANYD(qgdnvtmp1),
-             cdtdx);
+             cdtdx[0]);
 
       trans1(AMREX_ARLIM_ANYD(tbx[2][0].loVect()), AMREX_ARLIM_ANYD(tbx[2][0].hiVect()),
              1, 3,
@@ -217,7 +216,7 @@ Castro::construct_hydro_source(Real dt)
              BL_TO_FORTRAN_ANYD(qaux),
              BL_TO_FORTRAN_ANYD(ftmp1),
              BL_TO_FORTRAN_ANYD(qgdnvtmp1),
-             cdtdx);
+             cdtdx[0]);
 
       // compute F^y
 
@@ -245,7 +244,7 @@ Castro::construct_hydro_source(Real dt)
              BL_TO_FORTRAN_ANYD(qaux),
              BL_TO_FORTRAN_ANYD(ftmp1),
              BL_TO_FORTRAN_ANYD(qgdnvtmp1),
-             cdtdy);
+             cdtdx[1]);
 
       // ftmp1 = fy
       // rftmp1 = rfy
@@ -259,7 +258,7 @@ Castro::construct_hydro_source(Real dt)
              BL_TO_FORTRAN_ANYD(qaux),
              BL_TO_FORTRAN_ANYD(ftmp1),
              BL_TO_FORTRAN_ANYD(qgdnvtmp1),
-             cdtdy);
+             cdtdx[1]);
 
       // compute F^z
 
@@ -287,7 +286,7 @@ Castro::construct_hydro_source(Real dt)
              BL_TO_FORTRAN_ANYD(qaux),
              BL_TO_FORTRAN_ANYD(ftmp1),
              BL_TO_FORTRAN_ANYD(qgdnvtmp1),
-             cdtdz);
+             cdtdx[2]);
 
       // ftmp1 = fz
       // rftmp1 = rfz
@@ -301,183 +300,74 @@ Castro::construct_hydro_source(Real dt)
              BL_TO_FORTRAN_ANYD(qaux),
              BL_TO_FORTRAN_ANYD(ftmp1),
              BL_TO_FORTRAN_ANYD(qgdnvtmp1),
-             cdtdz);
+             cdtdx[2]);
 
       // we now have q?zx, q?yx, q?zy, q?xy, q?yz, q?xz
 
-      //
-      // Use qx?, q?yz, q?zy to compute final x-flux
-      //
+      for (idir = 0; idir < 3; ++idir) {
 
-      // compute F^{y|z}
+          if (idir == 0) {
+              idir_t1 = 1;
+              idir_t2 = 2;
+          }
+          else if (idir == 1) {
+              idir_t1 = 0;
+              idir_t2 = 2;
+          }
+          else {
+              idir_t1 = 0;
+              idir_t2 = 1;
+          }
 
-      // ftmp1 = fyz
-      // rftmp1 = rfyz
-      // qgdnvtmp1 = qgdnvyz
-      cmpflx_plus_godunov(AMREX_ARLIM_ANYD(tbx[1][2].loVect()), AMREX_ARLIM_ANYD(tbx[1][2].hiVect()),
-                          BL_TO_FORTRAN_ANYD(qm[1][2]),
-                          BL_TO_FORTRAN_ANYD(qp[1][2]), 1, 1,
-                          BL_TO_FORTRAN_ANYD(ftmp1),
-                          BL_TO_FORTRAN_ANYD(q_int),
-                          BL_TO_FORTRAN_ANYD(qgdnvtmp1),
-                          BL_TO_FORTRAN_ANYD(qaux),
-                          2, AMREX_ARLIM_ANYD(domain_lo), AMREX_ARLIM_ANYD(domain_hi));
+          idir_f = idir + 1;
+          idir_t1_f = idir_t1 + 1;
+          idir_t2_f = idir_t2 + 1;
 
-      // compute F^{z|y}
+          // compute F^{1|2}
+          cmpflx_plus_godunov(AMREX_ARLIM_ANYD(tbx[idir_t1][idir_t2].loVect()), AMREX_ARLIM_ANYD(tbx[idir_t1][idir_t2].hiVect()),
+                              BL_TO_FORTRAN_ANYD(qm[idir_t1][idir_t2]),
+                              BL_TO_FORTRAN_ANYD(qp[idir_t1][idir_t2]), 1, 1,
+                              BL_TO_FORTRAN_ANYD(ftmp1),
+                              BL_TO_FORTRAN_ANYD(q_int),
+                              BL_TO_FORTRAN_ANYD(qgdnvtmp1),
+                              BL_TO_FORTRAN_ANYD(qaux),
+                              idir_t1_f, AMREX_ARLIM_ANYD(domain_lo), AMREX_ARLIM_ANYD(domain_hi));
 
-      // ftmp2 = fzy
-      // rftmp2 = rfzy
-      // qgdnvtmp2 = qgdnvzy
-      cmpflx_plus_godunov(AMREX_ARLIM_ANYD(tbx[2][1].loVect()), AMREX_ARLIM_ANYD(tbx[2][1].hiVect()),
-                          BL_TO_FORTRAN_ANYD(qm[2][1]),
-                          BL_TO_FORTRAN_ANYD(qp[2][1]), 1, 1,
-                          BL_TO_FORTRAN_ANYD(ftmp2),
-                          BL_TO_FORTRAN_ANYD(q_int),
-                          BL_TO_FORTRAN_ANYD(qgdnvtmp2),
-                          BL_TO_FORTRAN_ANYD(qaux),
-                          3, AMREX_ARLIM_ANYD(domain_lo), AMREX_ARLIM_ANYD(domain_hi));
+          // compute F^{2|1}
+          cmpflx_plus_godunov(AMREX_ARLIM_ANYD(tbx[idir_t2][idir_t1].loVect()), AMREX_ARLIM_ANYD(tbx[idir_t2][idir_t1].hiVect()),
+                              BL_TO_FORTRAN_ANYD(qm[idir_t2][idir_t1]),
+                              BL_TO_FORTRAN_ANYD(qp[idir_t2][idir_t1]), 1, 1,
+                              BL_TO_FORTRAN_ANYD(ftmp2),
+                              BL_TO_FORTRAN_ANYD(q_int),
+                              BL_TO_FORTRAN_ANYD(qgdnvtmp2),
+                              BL_TO_FORTRAN_ANYD(qaux),
+                              idir_t2_f, AMREX_ARLIM_ANYD(domain_lo), AMREX_ARLIM_ANYD(domain_hi));
 
-      // compute the corrected x interface states and fluxes
+          // Compute the corrected idir interface states and fluxes
+          trans2(AMREX_ARLIM_ANYD(ebx[idir].loVect()), AMREX_ARLIM_ANYD(ebx[idir].hiVect()),
+                 idir_f, idir_t1_f, idir_t2_f,
+                 BL_TO_FORTRAN_ANYD(qm[idir][idir]),
+                 BL_TO_FORTRAN_ANYD(ql),
+                 BL_TO_FORTRAN_ANYD(qp[idir][idir]),
+                 BL_TO_FORTRAN_ANYD(qr),
+                 BL_TO_FORTRAN_ANYD(qaux),
+                 BL_TO_FORTRAN_ANYD(ftmp1),
+                 BL_TO_FORTRAN_ANYD(ftmp2),
+                 BL_TO_FORTRAN_ANYD(qgdnvtmp1),
+                 BL_TO_FORTRAN_ANYD(qgdnvtmp2),
+                 hdtdx[idir], hdtdx[idir_t1], hdtdx[idir_t2]);
 
-      trans2(AMREX_ARLIM_ANYD(ebx[0].loVect()), AMREX_ARLIM_ANYD(ebx[0].hiVect()),
-             1, 2, 3,
-             BL_TO_FORTRAN_ANYD(qm[0][0]),
-             BL_TO_FORTRAN_ANYD(ql),
-             BL_TO_FORTRAN_ANYD(qp[0][0]),
-             BL_TO_FORTRAN_ANYD(qr),
-             BL_TO_FORTRAN_ANYD(qaux),
-             BL_TO_FORTRAN_ANYD(ftmp1),
-             BL_TO_FORTRAN_ANYD(ftmp2),
-             BL_TO_FORTRAN_ANYD(qgdnvtmp1),
-             BL_TO_FORTRAN_ANYD(qgdnvtmp2),
-             hdtdx, hdtdy, hdtdz);
+          // Compute the final F^idir
+          cmpflx_plus_godunov(AMREX_ARLIM_ANYD(ebx[idir].loVect()), AMREX_ARLIM_ANYD(ebx[idir].hiVect()),
+                              BL_TO_FORTRAN_ANYD(ql),
+                              BL_TO_FORTRAN_ANYD(qr), 1, 1,
+                              BL_TO_FORTRAN_ANYD(flux[idir]),
+                              BL_TO_FORTRAN_ANYD(q_int),
+                              BL_TO_FORTRAN_ANYD(qe[idir]),
+                              BL_TO_FORTRAN_ANYD(qaux),
+                              idir_f, AMREX_ARLIM_ANYD(domain_lo), AMREX_ARLIM_ANYD(domain_hi));
 
-      cmpflx_plus_godunov(AMREX_ARLIM_ANYD(ebx[0].loVect()), AMREX_ARLIM_ANYD(ebx[0].hiVect()),
-                          BL_TO_FORTRAN_ANYD(ql),
-                          BL_TO_FORTRAN_ANYD(qr), 1, 1,
-                          BL_TO_FORTRAN_ANYD(flux[0]),
-                          BL_TO_FORTRAN_ANYD(q_int),
-                          BL_TO_FORTRAN_ANYD(qe[0]),
-                          BL_TO_FORTRAN_ANYD(qaux),
-                          1, AMREX_ARLIM_ANYD(domain_lo), AMREX_ARLIM_ANYD(domain_hi));
-
-      //
-      // Use qy?, q?zx, q?xz to compute final y-flux
-      //
-
-      // compute F^{z|x}
-
-      // ftmp1 = fzx
-      // rftmp1 = rfzx
-      // qgdnvtmp1 = qgdnvzx
-      cmpflx_plus_godunov(AMREX_ARLIM_ANYD(tbx[2][0].loVect()), AMREX_ARLIM_ANYD(tbx[2][0].hiVect()),
-                          BL_TO_FORTRAN_ANYD(qm[2][0]),
-                          BL_TO_FORTRAN_ANYD(qp[2][0]), 1, 1,
-                          BL_TO_FORTRAN_ANYD(ftmp1),
-                          BL_TO_FORTRAN_ANYD(q_int),
-                          BL_TO_FORTRAN_ANYD(qgdnvtmp1),
-                          BL_TO_FORTRAN_ANYD(qaux),
-                          3, AMREX_ARLIM_ANYD(domain_lo), AMREX_ARLIM_ANYD(domain_hi));
-
-      // compute F^{x|z}
-
-      // ftmp2 = fxz
-      // rftmp2 = rfxz
-      // qgdnvtmp2 = qgdnvxz
-      cmpflx_plus_godunov(AMREX_ARLIM_ANYD(tbx[0][2].loVect()), AMREX_ARLIM_ANYD(tbx[0][2].hiVect()),
-                          BL_TO_FORTRAN_ANYD(qm[0][2]),
-                          BL_TO_FORTRAN_ANYD(qp[0][2]), 1, 1,
-                          BL_TO_FORTRAN_ANYD(ftmp2),
-                          BL_TO_FORTRAN_ANYD(q_int),
-                          BL_TO_FORTRAN_ANYD(qgdnvtmp2),
-                          BL_TO_FORTRAN_ANYD(qaux),
-                          1, AMREX_ARLIM_ANYD(domain_lo), AMREX_ARLIM_ANYD(domain_hi));
-
-      // Compute the corrected y interface states and fluxes
-      // [lo(1), lo(2), lo(3)], [hi(1), hi(2)+1, hi(3)]
-
-      trans2(AMREX_ARLIM_ANYD(ebx[1].loVect()), AMREX_ARLIM_ANYD(ebx[1].hiVect()),
-             2, 1, 3,
-             BL_TO_FORTRAN_ANYD(qm[1][1]),
-             BL_TO_FORTRAN_ANYD(ql),
-             BL_TO_FORTRAN_ANYD(qp[1][1]),
-             BL_TO_FORTRAN_ANYD(qr),
-             BL_TO_FORTRAN_ANYD(qaux),
-             BL_TO_FORTRAN_ANYD(ftmp2),
-             BL_TO_FORTRAN_ANYD(ftmp1),
-             BL_TO_FORTRAN_ANYD(qgdnvtmp2),
-             BL_TO_FORTRAN_ANYD(qgdnvtmp1),
-             hdtdy, hdtdx, hdtdz);
-
-      // Compute the final F^y
-      // [lo(1), lo(2), lo(3)], [hi(1), hi(2)+1, hi(3)]
-      cmpflx_plus_godunov(AMREX_ARLIM_ANYD(ebx[1].loVect()), AMREX_ARLIM_ANYD(ebx[1].hiVect()),
-                          BL_TO_FORTRAN_ANYD(ql),
-                          BL_TO_FORTRAN_ANYD(qr), 1, 1,
-                          BL_TO_FORTRAN_ANYD(flux[1]),
-                          BL_TO_FORTRAN_ANYD(q_int),
-                          BL_TO_FORTRAN_ANYD(qe[1]),
-                          BL_TO_FORTRAN_ANYD(qaux),
-                          2, AMREX_ARLIM_ANYD(domain_lo), AMREX_ARLIM_ANYD(domain_hi));
-
-      //
-      // Use qz?, q?xy, q?yx to compute final z-flux
-      //
-
-      // compute F^{x|y}
-
-      // ftmp1 = fxy
-      // rftmp1 = rfxy
-      // qgdnvtmp1 = qgdnvxy
-      cmpflx_plus_godunov(AMREX_ARLIM_ANYD(tbx[0][1].loVect()), AMREX_ARLIM_ANYD(tbx[0][1].hiVect()),
-                          BL_TO_FORTRAN_ANYD(qm[0][1]),
-                          BL_TO_FORTRAN_ANYD(qp[0][1]), 1, 1,
-                          BL_TO_FORTRAN_ANYD(ftmp1),
-                          BL_TO_FORTRAN_ANYD(q_int),
-                          BL_TO_FORTRAN_ANYD(qgdnvtmp1),
-                          BL_TO_FORTRAN_ANYD(qaux),
-                          1, AMREX_ARLIM_ANYD(domain_lo), AMREX_ARLIM_ANYD(domain_hi));
-
-      // compute F^{y|x}
-
-      // ftmp2 = fyx
-      // rftmp2 = rfyx
-      // qgdnvtmp2 = qgdnvyx
-      cmpflx_plus_godunov(AMREX_ARLIM_ANYD(tbx[1][0].loVect()), AMREX_ARLIM_ANYD(tbx[1][0].hiVect()),
-                          BL_TO_FORTRAN_ANYD(qm[1][0]),
-                          BL_TO_FORTRAN_ANYD(qp[1][0]), 1, 1,
-                          BL_TO_FORTRAN_ANYD(ftmp2),
-                          BL_TO_FORTRAN_ANYD(q_int),
-                          BL_TO_FORTRAN_ANYD(qgdnvtmp2),
-                          BL_TO_FORTRAN_ANYD(qaux),
-                          2, AMREX_ARLIM_ANYD(domain_lo), AMREX_ARLIM_ANYD(domain_hi));
-
-      // compute the corrected z interface states and fluxes
-
-      trans2(AMREX_ARLIM_ANYD(ebx[2].loVect()), AMREX_ARLIM_ANYD(ebx[2].hiVect()),
-             3, 1, 2,
-             BL_TO_FORTRAN_ANYD(qm[2][2]),
-             BL_TO_FORTRAN_ANYD(ql),
-             BL_TO_FORTRAN_ANYD(qp[2][2]),
-             BL_TO_FORTRAN_ANYD(qr),
-             BL_TO_FORTRAN_ANYD(qaux),
-             BL_TO_FORTRAN_ANYD(ftmp1),
-             BL_TO_FORTRAN_ANYD(ftmp2),
-             BL_TO_FORTRAN_ANYD(qgdnvtmp1),
-             BL_TO_FORTRAN_ANYD(qgdnvtmp2),
-             hdtdz, hdtdx, hdtdy);
-
-      // compute the final z fluxes F^z
-      // [lo(1), lo(2), lo(3)], [hi(1), hi(2), hi(3)+1]
-
-      cmpflx_plus_godunov(AMREX_ARLIM_ANYD(ebx[2].loVect()), AMREX_ARLIM_ANYD(ebx[2].hiVect()),
-                          BL_TO_FORTRAN_ANYD(ql),
-                          BL_TO_FORTRAN_ANYD(qr), 1, 1,
-                          BL_TO_FORTRAN_ANYD(flux[2]),
-                          BL_TO_FORTRAN_ANYD(q_int),
-                          BL_TO_FORTRAN_ANYD(qe[2]),
-                          BL_TO_FORTRAN_ANYD(qaux),
-                          3, AMREX_ARLIM_ANYD(domain_lo), AMREX_ARLIM_ANYD(domain_hi));
+      }
 
       for (int idir = 0; idir < AMREX_SPACEDIM; ++idir) {
 
