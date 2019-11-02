@@ -166,7 +166,7 @@ extern "C"
               const BL_FORT_FAB_ARG_3D(qz),
               const amrex::Real hdtdx, const amrex::Real cdtdy, const amrex::Real cdtdz);
 
-  void cmpflx_plus_godunov
+  void compute_flux
     (const int* lo, const int* hi,
      const BL_FORT_FAB_ARG_3D(ql),
      const BL_FORT_FAB_ARG_3D(qr),

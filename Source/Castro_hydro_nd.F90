@@ -158,14 +158,14 @@ contains
 
 
 
-  subroutine cmpflx_plus_godunov(lo, hi, &
-                                 ql, ql_lo, ql_hi, &
-                                 qr, qr_lo, qr_hi, &
-                                 flx, flx_lo, flx_hi, &
-                                 qint, q_lo, q_hi, &
-                                 qgdnv, qg_lo, qg_hi, &
-                                 qaux, qa_lo, qa_hi, &
-                                 idir) bind(C, name="cmpflx_plus_godunov")
+  subroutine compute_flux(lo, hi, &
+                          ql, ql_lo, ql_hi, &
+                          qr, qr_lo, qr_hi, &
+                          flx, flx_lo, flx_hi, &
+                          qint, q_lo, q_hi, &
+                          qgdnv, qg_lo, qg_hi, &
+                          qaux, qa_lo, qa_hi, &
+                          idir) bind(C, name="compute_flux")
 
     use castro_module, only: QVAR, QRHO, QU, QV, QW, QPRES, QC, QGAMC, QGAME, QFS, QREINT, &
                              NQAUX, NVAR, URHO, UMX, UMY, UMZ, UEDEN, UEINT, UTEMP, UFS, &
@@ -499,7 +499,7 @@ contains
        end do
     end do
 
-  end subroutine cmpflx_plus_godunov
+  end subroutine compute_flux
 
 
 
