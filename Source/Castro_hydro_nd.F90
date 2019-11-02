@@ -9,8 +9,105 @@ module hydro_module
   real(rt), parameter :: small = 1.e-8_rt
   real(rt), parameter :: small_pres = 1.e-200_rt
   real(rt), parameter :: smallu = 1.e-12_rt
+  real(rt), parameter :: dual_energy_eta1 = 1.e0_rt
 
 contains
+
+  subroutine ca_ctoprim(lo, hi, &
+                        uin, uin_lo, uin_hi, &
+                        q,     q_lo,   q_hi, &
+                        qaux, qa_lo,  qa_hi) bind(c,name='ca_ctoprim')
+
+    use network, only: nspec
+    use eos_module, only: eos_t, eos_input_re, eos
+    use castro_module, only: NVAR, URHO, UMX, UMZ, &
+                             UEDEN, UEINT, UTEMP, &
+                             QRHO, QU, QV, QW, UFS, &
+                             QREINT, QPRES, QTEMP, QGAME, QFS, &
+                             QVAR, QC, QGAMC, QDPDR, QDPDE, NQAUX, &
+                             small_dens
+
+    implicit none
+
+    integer, intent(in) :: lo(3), hi(3)
+    integer, intent(in) :: uin_lo(3), uin_hi(3)
+    integer, intent(in) :: q_lo(3), q_hi(3)
+    integer, intent(in) :: qa_lo(3), qa_hi(3)
+
+    real(rt), intent(in   ) :: uin(uin_lo(1):uin_hi(1),uin_lo(2):uin_hi(2),uin_lo(3):uin_hi(3),NVAR)
+    real(rt), intent(inout) :: q(q_lo(1):q_hi(1),q_lo(2):q_hi(2),q_lo(3):q_hi(3),QVAR)
+    real(rt), intent(inout) :: qaux(qa_lo(1):qa_hi(1),qa_lo(2):qa_hi(2),qa_lo(3):qa_hi(3),NQAUX)
+
+    real(rt), parameter :: small = 1.e-8_rt
+
+    integer  :: i, j, k, g
+    integer  :: n, iq, ispec
+    real(rt) :: kineng, rhoinv
+    real(rt) :: vel(3)
+
+    type (eos_t) :: eos_state
+
+    do k = lo(3), hi(3)
+       do j = lo(2), hi(2)
+          do i = lo(1), hi(1)
+
+             q(i,j,k,QRHO) = uin(i,j,k,URHO)
+             rhoinv = ONE/q(i,j,k,QRHO)
+
+             vel = uin(i,j,k,UMX:UMZ) * rhoinv
+
+             q(i,j,k,QU:QW) = vel
+
+             ! Get the internal energy, which we'll use for
+             ! determining the pressure.  We use a dual energy
+             ! formalism. If (E - K) < eta1 and eta1 is suitably
+             ! small, then we risk serious numerical truncation error
+             ! in the internal energy.  Therefore we'll use the result
+             ! of the separately updated internal energy equation.
+             ! Otherwise, we'll set e = E - K.
+
+             kineng = HALF * q(i,j,k,QRHO) * (q(i,j,k,QU)**2 + q(i,j,k,QV)**2 + q(i,j,k,QW)**2)
+
+             if ( (uin(i,j,k,UEDEN) - kineng) / uin(i,j,k,UEDEN) .gt. dual_energy_eta1) then
+                q(i,j,k,QREINT) = (uin(i,j,k,UEDEN) - kineng) * rhoinv
+             else
+                q(i,j,k,QREINT) = uin(i,j,k,UEINT) * rhoinv
+             endif
+
+             q(i,j,k,QTEMP) = uin(i,j,k,UTEMP)
+
+             ! Load passively advected quatities into q
+             do ispec = 1, nspec
+                n  = UFS + ispec - 1
+                iq = QFS + ispec - 1
+                q(i,j,k,iq) = uin(i,j,k,n) * rhoinv
+             enddo
+
+             ! get gamc, p, T, c, csml using q state
+             eos_state % T   = q(i,j,k,QTEMP )
+             eos_state % rho = q(i,j,k,QRHO  )
+             eos_state % e   = q(i,j,k,QREINT)
+             eos_state % xn  = q(i,j,k,QFS:QFS+nspec-1)
+
+             call eos(eos_input_re, eos_state)
+
+             q(i,j,k,QTEMP)  = eos_state % T
+             q(i,j,k,QREINT) = eos_state % e * q(i,j,k,QRHO)
+             q(i,j,k,QPRES)  = eos_state % p
+             q(i,j,k,QGAME)  = q(i,j,k,QPRES) / q(i,j,k,QREINT) + ONE
+
+             qaux(i,j,k,QDPDR)  = eos_state % dpdr_e
+             qaux(i,j,k,QDPDE)  = eos_state % dpde
+             qaux(i,j,k,QGAMC)  = eos_state % gam1
+             qaux(i,j,k,QC   )  = eos_state % cs
+
+          enddo
+       enddo
+    enddo
+
+  end subroutine ca_ctoprim
+
+
 
   subroutine ppm_reconstruct(s, flatn, sm, sp)
     ! This routine does the reconstruction of the zone data into a parabola.
