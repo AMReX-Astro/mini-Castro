@@ -2955,6 +2955,16 @@ contains
                 ! Note: for the transverse velocities, the jump is carried
                 !       only by the u wave (the contact)
 
+                dum = un_ref - Im(1,QUN)
+                dptotm = p_ref - Im(1,QPRES)
+
+                drho = rho_ref - Im(2,QRHO)
+                dptot = p_ref - Im(2,QPRES)
+                drhoe_g = rhoe_g_ref - Im(2,QREINT)
+
+                dup = un_ref - Im(3,QUN)
+                dptotp = p_ref - Im(3,QPRES)
+
                 ! (rho, u, p, (rho e) eigensystem
 
                 ! These are analogous to the beta's from the original PPM
