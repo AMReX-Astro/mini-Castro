@@ -202,7 +202,7 @@ Castro::construct_hydro_source(Real dt)
 
           cmpflx_plus_godunov(AMREX_ARLIM_ANYD(tbx[idir][idir].loVect()), AMREX_ARLIM_ANYD(tbx[idir][idir].hiVect()),
                               BL_TO_FORTRAN_ANYD(qm[idir][idir]),
-                              BL_TO_FORTRAN_ANYD(qp[idir][idir]), 1, 1,
+                              BL_TO_FORTRAN_ANYD(qp[idir][idir]),
                               BL_TO_FORTRAN_ANYD(ftmp1),
                               BL_TO_FORTRAN_ANYD(q_int),
                               BL_TO_FORTRAN_ANYD(qgdnvtmp1),
@@ -255,7 +255,7 @@ Castro::construct_hydro_source(Real dt)
           // compute F^{1|2}
           cmpflx_plus_godunov(AMREX_ARLIM_ANYD(tbx[idir_t1][idir_t2].loVect()), AMREX_ARLIM_ANYD(tbx[idir_t1][idir_t2].hiVect()),
                               BL_TO_FORTRAN_ANYD(qm[idir_t1][idir_t2]),
-                              BL_TO_FORTRAN_ANYD(qp[idir_t1][idir_t2]), 1, 1,
+                              BL_TO_FORTRAN_ANYD(qp[idir_t1][idir_t2]),
                               BL_TO_FORTRAN_ANYD(ftmp1),
                               BL_TO_FORTRAN_ANYD(q_int),
                               BL_TO_FORTRAN_ANYD(qgdnvtmp1),
@@ -265,7 +265,7 @@ Castro::construct_hydro_source(Real dt)
           // compute F^{2|1}
           cmpflx_plus_godunov(AMREX_ARLIM_ANYD(tbx[idir_t2][idir_t1].loVect()), AMREX_ARLIM_ANYD(tbx[idir_t2][idir_t1].hiVect()),
                               BL_TO_FORTRAN_ANYD(qm[idir_t2][idir_t1]),
-                              BL_TO_FORTRAN_ANYD(qp[idir_t2][idir_t1]), 1, 1,
+                              BL_TO_FORTRAN_ANYD(qp[idir_t2][idir_t1]),
                               BL_TO_FORTRAN_ANYD(ftmp2),
                               BL_TO_FORTRAN_ANYD(q_int),
                               BL_TO_FORTRAN_ANYD(qgdnvtmp2),
@@ -289,7 +289,7 @@ Castro::construct_hydro_source(Real dt)
           // Compute the final F^idir
           cmpflx_plus_godunov(AMREX_ARLIM_ANYD(ebx[idir].loVect()), AMREX_ARLIM_ANYD(ebx[idir].hiVect()),
                               BL_TO_FORTRAN_ANYD(ql),
-                              BL_TO_FORTRAN_ANYD(qr), 1, 1,
+                              BL_TO_FORTRAN_ANYD(qr),
                               BL_TO_FORTRAN_ANYD(flux[idir]),
                               BL_TO_FORTRAN_ANYD(q_int),
                               BL_TO_FORTRAN_ANYD(qe[idir]),

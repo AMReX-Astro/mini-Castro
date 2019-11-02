@@ -292,7 +292,7 @@ contains
   
   subroutine cmpflx_plus_godunov(lo, hi, &
                                  qm, qm_lo, qm_hi, &
-                                 qp, qp_lo, qp_hi, nc, comp, &
+                                 qp, qp_lo, qp_hi, &
                                  flx, flx_lo, flx_hi, &
                                  qint, q_lo, q_hi, &
                                  qgdnv, qg_lo, qg_hi, &
@@ -320,10 +320,9 @@ contains
     integer, intent(in), value :: idir
 
     integer, intent(in) :: domlo(3),domhi(3)
-    integer, intent(in), value :: nc, comp
 
-    real(rt), intent(inout) :: qm(qm_lo(1):qm_hi(1),qm_lo(2):qm_hi(2),qm_lo(3):qm_hi(3),QVAR,nc)
-    real(rt), intent(inout) :: qp(qp_lo(1):qp_hi(1),qp_lo(2):qp_hi(2),qp_lo(3):qp_hi(3),QVAR,nc)
+    real(rt), intent(inout) :: qm(qm_lo(1):qm_hi(1),qm_lo(2):qm_hi(2),qm_lo(3):qm_hi(3),QVAR)
+    real(rt), intent(inout) :: qp(qp_lo(1):qp_hi(1),qp_lo(2):qp_hi(2),qp_lo(3):qp_hi(3),QVAR)
 
     real(rt), intent(inout) :: flx(flx_lo(1):flx_hi(1),flx_lo(2):flx_hi(2),flx_lo(3):flx_hi(3),NVAR)
     real(rt), intent(inout) :: qint(q_lo(1):q_hi(1),q_lo(2):q_hi(2),q_lo(3):q_hi(3),QVAR)
@@ -334,7 +333,7 @@ contains
 
     call cmpflx(lo, hi, &
                 qm, qm_lo, qm_hi, &
-                qp, qp_lo, qp_hi, nc, comp, &
+                qp, qp_lo, qp_hi, &
                 flx, flx_lo, flx_hi, &
                 qint, q_lo, q_hi, &
                 qaux, qa_lo, qa_hi, &
@@ -348,7 +347,7 @@ contains
 
   subroutine cmpflx(lo, hi, &
                     qm, qm_lo, qm_hi, &
-                    qp, qp_lo, qp_hi, nc, comp, &
+                    qp, qp_lo, qp_hi, &
                     flx, flx_lo, flx_hi, &
                     qint, q_lo, q_hi, &
                     qaux, qa_lo, qa_hi, &
@@ -374,10 +373,9 @@ contains
     integer, intent(in) :: idir
 
     integer, intent(in) :: domlo(3),domhi(3)
-    integer, intent(in) :: nc, comp
 
-    real(rt), intent(inout) :: qm(qm_lo(1):qm_hi(1),qm_lo(2):qm_hi(2),qm_lo(3):qm_hi(3),QVAR,nc)
-    real(rt), intent(inout) :: qp(qp_lo(1):qp_hi(1),qp_lo(2):qp_hi(2),qp_lo(3):qp_hi(3),QVAR,nc)
+    real(rt), intent(inout) :: qm(qm_lo(1):qm_hi(1),qm_lo(2):qm_hi(2),qm_lo(3):qm_hi(3),QVAR)
+    real(rt), intent(inout) :: qp(qp_lo(1):qp_hi(1),qp_lo(2):qp_hi(2),qp_lo(3):qp_hi(3),QVAR)
 
     real(rt), intent(inout) :: flx(flx_lo(1):flx_hi(1),flx_lo(2):flx_hi(2),flx_lo(3):flx_hi(3),NVAR)
     real(rt), intent(inout) :: qint(q_lo(1):q_hi(1),q_lo(2):q_hi(2),q_lo(3):q_hi(3),QVAR)
@@ -387,7 +385,7 @@ contains
     ! Solve Riemann problem to get the fluxes
 
     call riemann_state(qm, qm_lo, qm_hi, &
-                       qp, qp_lo, qp_hi, nc, comp, &
+                       qp, qp_lo, qp_hi, &
                        qint, q_lo, q_hi, &
                        qaux, qa_lo, qa_hi, &
                        idir, lo, hi, &
@@ -404,7 +402,7 @@ contains
 
 
   subroutine riemann_state(qm, qm_lo, qm_hi, &
-                           qp, qp_lo, qp_hi, nc, comp, &
+                           qp, qp_lo, qp_hi, &
                            qint, q_lo, q_hi, &
                            qaux, qa_lo, qa_hi, &
                            idir, lo, hi, domlo, domhi)
@@ -427,10 +425,9 @@ contains
     ! solve the Riemann problems
     integer, intent(in) :: lo(3), hi(3)
     integer, intent(in) :: domlo(3), domhi(3)
-    integer, intent(in) :: nc, comp
 
-    real(rt), intent(inout) :: qm(qm_lo(1):qm_hi(1),qm_lo(2):qm_hi(2),qm_lo(3):qm_hi(3),QVAR,nc)
-    real(rt), intent(inout) :: qp(qp_lo(1):qp_hi(1),qp_lo(2):qp_hi(2),qp_lo(3):qp_hi(3),QVAR,nc)
+    real(rt), intent(inout) :: qm(qm_lo(1):qm_hi(1),qm_lo(2):qm_hi(2),qm_lo(3):qm_hi(3),QVAR)
+    real(rt), intent(inout) :: qp(qp_lo(1):qp_hi(1),qp_lo(2):qp_hi(2),qp_lo(3):qp_hi(3),QVAR)
 
     real(rt), intent(inout) :: qint(q_lo(1):q_hi(1),q_lo(2):q_hi(2),q_lo(3):q_hi(3),QVAR)
 
@@ -439,7 +436,7 @@ contains
     ! Solve Riemann problem
 
     call riemannus(qm, qm_lo, qm_hi, &
-                   qp, qp_lo, qp_hi, nc, comp, &
+                   qp, qp_lo, qp_hi, &
                    qaux, qa_lo, qa_hi, &
                    qint, q_lo, q_hi, &
                    idir, lo, hi, &
@@ -450,7 +447,7 @@ contains
 
 
   subroutine riemannus(ql, ql_lo, ql_hi, &
-                       qr, qr_lo, qr_hi, nc, comp, &
+                       qr, qr_lo, qr_hi, &
                        qaux, qa_lo, qa_hi, &
                        qint, q_lo, q_hi, &
                        idir, lo, hi, &
@@ -473,10 +470,9 @@ contains
     integer, intent(in) :: q_lo(3), q_hi(3)
     integer, intent(in) :: idir, lo(3), hi(3)
     integer, intent(in) :: domlo(3),domhi(3)
-    integer, intent(in) :: nc, comp
 
-    real(rt), intent(in) :: ql(ql_lo(1):ql_hi(1),ql_lo(2):ql_hi(2),ql_lo(3):ql_hi(3),QVAR,nc)
-    real(rt), intent(in) :: qr(qr_lo(1):qr_hi(1),qr_lo(2):qr_hi(2),qr_lo(3):qr_hi(3),QVAR,nc)
+    real(rt), intent(in) :: ql(ql_lo(1):ql_hi(1),ql_lo(2):ql_hi(2),ql_lo(3):ql_hi(3),QVAR)
+    real(rt), intent(in) :: qr(qr_lo(1):qr_hi(1),qr_lo(2):qr_hi(2),qr_lo(3):qr_hi(3),QVAR)
 
     real(rt), intent(in) :: qaux(qa_lo(1):qa_hi(1),qa_lo(2):qa_hi(2),qa_lo(3):qa_hi(3),NQAUX)
     real(rt), intent(inout) :: qint(q_lo(1):q_hi(1),q_lo(2):q_hi(2),q_lo(3):q_hi(3),QVAR)
@@ -533,23 +529,23 @@ contains
              ! set the left and right states for this interface
              ! ------------------------------------------------------------------
 
-             rl = max(ql(i,j,k,QRHO,comp), small_dens)
+             rl = max(ql(i,j,k,QRHO), small_dens)
 
              ! pick left velocities based on direction
-             ul  = ql(i,j,k,iu,comp)
-             v1l = ql(i,j,k,iv1,comp)
-             v2l = ql(i,j,k,iv2,comp)
-             pl  = max(ql(i,j,k,QPRES,comp), small_pres)
-             rel = ql(i,j,k,QREINT,comp)
+             ul  = ql(i,j,k,iu)
+             v1l = ql(i,j,k,iv1)
+             v2l = ql(i,j,k,iv2)
+             pl  = max(ql(i,j,k,QPRES), small_pres)
+             rel = ql(i,j,k,QREINT)
 
-             rr = max(qr(i,j,k,QRHO,comp), small_dens)
+             rr = max(qr(i,j,k,QRHO), small_dens)
 
              ! pick right velocities based on direction
-             ur  = qr(i,j,k,iu,comp)
-             v1r = qr(i,j,k,iv1,comp)
-             v2r = qr(i,j,k,iv2,comp)
-             pr  = max(qr(i,j,k,QPRES,comp), small_pres)
-             rer = qr(i,j,k,QREINT,comp)
+             ur  = qr(i,j,k,iu)
+             v1r = qr(i,j,k,iv1)
+             v2r = qr(i,j,k,iv2)
+             pr  = max(qr(i,j,k,QPRES), small_pres)
+             rer = qr(i,j,k,QREINT)
 
              ! ------------------------------------------------------------------
              ! estimate the star state: pstar, ustar
@@ -727,11 +723,11 @@ contains
                 nqp = QFS + ispec - 1
 
                 if (ustar > ZERO) then
-                   qint(i,j,k,nqp) = ql(i,j,k,nqp,comp)
+                   qint(i,j,k,nqp) = ql(i,j,k,nqp)
                 else if (ustar < ZERO) then
-                   qint(i,j,k,nqp) = qr(i,j,k,nqp,comp)
+                   qint(i,j,k,nqp) = qr(i,j,k,nqp)
                 else
-                   qavg = HALF * (ql(i,j,k,nqp,comp) + qr(i,j,k,nqp,comp))
+                   qavg = HALF * (ql(i,j,k,nqp) + qr(i,j,k,nqp))
                    qint(i,j,k,nqp) = qavg
                 end if
 

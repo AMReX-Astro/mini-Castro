@@ -169,7 +169,7 @@ extern "C"
   void cmpflx_plus_godunov
     (const int* lo, const int* hi,
      const BL_FORT_FAB_ARG_3D(ql),
-     const BL_FORT_FAB_ARG_3D(qr), const int nc, const int comp,
+     const BL_FORT_FAB_ARG_3D(qr),
      BL_FORT_FAB_ARG_3D(flux),
      BL_FORT_FAB_ARG_3D(q_int),
      BL_FORT_FAB_ARG_3D(qe),
