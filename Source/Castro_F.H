@@ -147,65 +147,16 @@ extern "C"
      BL_FORT_FAB_ARG_3D(Sborder),
      BL_FORT_FAB_ARG_3D(flux));
 
-  void transx_on_ystates(const int* lo, const int* hi,
-                         const BL_FORT_FAB_ARG_3D(qym),
-                         BL_FORT_FAB_ARG_3D(qymo),
-                         const BL_FORT_FAB_ARG_3D(qyp),
-                         BL_FORT_FAB_ARG_3D(qypo),
+  void trans1_on_2states(const int* lo, const int* hi,
+                         const int idir1, const int idir2,
+                         const BL_FORT_FAB_ARG_3D(q2m),
+                         BL_FORT_FAB_ARG_3D(q2mo),
+                         const BL_FORT_FAB_ARG_3D(q2p),
+                         BL_FORT_FAB_ARG_3D(q2po),
                          const BL_FORT_FAB_ARG_3D(qaux),
-                         const BL_FORT_FAB_ARG_3D(fx),
-                         const BL_FORT_FAB_ARG_3D(qx),
-                         const amrex::Real hdt, const amrex::Real cdtdx);
-
-  void transx_on_zstates(const int* lo, const int* hi,
-                         const BL_FORT_FAB_ARG_3D(qzm),
-                         BL_FORT_FAB_ARG_3D(qzmo),
-                         const BL_FORT_FAB_ARG_3D(qzp),
-                         BL_FORT_FAB_ARG_3D(qzpo),
-                         const BL_FORT_FAB_ARG_3D(qaux),
-                         const BL_FORT_FAB_ARG_3D(fx),
-                         const BL_FORT_FAB_ARG_3D(qx),
-                         const amrex::Real hdt, const amrex::Real cdtdx);
-
-  void transy_on_xstates(const int* lo, const int* hi,
-                         const BL_FORT_FAB_ARG_3D(qxm),
-                         BL_FORT_FAB_ARG_3D(qxmo),
-                         const BL_FORT_FAB_ARG_3D(qxp),
-                         BL_FORT_FAB_ARG_3D(qxpo),
-                         const BL_FORT_FAB_ARG_3D(qaux),
-                         const BL_FORT_FAB_ARG_3D(fy),
-                         const BL_FORT_FAB_ARG_3D(qy),
-                         const amrex::Real cdtdy);
-
-  void transy_on_zstates(const int* lo, const int* hi,
-                         const BL_FORT_FAB_ARG_3D(qzm),
-                         BL_FORT_FAB_ARG_3D(qzmo),
-                         const BL_FORT_FAB_ARG_3D(qzp),
-                         BL_FORT_FAB_ARG_3D(qzpo),
-                         const BL_FORT_FAB_ARG_3D(qaux),
-                         const BL_FORT_FAB_ARG_3D(fy),
-                         const BL_FORT_FAB_ARG_3D(qy),
-                         const amrex::Real cdtdy);
-
-  void transz_on_xstates(const int* lo, const int* hi,
-                         const BL_FORT_FAB_ARG_3D(qxm),
-                         BL_FORT_FAB_ARG_3D(qxmo),
-                         const BL_FORT_FAB_ARG_3D(qxp),
-                         BL_FORT_FAB_ARG_3D(qxpo),
-                         const BL_FORT_FAB_ARG_3D(qaux),
-                         const BL_FORT_FAB_ARG_3D(fz),
-                         const BL_FORT_FAB_ARG_3D(qz),
-                         const amrex::Real cdtdz);
-
-  void transz_on_ystates(const int* lo, const int* hi,
-                         const BL_FORT_FAB_ARG_3D(qym),
-                         BL_FORT_FAB_ARG_3D(qymo),
-                         const BL_FORT_FAB_ARG_3D(qyp),
-                         BL_FORT_FAB_ARG_3D(qypo),
-                         const BL_FORT_FAB_ARG_3D(qaux),
-                         const BL_FORT_FAB_ARG_3D(fz),
-                         const BL_FORT_FAB_ARG_3D(qz),
-                         const amrex::Real cdtdz);
+                         const BL_FORT_FAB_ARG_3D(f1),
+                         const BL_FORT_FAB_ARG_3D(q1),
+                         const amrex::Real cdtdx);
 
   void transyz(const int* lo, const int* hi,
                const BL_FORT_FAB_ARG_3D(qm),

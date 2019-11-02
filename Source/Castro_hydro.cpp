@@ -199,7 +199,8 @@ Castro::construct_hydro_source(Real dt)
       // ftmp1 = fx
       // rftmp1 = rfx
       // qgdnvtmp1 = qgdnvx
-      transx_on_ystates(AMREX_ARLIM_ANYD(tbx[1][0].loVect()), AMREX_ARLIM_ANYD(tbx[1][0].hiVect()),
+      trans1_on_2states(AMREX_ARLIM_ANYD(tbx[1][0].loVect()), AMREX_ARLIM_ANYD(tbx[1][0].hiVect()),
+                        1, 2,
                         BL_TO_FORTRAN_ANYD(qm[1][1]),
                         BL_TO_FORTRAN_ANYD(qm[1][0]),
                         BL_TO_FORTRAN_ANYD(qp[1][1]),
@@ -207,9 +208,10 @@ Castro::construct_hydro_source(Real dt)
                         BL_TO_FORTRAN_ANYD(qaux),
                         BL_TO_FORTRAN_ANYD(ftmp1),
                         BL_TO_FORTRAN_ANYD(qgdnvtmp1),
-                        hdt, cdtdx);
+                        cdtdx);
 
-      transx_on_zstates(AMREX_ARLIM_ANYD(tbx[2][0].loVect()), AMREX_ARLIM_ANYD(tbx[2][0].hiVect()),
+      trans1_on_2states(AMREX_ARLIM_ANYD(tbx[2][0].loVect()), AMREX_ARLIM_ANYD(tbx[2][0].hiVect()),
+                        1, 3,
                         BL_TO_FORTRAN_ANYD(qm[2][2]),
                         BL_TO_FORTRAN_ANYD(qm[2][0]),
                         BL_TO_FORTRAN_ANYD(qp[2][2]),
@@ -217,7 +219,7 @@ Castro::construct_hydro_source(Real dt)
                         BL_TO_FORTRAN_ANYD(qaux),
                         BL_TO_FORTRAN_ANYD(ftmp1),
                         BL_TO_FORTRAN_ANYD(qgdnvtmp1),
-                        hdt, cdtdx);
+                        cdtdx);
 
       // compute F^y
 
@@ -236,7 +238,8 @@ Castro::construct_hydro_source(Real dt)
       // ftmp1 = fy
       // rftmp1 = rfy
       // qgdnvtmp1 = qgdnvy
-      transy_on_xstates(AMREX_ARLIM_ANYD(tbx[0][1].loVect()), AMREX_ARLIM_ANYD(tbx[0][1].hiVect()),
+      trans1_on_2states(AMREX_ARLIM_ANYD(tbx[0][1].loVect()), AMREX_ARLIM_ANYD(tbx[0][1].hiVect()),
+                        2, 1,
                         BL_TO_FORTRAN_ANYD(qm[0][0]),
                         BL_TO_FORTRAN_ANYD(qm[0][1]),
                         BL_TO_FORTRAN_ANYD(qp[0][0]),
@@ -249,7 +252,8 @@ Castro::construct_hydro_source(Real dt)
       // ftmp1 = fy
       // rftmp1 = rfy
       // qgdnvtmp1 = qgdnvy
-      transy_on_zstates(AMREX_ARLIM_ANYD(tbx[2][1].loVect()), AMREX_ARLIM_ANYD(tbx[2][1].hiVect()),
+      trans1_on_2states(AMREX_ARLIM_ANYD(tbx[2][1].loVect()), AMREX_ARLIM_ANYD(tbx[2][1].hiVect()),
+                        2, 3,
                         BL_TO_FORTRAN_ANYD(qm[2][2]),
                         BL_TO_FORTRAN_ANYD(qm[2][1]),
                         BL_TO_FORTRAN_ANYD(qp[2][2]),
@@ -276,7 +280,8 @@ Castro::construct_hydro_source(Real dt)
       // ftmp1 = fz
       // rftmp1 = rfz
       // qgdnvtmp1 = qgdnvz
-      transz_on_xstates(AMREX_ARLIM_ANYD(tbx[0][2].loVect()), AMREX_ARLIM_ANYD(tbx[0][2].hiVect()),
+      trans1_on_2states(AMREX_ARLIM_ANYD(tbx[0][2].loVect()), AMREX_ARLIM_ANYD(tbx[0][2].hiVect()),
+                        3, 1,
                         BL_TO_FORTRAN_ANYD(qm[0][0]),
                         BL_TO_FORTRAN_ANYD(qm[0][2]),
                         BL_TO_FORTRAN_ANYD(qp[0][0]),
@@ -289,7 +294,8 @@ Castro::construct_hydro_source(Real dt)
       // ftmp1 = fz
       // rftmp1 = rfz
       // qgdnvtmp1 = qgdnvz
-      transz_on_ystates(AMREX_ARLIM_ANYD(tbx[1][2].loVect()), AMREX_ARLIM_ANYD(tbx[1][2].hiVect()),
+      trans1_on_2states(AMREX_ARLIM_ANYD(tbx[1][2].loVect()), AMREX_ARLIM_ANYD(tbx[1][2].hiVect()),
+                        3, 2,
                         BL_TO_FORTRAN_ANYD(qm[1][1]),
                         BL_TO_FORTRAN_ANYD(qm[1][2]),
                         BL_TO_FORTRAN_ANYD(qp[1][1]),
