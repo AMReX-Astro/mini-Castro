@@ -44,8 +44,6 @@ Castro::advance (Real time, Real dt, int  amr_iteration, int  amr_ncycle)
     for (int dir = 0; dir < 3; ++dir)
 	fluxes[dir]->setVal(0.0);
 
-    const Real prev_time = state[State_Type].prevTime();
-
     MultiFab& S_old = get_old_data(State_Type);
     MultiFab& S_new = get_new_data(State_Type);
 
@@ -63,7 +61,7 @@ Castro::advance (Real time, Real dt, int  amr_iteration, int  amr_ncycle)
     // zones. So we use a FillPatch using the state data to give us
     // Sborder, which does have ghost zones.
 
-    AmrLevel::FillPatch(*this, Sborder, 4, prev_time, State_Type, 0, NUM_STATE);
+    AmrLevel::FillPatch(*this, Sborder, 4, time, State_Type, 0, NUM_STATE);
 
     // Make the temporarily expanded state thermodynamically consistent after the fill.
 
@@ -71,11 +69,11 @@ Castro::advance (Real time, Real dt, int  amr_iteration, int  amr_ncycle)
 
     // Construct the primitive variables (including over the 4 ghost zones).
 
-    cons_to_prim(time);
+    cons_to_prim();
 
     // Construct the hydro source.
 
-    construct_hydro_source(time, dt);
+    construct_hydro_source(dt);
 
     // Add it to the state, scaled by the timestep.
 

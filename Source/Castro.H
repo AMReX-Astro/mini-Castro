@@ -73,10 +73,10 @@ public:
     virtual amrex::Real advance (amrex::Real time, amrex::Real dt, int iteration, int ncycle) override;
 
     // Convert conservative variables to primitive variables
-    void cons_to_prim(const amrex::Real time);
+    void cons_to_prim();
     
     // Construct the hydrodynamic source term
-    void construct_hydro_source(amrex::Real time, amrex::Real dt);
+    void construct_hydro_source(amrex::Real dt);
 
     // Estimate time step
     amrex::Real estTimeStep (amrex::Real dt_old);

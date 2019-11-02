@@ -4,7 +4,7 @@
 using namespace amrex;
 
 void
-Castro::cons_to_prim(const Real time)
+Castro::cons_to_prim()
 {
 
     BL_PROFILE("Castro::cons_to_prim()");
@@ -31,7 +31,7 @@ Castro::cons_to_prim(const Real time)
 }
 
 void
-Castro::construct_hydro_source(Real time, Real dt)
+Castro::construct_hydro_source(Real dt)
 {
 
   BL_PROFILE("Castro::construct_hydro_source()");
