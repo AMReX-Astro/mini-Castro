@@ -197,27 +197,27 @@ Castro::construct_hydro_source(Real dt)
       // ftmp1 = fx
       // rftmp1 = rfx
       // qgdnvtmp1 = qgdnvx
-      trans1_on_2states(AMREX_ARLIM_ANYD(tbx[1][0].loVect()), AMREX_ARLIM_ANYD(tbx[1][0].hiVect()),
-                        1, 2,
-                        BL_TO_FORTRAN_ANYD(qm[1][1]),
-                        BL_TO_FORTRAN_ANYD(qm[1][0]),
-                        BL_TO_FORTRAN_ANYD(qp[1][1]),
-                        BL_TO_FORTRAN_ANYD(qp[1][0]),
-                        BL_TO_FORTRAN_ANYD(qaux),
-                        BL_TO_FORTRAN_ANYD(ftmp1),
-                        BL_TO_FORTRAN_ANYD(qgdnvtmp1),
-                        cdtdx);
+      trans1(AMREX_ARLIM_ANYD(tbx[1][0].loVect()), AMREX_ARLIM_ANYD(tbx[1][0].hiVect()),
+             1, 2,
+             BL_TO_FORTRAN_ANYD(qm[1][1]),
+             BL_TO_FORTRAN_ANYD(qm[1][0]),
+             BL_TO_FORTRAN_ANYD(qp[1][1]),
+             BL_TO_FORTRAN_ANYD(qp[1][0]),
+             BL_TO_FORTRAN_ANYD(qaux),
+             BL_TO_FORTRAN_ANYD(ftmp1),
+             BL_TO_FORTRAN_ANYD(qgdnvtmp1),
+             cdtdx);
 
-      trans1_on_2states(AMREX_ARLIM_ANYD(tbx[2][0].loVect()), AMREX_ARLIM_ANYD(tbx[2][0].hiVect()),
-                        1, 3,
-                        BL_TO_FORTRAN_ANYD(qm[2][2]),
-                        BL_TO_FORTRAN_ANYD(qm[2][0]),
-                        BL_TO_FORTRAN_ANYD(qp[2][2]),
-                        BL_TO_FORTRAN_ANYD(qp[2][0]),
-                        BL_TO_FORTRAN_ANYD(qaux),
-                        BL_TO_FORTRAN_ANYD(ftmp1),
-                        BL_TO_FORTRAN_ANYD(qgdnvtmp1),
-                        cdtdx);
+      trans1(AMREX_ARLIM_ANYD(tbx[2][0].loVect()), AMREX_ARLIM_ANYD(tbx[2][0].hiVect()),
+             1, 3,
+             BL_TO_FORTRAN_ANYD(qm[2][2]),
+             BL_TO_FORTRAN_ANYD(qm[2][0]),
+             BL_TO_FORTRAN_ANYD(qp[2][2]),
+             BL_TO_FORTRAN_ANYD(qp[2][0]),
+             BL_TO_FORTRAN_ANYD(qaux),
+             BL_TO_FORTRAN_ANYD(ftmp1),
+             BL_TO_FORTRAN_ANYD(qgdnvtmp1),
+             cdtdx);
 
       // compute F^y
 
@@ -236,30 +236,30 @@ Castro::construct_hydro_source(Real dt)
       // ftmp1 = fy
       // rftmp1 = rfy
       // qgdnvtmp1 = qgdnvy
-      trans1_on_2states(AMREX_ARLIM_ANYD(tbx[0][1].loVect()), AMREX_ARLIM_ANYD(tbx[0][1].hiVect()),
-                        2, 1,
-                        BL_TO_FORTRAN_ANYD(qm[0][0]),
-                        BL_TO_FORTRAN_ANYD(qm[0][1]),
-                        BL_TO_FORTRAN_ANYD(qp[0][0]),
-                        BL_TO_FORTRAN_ANYD(qp[0][1]),
-                        BL_TO_FORTRAN_ANYD(qaux),
-                        BL_TO_FORTRAN_ANYD(ftmp1),
-                        BL_TO_FORTRAN_ANYD(qgdnvtmp1),
-                        cdtdy);
+      trans1(AMREX_ARLIM_ANYD(tbx[0][1].loVect()), AMREX_ARLIM_ANYD(tbx[0][1].hiVect()),
+             2, 1,
+             BL_TO_FORTRAN_ANYD(qm[0][0]),
+             BL_TO_FORTRAN_ANYD(qm[0][1]),
+             BL_TO_FORTRAN_ANYD(qp[0][0]),
+             BL_TO_FORTRAN_ANYD(qp[0][1]),
+             BL_TO_FORTRAN_ANYD(qaux),
+             BL_TO_FORTRAN_ANYD(ftmp1),
+             BL_TO_FORTRAN_ANYD(qgdnvtmp1),
+             cdtdy);
 
       // ftmp1 = fy
       // rftmp1 = rfy
       // qgdnvtmp1 = qgdnvy
-      trans1_on_2states(AMREX_ARLIM_ANYD(tbx[2][1].loVect()), AMREX_ARLIM_ANYD(tbx[2][1].hiVect()),
-                        2, 3,
-                        BL_TO_FORTRAN_ANYD(qm[2][2]),
-                        BL_TO_FORTRAN_ANYD(qm[2][1]),
-                        BL_TO_FORTRAN_ANYD(qp[2][2]),
-                        BL_TO_FORTRAN_ANYD(qp[2][1]),
-                        BL_TO_FORTRAN_ANYD(qaux),
-                        BL_TO_FORTRAN_ANYD(ftmp1),
-                        BL_TO_FORTRAN_ANYD(qgdnvtmp1),
-                        cdtdy);
+      trans1(AMREX_ARLIM_ANYD(tbx[2][1].loVect()), AMREX_ARLIM_ANYD(tbx[2][1].hiVect()),
+             2, 3,
+             BL_TO_FORTRAN_ANYD(qm[2][2]),
+             BL_TO_FORTRAN_ANYD(qm[2][1]),
+             BL_TO_FORTRAN_ANYD(qp[2][2]),
+             BL_TO_FORTRAN_ANYD(qp[2][1]),
+             BL_TO_FORTRAN_ANYD(qaux),
+             BL_TO_FORTRAN_ANYD(ftmp1),
+             BL_TO_FORTRAN_ANYD(qgdnvtmp1),
+             cdtdy);
 
       // compute F^z
 
@@ -278,30 +278,30 @@ Castro::construct_hydro_source(Real dt)
       // ftmp1 = fz
       // rftmp1 = rfz
       // qgdnvtmp1 = qgdnvz
-      trans1_on_2states(AMREX_ARLIM_ANYD(tbx[0][2].loVect()), AMREX_ARLIM_ANYD(tbx[0][2].hiVect()),
-                        3, 1,
-                        BL_TO_FORTRAN_ANYD(qm[0][0]),
-                        BL_TO_FORTRAN_ANYD(qm[0][2]),
-                        BL_TO_FORTRAN_ANYD(qp[0][0]),
-                        BL_TO_FORTRAN_ANYD(qp[0][2]),
-                        BL_TO_FORTRAN_ANYD(qaux),
-                        BL_TO_FORTRAN_ANYD(ftmp1),
-                        BL_TO_FORTRAN_ANYD(qgdnvtmp1),
-                        cdtdz);
+      trans1(AMREX_ARLIM_ANYD(tbx[0][2].loVect()), AMREX_ARLIM_ANYD(tbx[0][2].hiVect()),
+             3, 1,
+             BL_TO_FORTRAN_ANYD(qm[0][0]),
+             BL_TO_FORTRAN_ANYD(qm[0][2]),
+             BL_TO_FORTRAN_ANYD(qp[0][0]),
+             BL_TO_FORTRAN_ANYD(qp[0][2]),
+             BL_TO_FORTRAN_ANYD(qaux),
+             BL_TO_FORTRAN_ANYD(ftmp1),
+             BL_TO_FORTRAN_ANYD(qgdnvtmp1),
+             cdtdz);
 
       // ftmp1 = fz
       // rftmp1 = rfz
       // qgdnvtmp1 = qgdnvz
-      trans1_on_2states(AMREX_ARLIM_ANYD(tbx[1][2].loVect()), AMREX_ARLIM_ANYD(tbx[1][2].hiVect()),
-                        3, 2,
-                        BL_TO_FORTRAN_ANYD(qm[1][1]),
-                        BL_TO_FORTRAN_ANYD(qm[1][2]),
-                        BL_TO_FORTRAN_ANYD(qp[1][1]),
-                        BL_TO_FORTRAN_ANYD(qp[1][2]),
-                        BL_TO_FORTRAN_ANYD(qaux),
-                        BL_TO_FORTRAN_ANYD(ftmp1),
-                        BL_TO_FORTRAN_ANYD(qgdnvtmp1),
-                        cdtdz);
+      trans1(AMREX_ARLIM_ANYD(tbx[1][2].loVect()), AMREX_ARLIM_ANYD(tbx[1][2].hiVect()),
+             3, 2,
+             BL_TO_FORTRAN_ANYD(qm[1][1]),
+             BL_TO_FORTRAN_ANYD(qm[1][2]),
+             BL_TO_FORTRAN_ANYD(qp[1][1]),
+             BL_TO_FORTRAN_ANYD(qp[1][2]),
+             BL_TO_FORTRAN_ANYD(qaux),
+             BL_TO_FORTRAN_ANYD(ftmp1),
+             BL_TO_FORTRAN_ANYD(qgdnvtmp1),
+             cdtdz);
 
       // we now have q?zx, q?yx, q?zy, q?xy, q?yz, q?xz
 

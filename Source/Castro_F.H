@@ -147,16 +147,16 @@ extern "C"
      BL_FORT_FAB_ARG_3D(Sborder),
      BL_FORT_FAB_ARG_3D(flux));
 
-  void trans1_on_2states(const int* lo, const int* hi,
-                         const int idir1, const int idir2,
-                         const BL_FORT_FAB_ARG_3D(q2m),
-                         BL_FORT_FAB_ARG_3D(q2mo),
-                         const BL_FORT_FAB_ARG_3D(q2p),
-                         BL_FORT_FAB_ARG_3D(q2po),
-                         const BL_FORT_FAB_ARG_3D(qaux),
-                         const BL_FORT_FAB_ARG_3D(f1),
-                         const BL_FORT_FAB_ARG_3D(q1),
-                         const amrex::Real cdtdx);
+  void trans1(const int* lo, const int* hi,
+              const int idir1, const int idir2,
+              const BL_FORT_FAB_ARG_3D(q2m),
+              BL_FORT_FAB_ARG_3D(q2mo),
+              const BL_FORT_FAB_ARG_3D(q2p),
+              BL_FORT_FAB_ARG_3D(q2po),
+              const BL_FORT_FAB_ARG_3D(qaux),
+              const BL_FORT_FAB_ARG_3D(f1),
+              const BL_FORT_FAB_ARG_3D(q1),
+              const amrex::Real cdtdx);
 
   void trans2(const int* lo, const int* hi,
               const int idir1, const int idir2, const int idir3,

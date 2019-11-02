@@ -9,16 +9,19 @@ module hydro_module
 
 contains
 
-  subroutine trans1_on_2states(lo, hi, &
-                               idir1, idir2, &
-                               q2m, q2m_lo, q2m_hi, &
-                               q2mo, q2mo_lo, q2mo_hi, &
-                               q2p, q2p_lo, q2p_hi, &
-                               q2po, q2po_lo, q2po_hi, &
-                               qaux, qa_lo, qa_hi, &
-                               f1, f1_lo, f1_hi, &
-                               q1, q1_lo, q1_hi, &
-                               cdtdx) bind(C, name="trans1_on_2states")
+  ! Add the transverse corrections from directions 2 and 3
+  ! to the states in direction 1.
+
+  subroutine trans1(lo, hi, &
+                    idir1, idir2, &
+                    q2m, q2m_lo, q2m_hi, &
+                    q2mo, q2mo_lo, q2mo_hi, &
+                    q2p, q2p_lo, q2p_hi, &
+                    q2po, q2po_lo, q2po_hi, &
+                    qaux, qa_lo, qa_hi, &
+                    f1, f1_lo, f1_hi, &
+                    q1, q1_lo, q1_hi, &
+                    cdtdx) bind(C, name="trans1")
 
     use network, only: nspec
     use castro_module, only: QVAR, NVAR, NQAUX, QRHO, QU, QV, QW, &
@@ -231,7 +234,7 @@ contains
        end do
     end do
 
-  end subroutine trans1_on_2states
+  end subroutine trans1
 
 
 
