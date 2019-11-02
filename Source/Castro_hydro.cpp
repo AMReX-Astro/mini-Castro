@@ -562,28 +562,21 @@ Castro::construct_hydro_source(Real dt)
                           BL_TO_FORTRAN_ANYD(qaux[mfi]),
                           3, AMREX_ARLIM_ANYD(domain_lo), AMREX_ARLIM_ANYD(domain_hi));
 
-      // clean the fluxes
-
       for (int idir = 0; idir < AMREX_SPACEDIM; ++idir) {
 
           const Box& nbx = amrex::surroundingNodes(bx, idir);
 
           int idir_f = idir + 1;
 
-          Array4<Real> const flux_arr = (flux[idir]).array();
-          const int temp_comp = Temp;
-
-          // Zero out shock and temp fluxes -- these are physically meaningless here
-          AMREX_PARALLEL_FOR_3D(nbx, i, j, k,
-          {
-              flux_arr(i,j,k,temp_comp) = 0.e0;
-          });
+          // Apply artificial viscosity to the fluxes.
 
           apply_av(AMREX_ARLIM_ANYD(nbx.loVect()), AMREX_ARLIM_ANYD(nbx.hiVect()),
                    idir_f, AMREX_ZFILL(dx),
                    BL_TO_FORTRAN_ANYD(div),
                    BL_TO_FORTRAN_ANYD(Sborder[mfi]),
                    BL_TO_FORTRAN_ANYD(flux[idir]));
+
+          // Ensure species fluxes are normalized properly.
 
           normalize_species_fluxes(AMREX_ARLIM_ANYD(nbx.loVect()), AMREX_ARLIM_ANYD(nbx.hiVect()),
                                    BL_TO_FORTRAN_ANYD(flux[idir]));
