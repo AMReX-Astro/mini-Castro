@@ -13,6 +13,61 @@ module hydro_module
 
 contains
 
+  subroutine divu(lo, hi, &
+                  q, q_lo, q_hi, &
+                  dx, div, div_lo, div_hi) bind(C, name='divu')
+    ! this computes the *node-centered* divergence
+
+    use castro_module, only: QU, QV, QW, QVAR
+
+    implicit none
+
+    integer, intent(in) :: lo(3), hi(3)
+    integer, intent(in) :: q_lo(3), q_hi(3)
+    integer, intent(in) :: div_lo(3), div_hi(3)
+    real(rt), intent(in) :: dx(3)
+    real(rt), intent(inout) :: div(div_lo(1):div_hi(1),div_lo(2):div_hi(2),div_lo(3):div_hi(3))
+    real(rt), intent(in) :: q(q_lo(1):q_hi(1),q_lo(2):q_hi(2),q_lo(3):q_hi(3),QVAR)
+
+    integer  :: i, j, k
+    real(rt) :: ux, vy, wz, dxinv, dyinv, dzinv
+
+    dxinv = ONE / dx(1)
+    dyinv = ONE / dx(2)
+    dzinv = ONE / dx(3)
+
+    do k = lo(3), hi(3)
+       do j = lo(2), hi(2)
+          do i = lo(1), hi(1)
+
+             ux = FOURTH*( &
+                  + q(i  ,j  ,k  ,QU) - q(i-1,j  ,k  ,QU) &
+                  + q(i  ,j  ,k-1,QU) - q(i-1,j  ,k-1,QU) &
+                  + q(i  ,j-1,k  ,QU) - q(i-1,j-1,k  ,QU) &
+                  + q(i  ,j-1,k-1,QU) - q(i-1,j-1,k-1,QU) ) * dxinv
+
+             vy = FOURTH*( &
+                  + q(i  ,j  ,k  ,QV) - q(i  ,j-1,k  ,QV) &
+                  + q(i  ,j  ,k-1,QV) - q(i  ,j-1,k-1,QV) &
+                  + q(i-1,j  ,k  ,QV) - q(i-1,j-1,k  ,QV) &
+                  + q(i-1,j  ,k-1,QV) - q(i-1,j-1,k-1,QV) ) * dyinv
+
+             wz = FOURTH*( &
+                  + q(i  ,j  ,k  ,QW) - q(i  ,j  ,k-1,QW) &
+                  + q(i  ,j-1,k  ,QW) - q(i  ,j-1,k-1,QW) &
+                  + q(i-1,j  ,k  ,QW) - q(i-1,j  ,k-1,QW) &
+                  + q(i-1,j-1,k  ,QW) - q(i-1,j-1,k-1,QW) ) * dzinv
+
+             div(i,j,k) = ux + vy + wz
+
+          enddo
+       enddo
+    enddo
+
+  end subroutine divu
+
+
+
   subroutine ca_ctoprim(lo, hi, &
                         uin, uin_lo, uin_hi, &
                         q,     q_lo,   q_hi, &
