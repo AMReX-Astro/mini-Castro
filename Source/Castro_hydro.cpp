@@ -107,71 +107,28 @@ Castro::construct_hydro_source(Real dt)
           gebx[i] = amrex::grow(ebx[i], 1);
       }
 
-      qm[0][0].resize(obx, QVAR);
-      Elixir elix_qxm = qm[0][0].elixir();
+      tbx[0][0] = amrex::grow(bx, 1);
+      tbx[0][1] = amrex::grow(ebx[0], 2, 1);
+      tbx[0][2] = amrex::grow(ebx[0], 1, 1);
+      tbx[1][0] = amrex::grow(ebx[1], 2, 1);
+      tbx[1][1] = amrex::grow(bx, 1);
+      tbx[1][2] = amrex::grow(ebx[1], 0, 1);
+      tbx[2][0] = amrex::grow(ebx[2], 1, 1);
+      tbx[2][1] = amrex::grow(ebx[2], 0, 1);
+      tbx[2][2] = amrex::grow(bx, 1);
 
-      qp[0][0].resize(obx, QVAR);
-      Elixir elix_qxp = qp[0][0].elixir();
+      Elixir elix_qm[3][3];
+      Elixir elix_qp[3][3];
 
-      qm[1][1].resize(obx, QVAR);
-      Elixir elix_qym = qm[1][1].elixir();
+      for (int i = 0; i < 3; ++i) {
+          for (int j = 0; j < 3; ++j) {
+              qm[i][j].resize(tbx[i][j], QVAR);
+              elix_qm[i][j] = qm[i][j].elixir();
 
-      qp[1][1].resize(obx, QVAR);
-      Elixir elix_qyp = qp[1][1].elixir();
-
-      qm[2][2].resize(obx, QVAR);
-      Elixir elix_qzm = qm[2][2].elixir();
-
-      qp[2][2].resize(obx, QVAR);
-      Elixir elix_qzp = qp[2][2].elixir();
-
-      tbx[1][0] = amrex::grow(ebx[1], IntVect(AMREX_D_DECL(0,0,1)));
-
-      qm[1][0].resize(tbx[1][0], QVAR);
-      Elixir elix_qmyx = qm[1][0].elixir();
-
-      qp[1][0].resize(tbx[1][0], QVAR);
-      Elixir elix_qpyx = qp[1][0].elixir();
-
-      tbx[2][0] = amrex::grow(ebx[2], IntVect(AMREX_D_DECL(0,1,0)));
-
-      qm[2][0].resize(tbx[2][0], QVAR);
-      Elixir elix_qmzx = qm[2][0].elixir();
-
-      qp[2][0].resize(tbx[2][0], QVAR);
-      Elixir elix_qpzx = qp[2][0].elixir();
-
-      tbx[0][1] = amrex::grow(ebx[0], IntVect(AMREX_D_DECL(0,0,1)));
-
-      qm[0][1].resize(tbx[0][1], QVAR);
-      Elixir elix_qmxy = qm[0][1].elixir();
-
-      qp[0][1].resize(tbx[0][1], QVAR);
-      Elixir elix_qpxy = qp[0][1].elixir();
-
-      tbx[2][1] = amrex::grow(ebx[2], IntVect(AMREX_D_DECL(1,0,0)));
-
-      qm[2][1].resize(tbx[2][1], QVAR);
-      Elixir elix_qmzy = qm[2][1].elixir();
-
-      qp[2][1].resize(tbx[2][1], QVAR);
-      Elixir elix_qpzy = qp[2][1].elixir();
-
-      tbx[0][2] = amrex::grow(ebx[0], IntVect(AMREX_D_DECL(0,1,0)));
-
-      qm[0][2].resize(tbx[0][2], QVAR);
-      Elixir elix_qmxz = qm[0][2].elixir();
-
-      qp[0][2].resize(tbx[0][2], QVAR);
-      Elixir elix_qpxz = qp[0][2].elixir();
-
-      tbx[1][2] = amrex::grow(ebx[1], IntVect(AMREX_D_DECL(1,0,0)));
-
-      qm[1][2].resize(tbx[1][2], QVAR);
-      Elixir elix_qmyz = qm[1][2].elixir();
-
-      qp[1][2].resize(tbx[1][2], QVAR);
-      Elixir elix_qpyz = qp[1][2].elixir();
+              qp[i][j].resize(obx, QVAR);
+              elix_qp[i][j] = qp[i][j].elixir();
+          }
+      }
 
       ctu_ppm_states(AMREX_ARLIM_ANYD(obx.loVect()), AMREX_ARLIM_ANYD(obx.hiVect()),
                      AMREX_ARLIM_ANYD(bx.loVect()), AMREX_ARLIM_ANYD(bx.hiVect()),
