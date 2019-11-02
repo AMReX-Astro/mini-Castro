@@ -179,130 +179,57 @@ Castro::construct_hydro_source(Real dt)
       const amrex::Real hdtdx[3] = {0.5*dt/dx[0], 0.5*dt/dx[1], 0.5*dt/dx[2]};
       const amrex::Real cdtdx[3] = {dt/dx[0]/3.0, dt/dx[1]/3.0, dt/dx[2]/3.0};
 
-      // compute F^x
+      for (idir = 0; idir < 3; ++idir) {
 
-      // ftmp1 = fx
-      // rftmp1 = rfx
-      // qgdnvtmp1 = qgdnxv
-      cmpflx_plus_godunov(AMREX_ARLIM_ANYD(tbx[0][0].loVect()), AMREX_ARLIM_ANYD(tbx[0][0].hiVect()),
-                          BL_TO_FORTRAN_ANYD(qm[0][0]),
-                          BL_TO_FORTRAN_ANYD(qp[0][0]), 1, 1,
-                          BL_TO_FORTRAN_ANYD(ftmp1),
-                          BL_TO_FORTRAN_ANYD(q_int),
-                          BL_TO_FORTRAN_ANYD(qgdnvtmp1),
-                          BL_TO_FORTRAN_ANYD(qaux),
-                          1, AMREX_ARLIM_ANYD(domain_lo), AMREX_ARLIM_ANYD(domain_hi));
+          if (idir == 0) {
+              idir_t1 = 1;
+              idir_t2 = 2;
+          }
+          else if (idir == 1) {
+              idir_t1 = 0;
+              idir_t2 = 2;
+          }
+          else {
+              idir_t1 = 0;
+              idir_t2 = 1;
+          }
 
-      // ftmp1 = fx
-      // rftmp1 = rfx
-      // qgdnvtmp1 = qgdnvx
-      trans1(AMREX_ARLIM_ANYD(tbx[1][0].loVect()), AMREX_ARLIM_ANYD(tbx[1][0].hiVect()),
-             1, 2,
-             BL_TO_FORTRAN_ANYD(qm[1][1]),
-             BL_TO_FORTRAN_ANYD(qm[1][0]),
-             BL_TO_FORTRAN_ANYD(qp[1][1]),
-             BL_TO_FORTRAN_ANYD(qp[1][0]),
-             BL_TO_FORTRAN_ANYD(qaux),
-             BL_TO_FORTRAN_ANYD(ftmp1),
-             BL_TO_FORTRAN_ANYD(qgdnvtmp1),
-             cdtdx[0]);
+          idir_f = idir + 1;
+          idir_t1_f = idir_t1 + 1;
+          idir_t2_f = idir_t2 + 1;
 
-      trans1(AMREX_ARLIM_ANYD(tbx[2][0].loVect()), AMREX_ARLIM_ANYD(tbx[2][0].hiVect()),
-             1, 3,
-             BL_TO_FORTRAN_ANYD(qm[2][2]),
-             BL_TO_FORTRAN_ANYD(qm[2][0]),
-             BL_TO_FORTRAN_ANYD(qp[2][2]),
-             BL_TO_FORTRAN_ANYD(qp[2][0]),
-             BL_TO_FORTRAN_ANYD(qaux),
-             BL_TO_FORTRAN_ANYD(ftmp1),
-             BL_TO_FORTRAN_ANYD(qgdnvtmp1),
-             cdtdx[0]);
+          cmpflx_plus_godunov(AMREX_ARLIM_ANYD(tbx[idir][idir].loVect()), AMREX_ARLIM_ANYD(tbx[idir][idir].hiVect()),
+                              BL_TO_FORTRAN_ANYD(qm[idir][idir]),
+                              BL_TO_FORTRAN_ANYD(qp[idir][idir]), 1, 1,
+                              BL_TO_FORTRAN_ANYD(ftmp1),
+                              BL_TO_FORTRAN_ANYD(q_int),
+                              BL_TO_FORTRAN_ANYD(qgdnvtmp1),
+                              BL_TO_FORTRAN_ANYD(qaux),
+                              idir_f, AMREX_ARLIM_ANYD(domain_lo), AMREX_ARLIM_ANYD(domain_hi));
 
-      // compute F^y
+          trans1(AMREX_ARLIM_ANYD(tbx[idir_t1][idir].loVect()), AMREX_ARLIM_ANYD(tbx[idir_t1][idir].hiVect()),
+                 idir_f, idir_t1_f,
+                 BL_TO_FORTRAN_ANYD(qm[idir_t1][idir_t1]),
+                 BL_TO_FORTRAN_ANYD(qm[idir_t1][idir]),
+                 BL_TO_FORTRAN_ANYD(qp[idir_t1][idir_t1]),
+                 BL_TO_FORTRAN_ANYD(qp[idir_t1][idir]),
+                 BL_TO_FORTRAN_ANYD(qaux),
+                 BL_TO_FORTRAN_ANYD(ftmp1),
+                 BL_TO_FORTRAN_ANYD(qgdnvtmp1),
+                 cdtdx[idir]);
 
-      // ftmp1 = fy
-      // rftmp1 = rfy
-      // qgdnvtmp1 = qgdnvy
-      cmpflx_plus_godunov(AMREX_ARLIM_ANYD(tbx[1][1].loVect()), AMREX_ARLIM_ANYD(tbx[1][1].hiVect()),
-                          BL_TO_FORTRAN_ANYD(qm[1][1]),
-                          BL_TO_FORTRAN_ANYD(qp[1][1]), 1, 1,
-                          BL_TO_FORTRAN_ANYD(ftmp1),
-                          BL_TO_FORTRAN_ANYD(q_int),
-                          BL_TO_FORTRAN_ANYD(qgdnvtmp1),
-                          BL_TO_FORTRAN_ANYD(qaux),
-                          2, AMREX_ARLIM_ANYD(domain_lo), AMREX_ARLIM_ANYD(domain_hi));
+          trans1(AMREX_ARLIM_ANYD(tbx[idir_t2][idir].loVect()), AMREX_ARLIM_ANYD(tbx[idir_t2][idir].hiVect()),
+                 idir_f, idir_t2_f,
+                 BL_TO_FORTRAN_ANYD(qm[idir_t2][idir_t2]),
+                 BL_TO_FORTRAN_ANYD(qm[idir_t2][idir]),
+                 BL_TO_FORTRAN_ANYD(qp[idir_t2][idir_t2]),
+                 BL_TO_FORTRAN_ANYD(qp[idir_t2][idir]),
+                 BL_TO_FORTRAN_ANYD(qaux),
+                 BL_TO_FORTRAN_ANYD(ftmp1),
+                 BL_TO_FORTRAN_ANYD(qgdnvtmp1),
+                 cdtdx[idir]);
 
-      // ftmp1 = fy
-      // rftmp1 = rfy
-      // qgdnvtmp1 = qgdnvy
-      trans1(AMREX_ARLIM_ANYD(tbx[0][1].loVect()), AMREX_ARLIM_ANYD(tbx[0][1].hiVect()),
-             2, 1,
-             BL_TO_FORTRAN_ANYD(qm[0][0]),
-             BL_TO_FORTRAN_ANYD(qm[0][1]),
-             BL_TO_FORTRAN_ANYD(qp[0][0]),
-             BL_TO_FORTRAN_ANYD(qp[0][1]),
-             BL_TO_FORTRAN_ANYD(qaux),
-             BL_TO_FORTRAN_ANYD(ftmp1),
-             BL_TO_FORTRAN_ANYD(qgdnvtmp1),
-             cdtdx[1]);
-
-      // ftmp1 = fy
-      // rftmp1 = rfy
-      // qgdnvtmp1 = qgdnvy
-      trans1(AMREX_ARLIM_ANYD(tbx[2][1].loVect()), AMREX_ARLIM_ANYD(tbx[2][1].hiVect()),
-             2, 3,
-             BL_TO_FORTRAN_ANYD(qm[2][2]),
-             BL_TO_FORTRAN_ANYD(qm[2][1]),
-             BL_TO_FORTRAN_ANYD(qp[2][2]),
-             BL_TO_FORTRAN_ANYD(qp[2][1]),
-             BL_TO_FORTRAN_ANYD(qaux),
-             BL_TO_FORTRAN_ANYD(ftmp1),
-             BL_TO_FORTRAN_ANYD(qgdnvtmp1),
-             cdtdx[1]);
-
-      // compute F^z
-
-      // ftmp1 = fz
-      // rftmp1 = rfz
-      // qgdnvtmp1 = qgdnvz
-      cmpflx_plus_godunov(AMREX_ARLIM_ANYD(tbx[2][2].loVect()), AMREX_ARLIM_ANYD(tbx[2][2].hiVect()),
-                          BL_TO_FORTRAN_ANYD(qm[2][2]),
-                          BL_TO_FORTRAN_ANYD(qp[2][2]), 1, 1,
-                          BL_TO_FORTRAN_ANYD(ftmp1),
-                          BL_TO_FORTRAN_ANYD(q_int),
-                          BL_TO_FORTRAN_ANYD(qgdnvtmp1),
-                          BL_TO_FORTRAN_ANYD(qaux),
-                          3, AMREX_ARLIM_ANYD(domain_lo), AMREX_ARLIM_ANYD(domain_hi));
-
-      // ftmp1 = fz
-      // rftmp1 = rfz
-      // qgdnvtmp1 = qgdnvz
-      trans1(AMREX_ARLIM_ANYD(tbx[0][2].loVect()), AMREX_ARLIM_ANYD(tbx[0][2].hiVect()),
-             3, 1,
-             BL_TO_FORTRAN_ANYD(qm[0][0]),
-             BL_TO_FORTRAN_ANYD(qm[0][2]),
-             BL_TO_FORTRAN_ANYD(qp[0][0]),
-             BL_TO_FORTRAN_ANYD(qp[0][2]),
-             BL_TO_FORTRAN_ANYD(qaux),
-             BL_TO_FORTRAN_ANYD(ftmp1),
-             BL_TO_FORTRAN_ANYD(qgdnvtmp1),
-             cdtdx[2]);
-
-      // ftmp1 = fz
-      // rftmp1 = rfz
-      // qgdnvtmp1 = qgdnvz
-      trans1(AMREX_ARLIM_ANYD(tbx[1][2].loVect()), AMREX_ARLIM_ANYD(tbx[1][2].hiVect()),
-             3, 2,
-             BL_TO_FORTRAN_ANYD(qm[1][1]),
-             BL_TO_FORTRAN_ANYD(qm[1][2]),
-             BL_TO_FORTRAN_ANYD(qp[1][1]),
-             BL_TO_FORTRAN_ANYD(qp[1][2]),
-             BL_TO_FORTRAN_ANYD(qaux),
-             BL_TO_FORTRAN_ANYD(ftmp1),
-             BL_TO_FORTRAN_ANYD(qgdnvtmp1),
-             cdtdx[2]);
-
-      // we now have q?zx, q?yx, q?zy, q?xy, q?yz, q?xz
+      }
 
       for (idir = 0; idir < 3; ++idir) {
 
