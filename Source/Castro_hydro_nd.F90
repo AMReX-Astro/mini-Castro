@@ -2,82 +2,82 @@ module hydro_module
 
   use amrex_fort_module, only: rt => amrex_real
   use amrex_acc_module, only: acc_stream
+  use amrex_constants_module, only: ZERO, HALF, ONE
 
   implicit none
 
 contains
 
-  CASTRO_FORT_DEVICE subroutine ca_construct_flux(lo, hi, domlo, domhi, dx, dt, &
-                                                  idir, stage_weight, &
-                                                  uin, uin_lo, uin_hi, &
-                                                  div, div_lo, div_hi, &
-                                                  qaux, qa_lo, qa_hi, &
-                                                  qm, qm_lo, qm_hi, &
-                                                  qp, qp_lo, qp_hi, &
-                                                  qint, qe_lo, qe_hi, &
-                                                  flux, f_lo, f_hi, &
-                                                  fluxes, fs_lo, fs_hi, &
-                                                  area, a_lo, a_hi) &
-                                                  bind(C, name='ca_construct_flux')
+  CASTRO_FORT_DEVICE subroutine divu(lo, hi, &
+                                     q, q_lo, q_hi, &
+                                     dx, div, div_lo, div_hi) bind(C, name='divu')
+    ! this computes the *node-centered* divergence
 
-    use amrex_fort_module, only: rt => amrex_real
-    use castro_module, only: NVAR, QVAR, NGDNV, NQAUX
-    use riemann_module, only: cmpflx
+    use amrex_constants_module, only: FOURTH
+    use castro_module, only: QU, QV, QW, QVAR
 
     implicit none
 
-    integer,  intent(in   ) :: lo(3), hi(3)
-    integer,  intent(in   ), value :: idir
-    integer,  intent(in   ) :: domlo(3), domhi(3)
-    integer,  intent(in   ) :: uin_lo(3), uin_hi(3)
-    integer,  intent(in   ) :: div_lo(3), div_hi(3)
-    integer,  intent(in   ) :: qa_lo(3), qa_hi(3)
-    integer,  intent(in   ) :: qm_lo(3), qm_hi(3)
-    integer,  intent(in   ) :: qp_lo(3), qp_hi(3)
-    integer,  intent(in   ) :: qe_lo(3), qe_hi(3)
-    integer,  intent(in   ) :: f_lo(3), f_hi(3)
-    integer,  intent(in   ) :: fs_lo(3), fs_hi(3)
-    integer,  intent(in   ) :: a_lo(3), a_hi(3)
-    real(rt), intent(in   ), value :: stage_weight
+    integer, intent(in) :: lo(3), hi(3)
+    integer, intent(in) :: q_lo(3), q_hi(3)
+    integer, intent(in) :: div_lo(3), div_hi(3)
+    real(rt), intent(in) :: dx(3)
+    real(rt), intent(inout) :: div(div_lo(1):div_hi(1),div_lo(2):div_hi(2),div_lo(3):div_hi(3))
+    real(rt), intent(in) :: q(q_lo(1):q_hi(1),q_lo(2):q_hi(2),q_lo(3):q_hi(3),QVAR)
 
-    real(rt), intent(in   ) :: uin(uin_lo(1):uin_hi(1), uin_lo(2):uin_hi(2), uin_lo(3):uin_hi(3), NVAR)
-    real(rt), intent(in   ) :: div(div_lo(1):div_hi(1), div_lo(2):div_hi(2), div_lo(3):div_hi(3))
-    real(rt), intent(in   ) :: qaux(qa_lo(1):qa_hi(1), qa_lo(2):qa_hi(2), qa_lo(3):qa_hi(3), NQAUX)
-    real(rt), intent(inout) :: qm(qm_lo(1):qm_hi(1),qm_lo(2):qm_hi(2),qm_lo(3):qm_hi(3),QVAR,3)
-    real(rt), intent(inout) :: qp(qp_lo(1):qp_hi(1),qp_lo(2):qp_hi(2),qp_lo(3):qp_hi(3),QVAR,3)
-    real(rt), intent(inout) :: qint(qe_lo(1):qe_hi(1), qe_lo(2):qe_hi(2), qe_lo(3):qe_hi(3), NGDNV)
-    real(rt), intent(inout) :: flux(f_lo(1):f_hi(1), f_lo(2):f_hi(2), f_lo(3):f_hi(3), NVAR)
-    real(rt), intent(inout) :: fluxes(fs_lo(1):fs_hi(1), fs_lo(2):fs_hi(2), fs_lo(3):fs_hi(3), NVAR)
-    real(rt), intent(in   ) :: area(a_lo(1):a_hi(1), a_lo(2):a_hi(2), a_lo(3):a_hi(3))
-    real(rt), intent(in   ) :: dx(3)
-    real(rt), intent(in   ), value :: dt
+    integer  :: i, j, k
+    real(rt) :: ux, vy, wz, dxinv, dyinv, dzinv
 
-    call cmpflx(lo, hi, domlo, domhi, idir, qm, qm_lo, qm_hi, qp, qp_lo, qp_hi, &
-                qint, qe_lo, qe_hi, flux, f_lo, f_hi, qaux, qa_lo, qa_hi)
-    call apply_av(lo, hi, idir, dx, div, div_lo, div_hi, uin, uin_lo, uin_hi, flux, f_lo, f_hi)
-    call normalize_species_fluxes(lo, hi, flux, f_lo, f_hi)
-    call scale_flux(lo, hi, flux, f_lo, f_hi, area, a_lo, a_hi, dt)
-    call update_fluxes(lo, hi, fluxes, fs_lo, fs_hi, flux, f_lo, f_hi, stage_weight)
+    dxinv = ONE / dx(1)
+    dyinv = ONE / dx(2)
+    dzinv = ONE / dx(3)
 
-  end subroutine ca_construct_flux
+    !$acc parallel loop gang vector collapse(3) deviceptr(div, q) async(acc_stream)
+    do k = lo(3), hi(3)
+       do j = lo(2), hi(2)
+          do i = lo(1), hi(1)
+
+             ux = FOURTH*( &
+                  + q(i  ,j  ,k  ,QU) - q(i-1,j  ,k  ,QU) &
+                  + q(i  ,j  ,k-1,QU) - q(i-1,j  ,k-1,QU) &
+                  + q(i  ,j-1,k  ,QU) - q(i-1,j-1,k  ,QU) &
+                  + q(i  ,j-1,k-1,QU) - q(i-1,j-1,k-1,QU) ) * dxinv
+
+             vy = FOURTH*( &
+                  + q(i  ,j  ,k  ,QV) - q(i  ,j-1,k  ,QV) &
+                  + q(i  ,j  ,k-1,QV) - q(i  ,j-1,k-1,QV) &
+                  + q(i-1,j  ,k  ,QV) - q(i-1,j-1,k  ,QV) &
+                  + q(i-1,j  ,k-1,QV) - q(i-1,j-1,k-1,QV) ) * dyinv
+
+             wz = FOURTH*( &
+                  + q(i  ,j  ,k  ,QW) - q(i  ,j  ,k-1,QW) &
+                  + q(i  ,j-1,k  ,QW) - q(i  ,j-1,k-1,QW) &
+                  + q(i-1,j  ,k  ,QW) - q(i-1,j  ,k-1,QW) &
+                  + q(i-1,j-1,k  ,QW) - q(i-1,j-1,k-1,QW) ) * dzinv
+
+             div(i,j,k) = ux + vy + wz
+
+          enddo
+       enddo
+    enddo
+
+  end subroutine divu
 
 
 
-  CASTRO_FORT_DEVICE subroutine ca_ctoprim(lo, hi, &
-                                           uin, uin_lo, uin_hi, &
-                                           q,     q_lo,   q_hi, &
-                                           qaux, qa_lo,  qa_hi) &
-                                           bind(C, name='ca_ctoprim')
+  CASTRO_FORT_DEVICE subroutine ctoprim(lo, hi, &
+                                        uin, uin_lo, uin_hi, &
+                                        q,     q_lo,   q_hi, &
+                                        qaux, qa_lo,  qa_hi) bind(c,name='ctoprim')
 
     use network, only: nspec
     use eos_module, only: eos_t, eos_input_re, eos
-    use amrex_constants_module, only: ZERO, HALF, ONE
     use castro_module, only: NVAR, URHO, UMX, UMZ, &
-                             UEDEN, UEINT, UTEMP, UFS, &
-                             QRHO, QU, QV, QW, &
+                             UEDEN, UEINT, UTEMP, &
+                             QRHO, QU, QV, QW, UFS, &
                              QREINT, QPRES, QTEMP, QGAME, QFS, &
                              QVAR, QC, QGAMC, QDPDR, QDPDE, NQAUX, &
-                             small_dens
+                             small_dens, dual_energy_eta1
 
     implicit none
 
@@ -89,9 +89,6 @@ contains
     real(rt), intent(in   ) :: uin(uin_lo(1):uin_hi(1),uin_lo(2):uin_hi(2),uin_lo(3):uin_hi(3),NVAR)
     real(rt), intent(inout) :: q(q_lo(1):q_hi(1),q_lo(2):q_hi(2),q_lo(3):q_hi(3),QVAR)
     real(rt), intent(inout) :: qaux(qa_lo(1):qa_hi(1),qa_lo(2):qa_hi(2),qa_lo(3):qa_hi(3),NQAUX)
-
-    real(rt), parameter :: small = 1.e-8_rt
-    real(rt), parameter :: dual_energy_eta1 = 1.e0_rt
 
     integer  :: i, j, k, g
     integer  :: n, iq, ispec
@@ -128,21 +125,16 @@ contains
                 q(i,j,k,QREINT) = uin(i,j,k,UEINT) * rhoinv
              endif
 
-             ! If we're advecting in the rotating reference frame,
-             ! then subtract off the rotation component here.
-
              q(i,j,k,QTEMP) = uin(i,j,k,UTEMP)
 
-             ! Load passively advected quantities into q
-
+             ! Load passively advected quatities into q
              do ispec = 1, nspec
                 n  = UFS + ispec - 1
                 iq = QFS + ispec - 1
-                q(i,j,k,iq) = uin(i,j,k,n)/q(i,j,k,QRHO)
+                q(i,j,k,iq) = uin(i,j,k,n) * rhoinv
              enddo
 
              ! get gamc, p, T, c, csml using q state
-
              eos_state % T   = q(i,j,k,QTEMP )
              eos_state % rho = q(i,j,k,QRHO  )
              eos_state % e   = q(i,j,k,QREINT)
@@ -157,7 +149,6 @@ contains
 
              qaux(i,j,k,QDPDR)  = eos_state % dpdr_e
              qaux(i,j,k,QDPDE)  = eos_state % dpde
-
              qaux(i,j,k,QGAMC)  = eos_state % gam1
              qaux(i,j,k,QC   )  = eos_state % cs
 
@@ -165,18 +156,86 @@ contains
        enddo
     enddo
 
-  end subroutine ca_ctoprim
+  end subroutine ctoprim
 
 
 
-  CASTRO_FORT_DEVICE subroutine normalize_species_fluxes(lo, hi, flux, f_lo, f_hi)
+  CASTRO_FORT_DEVICE subroutine apply_av(lo, hi, idir, dx, &
+                                         div, div_lo, div_hi, &
+                                         uin, uin_lo, uin_hi, &
+                                         flux, f_lo, f_hi) bind(c, name="apply_av")
 
+    use amrex_constants_module, only: FOURTH
+    use castro_module, only: NVAR, UTEMP
+
+    implicit none
+
+    integer,  intent(in   ) :: lo(3), hi(3)
+    integer,  intent(in   ) :: div_lo(3), div_hi(3)
+    integer,  intent(in   ) :: uin_lo(3), uin_hi(3)
+    integer,  intent(in   ) :: f_lo(3), f_hi(3)
+    real(rt), intent(in   ) :: dx(3)
+    integer,  intent(in   ), value :: idir
+
+    real(rt), intent(in   ) :: div(div_lo(1):div_hi(1),div_lo(2):div_hi(2),div_lo(3):div_hi(3))
+    real(rt), intent(in   ) :: uin(uin_lo(1):uin_hi(1),uin_lo(2):uin_hi(2),uin_lo(3):uin_hi(3),NVAR)
+    real(rt), intent(inout) :: flux(f_lo(1):f_hi(1),f_lo(2):f_hi(2),f_lo(3):f_hi(3),NVAR)
+
+    integer :: i, j, k, n
+
+    real(rt) :: div1
+
+    real(rt), parameter :: difmag = 0.1d0
+
+    !$acc parallel loop gang vector collapse(4) deviceptr(flux, uin, div) async(acc_stream)
+    do n = 1, NVAR
+       do k = lo(3), hi(3)
+          do j = lo(2), hi(2)
+             do i = lo(1), hi(1)
+
+                if ( n == UTEMP ) cycle
+
+                if (idir .eq. 1) then
+
+                   div1 = FOURTH * (div(i,j,k  ) + div(i,j+1,k) + &
+                                    div(i,j,k+1) + div(i,j+1,k))
+                   div1 = difmag * min(ZERO, div1)
+                   div1 = div1 * (uin(i,j,k,n) - uin(i-1,j,k,n))
+
+                else if (idir .eq. 2) then
+
+                   div1 = FOURTH * (div(i,j,k  ) + div(i+1,j,k) + &
+                                    div(i,j,k+1) + div(i+1,j,k))
+                   div1 = difmag * min(ZERO, div1)
+                   div1 = div1 * (uin(i,j,k,n) - uin(i,j-1,k,n))
+
+                else
+
+                   div1 = FOURTH * (div(i,j  ,k) + div(i+1,j  ,k) + &
+                                    div(i,j+1,k) + div(i+1,j+1,k))
+                   div1 = difmag * min(ZERO, div1)
+                   div1 = div1 * (uin(i,j,k,n) - uin(i,j,k-1,n))
+
+                end if
+
+                flux(i,j,k,n) = flux(i,j,k,n) + dx(idir) * div1
+
+             end do
+          end do
+       end do
+
+    end do
+
+  end subroutine apply_av
+
+  
+  CASTRO_FORT_DEVICE subroutine normalize_species_fluxes(lo, hi, flux, f_lo, f_hi) bind(c, name="normalize_species_fluxes")
     ! Normalize the fluxes of the mass fractions so that
     ! they sum to 0.  This is essentially the CMA procedure that is
     ! defined in Plewa & Muller, 1999, A&A, 342, 179.
 
     use network, only: nspec
-    use amrex_constants_module, only: ZERO, ONE
+    use amrex_fort_module, only: rt => amrex_real
     use castro_module, only: NVAR, URHO, UFS
 
     implicit none
@@ -218,205 +277,128 @@ contains
 
 
 
-  CASTRO_FORT_DEVICE subroutine ca_divu(lo, hi, dx, q, q_lo, q_hi, div, d_lo, d_hi) bind(C, name='ca_divu')
+  CASTRO_FORT_DEVICE subroutine store_flux(lo, hi, &
+                                           flux_out, fo_lo, fo_hi, &
+                                           flux_in, fi_lo, fi_hi, &
+                                           area, a_lo, a_hi, &
+                                           dt) bind(C, name="store_flux")
 
-    use amrex_constants_module, only: FOURTH, ONE
-    use castro_module, only: QU, QV, QW, QVAR
+    use castro_module, only: NVAR
 
     implicit none
 
     integer,  intent(in   ) :: lo(3), hi(3)
-    integer,  intent(in   ) :: q_lo(3), q_hi(3)
-    integer,  intent(in   ) :: d_lo(3), d_hi(3)
-    real(rt), intent(in   ) :: dx(3)
-    real(rt), intent(in   ) :: q(q_lo(1):q_hi(1),q_lo(2):q_hi(2),q_lo(3):q_hi(3),QVAR)
-    real(rt), intent(inout) :: div(d_lo(1):d_hi(1),d_lo(2):d_hi(2),d_lo(3):d_hi(3))
+    integer,  intent(in   ) :: fo_lo(3), fo_hi(3)
+    integer,  intent(in   ) :: fi_lo(3), fi_hi(3)
+    integer,  intent(in   ) :: a_lo(3), a_hi(3)
 
-    integer  :: i, j, k
-    real(rt) :: ux, vy, wz, dxinv, dyinv, dzinv
+    real(rt), intent(inout) :: flux_out(fo_lo(1):fo_hi(1),fo_lo(2):fo_hi(2),fo_lo(3):fo_hi(3),NVAR)
+    real(rt), intent(in   ) :: flux_in(fi_lo(1):fi_hi(1),fi_lo(2):fi_hi(2),fi_lo(3):fi_hi(3),NVAR)
+    real(rt), intent(in   ) :: area(a_lo(1):a_hi(1),a_lo(2):a_hi(2),a_lo(3):a_hi(3))
 
-    dxinv = ONE/dx(1)
-    dyinv = ONE/dx(2)
-    dzinv = ONE/dx(3)
+    real(rt), intent(in), value :: dt
 
-    !$acc parallel loop gang vector collapse(3) deviceptr(q, div) async(acc_stream)
-    do k = lo(3), hi(3)
-       do j = lo(2), hi(2)
-          do i = lo(1), hi(1)
+    integer :: i, j, k, n
 
-             ux = FOURTH*( &
-                    + q(i  ,j  ,k  ,QU) - q(i-1,j  ,k  ,QU) &
-                    + q(i  ,j  ,k-1,QU) - q(i-1,j  ,k-1,QU) &
-                    + q(i  ,j-1,k  ,QU) - q(i-1,j-1,k  ,QU) &
-                    + q(i  ,j-1,k-1,QU) - q(i-1,j-1,k-1,QU) ) * dxinv
-
-             vy = FOURTH*( &
-                    + q(i  ,j  ,k  ,QV) - q(i  ,j-1,k  ,QV) &
-                    + q(i  ,j  ,k-1,QV) - q(i  ,j-1,k-1,QV) &
-                    + q(i-1,j  ,k  ,QV) - q(i-1,j-1,k  ,QV) &
-                    + q(i-1,j  ,k-1,QV) - q(i-1,j-1,k-1,QV) ) * dyinv
-
-             wz = FOURTH*( &
-                    + q(i  ,j  ,k  ,QW) - q(i  ,j  ,k-1,QW) &
-                    + q(i  ,j-1,k  ,QW) - q(i  ,j-1,k-1,QW) &
-                    + q(i-1,j  ,k  ,QW) - q(i-1,j  ,k-1,QW) &
-                    + q(i-1,j-1,k  ,QW) - q(i-1,j-1,k-1,QW) ) * dzinv
-
-             div(i,j,k) = ux + vy + wz
-
+    !$acc parallel loop gang vector collapse(4) deviceptr(flux_out, flux_in, area) async(acc_stream)
+    do n = 1, NVAR
+       do k = lo(3), hi(3)
+          do j = lo(2), hi(2)
+             do i = lo(1), hi(1)
+                flux_out(i,j,k,n) = dt * flux_in(i,j,k,n) * area(i,j,k)
+             enddo
           enddo
        enddo
     enddo
 
-  end subroutine ca_divu
+  end subroutine store_flux
 
+  
 
+  CASTRO_FORT_DEVICE subroutine fill_hydro_source(lo, hi, &
+                                                  uin, uin_lo, uin_hi, &
+                                                  q, q_lo, q_hi, &
+                                                  source, sr_lo, sr_hi, &
+                                                  flux1, flux1_lo, flux1_hi, &
+                                                  flux2, flux2_lo, flux2_hi, &
+                                                  flux3, flux3_lo, flux3_hi, &
+                                                  qx, qx_lo, qx_hi, &
+                                                  qy, qy_lo, qy_hi, &
+                                                  qz, qz_lo, qz_hi, &
+                                                  area1, area1_lo, area1_hi, &
+                                                  area2, area2_lo, area2_hi, &
+                                                  area3, area3_lo, area3_hi, &
+                                                  vol, vol_lo, vol_hi, &
+                                                  dx, dt) bind(C, name="fill_hydro_source")
 
-  CASTRO_FORT_DEVICE subroutine apply_av(lo, hi, idir, dx, &
-                                         div, div_lo, div_hi, &
-                                         uin, uin_lo, uin_hi, &
-                                         flux, f_lo, f_hi)
+    use castro_module, only: NVAR, URHO, UMX, UMY, UMZ, UEDEN, &
+                             UEINT, UTEMP, NGDNV, QVAR, &
+                             GDU, GDV, GDW, GDPRES
 
-    use amrex_constants_module, only: ZERO, FOURTH
-    use castro_module, only: NVAR, UTEMP
+    integer, intent(in) ::       lo(3),       hi(3)
+    integer, intent(in) ::   uin_lo(3),   uin_hi(3)
+    integer, intent(in) ::     q_lo(3),     q_hi(3)
+    integer, intent(in) ::    sr_lo(3),    sr_hi(3)
+    integer, intent(in) :: flux1_lo(3), flux1_hi(3)
+    integer, intent(in) :: area1_lo(3), area1_hi(3)
+    integer, intent(in) :: flux2_lo(3), flux2_hi(3)
+    integer, intent(in) :: area2_lo(3), area2_hi(3)
+    integer, intent(in) ::    qy_lo(3),    qy_hi(3)
+    integer, intent(in) :: flux3_lo(3), flux3_hi(3)
+    integer, intent(in) :: area3_lo(3), area3_hi(3)
+    integer, intent(in) ::    qz_lo(3),    qz_hi(3)
+    integer, intent(in) ::    qx_lo(3),    qx_hi(3)
+    integer, intent(in) ::   vol_lo(3),   vol_hi(3)
 
-    implicit none
+    real(rt), intent(in) :: uin(uin_lo(1):uin_hi(1),uin_lo(2):uin_hi(2),uin_lo(3):uin_hi(3),NVAR)
+    real(rt), intent(in) :: q(q_lo(1):q_hi(1),q_lo(2):q_hi(2),q_lo(3):q_hi(3),QVAR)
+    real(rt), intent(inout) :: source(sr_lo(1):sr_hi(1),sr_lo(2):sr_hi(2),sr_lo(3):sr_hi(3),NVAR)
+    real(rt), intent(in) :: flux1(flux1_lo(1):flux1_hi(1),flux1_lo(2):flux1_hi(2),flux1_lo(3):flux1_hi(3),NVAR)
+    real(rt), intent(in) :: area1(area1_lo(1):area1_hi(1),area1_lo(2):area1_hi(2),area1_lo(3):area1_hi(3))
+    real(rt), intent(in) ::    qx(qx_lo(1):qx_hi(1),qx_lo(2):qx_hi(2),qx_lo(3):qx_hi(3),NGDNV)
+    real(rt), intent(in) :: flux2(flux2_lo(1):flux2_hi(1),flux2_lo(2):flux2_hi(2),flux2_lo(3):flux2_hi(3),NVAR)
+    real(rt), intent(in) :: area2(area2_lo(1):area2_hi(1),area2_lo(2):area2_hi(2),area2_lo(3):area2_hi(3))
+    real(rt), intent(in) ::    qy(qy_lo(1):qy_hi(1),qy_lo(2):qy_hi(2),qy_lo(3):qy_hi(3),NGDNV)
+    real(rt), intent(in) :: flux3(flux3_lo(1):flux3_hi(1),flux3_lo(2):flux3_hi(2),flux3_lo(3):flux3_hi(3),NVAR)
+    real(rt), intent(in) :: area3(area3_lo(1):area3_hi(1),area3_lo(2):area3_hi(2),area3_lo(3):area3_hi(3))
+    real(rt), intent(in) ::    qz(qz_lo(1):qz_hi(1),qz_lo(2):qz_hi(2),qz_lo(3):qz_hi(3),NGDNV)
+    real(rt), intent(in) :: vol(vol_lo(1):vol_hi(1),vol_lo(2):vol_hi(2),vol_lo(3):vol_hi(3))
+    real(rt), intent(in) :: dx(3)
+    real(rt), intent(in), value :: dt
 
-    integer,  intent(in   ) :: lo(3), hi(3)
-    integer,  intent(in   ) :: div_lo(3), div_hi(3)
-    integer,  intent(in   ) :: uin_lo(3), uin_hi(3)
-    integer,  intent(in   ) :: f_lo(3), f_hi(3)
-    real(rt), intent(in   ) :: dx(3)
-    integer,  intent(in   ), value :: idir
+    integer :: i, j, g, k, n
+    real(rt) :: volInv
+    real(rt) :: pdivu
 
-    real(rt), intent(in   ) :: div(div_lo(1):div_hi(1),div_lo(2):div_hi(2),div_lo(3):div_hi(3))
-    real(rt), intent(in   ) :: uin(uin_lo(1):uin_hi(1),uin_lo(2):uin_hi(2),uin_lo(3):uin_hi(3),NVAR)
-    real(rt), intent(inout) :: flux(f_lo(1):f_hi(1),f_lo(2):f_hi(2),f_lo(3):f_hi(3),NVAR)
+    ! For hydro, we will create an update source term that is
+    ! essentially the flux divergence.  This can be added with dt to
+    ! get the update.
 
-    integer :: i, j, k, n
-
-    real(rt) :: div1
-
-    real(rt), parameter :: difmag = 0.1d0
-
-    !$acc parallel loop gang vector collapse(4) deviceptr(div, uin, flux) async(acc_stream)
+    !$acc parallel loop gang vector collapse(3) deviceptr(source, flux1, flux2, flux3, area1, area2, area3) &
+    !$acc deviceptr(qx, qy, qz, vol) async(acc_stream)
     do n = 1, NVAR
        do k = lo(3), hi(3)
           do j = lo(2), hi(2)
              do i = lo(1), hi(1)
 
-                if ( n == UTEMP ) cycle
+                volinv = ONE / vol(i,j,k)
 
-                if (idir .eq. 1) then
-
-                   div1 = FOURTH * (div(i,j,k  ) + div(i,j+1,k  ) + &
-                        div(i,j,k+1) + div(i,j+1,k+1))
-                   div1 = difmag * min(ZERO, div1)
-                   div1 = div1 * (uin(i,j,k,n) - uin(i-1,j,k,n))
-
-                else if (idir .eq. 2) then
-
-                   div1 = FOURTH * (div(i,j,k  ) + div(i+1,j,k  ) + &
-                        div(i,j,k+1) + div(i+1,j,k+1))
-                   div1 = difmag * min(ZERO, div1)
-                   div1 = div1 * (uin(i,j,k,n) - uin(i,j-1,k,n))
-
-                else
-
-                   div1 = FOURTH * (div(i,j  ,k) + div(i+1,j,k  ) + &
-                        div(i,j+1,k) + div(i+1,j+1,k))
-                   div1 = difmag * min(ZERO, div1)
-                   div1 = div1 * (uin(i,j,k,n)-uin(i,j,k-1,n))
-
-                end if
-
-                flux(i,j,k,n) = flux(i,j,k,n) + dx(idir) * div1
-
-             end do
-          end do
-       end do
-    end do
-
-  end subroutine apply_av
-
-
-
-  CASTRO_FORT_DEVICE subroutine ca_construct_hydro_update(lo, hi, dx, dt, stage_weight, &
-                                                          q1, q1_lo, q1_hi, &
-                                                          q2, q2_lo, q2_hi, &
-                                                          q3, q3_lo, q3_hi, &
-                                                          f1, f1_lo, f1_hi, &
-                                                          f2, f2_lo, f2_hi, &
-                                                          f3, f3_lo, f3_hi, &
-                                                          a1, a1_lo, a1_hi, &
-                                                          a2, a2_lo, a2_hi, &
-                                                          a3, a3_lo, a3_hi, &
-                                                          vol, vol_lo, vol_hi, &
-                                                          update, u_lo, u_hi) &
-                                                          bind(C, name='ca_construct_hydro_update')
-
-    use amrex_constants_module, only: HALF, ONE
-    use castro_module, only: NVAR, UEINT, NGDNV, GDPRES, GDU, GDV, GDW
-
-    implicit none
-
-    integer,  intent(in   ) :: lo(3), hi(3)
-    integer,  intent(in   ) :: q1_lo(3), q1_hi(3)
-    integer,  intent(in   ) :: q2_lo(3), q2_hi(3)
-    integer,  intent(in   ) :: q3_lo(3), q3_hi(3)
-    integer,  intent(in   ) :: f1_lo(3), f1_hi(3)
-    integer,  intent(in   ) :: f2_lo(3), f2_hi(3)
-    integer,  intent(in   ) :: f3_lo(3), f3_hi(3)
-    integer,  intent(in   ) :: a1_lo(3), a1_hi(3)
-    integer,  intent(in   ) :: a2_lo(3), a2_hi(3)
-    integer,  intent(in   ) :: a3_lo(3), a3_hi(3)
-    integer,  intent(in   ) :: vol_lo(3), vol_hi(3)
-    integer,  intent(in   ) :: u_lo(3), u_hi(3)
-    real(rt), intent(in   ) :: dx(3)
-    real(rt), intent(in   ), value :: dt, stage_weight
-
-    real(rt), intent(in   ) :: q1(q1_lo(1):q1_hi(1),q1_lo(2):q1_hi(2),q1_lo(3):q1_hi(3),NGDNV)
-    real(rt), intent(in   ) :: q2(q2_lo(1):q2_hi(1),q2_lo(2):q2_hi(2),q2_lo(3):q2_hi(3),NGDNV)
-    real(rt), intent(in   ) :: q3(q3_lo(1):q3_hi(1),q3_lo(2):q3_hi(2),q3_lo(3):q3_hi(3),NGDNV)
-    real(rt), intent(in   ) :: f1(f1_lo(1):f1_hi(1),f1_lo(2):f1_hi(2),f1_lo(3):f1_hi(3),NVAR)
-    real(rt), intent(in   ) :: f2(f2_lo(1):f2_hi(1),f2_lo(2):f2_hi(2),f2_lo(3):f2_hi(3),NVAR)
-    real(rt), intent(in   ) :: f3(f3_lo(1):f3_hi(1),f3_lo(2):f3_hi(2),f3_lo(3):f3_hi(3),NVAR)
-    real(rt), intent(in   ) :: a1(a1_lo(1):a1_hi(1),a1_lo(2):a1_hi(2),a1_lo(3):a1_hi(3))
-    real(rt), intent(in   ) :: a2(a2_lo(1):a2_hi(1),a2_lo(2):a2_hi(2),a2_lo(3):a2_hi(3))
-    real(rt), intent(in   ) :: a3(a3_lo(1):a3_hi(1),a3_lo(2):a3_hi(2),a3_lo(3):a3_hi(3))
-    real(rt), intent(in   ) :: vol(vol_lo(1):vol_hi(1),vol_lo(2):vol_hi(2),vol_lo(3):vol_hi(3))
-    real(rt), intent(inout) :: update(u_lo(1):u_hi(1),u_lo(2):u_hi(2),u_lo(3):u_hi(3),NVAR)
-
-    integer  :: i, j, k, n
-    real(rt) :: pdivu, dxinv(3), dtinv
-
-    dtinv = ONE / dt
-    dxinv = ONE / dx
-
-    !$acc parallel loop gang vector collapse(4) deviceptr(q1, q2, q3, f1, f2, f3, a1, a2, a3, vol, update) async(acc_stream)
-    do n = 1, NVAR
-       do k = lo(3), hi(3)
-          do j = lo(2), hi(2)
-             do i = lo(1), hi(1)
-
-                ! Note that the fluxes have already been scaled by dt * dA.
-
-                update(i,j,k,n) = update(i,j,k,n) + stage_weight * dtinv * (f1(i,j,k,n) - f1(i+1,j,k,n) + &
-                                                                            f2(i,j,k,n) - f2(i,j+1,k,n) + &
-                                                                            f3(i,j,k,n) - f3(i,j,k+1,n) ) / vol(i,j,k)
+                source(i,j,k,n) = source(i,j,k,n) + &
+                     ( flux1(i,j,k,n) * area1(i,j,k) - flux1(i+1,j,k,n) * area1(i+1,j,k) &
+                     + flux2(i,j,k,n) * area2(i,j,k) - flux2(i,j+1,k,n) * area2(i,j+1,k) &
+                     + flux3(i,j,k,n) * area3(i,j,k) - flux3(i,j,k+1,n) * area3(i,j,k+1) &
+                     ) * volinv
 
                 ! Add the p div(u) source term to (rho e).
                 if (n .eq. UEINT) then
+                   pdivu = HALF * (qx(i+1,j,k,GDPRES) + qx(i,j,k,GDPRES)) * &
+                                  (qx(i+1,j,k,GDU) - qx(i,j,k,GDU)) / dx(1) + &
+                           HALF * (qy(i,j+1,k,GDPRES) + qy(i,j,k,GDPRES)) * &
+                                  (qy(i,j+1,k,GDV) - qy(i,j,k,GDV)) / dx(2) + &
+                           HALF * (qz(i,j,k+1,GDPRES) + qz(i,j,k,GDPRES)) * &
+                                  (qz(i,j,k+1,GDW) - qz(i,j,k,GDW)) / dx(3)
 
-                   pdivu = HALF * (q1(i+1,j,k,GDPRES) + q1(i,j,k,GDPRES)) * &
-                                  (q1(i+1,j,k,GDU) - q1(i,j,k,GDU)) * dxinv(1) + &
-                           HALF * (q2(i,j+1,k,GDPRES) + q2(i,j,k,GDPRES)) * &
-                                  (q2(i,j+1,k,GDV) - q2(i,j,k,GDV)) * dxinv(2) + &
-                           HALF * (q3(i,j,k+1,GDPRES) + q3(i,j,k,GDPRES)) * &
-                                  (q3(i,j,k+1,GDW) - q3(i,j,k,GDW)) * dxinv(3)
-
-                   update(i,j,k,n) = update(i,j,k,n) - stage_weight * pdivu
-
+                   source(i,j,k,n) = source(i,j,k,n) - pdivu
                 endif
 
              enddo
@@ -424,70 +406,6 @@ contains
        enddo
     enddo
 
-  end subroutine ca_construct_hydro_update
-
-
-
-  CASTRO_FORT_DEVICE subroutine scale_flux(lo, hi, flux, f_lo, f_hi, area, a_lo, a_hi, dt)
-
-    use castro_module, only: NVAR
-
-    implicit none
-
-    integer,  intent(in   ) :: lo(3), hi(3)
-    integer,  intent(in   ) :: f_lo(3), f_hi(3)
-    integer,  intent(in   ) :: a_lo(3), a_hi(3)
-    real(rt), intent(in   ), value :: dt
-
-    real(rt), intent(inout) :: flux(f_lo(1):f_hi(1),f_lo(2):f_hi(2),f_lo(3):f_hi(3),NVAR)
-    real(rt), intent(in   ) :: area(a_lo(1):a_hi(1),a_lo(2):a_hi(2),a_lo(3):a_hi(3))
-
-    integer :: i, j, k, n
-
-    !$acc parallel loop gang vector collapse(4) deviceptr(flux, area) async(acc_stream)
-    do n = 1, NVAR
-       do k = lo(3), hi(3)
-          do j = lo(2), hi(2)
-             do i = lo(1), hi(1)
-                flux(i,j,k,n) = dt * flux(i,j,k,n) * area(i,j,k)
-             enddo
-          enddo
-       enddo
-    enddo
-
-  end subroutine scale_flux
-
-
-
-  CASTRO_FORT_DEVICE subroutine update_fluxes(lo, hi, fluxes, fs_lo, fs_hi, flux, f_lo, f_hi, stage_weight)
-
-    use castro_module, only: NVAR
-
-    implicit none
-
-    integer,  intent(in   ) :: lo(3), hi(3)
-    integer,  intent(in   ) :: fs_lo(3), fs_hi(3)
-    integer,  intent(in   ) :: f_lo(3), f_hi(3)
-    real(rt), intent(in   ), value :: stage_weight
-
-    real(rt), intent(inout) :: fluxes(fs_lo(1):fs_hi(1),fs_lo(2):fs_hi(2),fs_lo(3):fs_hi(3),NVAR)
-    real(rt), intent(in   ) :: flux(f_lo(1):f_hi(1),f_lo(2):f_hi(2),f_lo(3):f_hi(3),NVAR)
-
-    integer :: i, j, k, n
-
-    ! Update the total fluxes for the timestep with the contribution from this stage.
-
-    !$acc parallel loop gang vector collapse(4) deviceptr(fluxes, flux) async(acc_stream)
-    do n = 1, NVAR
-       do k = lo(3), hi(3)
-          do j = lo(2), hi(2)
-             do i = lo(1), hi(1)
-                fluxes(i,j,k,n) = fluxes(i,j,k,n) + stage_weight * flux(i,j,k,n)
-             enddo
-          enddo
-       enddo
-    enddo
-
-  end subroutine update_fluxes
+  end subroutine fill_hydro_source
 
 end module hydro_module

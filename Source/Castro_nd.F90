@@ -58,11 +58,15 @@ module castro_module
 
   real(rt), parameter :: small_dens = 1.0d-12
   real(rt), parameter :: small_temp = 1.0d3
+  real(rt), parameter :: small_pres = 1.e-200_rt
+  real(rt), parameter :: smallu = 1.e-12_rt
+  real(rt), parameter :: small = 1.e-8_rt
+  real(rt), parameter :: dual_energy_eta1 = 1.e0_rt
   real(rt), parameter :: cfl = 0.5d0
 
 contains
 
-  CASTRO_FORT_DEVICE subroutine ca_enforce_minimum_density(lo, hi, state, s_lo, s_hi) bind(C, name='ca_enforce_minimum_density')
+  CASTRO_FORT_DEVICE subroutine enforce_minimum_density(lo, hi, state, s_lo, s_hi) bind(C, name='enforce_minimum_density')
 
     use amrex_constants_module, only: ZERO
     use network, only: nspec
@@ -159,11 +163,11 @@ contains
        enddo
     enddo
 
-  end subroutine ca_enforce_minimum_density
+  end subroutine enforce_minimum_density
 
 
 
-  CASTRO_FORT_DEVICE subroutine ca_normalize_species(lo, hi, state, s_lo, s_hi) bind(C, name='ca_normalize_species')
+  CASTRO_FORT_DEVICE subroutine normalize_species(lo, hi, state, s_lo, s_hi) bind(C, name='normalize_species')
 
     use network, only: nspec
     use amrex_constants_module, only: ONE
@@ -189,11 +193,11 @@ contains
        enddo
     enddo
 
-  end subroutine ca_normalize_species
+  end subroutine normalize_species
 
 
 
-  CASTRO_FORT_DEVICE subroutine ca_reset_internal_e(lo,hi,u,u_lo,u_hi) bind(C, name='ca_reset_internal_e')
+  CASTRO_FORT_DEVICE subroutine reset_internal_e(lo, hi, u, u_lo, u_hi) bind(C, name='reset_internal_e')
 
     use eos_module, only: eos_t, eos_input_re, eos_input_rt, eos
     use network, only: nspec
@@ -271,11 +275,11 @@ contains
        enddo
     enddo
 
-  end subroutine ca_reset_internal_e
+  end subroutine reset_internal_e
 
 
 
-  CASTRO_FORT_DEVICE subroutine ca_compute_temp(lo,hi,state,s_lo,s_hi) bind(C, name='ca_compute_temp')
+  CASTRO_FORT_DEVICE subroutine compute_temp(lo, hi, state, s_lo, s_hi) bind(C, name='compute_temp')
 
     use network, only: nspec
     use eos_module, only: eos_input_re, eos_t, eos
@@ -313,15 +317,15 @@ contains
        enddo
     enddo
 
-  end subroutine ca_compute_temp
+  end subroutine compute_temp
 
 
 
-  CASTRO_FORT_DEVICE subroutine ca_denerror(lo, hi, &
-                                            tag, taglo, taghi, &
-                                            den, denlo, denhi, &
-                                            set, clear) &
-                                            bind(C, name="ca_denerror")
+  CASTRO_FORT_DEVICE subroutine denerror(lo, hi, &
+                                         tag, taglo, taghi, &
+                                         den, denlo, denhi, &
+                                         set, clear) &
+                                         bind(C, name="denerror")
 
     implicit none
 
@@ -356,7 +360,7 @@ contains
        end do
     end do
 
-  end subroutine ca_denerror
+  end subroutine denerror
 
 
 
@@ -407,27 +411,5 @@ contains
     end do
 
   end subroutine calculate_blast_radius
-
-
-
-  subroutine ca_get_spec_names(spec_names,ispec,len) bind(C, name="ca_get_spec_names")
-
-    use network, only: nspec, short_spec_names
-
-    implicit none
-
-    integer, intent(in   ) :: ispec
-    integer, intent(inout) :: len
-    integer, intent(inout) :: spec_names(len)
-
-    integer :: i
-
-    len = len_trim(short_spec_names(ispec+1))
-
-    do i = 1, len
-       spec_names(i) = ichar(short_spec_names(ispec+1)(i:i))
-    end do
-
-  end subroutine ca_get_spec_names
   
 end module castro_module

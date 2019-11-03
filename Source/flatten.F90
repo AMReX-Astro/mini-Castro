@@ -6,7 +6,7 @@ module flatten_module
 
 contains
 
-  CASTRO_FORT_DEVICE subroutine ca_uflaten(lo, hi, q, q_lo, q_hi, flatn, f_lo, f_hi) bind(C, name='ca_uflaten')
+  CASTRO_FORT_DEVICE subroutine uflatten(lo, hi, q, q_lo, q_hi, flatn, f_lo, f_hi) bind(C, name='uflatten')
 
     use amrex_constants_module, only: ZERO, ONE
     use amrex_fort_module, only: rt => amrex_real
@@ -129,6 +129,6 @@ contains
        end do
     end do
 
-  end subroutine ca_uflaten
+  end subroutine uflatten
 
 end module flatten_module

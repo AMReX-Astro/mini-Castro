@@ -8,7 +8,6 @@
 #include <AMReX_FluxRegister.H>
 
 #define NumSpec 13
-#define MOL_STAGES 2
 #define NQAUX 4
 #define NGDNV 6
 #define QVAR 21
@@ -72,26 +71,8 @@ public:
     // Advance grids at this level in time
     virtual amrex::Real advance (amrex::Real time, amrex::Real dt, int iteration, int ncycle) override;
 
-    // Prepare for the advance
-    void initialize_advance(amrex::Real time, amrex::Real dt);
-
-    // Prepare for the MOL iteration
-    void initialize_do_advance(amrex::Real time, amrex::Real dt, int sub_iteration, int sub_ncycle);
-
-    // Do the MOL iteration
-    amrex::Real do_advance (amrex::Real time, amrex::Real dt, int sub_iteration, int sub_ncycle);
-
-    // Clean up after the MOL iteration
-    void finalize_do_advance(amrex::Real time, amrex::Real dt, int sub_iteration, int sub_ncycle);
-
-    // Clean up after the advance
-    void finalize_advance(amrex::Real time, amrex::Real dt);
-
-    // Construct the (instantaneous) hydrodynamic source term
-    void construct_mol_hydro_source(amrex::Real time, amrex::Real dt, int istage, int nstages);
-
-    // Check if our state has any NaN's
-    void check_for_nan(amrex::MultiFab& state, int check_ghost=0);
+    // Construct the hydrodynamic source term
+    void construct_hydro_source(amrex::Real dt);
 
     // Estimate time step
     amrex::Real estTimeStep (amrex::Real dt_old);
@@ -134,20 +115,21 @@ public:
 			   int                 n_error_buf = 0,
 			   int                 ngrow = 0) override;
 
-    // Create a version of the state data that has ghost zones
-    void expand_state(amrex::MultiFab& state, amrex::Real time, int ng);
-
     // Apply a number of corrections to ensure consistency in the state
     void clean_state (amrex::MultiFab& state);
-
+    
     // Update coarse levels with flux correction from fine levels
     void reflux (int crse_level, int fine_level);
 
     // Average down data from fine levels onto underlying coarse levels
     void avgDown ();
 
-    // A record of how many cells we have advanced throughout the simulation
-    static long num_zones_advanced;
+    // A record of how many cells we have advanced throughout the simulation.
+    // This is saved as a real because we will be storing the number of zones
+    // advanced as a ratio with the number of zones on the coarse grid (to
+    // help prevent the number from getting too large), and that may be a
+    // non-integer number.
+    static amrex::Real num_zones_advanced;
 
     // How often should we print out diagnostic output?
     static int diagnostic_interval;
@@ -157,18 +139,12 @@ protected:
     // A state array with ghost zones
     amrex::MultiFab Sborder;
 
-    // A state array for the post burn state to be used in MOL integration
-    amrex::MultiFab Sburn;
-
     // Source term representing hydrodynamics update
     amrex::MultiFab hydro_source;
 
     // Hydrodynamic fluxes
     amrex::Vector<std::unique_ptr<amrex::MultiFab> > fluxes;
     amrex::FluxRegister flux_reg;
-
-    // Storage for the method of lines stages
-    amrex::Vector<std::unique_ptr<amrex::MultiFab> > k_mol;
 
     // Geometric data
     amrex::MultiFab volume;

@@ -28,8 +28,6 @@ module network
 
   !$acc declare create(aion, zion, aion_inv)
 
-  character(len=5), save :: short_spec_names(nspec)
-
 contains
 
   subroutine network_init() bind(C, name='network_init')
@@ -71,21 +69,6 @@ contains
     zion(ini56) = 28.0d0
 
     aion_inv(:) = 1.d0 / aion(:)
-
-    ! Set the species names
-    short_spec_names(ihe4)  = 'he4'
-    short_spec_names(ic12)  = 'c12'
-    short_spec_names(io16)  = 'o16'
-    short_spec_names(ine20) = 'ne20'
-    short_spec_names(img24) = 'mg24'
-    short_spec_names(isi28) = 'si28'
-    short_spec_names(is32)  = 's32'
-    short_spec_names(iar36) = 'ar36'
-    short_spec_names(ica40) = 'ca40'
-    short_spec_names(iti44) = 'ti44'
-    short_spec_names(icr48) = 'cr48'
-    short_spec_names(ife52) = 'fe52'
-    short_spec_names(ini56) = 'ni56'
 
     !$acc update device(aion, zion, aion_inv)
 
