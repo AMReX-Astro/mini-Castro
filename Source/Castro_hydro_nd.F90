@@ -274,21 +274,21 @@ contains
 
   
 
-  CASTRO_FORT_DEVICE subroutine consup(lo, hi, &
-                                       uin, uin_lo, uin_hi, &
-                                       q, q_lo, q_hi, &
-                                       update, updt_lo, updt_hi, &
-                                       flux1, flux1_lo, flux1_hi, &
-                                       flux2, flux2_lo, flux2_hi, &
-                                       flux3, flux3_lo, flux3_hi, &
-                                       qx, qx_lo, qx_hi, &
-                                       qy, qy_lo, qy_hi, &
-                                       qz, qz_lo, qz_hi, &
-                                       area1, area1_lo, area1_hi, &
-                                       area2, area2_lo, area2_hi, &
-                                       area3, area3_lo, area3_hi, &
-                                       vol, vol_lo, vol_hi, &
-                                       dx, dt) bind(C, name="consup")
+  CASTRO_FORT_DEVICE subroutine fill_hydro_source(lo, hi, &
+                                                  uin, uin_lo, uin_hi, &
+                                                  q, q_lo, q_hi, &
+                                                  source, sr_lo, sr_hi, &
+                                                  flux1, flux1_lo, flux1_hi, &
+                                                  flux2, flux2_lo, flux2_hi, &
+                                                  flux3, flux3_lo, flux3_hi, &
+                                                  qx, qx_lo, qx_hi, &
+                                                  qy, qy_lo, qy_hi, &
+                                                  qz, qz_lo, qz_hi, &
+                                                  area1, area1_lo, area1_hi, &
+                                                  area2, area2_lo, area2_hi, &
+                                                  area3, area3_lo, area3_hi, &
+                                                  vol, vol_lo, vol_hi, &
+                                                  dx, dt) bind(C, name="fill_hydro_source")
 
     use castro_module, only: NVAR, URHO, UMX, UMY, UMZ, UEDEN, &
                              UEINT, UTEMP, NGDNV, QVAR, &
@@ -297,7 +297,7 @@ contains
     integer, intent(in) ::       lo(3),       hi(3)
     integer, intent(in) ::   uin_lo(3),   uin_hi(3)
     integer, intent(in) ::     q_lo(3),     q_hi(3)
-    integer, intent(in) ::  updt_lo(3),  updt_hi(3)
+    integer, intent(in) ::    sr_lo(3),    sr_hi(3)
     integer, intent(in) :: flux1_lo(3), flux1_hi(3)
     integer, intent(in) :: area1_lo(3), area1_hi(3)
     integer, intent(in) :: flux2_lo(3), flux2_hi(3)
@@ -311,7 +311,7 @@ contains
 
     real(rt), intent(in) :: uin(uin_lo(1):uin_hi(1),uin_lo(2):uin_hi(2),uin_lo(3):uin_hi(3),NVAR)
     real(rt), intent(in) :: q(q_lo(1):q_hi(1),q_lo(2):q_hi(2),q_lo(3):q_hi(3),QVAR)
-    real(rt), intent(inout) :: update(updt_lo(1):updt_hi(1),updt_lo(2):updt_hi(2),updt_lo(3):updt_hi(3),NVAR)
+    real(rt), intent(inout) :: source(sr_lo(1):sr_hi(1),sr_lo(2):sr_hi(2),sr_lo(3):sr_hi(3),NVAR)
     real(rt), intent(in) :: flux1(flux1_lo(1):flux1_hi(1),flux1_lo(2):flux1_hi(2),flux1_lo(3):flux1_hi(3),NVAR)
     real(rt), intent(in) :: area1(area1_lo(1):area1_hi(1),area1_lo(2):area1_hi(2),area1_lo(3):area1_hi(3))
     real(rt), intent(in) ::    qx(qx_lo(1):qx_hi(1),qx_lo(2):qx_hi(2),qx_lo(3):qx_hi(3),NGDNV)
@@ -340,7 +340,7 @@ contains
 
                 volinv = ONE / vol(i,j,k)
 
-                update(i,j,k,n) = update(i,j,k,n) + &
+                source(i,j,k,n) = source(i,j,k,n) + &
                      ( flux1(i,j,k,n) * area1(i,j,k) - flux1(i+1,j,k,n) * area1(i+1,j,k) &
                      + flux2(i,j,k,n) * area2(i,j,k) - flux2(i,j+1,k,n) * area2(i,j+1,k) &
                      + flux3(i,j,k,n) * area3(i,j,k) - flux3(i,j,k+1,n) * area3(i,j,k+1) &
@@ -355,7 +355,7 @@ contains
                            HALF * (qz(i,j,k+1,GDPRES) + qz(i,j,k,GDPRES)) * &
                                   (qz(i,j,k+1,GDW) - qz(i,j,k,GDW)) / dx(3)
 
-                   update(i,j,k,n) = update(i,j,k,n) - pdivu
+                   source(i,j,k,n) = source(i,j,k,n) - pdivu
                 endif
 
              enddo
@@ -363,7 +363,7 @@ contains
        enddo
     enddo
 
-  end subroutine consup
+  end subroutine fill_hydro_source
 
 
 

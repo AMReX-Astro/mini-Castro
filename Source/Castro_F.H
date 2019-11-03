@@ -61,11 +61,11 @@ extern "C"
      const amrex::Real dt);
 
   CASTRO_DEVICE
-  void consup
+  void fill_hydro_source
     (const int* lo, const int* hi,
-     const BL_FORT_FAB_ARG_3D(Sborder),
+     const BL_FORT_FAB_ARG_3D(state),
      const BL_FORT_FAB_ARG_3D(q),
-     BL_FORT_FAB_ARG_3D(hydro_source),
+     BL_FORT_FAB_ARG_3D(source),
      const BL_FORT_FAB_ARG_3D(flux0),
      const BL_FORT_FAB_ARG_3D(flux1),
      const BL_FORT_FAB_ARG_3D(flux2),

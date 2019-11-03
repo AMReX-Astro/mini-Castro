@@ -400,25 +400,25 @@ Castro::construct_hydro_source(Real dt)
 
       }
 
-      // conservative update
+      // Construct the conservative update source term.
 
       CASTRO_LAUNCH_LAMBDA(bx, lbx,
       {
-          consup(AMREX_ARLIM_ANYD(lbx.loVect()), AMREX_ARLIM_ANYD(lbx.hiVect()),
-                 AMREX_ARR4_TO_FORTRAN_ANYD(state),
-                 AMREX_ARR4_TO_FORTRAN_ANYD(q),
-                 AMREX_ARR4_TO_FORTRAN_ANYD(source),
-                 AMREX_ARR4_TO_FORTRAN_ANYD(flux[0]),
-                 AMREX_ARR4_TO_FORTRAN_ANYD(flux[1]),
-                 AMREX_ARR4_TO_FORTRAN_ANYD(flux[2]),
-                 AMREX_ARR4_TO_FORTRAN_ANYD(qe[0]),
-                 AMREX_ARR4_TO_FORTRAN_ANYD(qe[1]),
-                 AMREX_ARR4_TO_FORTRAN_ANYD(qe[2]),
-                 AMREX_ARR4_TO_FORTRAN_ANYD(ar[0]),
-                 AMREX_ARR4_TO_FORTRAN_ANYD(ar[1]),
-                 AMREX_ARR4_TO_FORTRAN_ANYD(ar[2]),
-                 AMREX_ARR4_TO_FORTRAN_ANYD(vol),
-                 AMREX_ZFILL(dx.data()), dt);
+          fill_hydro_source(AMREX_ARLIM_ANYD(lbx.loVect()), AMREX_ARLIM_ANYD(lbx.hiVect()),
+                            AMREX_ARR4_TO_FORTRAN_ANYD(state),
+                            AMREX_ARR4_TO_FORTRAN_ANYD(q),
+                            AMREX_ARR4_TO_FORTRAN_ANYD(source),
+                            AMREX_ARR4_TO_FORTRAN_ANYD(flux[0]),
+                            AMREX_ARR4_TO_FORTRAN_ANYD(flux[1]),
+                            AMREX_ARR4_TO_FORTRAN_ANYD(flux[2]),
+                            AMREX_ARR4_TO_FORTRAN_ANYD(qe[0]),
+                            AMREX_ARR4_TO_FORTRAN_ANYD(qe[1]),
+                            AMREX_ARR4_TO_FORTRAN_ANYD(qe[2]),
+                            AMREX_ARR4_TO_FORTRAN_ANYD(ar[0]),
+                            AMREX_ARR4_TO_FORTRAN_ANYD(ar[1]),
+                            AMREX_ARR4_TO_FORTRAN_ANYD(ar[2]),
+                            AMREX_ARR4_TO_FORTRAN_ANYD(vol),
+                            AMREX_ZFILL(dx.data()), dt);
       });
 
     } // MFIter loop
