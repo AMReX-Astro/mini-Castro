@@ -13,7 +13,6 @@ FEXE_headers += Castro_F.H
 F90EXE_sources += Castro_nd.F90
 F90EXE_sources += Castro_hydro_nd.F90 
 F90EXE_sources += timestep.F90
-F90EXE_sources += flatten.F90
 F90EXE_sources += eos.F90
 F90EXE_sources += network.F90
 F90EXE_sources += Prob.F90
