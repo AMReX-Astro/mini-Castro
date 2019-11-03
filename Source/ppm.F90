@@ -8,7 +8,7 @@ module ppm_module
 
 contains
 
-  subroutine ppm_reconstruct(s, flatn, sm, sp) bind(C, name='ppm_reconstruct')
+  CASTRO_FORT_DEVICE subroutine ppm_reconstruct(s, flatn, sm, sp) bind(C, name='ppm_reconstruct')
     ! This routine does the reconstruction of the zone data into a parabola.
 
     implicit none
@@ -108,7 +108,7 @@ contains
 
 
 
-  subroutine ppm_int_profile(sm, sp, sc, u, c, dtdx, Ip, Im) bind(C, name='ppm_int_profile')
+  CASTRO_FORT_DEVICE subroutine ppm_int_profile(sm, sp, sc, u, c, dtdx, Ip, Im) bind(C, name='ppm_int_profile')
     ! Integrate the parabolic profile to the edge of the cell.
 
     implicit none
@@ -169,16 +169,16 @@ contains
 
 
 
-  subroutine trace_ppm(lo, hi, &
-                       vlo, vhi, &
-                       idir, &
-                       q, qd_lo, qd_hi, &
-                       qaux, qa_lo, qa_hi, &
-                       flatn, f_lo, f_hi, &
-                       qm, qm_lo, qm_hi, &
-                       qp, qp_lo, qp_hi, &
-                       domlo, domhi, &
-                       dx, dt) bind(C, name='trace_ppm')
+  CASTRO_FORT_DEVICE subroutine trace_ppm(lo, hi, &
+                                          vlo, vhi, &
+                                          idir, &
+                                          q, qd_lo, qd_hi, &
+                                          qaux, qa_lo, qa_hi, &
+                                          flatn, f_lo, f_hi, &
+                                          qm, qm_lo, qm_hi, &
+                                          qp, qp_lo, qp_hi, &
+                                          domlo, domhi, &
+                                          dx, dt) bind(C, name='trace_ppm')
 
     use network, only: nspec
     use castro_module, only: QVAR, NQAUX, QRHO, QU, QV, QW, QC, QGAMC, QGAME, &

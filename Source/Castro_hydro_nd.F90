@@ -8,9 +8,9 @@ module hydro_module
 
 contains
 
-  subroutine divu(lo, hi, &
-                  q, q_lo, q_hi, &
-                  dx, div, div_lo, div_hi) bind(C, name='divu')
+  CASTRO_FORT_DEVICE subroutine divu(lo, hi, &
+                                     q, q_lo, q_hi, &
+                                     dx, div, div_lo, div_hi) bind(C, name='divu')
     ! this computes the *node-centered* divergence
 
     use amrex_constants_module, only: FOURTH
@@ -64,10 +64,10 @@ contains
 
 
 
-  subroutine ctoprim(lo, hi, &
-                     uin, uin_lo, uin_hi, &
-                     q,     q_lo,   q_hi, &
-                     qaux, qa_lo,  qa_hi) bind(c,name='ctoprim')
+  CASTRO_FORT_DEVICE subroutine ctoprim(lo, hi, &
+                                        uin, uin_lo, uin_hi, &
+                                        q,     q_lo,   q_hi, &
+                                        qaux, qa_lo,  qa_hi) bind(c,name='ctoprim')
 
     use network, only: nspec
     use eos_module, only: eos_t, eos_input_re, eos
@@ -158,10 +158,10 @@ contains
 
 
 
-  subroutine apply_av(lo, hi, idir, dx, &
-                      div, div_lo, div_hi, &
-                      uin, uin_lo, uin_hi, &
-                      flux, f_lo, f_hi) bind(c, name="apply_av")
+  CASTRO_FORT_DEVICE subroutine apply_av(lo, hi, idir, dx, &
+                                         div, div_lo, div_hi, &
+                                         uin, uin_lo, uin_hi, &
+                                         flux, f_lo, f_hi) bind(c, name="apply_av")
 
     use amrex_constants_module, only: FOURTH
     use castro_module, only: NVAR, UTEMP
@@ -227,7 +227,7 @@ contains
   end subroutine apply_av
 
   
-  subroutine normalize_species_fluxes(lo, hi, flux, f_lo, f_hi) bind(c, name="normalize_species_fluxes")
+  CASTRO_FORT_DEVICE subroutine normalize_species_fluxes(lo, hi, flux, f_lo, f_hi) bind(c, name="normalize_species_fluxes")
     ! Normalize the fluxes of the mass fractions so that
     ! they sum to 0.  This is essentially the CMA procedure that is
     ! defined in Plewa & Muller, 1999, A&A, 342, 179.
@@ -274,21 +274,21 @@ contains
 
   
 
-  subroutine consup(lo, hi, &
-                    uin, uin_lo, uin_hi, &
-                    q, q_lo, q_hi, &
-                    update, updt_lo, updt_hi, &
-                    flux1, flux1_lo, flux1_hi, &
-                    flux2, flux2_lo, flux2_hi, &
-                    flux3, flux3_lo, flux3_hi, &
-                    qx, qx_lo, qx_hi, &
-                    qy, qy_lo, qy_hi, &
-                    qz, qz_lo, qz_hi, &
-                    area1, area1_lo, area1_hi, &
-                    area2, area2_lo, area2_hi, &
-                    area3, area3_lo, area3_hi, &
-                    vol, vol_lo, vol_hi, &
-                    dx, dt) bind(C, name="consup")
+  CASTRO_FORT_DEVICE subroutine consup(lo, hi, &
+                                       uin, uin_lo, uin_hi, &
+                                       q, q_lo, q_hi, &
+                                       update, updt_lo, updt_hi, &
+                                       flux1, flux1_lo, flux1_hi, &
+                                       flux2, flux2_lo, flux2_hi, &
+                                       flux3, flux3_lo, flux3_hi, &
+                                       qx, qx_lo, qx_hi, &
+                                       qy, qy_lo, qy_hi, &
+                                       qz, qz_lo, qz_hi, &
+                                       area1, area1_lo, area1_hi, &
+                                       area2, area2_lo, area2_hi, &
+                                       area3, area3_lo, area3_hi, &
+                                       vol, vol_lo, vol_hi, &
+                                       dx, dt) bind(C, name="consup")
 
     use castro_module, only: NVAR, URHO, UMX, UMY, UMZ, UEDEN, &
                              UEINT, UTEMP, NGDNV, QVAR, &
@@ -367,11 +367,11 @@ contains
 
 
 
-  subroutine store_flux(lo, hi, &
-                        flux_out, fo_lo, fo_hi, &
-                        flux_in, fi_lo, fi_hi, &
-                        area, a_lo, a_hi, &
-                        dt) bind(C, name="store_flux")
+  CASTRO_FORT_DEVICE subroutine store_flux(lo, hi, &
+                                           flux_out, fo_lo, fo_hi, &
+                                           flux_in, fi_lo, fi_hi, &
+                                           area, a_lo, a_hi, &
+                                           dt) bind(C, name="store_flux")
 
     use castro_module, only: NVAR
 

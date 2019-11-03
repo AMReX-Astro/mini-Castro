@@ -52,6 +52,7 @@ extern "C"
      BL_FORT_FAB_ARG_3D(q),
      BL_FORT_FAB_ARG_3D(flatn));
 
+  CASTRO_DEVICE
   void store_flux
     (const int* lo, const int* hi,
      BL_FORT_FAB_ARG_3D(flux_out),
@@ -59,6 +60,7 @@ extern "C"
      BL_FORT_FAB_ARG_3D(area),
      const amrex::Real dt);
 
+  CASTRO_DEVICE
   void consup
     (const int* lo, const int* hi,
      const BL_FORT_FAB_ARG_3D(Sborder),
@@ -76,10 +78,12 @@ extern "C"
      const BL_FORT_FAB_ARG_3D(volume),
      const amrex::Real* dx, const amrex::Real dt);
 
+  CASTRO_DEVICE
   void normalize_species_fluxes
     (const int* lo, const int* hi,
      BL_FORT_FAB_ARG_3D(flux));
 
+  CASTRO_DEVICE
   void apply_av
     (const int* lo, const int* hi,
      const int idir, const amrex::Real* dx,
@@ -87,6 +91,7 @@ extern "C"
      BL_FORT_FAB_ARG_3D(Sborder),
      BL_FORT_FAB_ARG_3D(flux));
 
+  CASTRO_DEVICE
   void trans1(const int* lo, const int* hi,
               const int idir1, const int idir2,
               const BL_FORT_FAB_ARG_3D(q2m),
@@ -98,6 +103,7 @@ extern "C"
               const BL_FORT_FAB_ARG_3D(q1),
               const amrex::Real cdtdx);
 
+  CASTRO_DEVICE
   void trans2(const int* lo, const int* hi,
               const int idir1, const int idir2, const int idir3,
               const BL_FORT_FAB_ARG_3D(qm),
@@ -111,6 +117,7 @@ extern "C"
               const BL_FORT_FAB_ARG_3D(qz),
               const amrex::Real hdtdx, const amrex::Real cdtdy, const amrex::Real cdtdz);
 
+  CASTRO_DEVICE
   void compute_flux
     (const int* lo, const int* hi,
      const BL_FORT_FAB_ARG_3D(ql),
@@ -121,12 +128,14 @@ extern "C"
      const BL_FORT_FAB_ARG_3D(qaux),
      const int idir);
 
+  CASTRO_DEVICE
   void divu
     (const int* lo, const int* hi,
      BL_FORT_FAB_ARG_3D(q),
      const amrex::Real* dx,
      BL_FORT_FAB_ARG_3D(div));
 
+  CASTRO_DEVICE
   void trace_ppm
      (const int* lo, const int* hi,
       const int* vlo, const int* vhi,
