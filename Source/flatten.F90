@@ -23,7 +23,7 @@ contains
 
     integer :: ishft, idir
 
-    real(rt) :: denom, zeta, tst, tmp
+    real(rt) :: denom, denominv, zeta, tst, tmp
     real(rt) :: pl, pr, dp, dp2, du, z, z2, chi, chi2
 
     ! Knobs for detection of strong shock
@@ -51,14 +51,15 @@ contains
        end if
        dp = pr - pl
 
-       if (pr - pl .gt. ZERO) then
+       if (dp .gt. ZERO) then
           ishft = 1
        else
           ishft = -1
        endif
 
        denom = max(small_pres, abs(dp2))
-       zeta = abs(dp) / denom
+       denominv = ONE / denom
+       zeta = abs(dp) * denominv
        z = min(ONE, max(ZERO, dzcut * (zeta - zcut1)))
 
        if (du .le. ZERO) then
@@ -69,7 +70,7 @@ contains
 
        tmp = min(pr, pl)
 
-       if ((abs(dp)/tmp) .gt. shktst) then
+       if (abs(dp) .gt. shktst * tmp) then
           chi = tst
        else
           chi = ZERO
@@ -94,7 +95,8 @@ contains
        dp = pr - pl
 
        denom = max(small_pres, abs(dp2))
-       zeta = abs(dp) / denom
+       denominv = ONE / denom
+       zeta = abs(dp) * denominv
        z2 = min(ONE, max(ZERO, dzcut * (zeta - zcut1)))
 
        if (du .le. ZERO) then
@@ -105,7 +107,7 @@ contains
 
        tmp = min(pr, pl)
 
-       if ((abs(dp)/tmp) .gt. shktst) then
+       if (abs(dp) .gt. shktst * tmp) then
           chi2 = tst
        else
           chi2 = ZERO
