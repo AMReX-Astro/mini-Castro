@@ -300,7 +300,7 @@ contains
 
     use network, only: nspec
     use castro_module, only: QVAR, NQAUX, QRHO, QU, QV, QW, QC, QGAMC, QGAME, &
-                             QREINT, QTEMP, QFS, QPRES, small_dens, small_pres
+                             QREINT, QTEMP, QFS, QPRES, QTHERM, small_dens, small_pres
 
     implicit none
 
@@ -333,8 +333,9 @@ contains
     real(rt) :: sm, sp
 
     real(rt) :: s(-2:2)
-    real(rt) :: Ip(1:3,QVAR), Im(1:3,QVAR)
+    real(rt) :: Ip(1:3,QTHERM), Im(1:3,QTHERM)
     real(rt) :: Ip_gc(1:3,1), Im_gc(1:3,1)
+    real(rt) :: Ip_sp(1:3,1), Im_sp(1:3,1)
 
     integer :: QUN, QUT, QUTT
 
@@ -404,7 +405,7 @@ contains
     ! Trace to left and right edges using upwind PPM
 
     !$acc parallel loop gang vector collapse(3) deviceptr(qm, qp, q, qaux) &
-    !$acc private(Ip, Im, Ip_gc, Im_gc, s) async(acc_stream)
+    !$acc private(Ip, Im, Ip_gc, Im_gc, Ip_sp, Im_sp, s) async(acc_stream)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
@@ -420,7 +421,7 @@ contains
 
              ! do the parabolic reconstruction and compute the
              ! integrals under the characteristic waves
-             do n = 1, QVAR
+             do n = 1, QTHERM
                 if (.not. reconstruct_state(n)) cycle
 
                 if (idir == 1) then
@@ -454,6 +455,18 @@ contains
              do ispec = 1, nspec
                 n = QFS + ispec - 1
 
+                if (idir == 1) then
+                   s(:) = q(i-2:i+2,j,k,n)
+                else if (idir == 2) then
+                   s(:) = q(i,j-2:j+2,k,n)
+                else
+                   s(:) = q(i,j,k-2:k+2,n)
+                end if
+
+                call ppm_reconstruct(s, flatn, sm, sp)
+
+                call ppm_int_profile(sm, sp, s(0), un, cc, dtdx, Ip_sp, Im_sp)
+
                 ! Plus state on face i
                 if ((idir == 1 .and. i >= vlo(1)) .or. &
                     (idir == 2 .and. j >= vlo(2)) .or. &
@@ -468,17 +481,17 @@ contains
                    ! wave, so no projection is needed.  Since we are not
                    ! projecting, the reference state doesn't matter
 
-                   qp(i,j,k,n) = Im(2,n)
+                   qp(i,j,k,n) = Im_sp(2,1)
 
                 end if
 
                 ! Minus state on face i+1
                 if (idir == 1 .and. i <= vhi(1)) then
-                   qm(i+1,j,k,n) = Ip(2,n)
+                   qm(i+1,j,k,n) = Ip_sp(2,1)
                 else if (idir == 2 .and. j <= vhi(2)) then
-                   qm(i,j+1,k,n) = Ip(2,n)
+                   qm(i,j+1,k,n) = Ip_sp(2,1)
                 else if (idir == 3 .and. k <= vhi(3)) then
-                   qm(i,j,k+1,n) = Ip(2,n)
+                   qm(i,j,k+1,n) = Ip_sp(2,1)
                 end if
 
              end do
