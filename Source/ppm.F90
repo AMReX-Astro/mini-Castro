@@ -11,6 +11,8 @@ contains
   CASTRO_FORT_DEVICE subroutine ppm_reconstruct(s, flatn, sm, sp) bind(C, name='ppm_reconstruct')
     ! This routine does the reconstruction of the zone data into a parabola.
 
+    !$acc routine seq
+
     implicit none
 
     real(rt), intent(in   ) :: s(-2:2), flatn
@@ -110,6 +112,8 @@ contains
 
   CASTRO_FORT_DEVICE subroutine ppm_int_profile(sm, sp, sc, u, c, dtdx, Ip, Im) bind(C, name='ppm_int_profile')
     ! Integrate the parabolic profile to the edge of the cell.
+
+    !$acc routine seq
 
     implicit none
 
@@ -284,6 +288,9 @@ contains
     reconstruct_state(QTEMP) = .false.
 
     ! Trace to left and right edges using upwind PPM
+
+    !$acc parallel loop gang vector collapse(3) deviceptr(qm, qp, q, qaux, flatn) &
+    !$acc private(Ip, Im, Ip_gc, Im_gc, s) async(acc_stream)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)

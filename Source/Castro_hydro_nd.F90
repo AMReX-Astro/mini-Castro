@@ -32,6 +32,7 @@ contains
     dyinv = ONE / dx(2)
     dzinv = ONE / dx(3)
 
+    !$acc parallel loop gang vector collapse(3) deviceptr(div, q) async(acc_stream)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
@@ -96,6 +97,7 @@ contains
 
     type (eos_t) :: eos_state
 
+    !$acc parallel loop gang vector collapse(3) deviceptr(uin, q, qaux) private(vel, eos_state) async(acc_stream)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
@@ -185,13 +187,13 @@ contains
 
     real(rt), parameter :: difmag = 0.1d0
 
+    !$acc parallel loop gang vector collapse(4) deviceptr(flux, uin, div) async(acc_stream)
     do n = 1, NVAR
-
-       if ( n == UTEMP ) cycle
-
        do k = lo(3), hi(3)
           do j = lo(2), hi(2)
              do i = lo(1), hi(1)
+
+                if ( n == UTEMP ) cycle
 
                 if (idir .eq. 1) then
 
@@ -246,6 +248,7 @@ contains
     integer  :: i, j, k, n
     real(rt) :: sum, fac
 
+    !$acc parallel loop gang vector collapse(3) deviceptr(flux) async(acc_stream)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
@@ -297,6 +300,7 @@ contains
 
     integer :: i, j, k, n
 
+    !$acc parallel loop gang vector collapse(4) deviceptr(flux_out, flux_in, area) async(acc_stream)
     do n = 1, NVAR
        do k = lo(3), hi(3)
           do j = lo(2), hi(2)
@@ -370,6 +374,8 @@ contains
     ! essentially the flux divergence.  This can be added with dt to
     ! get the update.
 
+    !$acc parallel loop gang vector collapse(3) deviceptr(source, flux1, flux2, flux3, area1, area2, area3) &
+    !$acc deviceptr(qx, qy, qz, vol) async(acc_stream)
     do n = 1, NVAR
        do k = lo(3), hi(3)
           do j = lo(2), hi(2)

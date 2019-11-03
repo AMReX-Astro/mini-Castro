@@ -78,6 +78,7 @@ contains
 
     logical :: reset_state
 
+    !$acc parallel loop gang vector collapse(3) deviceptr(q2m, q2p, q2mo, q2po, qaux, f1, q1) private(lq2, lq2o) async(acc_stream)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
@@ -311,6 +312,7 @@ contains
     ! transverse differences come from the 2 and 3 indices
     !-------------------------------------------------------------------
 
+    !$acc parallel loop gang vector collapse(3) deviceptr(qm1, qp1, qm1o, qp1o, qaux, f2, f3, q2, q3) private(lqo, lq) async(acc_stream)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
