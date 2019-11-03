@@ -65,7 +65,8 @@ contains
     real(rt) :: cavg, gamcl, gamcr
 
     integer :: iu, iv1, iv2, im1, im2, im3
-    real(rt) :: wwinv, roinv, co2inv
+    real(rt) :: wwinv, roinv, co2inv, regdnvinv, scrinv, rstarinv
+    real(rt) :: fp, fm
     real(rt) :: u_adv, rhoeint, rhoetot
 
     integer :: ispec
@@ -128,17 +129,17 @@ contains
              ! ------------------------------------------------------------------
 
              if (idir == 1) then
-                csmall = max( small, max( small * qaux(i,j,k,QC) , small * qaux(i-1,j,k,QC))  )
+                csmall = max(small, small * max(qaux(i,j,k,QC), qaux(i-1,j,k,QC)))
                 cavg = HALF*(qaux(i,j,k,QC) + qaux(i-1,j,k,QC))
                 gamcl = qaux(i-1,j,k,QGAMC)
                 gamcr = qaux(i,j,k,QGAMC)
              else if (idir == 2) then
-                csmall = max( small, max( small * qaux(i,j,k,QC) , small * qaux(i,j-1,k,QC))  )
+                csmall = max(small, small * max(qaux(i,j,k,QC), qaux(i,j-1,k,QC)))
                 cavg = HALF*(qaux(i,j,k,QC) + qaux(i,j-1,k,QC))
                 gamcl = qaux(i,j-1,k,QGAMC)
                 gamcr = qaux(i,j,k,QGAMC)
              else
-                csmall = max( small, max( small * qaux(i,j,k,QC) , small * qaux(i,j,k-1,QC))  )
+                csmall = max(small, small * max(qaux(i,j,k,QC), qaux(i,j,k-1,QC)))
                 cavg = HALF*(qaux(i,j,k,QC) + qaux(i,j,k-1,QC))
                 gamcl = qaux(i,j,k-1,QGAMC)
                 gamcr = qaux(i,j,k,QGAMC)
@@ -169,26 +170,17 @@ contains
              ! this just determines which of the left or right states is still
              ! in play.  We still need to look at the other wave to determine
              ! if the star state or this state is on the interface.
+             sgnm = sign(ONE, ustar)
+             if (ustar == ZERO) sgnm = ZERO
 
-             if (ustar > ZERO) then
-                ro = rl
-                uo = ul
-                po = pl
-                reo = rel
-                gamco = gamcl
-             else if (ustar < ZERO) then
-                ro = rr
-                uo = ur
-                po = pr
-                reo = rer
-                gamco = gamcr
-             else
-                ro = HALF*(rl + rr)
-                uo = HALF*(ul + ur)
-                po = HALF*(pl + pr)
-                reo = HALF*(rel + rer)
-                gamco = HALF*(gamcl + gamcr)
-             endif
+             fp = HALF * (ONE + sgnm)
+             fm = HALF * (ONE - sgnm)
+
+             ro = fp * rl + fm * rr
+             uo = fp * ul + fm * ur
+             po = fp * pl + fm * pr
+             reo = fp * rel + fm * rer
+             gamco = fp * gamcl + fm * gamcr
 
              ro = max(small_dens, ro)
 
@@ -200,19 +192,8 @@ contains
 
              ! we can already deal with the transverse velocities -- they
              ! only jump across the contact
-             if (ustar > ZERO) then
-                qint(i,j,k,iv1) = v1l
-                qint(i,j,k,iv2) = v2l
-
-             else if (ustar < ZERO) then
-                qint(i,j,k,iv1) = v1r
-                qint(i,j,k,iv2) = v2r
-
-             else
-                qint(i,j,k,iv1) = HALF*(v1l+v1r)
-                qint(i,j,k,iv2) = HALF*(v2l+v2r)
-             endif
-
+             qint(i,j,k,iv1) = fp * v1l + fm * v1r
+             qint(i,j,k,iv2) = fp * v2l + fm * v2r
 
              ! ------------------------------------------------------------------
              ! compute the rest of the star state
@@ -221,11 +202,12 @@ contains
              drho = (pstar - po)*co2inv
              rstar = ro + drho
              rstar = max(small_dens, rstar)
+             rstarinv = ONE / rstar
 
              entho = (reo + po)*roinv*co2inv
              estar = reo + (pstar - po)*entho
 
-             cstar = sqrt(abs(gamco*pstar/rstar))
+             cstar = sqrt(abs(gamco*pstar*rstarinv))
              cstar = max(cstar, csmall)
 
              ! ------------------------------------------------------------------
@@ -255,9 +237,10 @@ contains
              else
                 scr = spout-spin
              endif
+             scrinv = ONE / scr
 
              ! interpolate for the case that we are in a rarefaction
-             frac = (ONE + (spout + spin)/scr)*HALF
+             frac = (ONE + (spout + spin) * scrinv) * HALF
              frac = max(ZERO, min(ONE, frac))
 
              qint(i,j,k,QRHO) = frac*rstar + (ONE - frac)*ro
@@ -287,26 +270,16 @@ contains
                 qint(i,j,k,QPRES) = pstar
                 regdnv = estar
              endif
+             regdnvinv = ONE / regdnv
 
-             qint(i,j,k,QGAME) = qint(i,j,k,QPRES)/regdnv + ONE
+             qint(i,j,k,QGAME) = qint(i,j,k,QPRES) * regdnvinv + ONE
              qint(i,j,k,QPRES) = max(qint(i,j,k,QPRES),small_pres)
              qint(i,j,k,QREINT) = regdnv
 
              ! passively advected quantities
              do ispec = 1, nspec
-
-                n  = UFS + ispec - 1
                 nqp = QFS + ispec - 1
-
-                if (ustar > ZERO) then
-                   qint(i,j,k,nqp) = ql(i,j,k,nqp)
-                else if (ustar < ZERO) then
-                   qint(i,j,k,nqp) = qr(i,j,k,nqp)
-                else
-                   qavg = HALF * (ql(i,j,k,nqp) + qr(i,j,k,nqp))
-                   qint(i,j,k,nqp) = qavg
-                end if
-
+                qint(i,j,k,nqp) = fp * ql(i,j,k,nqp) + fm * qr(i,j,k,nqp)
              end do
 
              ! Store results in the Godunov state
