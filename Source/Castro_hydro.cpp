@@ -35,7 +35,6 @@ Castro::construct_hydro_source(Real dt)
     // we apply an Elixir to ensure that their memory is saved until it is no
     // longer needed (only relevant for the asynchronous case, usually on GPUs).
 
-    FArrayBox flatn_fab;
     FArrayBox q_fab;
     FArrayBox qaux_fab;
 
@@ -87,20 +86,6 @@ Castro::construct_hydro_source(Real dt)
                   AMREX_ARR4_TO_FORTRAN_ANYD(state),
                   AMREX_ARR4_TO_FORTRAN_ANYD(q),
                   AMREX_ARR4_TO_FORTRAN_ANYD(qaux));
-      });
-
-      flatn_fab.resize(obx, 1);
-      Elixir elix_flatn = flatn_fab.elixir();
-
-      // Compute the flattening coefficient
-
-      Array4<Real> const flatn = flatn_fab.array();
-
-      CASTRO_LAUNCH_LAMBDA(obx, lbx,
-      {
-          uflatten(AMREX_ARLIM_ANYD(lbx.loVect()), AMREX_ARLIM_ANYD(lbx.hiVect()),
-                   AMREX_ARR4_TO_FORTRAN_ANYD(q),
-                   AMREX_ARR4_TO_FORTRAN_ANYD(flatn));
       });
 
       Elixir elix_flux[3];
@@ -209,7 +194,6 @@ Castro::construct_hydro_source(Real dt)
                         idir_f,
                         AMREX_ARR4_TO_FORTRAN_ANYD(q),
                         AMREX_ARR4_TO_FORTRAN_ANYD(qaux),
-                        AMREX_ARR4_TO_FORTRAN_ANYD(flatn),
                         AMREX_ARR4_TO_FORTRAN_ANYD(qm[idir][idir]),
                         AMREX_ARR4_TO_FORTRAN_ANYD(qp[idir][idir]),
                         AMREX_ARLIM_ANYD(domain_lo), AMREX_ARLIM_ANYD(domain_hi),

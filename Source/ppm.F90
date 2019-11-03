@@ -178,7 +178,6 @@ contains
                                           idir, &
                                           q, qd_lo, qd_hi, &
                                           qaux, qa_lo, qa_hi, &
-                                          flatn, f_lo, f_hi, &
                                           qm, qm_lo, qm_hi, &
                                           qp, qp_lo, qp_hi, &
                                           domlo, domhi, &
@@ -187,6 +186,7 @@ contains
     use network, only: nspec
     use castro_module, only: QVAR, NQAUX, QRHO, QU, QV, QW, QC, QGAMC, QGAME, &
                              QREINT, QTEMP, QFS, QPRES, small_dens, small_pres
+    use flatten_module, only: uflatten
 
     implicit none
 
@@ -195,14 +195,12 @@ contains
     integer, intent(in), value :: idir
     integer, intent(in) :: qd_lo(3), qd_hi(3)
     integer, intent(in) :: qa_lo(3), qa_hi(3)
-    integer, intent(in) :: f_lo(3), f_hi(3)
     integer, intent(in) :: qm_lo(3), qm_hi(3)
     integer, intent(in) :: qp_lo(3), qp_hi(3)
     integer, intent(in) :: domlo(3), domhi(3)
 
     real(rt), intent(in) :: q(qd_lo(1):qd_hi(1),qd_lo(2):qd_hi(2),qd_lo(3):qd_hi(3),QVAR)
     real(rt), intent(in) :: qaux(qa_lo(1):qa_hi(1),qa_lo(2):qa_hi(2),qa_lo(3):qa_hi(3),NQAUX)
-    real(rt), intent(in) :: flatn(f_lo(1):f_hi(1),f_lo(2):f_hi(2),f_lo(3):f_hi(3))
 
     real(rt), intent(inout) :: qm(qm_lo(1):qm_hi(1),qm_lo(2):qm_hi(2),qm_lo(3):qm_hi(3),QVAR)
     real(rt), intent(inout) :: qp(qp_lo(1):qp_hi(1),qp_lo(2):qp_hi(2),qp_lo(3):qp_hi(3),QVAR)
@@ -238,6 +236,8 @@ contains
 
     real(rt) :: alpham, alphap, alpha0r, alpha0e_g
     real(rt) :: sourcr, sourcp, source, courn, eta, dlogatmp
+
+    real(rt) :: flatn
 
     hdt = HALF * dt
     dtdx = dt / dx(idir)
@@ -289,7 +289,7 @@ contains
 
     ! Trace to left and right edges using upwind PPM
 
-    !$acc parallel loop gang vector collapse(3) deviceptr(qm, qp, q, qaux, flatn) &
+    !$acc parallel loop gang vector collapse(3) deviceptr(qm, qp, q, qaux) &
     !$acc private(Ip, Im, Ip_gc, Im_gc, s) async(acc_stream)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
@@ -301,6 +301,8 @@ contains
              csq = cc**2
 
              un = q(i,j,k,QUN)
+
+             call uflatten(i, j, k, q, qd_lo, qd_hi, flatn)
 
              ! do the parabolic reconstruction and compute the
              ! integrals under the characteristic waves
@@ -315,7 +317,7 @@ contains
                    s(:) = q(i,j,k-2:k+2,n)
                 end if
 
-                call ppm_reconstruct(s, flatn(i,j,k), sm, sp)
+                call ppm_reconstruct(s, flatn, sm, sp)
 
                 call ppm_int_profile(sm, sp, s(0), un, cc, dtdx, Ip(:,n), Im(:,n))
 
@@ -330,7 +332,7 @@ contains
                 s(:) = qaux(i,j,k-2:k+2,QGAMC)
              end if
 
-             call ppm_reconstruct(s, flatn(i,j,k), sm, sp)
+             call ppm_reconstruct(s, flatn, sm, sp)
 
              call ppm_int_profile(sm, sp, s(0), un, cc, dtdx, Ip_gc, Im_gc)
 

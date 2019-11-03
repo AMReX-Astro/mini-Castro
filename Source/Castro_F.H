@@ -47,12 +47,6 @@ extern "C"
      const amrex::Real* dx, amrex::Real* dt);
 
   CASTRO_DEVICE
-  void uflatten
-    (const int* lo, const int* hi,
-     BL_FORT_FAB_ARG_3D(q),
-     BL_FORT_FAB_ARG_3D(flatn));
-
-  CASTRO_DEVICE
   void store_flux
     (const int* lo, const int* hi,
      BL_FORT_FAB_ARG_3D(flux_out),
@@ -142,7 +136,6 @@ extern "C"
       const int idir,
       const BL_FORT_FAB_ARG_3D(q),
       const BL_FORT_FAB_ARG_3D(qaux),
-      const BL_FORT_FAB_ARG_3D(flatn),
       BL_FORT_FAB_ARG_3D(qm),
       BL_FORT_FAB_ARG_3D(qp),
       const int* domlo, const int* domhi,
