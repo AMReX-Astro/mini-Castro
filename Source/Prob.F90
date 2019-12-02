@@ -16,6 +16,8 @@ module initdata_module
 
   !$acc declare create(p_ambient, dens_ambient, exp_energy, r_init, nsub)
 
+  !$omp declare target(p_ambient, dens_ambient, exp_energy, r_init, nsub)
+
 contains
 
   CASTRO_FORT_DEVICE subroutine initdata(lo, hi, &
@@ -154,6 +156,8 @@ subroutine amrex_probinit (init,name,namlen,problo,probhi) bind(C, name='amrex_p
   nsub = 10
 
   !$acc update device(p_ambient, dens_ambient, exp_energy, r_init, nsub)
+
+  !$acc target update to(p_ambient, dens_ambient, exp_energy, r_init, nsub)
 
 end subroutine amrex_probinit
 
