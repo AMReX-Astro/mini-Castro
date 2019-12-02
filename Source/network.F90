@@ -28,6 +28,8 @@ module network
 
   !$acc declare create(aion, zion, aion_inv)
 
+  !$omp declare target(aion, zion, aion_inv)
+
 contains
 
   subroutine network_init() bind(C, name='network_init')
@@ -71,6 +73,8 @@ contains
     aion_inv(:) = 1.d0 / aion(:)
 
     !$acc update device(aion, zion, aion_inv)
+
+    !$omp target update to(aion, zion, aion_inv)
 
   end subroutine network_init
 

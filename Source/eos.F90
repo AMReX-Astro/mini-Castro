@@ -125,6 +125,14 @@ module eos_module
   !$acc declare create(ef, efd, eft, efdt)
   !$acc declare create(xf, xfd, xft, xfdt)
 
+  !$omp declare target(d, t)
+  !$omp declare target(dt, dt2, dti, dt2i)
+  !$omp declare target(dd, dd2, ddi, dd2i)
+  !$omp declare target(f, fd, fdd, ft, ftt, fdt, fddt, fdtt, fddtt)
+  !$omp declare target(dpdf, dpdfd, dpdft, dpdfdt)
+  !$omp declare target(ef, efd, eft, efdt)
+  !$omp declare target(xf, xfd, xft, xfdt)
+
   integer, parameter :: max_newton = 100
 
   ! Physical constants
@@ -240,6 +248,8 @@ contains
                         dsi0d,dsi1d,dsi2d,dsi0md,dsi1md,dsi2md, &
                         ddsi0t,ddsi1t,ddsi2t,ddsi0mt,ddsi1mt,ddsi2mt, &
                         z,din,fi(36)
+
+    !$omp declare target
 
     ! Calculate abar, the mean nucleon number,
     ! zbar, the mean proton number,
@@ -1157,6 +1167,14 @@ contains
     !$acc update device(ef, efd, eft, efdt)
     !$acc update device(xf, xfd, xft, xfdt)
 
+    !$omp target update to(d, t)
+    !$omp target update to(dt, dt2, dti, dt2i)
+    !$omp target update to(dd, dd2, ddi, dd2i)
+    !$omp target update to(f, fd, fdd, ft, ftt, fdt, fddt, fdtt, fddtt)
+    !$omp target update to(dpdf, dpdfd, dpdft, dpdfdt)
+    !$omp target update to(ef, efd, eft, efdt)
+    !$omp target update to(xf, xfd, xft, xfdt)
+
   end subroutine eos_init
 
 
@@ -1172,6 +1190,8 @@ contains
     double precision, intent(in) :: z
     double precision :: psi0r
 
+    !$omp declare target
+
     psi0r = z**3 * ( z * (-6.0d0*z + 15.0d0) -10.0d0) + 1.0d0
 
   end function psi0
@@ -1185,6 +1205,8 @@ contains
     double precision, intent(in) :: z
     double precision :: dpsi0r
 
+    !$omp declare target
+
     dpsi0r = z**2 * ( z * (-30.0d0*z + 60.0d0) - 30.0d0)
 
   end function dpsi0
@@ -1197,6 +1219,8 @@ contains
 
     double precision, intent(in) :: z
     double precision :: ddpsi0r
+
+    !$omp declare target
 
     ddpsi0r = z* ( z*( -120.0d0*z + 180.0d0) -60.0d0)
 
@@ -1212,6 +1236,8 @@ contains
     double precision, intent(in) :: z
     double precision :: psi1r
 
+    !$omp declare target
+
     psi1r = z* ( z**2 * ( z * (-3.0d0*z + 8.0d0) - 6.0d0) + 1.0d0)
 
   end function psi1
@@ -1225,6 +1251,8 @@ contains
     double precision, intent(in) :: z
     double precision :: dpsi1r
 
+    !$omp declare target
+
     dpsi1r = z*z * ( z * (-15.0d0*z + 32.0d0) - 18.0d0) +1.0d0
 
   end function dpsi1
@@ -1237,6 +1265,8 @@ contains
 
     double precision, intent(in) :: z
     double precision :: ddpsi1r
+
+    !$omp declare target
 
     ddpsi1r = z * (z * (-60.0d0*z + 96.0d0) -36.0d0)
 
@@ -1252,6 +1282,8 @@ contains
     double precision, intent(in) :: z
     double precision :: psi2r
 
+    !$omp declare target
+
     psi2r = 0.5d0*z*z*( z* ( z * (-z + 3.0d0) - 3.0d0) + 1.0d0)
 
   end function psi2
@@ -1265,6 +1297,8 @@ contains
     double precision, intent(in) :: z
     double precision :: dpsi2r
 
+    !$omp declare target
+
     dpsi2r = 0.5d0*z*( z*(z*(-5.0d0*z + 12.0d0) - 9.0d0) + 2.0d0)
 
   end function dpsi2
@@ -1277,6 +1311,8 @@ contains
 
     double precision, intent(in) :: z
     double precision :: ddpsi2r
+
+    !$omp declare target
 
     ddpsi2r = 0.5d0*(z*( z * (-20.0d0*z + 36.0d0) - 18.0d0) + 2.0d0)
 
@@ -1293,6 +1329,8 @@ contains
     double precision, intent(in) :: fi(36)
     double precision, intent(in) :: w0t,w1t,w2t,w0mt,w1mt,w2mt,w0d,w1d,w2d,w0md,w1md,w2md
     double precision :: h5r
+
+    !$omp declare target
 
     h5r =  fi(1)  *w0d*w0t   + fi(2)  *w0md*w0t &
          + fi(3)  *w0d*w0mt  + fi(4)  *w0md*w0mt &
@@ -1327,6 +1365,8 @@ contains
     double precision, intent(in) :: z
     double precision :: xpsi0r
 
+    !$omp declare target
+
     xpsi0r = z * z * (2.0d0*z - 3.0d0) + 1.0
 
   end function xpsi0
@@ -1339,6 +1379,8 @@ contains
 
     double precision, intent(in) :: z
     double precision :: xdpsi0r
+
+    !$omp declare target
 
     xdpsi0r = z * (6.0d0*z - 6.0d0)
 
@@ -1355,6 +1397,8 @@ contains
     double precision, intent(in) :: z
     double precision :: xpsi1r
 
+    !$omp declare target
+
     xpsi1r = z * ( z * (z - 2.0d0) + 1.0d0)
 
   end function xpsi1
@@ -1367,6 +1411,8 @@ contains
 
     double precision, intent(in) :: z
     double precision :: xdpsi1r
+
+    !$omp declare target
 
     xdpsi1r = z * (3.0d0*z - 4.0d0) + 1.0d0
 
@@ -1382,6 +1428,8 @@ contains
     double precision, intent(in) :: fi(36)
     double precision, intent(in) :: w0t,w1t,w0mt,w1mt,w0d,w1d,w0md,w1md
     double precision :: h3r
+
+    !$omp declare target
 
     h3r =  fi(1)  *w0d*w0t   +  fi(2)  *w0md*w0t &
          + fi(3)  *w0d*w0mt  +  fi(4)  *w0md*w0mt &
