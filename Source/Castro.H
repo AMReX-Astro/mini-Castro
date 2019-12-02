@@ -20,7 +20,7 @@ enum Conserved { Density = 0, Xmom, Ymom, Zmom, Eden, Eint, Temp, FirstSpec, NUM
 
 // If we are using OpenACC, disable AMReX from launching CUDA kernels for our code.
 
-#ifdef AMREX_USE_ACC
+#if (defined(AMREX_USE_ACC) || defined(AMREX_USE_OMP_OFFLOAD))
 #define CASTRO_LAUNCH_LAMBDA(box, lbx, lambda) { Box lbx = box; lambda; }
 #define CASTRO_MFITER_REDUCE_MIN(x) x
 #define CASTRO_MFITER_REDUCE_SUM(x) x

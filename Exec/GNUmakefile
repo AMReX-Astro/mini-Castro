@@ -14,10 +14,11 @@ USE_MPI    = FALSE
 USE_OMP    = FALSE
 USE_CUDA   = FALSE
 USE_ACC    = FALSE
+USE_OMP_OFFLOAD = FALSE
 
 CUDA_VERBOSE = FALSE
 
-# We only support OpenACC if CUDA is also defined.
+# We only support OpenACC/OpenMP offload if CUDA is also defined.
 # This is required because AMReX uses CUDA internally
 # for its operations, and those would massively slow
 # down the code on GPUs if they're not accelerated.
@@ -26,12 +27,21 @@ ifeq ($(USE_ACC),TRUE)
   USE_CUDA = TRUE
 endif
 
+ifeq ($(USE_OMP_OFFLOAD),TRUE)
+  USE_CUDA = TRUE
+endif
+
 ifeq ($(USE_ACC),TRUE)
   DEFINES += -DCASTRO_DEVICE=
   DEFINES += -DCASTRO_FORT_DEVICE=
 else
-  DEFINES += -DCASTRO_DEVICE=AMREX_GPU_DEVICE
-  DEFINES += -DCASTRO_FORT_DEVICE=AMREX_CUDA_FORT_DEVICE
+  ifeq ($(USE_OMP_OFFLOAD),TRUE)
+    DEFINES += -DCASTRO_DEVICE=
+    DEFINES += -DCASTRO_FORT_DEVICE=
+  else
+    DEFINES += -DCASTRO_DEVICE=AMREX_GPU_DEVICE
+    DEFINES += -DCASTRO_FORT_DEVICE=AMREX_CUDA_FORT_DEVICE
+  endif
 endif
 
 TINY_PROFILE = FALSE
