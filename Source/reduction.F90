@@ -19,7 +19,9 @@ contains
 
     real(rt) :: t
 
-#if defined(AMREX_USE_CUDA) && !defined(AMREX_USE_ACC)
+    !$omp declare target
+
+#if defined(AMREX_USE_CUDA) && !defined(AMREX_USE_ACC) && !defined(AMREX_USE_OMP_OFFLOAD)
     t = atomicAdd(x, y)
 #else
     x = x + y
@@ -42,7 +44,9 @@ contains
 
     real(rt) :: t
 
-#if defined(AMREX_USE_CUDA) && !defined(AMREX_USE_ACC)
+    !$omp declare target
+
+#if defined(AMREX_USE_CUDA) && !defined(AMREX_USE_ACC) && !defined(AMREX_USE_OMP_OFFLOAD)
     t = atomicMin(x, y)
 #else
     x = min(x, y)
