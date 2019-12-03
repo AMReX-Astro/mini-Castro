@@ -107,7 +107,7 @@ module eos_module
   ! Number density and derivatives
   double precision, allocatable :: xf(:,:), xfd(:,:), xft(:,:), xfdt(:,:)
 
-#ifdef AMREX_USE_CUDA
+#if (defined(AMREX_USE_CUDA) && !(defined(AMREX_USE_ACC) || defined(AMREX_USE_OMP_OFFLOAD)))
   attributes(managed) :: d, t
   attributes(managed) :: dt, dt2, dti, dt2i
   attributes(managed) :: dd, dd2, ddi, dd2i

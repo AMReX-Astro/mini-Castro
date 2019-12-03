@@ -10,7 +10,7 @@ module initdata_module
   real(rt), allocatable, public :: r_init
   integer,  allocatable, public :: nsub
 
-#ifdef AMREX_USE_CUDA
+#if (defined(AMREX_USE_CUDA) && !(defined(AMREX_USE_ACC) || defined(AMREX_USE_OMP_OFFLOAD)))
   attributes(managed) :: p_ambient, dens_ambient, exp_energy, r_init, nsub
 #endif
 

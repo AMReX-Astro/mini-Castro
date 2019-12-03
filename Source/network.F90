@@ -22,7 +22,7 @@ module network
 
   real(rt), allocatable :: aion(:), zion(:), aion_inv(:)
 
-#ifdef AMREX_USE_CUDA
+#if (defined(AMREX_USE_CUDA) && !(defined(AMREX_USE_ACC) || defined(AMREX_USE_OMP_OFFLOAD)))
   attributes(managed) :: aion, zion, aion_inv
 #endif
 
