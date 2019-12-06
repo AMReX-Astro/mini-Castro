@@ -28,6 +28,7 @@ contains
     use amrex_constants_module, only: M_PI, FOUR3RD
     use castro_module , only: NVAR, URHO, UMX, UMY, UMZ, UTEMP, UEDEN, UEINT, UFS
     use eos_module, only: eos_t, eos_input_rp, eos
+    use network, only: aion, zion
 
     implicit none
 
@@ -54,8 +55,8 @@ contains
     eos_state % rho = dens_ambient
     eos_state % p = p_ambient
     eos_state % T = 1.e4   ! an initial guess -- needed for iteration
-    eos_state % xn(:) = 0.e0_rt
-    eos_state % xn(1) = 1.e0_rt
+    eos_state % abar = aion(1)
+    eos_state % zbar = zion(1)
 
     call eos(eos_input_rp, eos_state)
 

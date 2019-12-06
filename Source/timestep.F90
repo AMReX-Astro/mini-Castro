@@ -11,7 +11,7 @@ contains
 
   CASTRO_FORT_DEVICE subroutine estdt(lo,hi,u,u_lo,u_hi,dx,dt) bind(C, name='estdt')
 
-    use network, only: nspec
+    use network, only: nspec, aion_inv, zion
     use castro_module, only: NVAR, URHO, UMX, UMY, UMZ, UEINT, UTEMP, UFS
     use amrex_constants_module, only: ONE
     use eos_module, only: eos_t, eos_input_re, eos
@@ -41,7 +41,8 @@ contains
              eos_state % rho = u(i,j,k,URHO )
              eos_state % T   = u(i,j,k,UTEMP)
              eos_state % e   = u(i,j,k,UEINT) * rhoInv
-             eos_state % xn  = u(i,j,k,UFS:UFS+nspec-1) * rhoInv
+             eos_state % abar = ONE / (sum(u(i,j,k,UFS:UFS+nspec-1) * aion_inv(:)) * rhoInv)
+             eos_state % zbar = eos_state % abar * (sum(u(i,j,k,UFS:UFS+nspec-1) * zion(:) * aion_inv(:)) * rhoInv)
 
              call eos(eos_input_re, eos_state)
 

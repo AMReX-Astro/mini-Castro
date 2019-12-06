@@ -68,8 +68,8 @@ contains
 
   CASTRO_FORT_DEVICE subroutine enforce_minimum_density(lo, hi, state, s_lo, s_hi) bind(C, name='enforce_minimum_density')
 
-    use amrex_constants_module, only: ZERO
-    use network, only: nspec
+    use amrex_constants_module, only: ZERO, ONE
+    use network, only: nspec, aion_inv, zion
     use eos_module, only: eos_t, eos_input_rt, eos
 
     implicit none
@@ -133,9 +133,10 @@ contains
                       state(i,j,k,n) = state(i,j,k,n) * (small_dens / state(i,j,k,URHO))
                    end do
 
-                   eos_state % rho = small_dens
-                   eos_state % T   = small_temp
-                   eos_state % xn  = state(i,j,k,UFS:UFS+nspec-1) / small_dens
+                   eos_state % rho  = small_dens
+                   eos_state % T    = small_temp
+                   eos_state % abar = ONE / (sum(state(i,j,k,UFS:UFS+nspec-1) * aion_inv(:)) / small_dens)
+                   eos_state % zbar = eos_state % abar * (sum(state(i,j,k,UFS:UFS+nspec-1) * zion(:) * aion_inv(:)) / small_dens)
 
                    call eos(eos_input_rt, eos_state)
 
@@ -200,7 +201,7 @@ contains
   CASTRO_FORT_DEVICE subroutine reset_internal_e(lo, hi, u, u_lo, u_hi) bind(C, name='reset_internal_e')
 
     use eos_module, only: eos_t, eos_input_re, eos_input_rt, eos
-    use network, only: nspec
+    use network, only: nspec, aion_inv, zion
     use amrex_constants_module, only: ZERO, HALF, ONE
 
     implicit none
@@ -236,7 +237,8 @@ contains
 
                    eos_state % rho   = u(i,j,k,URHO)
                    eos_state % T     = small_temp
-                   eos_state % xn(:) = u(i,j,k,UFS:UFS+nspec-1) * rhoInv
+                   eos_state % abar = ONE / (sum(u(i,j,k,UFS:UFS+nspec-1) * aion_inv(:)) * rhoInv)
+                   eos_state % zbar = eos_state % abar * (sum(u(i,j,k,UFS:UFS+nspec-1) * zion(:) * aion_inv(:)) * rhoInv)
 
                    call eos(eos_input_rt, eos_state)
 
@@ -260,7 +262,8 @@ contains
 
                    eos_state % rho   = u(i,j,k,URHO)
                    eos_state % T     = small_temp
-                   eos_state % xn(:) = u(i,j,k,UFS:UFS+nspec-1) * rhoInv
+                   eos_state % abar = ONE / (sum(u(i,j,k,UFS:UFS+nspec-1) * aion_inv(:)) * rhoInv)
+                   eos_state % zbar = eos_state % abar * (sum(u(i,j,k,UFS:UFS+nspec-1) * zion(:) * aion_inv(:)) * rhoInv)
 
                    call eos(eos_input_rt, eos_state)
 
@@ -281,7 +284,7 @@ contains
 
   CASTRO_FORT_DEVICE subroutine compute_temp(lo, hi, state, s_lo, s_hi) bind(C, name='compute_temp')
 
-    use network, only: nspec
+    use network, only: nspec, aion_inv, zion
     use eos_module, only: eos_input_re, eos_t, eos
     use amrex_constants_module, only: ZERO, ONE
 
@@ -306,7 +309,8 @@ contains
              eos_state % rho = state(i,j,k,URHO)
              eos_state % T   = state(i,j,k,UTEMP) ! Initial guess for the EOS
              eos_state % e   = state(i,j,k,UEINT) * rhoInv
-             eos_state % xn  = state(i,j,k,UFS:UFS+nspec-1) * rhoInv
+             eos_state % abar = ONE / (sum(state(i,j,k,UFS:UFS+nspec-1) * aion_inv(:)) * rhoInv)
+             eos_state % zbar = eos_state % abar * (sum(state(i,j,k,UFS:UFS+nspec-1) * zion(:) * aion_inv(:)) * rhoInv)
 
              call eos(eos_input_re, eos_state)
 

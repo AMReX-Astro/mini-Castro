@@ -36,7 +36,8 @@ module eos_module
     real(rt) :: e         ! internal energy (erg/g)
     real(rt) :: h         ! enthalpy (erg/g)
     real(rt) :: s         ! entropy (erg/g/K)
-    real(rt) :: xn(nspec) ! mass fractions
+    real(rt) :: abar      ! mean nucleon number
+    real(rt) :: zbar      ! mean proton number
 
     real(rt) :: dpdT      ! d pressure / d temperature
     real(rt) :: dpdr      ! d pressure / d density
@@ -62,8 +63,6 @@ module eos_module
     real(rt) :: gam1      ! first adiabatic index (d log P/ d log rho) |_s
     real(rt) :: cs        ! sound speed
 
-    real(rt) :: abar      ! average atomic number ( sum_k {X_k} ) / ( sum_k {X_k/A_k} )
-    real(rt) :: zbar      ! average proton number ( sum_k {Z_k X_k/ A_k} ) / ( sum_k {X_k/A_k} )
     real(rt) :: dpdA      ! d pressure / d abar
     real(rt) :: dpdZ      ! d pressure / d zbar
     real(rt) :: dedA      ! d energy / d abar
@@ -251,23 +250,11 @@ contains
 
     !$omp declare target
 
-    ! Calculate abar, the mean nucleon number,
-    ! zbar, the mean proton number,
-    ! mu, the mean molecular weight,
-    ! mu_e, the mean number of nucleons per electron, and
-    ! y_e, the electron fraction.
-
-    state % mu_e = ONE / (sum(state % xn(:) * zion(:) * aion_inv(:)))
-    state % y_e = ONE / state % mu_e
-
-    state % abar = ONE / (sum(state % xn(:) * aion_inv(:)))
-    state % zbar = state % abar / state % mu_e
-
     temp_row = state % T
     den_row  = state % rho
     abar_row = state % abar
     zbar_row = state % zbar
-    ye_row   = state % y_e
+    ye_row   = state % zbar / state % abar
 
     ! Initial setup for iterations
 

@@ -70,7 +70,7 @@ contains
                                         q,     q_lo,   q_hi, &
                                         qaux, qa_lo,  qa_hi) bind(c,name='ctoprim')
 
-    use network, only: nspec
+    use network, only: nspec, aion_inv, zion
     use eos_module, only: eos_t, eos_input_re, eos
     use castro_module, only: NVAR, URHO, UMX, UMZ, &
                              UEDEN, UEINT, UTEMP, &
@@ -138,7 +138,8 @@ contains
              eos_state % T   = q(i,j,k,QTEMP )
              eos_state % rho = q(i,j,k,QRHO  )
              eos_state % e   = q(i,j,k,QREINT)
-             eos_state % xn  = q(i,j,k,QFS:QFS+nspec-1)
+             eos_state % abar = ONE / (sum(q(i,j,k,QFS:QFS+nspec-1) * aion_inv(:)))
+             eos_state % zbar = eos_state % abar * (sum(q(i,j,k,QFS:QFS+nspec-1) * zion(:) * aion_inv(:)))
 
              call eos(eos_input_re, eos_state)
 
