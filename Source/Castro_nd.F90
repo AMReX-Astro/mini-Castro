@@ -86,7 +86,7 @@ contains
 
     max_dens = ZERO
 
-    !$acc parallel loop gang vector collapse(3) deviceptr(state) private(eos_state) async(acc_stream)
+    !$acc parallel loop gang vector collapse(3) deviceptr(state) async(acc_stream)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
@@ -220,7 +220,7 @@ contains
 
     ! Reset internal energy
 
-    !$acc parallel loop gang vector collapse(3) deviceptr(u) private(eos_state) async(acc_stream)
+    !$acc parallel loop gang vector collapse(3) deviceptr(u) async(acc_stream)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
@@ -299,7 +299,7 @@ contains
 
     type (eos_t) :: eos_state
 
-    !$acc parallel loop gang vector collapse(3) deviceptr(state) private(eos_state) async(acc_stream)
+    !$acc parallel loop gang vector collapse(3) deviceptr(state) async(acc_stream)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
