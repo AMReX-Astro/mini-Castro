@@ -66,7 +66,7 @@ module castro_module
 
 contains
 
-  CASTRO_FORT_DEVICE subroutine enforce_minimum_density(lo, hi, state, s_lo, s_hi) bind(C, name='enforce_minimum_density')
+  CASTRO_FORT_DEVICE subroutine enforce_minimum_density(lo, hi, u, u_lo, u_hi) bind(C, name='enforce_minimum_density')
 
     use amrex_constants_module, only: ZERO, ONE
     use network, only: nspec, aion_inv, zion
@@ -75,8 +75,8 @@ contains
     implicit none
 
     integer,  intent(in   ) :: lo(3), hi(3)
-    integer,  intent(in   ) :: s_lo(3), s_hi(3)
-    real(rt), intent(inout) :: state(s_lo(1):s_hi(1),s_lo(2):s_hi(2),s_lo(3):s_hi(3),NVAR)
+    integer,  intent(in   ) :: u_lo(3), u_hi(3)
+    real(rt), intent(inout) :: u(u_lo(1):u_hi(1),u_lo(2):u_hi(2),u_lo(3):u_hi(3),NVAR)
 
     integer      :: i, ii, j, jj, k, kk
     integer      :: i_set, j_set, k_set
@@ -86,16 +86,16 @@ contains
 
     max_dens = ZERO
 
-    !$acc parallel loop gang vector collapse(3) deviceptr(state) async(acc_stream)
+    !$acc parallel loop gang vector collapse(3) deviceptr(u) async(acc_stream)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
 
-             if (state(i,j,k,URHO) < small_dens) then
+             if (u(i,j,k,URHO) < small_dens) then
 
                 ! Reset to the characteristics of the adjacent state with the highest density.
 
-                max_dens = state(i,j,k,URHO)
+                max_dens = u(i,j,k,URHO)
 
                 i_set = i
                 j_set = j
@@ -105,14 +105,14 @@ contains
                    do jj = -1, 1
                       do ii = -1, 1
 
-                         if (i+ii >= s_lo(1) .and. j+jj <= s_lo(2) .and. k+kk .ge. lo(3) .and. &
-                             i+ii <= s_hi(1) .and. j+jj <= s_hi(2) .and. k+kk .le. hi(3)) then
+                         if (i+ii >= u_lo(1) .and. j+jj <= u_lo(2) .and. k+kk .ge. lo(3) .and. &
+                             i+ii <= u_hi(1) .and. j+jj <= u_hi(2) .and. k+kk .le. hi(3)) then
 
-                            if (state(i+ii,j+jj,k+kk,URHO) .gt. max_dens) then
+                            if (u(i+ii,j+jj,k+kk,URHO) .gt. max_dens) then
                                i_set = i + ii
                                j_set = j + jj
                                k_set = k + kk
-                               max_dens = state(i_set,j_set,k_set,URHO)
+                               max_dens = u(i_set,j_set,k_set,URHO)
                             end if
 
                          end if
@@ -130,31 +130,31 @@ contains
 
                    do ispec = 1, nspec
                       n = UFS + ispec - 1
-                      state(i,j,k,n) = state(i,j,k,n) * (small_dens / state(i,j,k,URHO))
+                      u(i,j,k,n) = u(i,j,k,n) * (small_dens / u(i,j,k,URHO))
                    end do
 
                    eos_state % rho  = small_dens
                    eos_state % T    = small_temp
-                   eos_state % abar = ONE / (sum(state(i,j,k,UFS:UFS+nspec-1) * aion_inv(:)) / small_dens)
-                   eos_state % zbar = eos_state % abar * (sum(state(i,j,k,UFS:UFS+nspec-1) * zion(:) * aion_inv(:)) / small_dens)
+                   eos_state % abar = ONE / (sum(u(i,j,k,UFS:UFS+nspec-1) * aion_inv(:)) / small_dens)
+                   eos_state % zbar = eos_state % abar * (sum(u(i,j,k,UFS:UFS+nspec-1) * zion(:) * aion_inv(:)) / small_dens)
 
                    call eos(eos_input_rt, eos_state)
 
-                   state(i,j,k,URHO ) = eos_state % rho
-                   state(i,j,k,UTEMP) = eos_state % T
+                   u(i,j,k,URHO ) = eos_state % rho
+                   u(i,j,k,UTEMP) = eos_state % T
 
-                   state(i,j,k,UMX  ) = ZERO
-                   state(i,j,k,UMY  ) = ZERO
-                   state(i,j,k,UMZ  ) = ZERO
+                   u(i,j,k,UMX  ) = ZERO
+                   u(i,j,k,UMY  ) = ZERO
+                   u(i,j,k,UMZ  ) = ZERO
 
-                   state(i,j,k,UEINT) = eos_state % rho * eos_state % e
-                   state(i,j,k,UEDEN) = state(i,j,k,UEINT)
+                   u(i,j,k,UEINT) = eos_state % rho * eos_state % e
+                   u(i,j,k,UEDEN) = u(i,j,k,UEINT)
 
                 else
 
                    ! Reset to the characteristics of the target zone.
 
-                   state(i,j,k,:) = state(i_set,j_set,k_set,:)
+                   u(i,j,k,:) = u(i_set,j_set,k_set,:)
 
                 endif
 
@@ -168,7 +168,7 @@ contains
 
 
 
-  CASTRO_FORT_DEVICE subroutine normalize_species(lo, hi, state, s_lo, s_hi) bind(C, name='normalize_species')
+  CASTRO_FORT_DEVICE subroutine normalize_species(lo, hi, u, u_lo, u_hi) bind(C, name='normalize_species')
 
     use network, only: nspec
     use amrex_constants_module, only: ONE
@@ -176,19 +176,19 @@ contains
     implicit none
 
     integer,  intent(in   ) :: lo(3), hi(3)
-    integer,  intent(in   ) :: s_lo(3), s_hi(3)
-    real(rt), intent(inout) :: state(s_lo(1):s_hi(1),s_lo(2):s_hi(2),s_lo(3):s_hi(3),NVAR)
+    integer,  intent(in   ) :: u_lo(3), u_hi(3)
+    real(rt), intent(inout) :: u(u_lo(1):u_hi(1),u_lo(2):u_hi(2),u_lo(3):u_hi(3),NVAR)
 
     integer  :: i, j, k
 
-    !$acc parallel loop gang vector collapse(3) deviceptr(state) async(acc_stream)
+    !$acc parallel loop gang vector collapse(3) deviceptr(u) async(acc_stream)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
 
-             state(i,j,k,UFS:UFS+nspec-1) = max(1.0d-30 * state(i,j,k,URHO), min(state(i,j,k,URHO), state(i,j,k,UFS:UFS+nspec-1)))
+             u(i,j,k,UFS:UFS+nspec-1) = max(1.0d-30 * u(i,j,k,URHO), min(u(i,j,k,URHO), u(i,j,k,UFS:UFS+nspec-1)))
 
-             state(i,j,k,UFS:UFS+nspec-1) = state(i,j,k,UFS:UFS+nspec-1) / sum(state(i,j,k,UFS:UFS+nspec-1))
+             u(i,j,k,UFS:UFS+nspec-1) = u(i,j,k,UFS:UFS+nspec-1) / sum(u(i,j,k,UFS:UFS+nspec-1))
 
           enddo
        enddo
@@ -282,7 +282,7 @@ contains
 
 
 
-  CASTRO_FORT_DEVICE subroutine compute_temp(lo, hi, state, s_lo, s_hi) bind(C, name='compute_temp')
+  CASTRO_FORT_DEVICE subroutine compute_temp(lo, hi, u, u_lo, u_hi) bind(C, name='compute_temp')
 
     use network, only: nspec, aion_inv, zion
     use eos_module, only: eos_input_re, eos_t, eos
@@ -290,32 +290,32 @@ contains
 
     implicit none
 
-    integer , intent(in   ) :: lo(3),hi(3)
-    integer , intent(in   ) :: s_lo(3),s_hi(3)
-    real(rt), intent(inout) :: state(s_lo(1):s_hi(1),s_lo(2):s_hi(2),s_lo(3):s_hi(3),NVAR)
+    integer , intent(in   ) :: lo(3), hi(3)
+    integer , intent(in   ) :: u_lo(3), u_hi(3)
+    real(rt), intent(inout) :: u(u_lo(1):u_hi(1),u_lo(2):u_hi(2),u_lo(3):u_hi(3),NVAR)
 
     integer  :: i,j,k
     real(rt) :: rhoInv
 
     type (eos_t) :: eos_state
 
-    !$acc parallel loop gang vector collapse(3) deviceptr(state) async(acc_stream)
+    !$acc parallel loop gang vector collapse(3) deviceptr(u) async(acc_stream)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
 
-             rhoInv = ONE / state(i,j,k,URHO)
+             rhoInv = ONE / u(i,j,k,URHO)
 
-             eos_state % rho = state(i,j,k,URHO)
-             eos_state % T   = state(i,j,k,UTEMP) ! Initial guess for the EOS
-             eos_state % e   = state(i,j,k,UEINT) * rhoInv
-             eos_state % abar = ONE / (sum(state(i,j,k,UFS:UFS+nspec-1) * aion_inv(:)) * rhoInv)
-             eos_state % zbar = eos_state % abar * (sum(state(i,j,k,UFS:UFS+nspec-1) * zion(:) * aion_inv(:)) * rhoInv)
+             eos_state % rho = u(i,j,k,URHO)
+             eos_state % T   = u(i,j,k,UTEMP) ! Initial guess for the EOS
+             eos_state % e   = u(i,j,k,UEINT) * rhoInv
+             eos_state % abar = ONE / (sum(u(i,j,k,UFS:UFS+nspec-1) * aion_inv(:)) * rhoInv)
+             eos_state % zbar = eos_state % abar * (sum(u(i,j,k,UFS:UFS+nspec-1) * zion(:) * aion_inv(:)) * rhoInv)
 
              call eos(eos_input_re, eos_state)
 
-             state(i,j,k,UTEMP) = eos_state % T
-             state(i,j,k,UEINT) = state(i,j,k,URHO) * eos_state % e
+             u(i,j,k,UTEMP) = eos_state % T
+             u(i,j,k,UEINT) = u(i,j,k,URHO) * eos_state % e
 
           enddo
        enddo
@@ -369,7 +369,7 @@ contains
 
 
   CASTRO_FORT_DEVICE subroutine calculate_blast_radius(lo, hi, &
-                                                       state, s_lo, s_hi, &
+                                                       u, u_lo, u_hi, &
                                                        dx, problo, probhi, &
                                                        blast_mass, blast_radius, &
                                                        max_density) &
@@ -381,8 +381,8 @@ contains
     implicit none
 
     integer,  intent(in   ) :: lo(3), hi(3)
-    integer,  intent(in   ) :: s_lo(3), s_hi(3)
-    real(rt), intent(in   ) :: state(s_lo(1):s_hi(1),s_lo(2):s_hi(2),s_lo(3):s_hi(3),NVAR)
+    integer,  intent(in   ) :: u_lo(3), u_hi(3)
+    real(rt), intent(in   ) :: u(u_lo(1):u_hi(1),u_lo(2):u_hi(2),u_lo(3):u_hi(3),NVAR)
     real(rt), intent(in   ) :: dx(3), problo(3), probhi(3)
     real(rt), intent(inout) :: blast_mass, blast_radius
     real(rt), intent(in   ), value :: max_density
@@ -398,7 +398,7 @@ contains
 
     center = (probhi - problo) / TWO
 
-    !$acc parallel loop gang vector collapse(3) deviceptr(state) reduction(+:blast_mass, blast_radius) async(acc_stream)
+    !$acc parallel loop gang vector collapse(3) deviceptr(u) reduction(+:blast_mass, blast_radius) async(acc_stream)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
@@ -406,9 +406,9 @@ contains
              y = problo(2) + (j + HALF) * dx(2) - center(2)
              z = problo(3) + (k + HALF) * dx(3) - center(3)
 
-             if (abs(state(i,j,k,URHO) - max_density) / max_density <= density_tolerance) then
-                call reduce_add(blast_mass, state(i,j,k,URHO))
-                call reduce_add(blast_radius, state(i,j,k,URHO) * sqrt(x**2 + y**2 + z**2))
+             if (abs(u(i,j,k,URHO) - max_density) / max_density <= density_tolerance) then
+                call reduce_add(blast_mass, u(i,j,k,URHO))
+                call reduce_add(blast_radius, u(i,j,k,URHO) * sqrt(x**2 + y**2 + z**2))
              end if
           end do
        end do

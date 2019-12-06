@@ -66,7 +66,7 @@ contains
 
 
   CASTRO_FORT_DEVICE subroutine ctoprim(lo, hi, &
-                                        uin, uin_lo, uin_hi, &
+                                        u,     u_lo,   u_hi, &
                                         q,     q_lo,   q_hi, &
                                         qaux, qa_lo,  qa_hi) bind(c,name='ctoprim')
 
@@ -82,11 +82,11 @@ contains
     implicit none
 
     integer, intent(in) :: lo(3), hi(3)
-    integer, intent(in) :: uin_lo(3), uin_hi(3)
+    integer, intent(in) :: u_lo(3), u_hi(3)
     integer, intent(in) :: q_lo(3), q_hi(3)
     integer, intent(in) :: qa_lo(3), qa_hi(3)
 
-    real(rt), intent(in   ) :: uin(uin_lo(1):uin_hi(1),uin_lo(2):uin_hi(2),uin_lo(3):uin_hi(3),NVAR)
+    real(rt), intent(in   ) :: u(u_lo(1):u_hi(1),u_lo(2):u_hi(2),u_lo(3):u_hi(3),NVAR)
     real(rt), intent(inout) :: q(q_lo(1):q_hi(1),q_lo(2):q_hi(2),q_lo(3):q_hi(3),QVAR)
     real(rt), intent(inout) :: qaux(qa_lo(1):qa_hi(1),qa_lo(2):qa_hi(2),qa_lo(3):qa_hi(3),NQAUX)
 
@@ -97,15 +97,15 @@ contains
 
     type (eos_t) :: eos_state
 
-    !$acc parallel loop gang vector collapse(3) deviceptr(uin, q, qaux) private(vel) async(acc_stream)
+    !$acc parallel loop gang vector collapse(3) deviceptr(u, q, qaux) private(vel) async(acc_stream)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
 
-             q(i,j,k,QRHO) = uin(i,j,k,URHO)
+             q(i,j,k,QRHO) = u(i,j,k,URHO)
              rhoinv = ONE/q(i,j,k,QRHO)
 
-             vel = uin(i,j,k,UMX:UMZ) * rhoinv
+             vel = u(i,j,k,UMX:UMZ) * rhoinv
 
              q(i,j,k,QU:QW) = vel
 
@@ -119,19 +119,19 @@ contains
 
              kineng = HALF * q(i,j,k,QRHO) * (q(i,j,k,QU)**2 + q(i,j,k,QV)**2 + q(i,j,k,QW)**2)
 
-             if ( (uin(i,j,k,UEDEN) - kineng) / uin(i,j,k,UEDEN) .gt. dual_energy_eta1) then
-                q(i,j,k,QREINT) = (uin(i,j,k,UEDEN) - kineng) * rhoinv
+             if ( (u(i,j,k,UEDEN) - kineng) / u(i,j,k,UEDEN) .gt. dual_energy_eta1) then
+                q(i,j,k,QREINT) = (u(i,j,k,UEDEN) - kineng) * rhoinv
              else
-                q(i,j,k,QREINT) = uin(i,j,k,UEINT) * rhoinv
+                q(i,j,k,QREINT) = u(i,j,k,UEINT) * rhoinv
              endif
 
-             q(i,j,k,QTEMP) = uin(i,j,k,UTEMP)
+             q(i,j,k,QTEMP) = u(i,j,k,UTEMP)
 
              ! Load passively advected quatities into q
              do ispec = 1, nspec
                 n  = UFS + ispec - 1
                 iq = QFS + ispec - 1
-                q(i,j,k,iq) = uin(i,j,k,n) * rhoinv
+                q(i,j,k,iq) = u(i,j,k,n) * rhoinv
              enddo
 
              ! get gamc, p, T, c, csml using q state
@@ -163,7 +163,7 @@ contains
 
   CASTRO_FORT_DEVICE subroutine apply_av(lo, hi, idir, dx, &
                                          div, div_lo, div_hi, &
-                                         uin, uin_lo, uin_hi, &
+                                         u, u_lo, u_hi, &
                                          flux, f_lo, f_hi) bind(c, name="apply_av")
 
     use amrex_constants_module, only: FOURTH
@@ -173,13 +173,13 @@ contains
 
     integer,  intent(in   ) :: lo(3), hi(3)
     integer,  intent(in   ) :: div_lo(3), div_hi(3)
-    integer,  intent(in   ) :: uin_lo(3), uin_hi(3)
+    integer,  intent(in   ) :: u_lo(3), u_hi(3)
     integer,  intent(in   ) :: f_lo(3), f_hi(3)
     real(rt), intent(in   ) :: dx(3)
     integer,  intent(in   ), value :: idir
 
     real(rt), intent(in   ) :: div(div_lo(1):div_hi(1),div_lo(2):div_hi(2),div_lo(3):div_hi(3))
-    real(rt), intent(in   ) :: uin(uin_lo(1):uin_hi(1),uin_lo(2):uin_hi(2),uin_lo(3):uin_hi(3),NVAR)
+    real(rt), intent(in   ) :: u(u_lo(1):u_hi(1),u_lo(2):u_hi(2),u_lo(3):u_hi(3),NVAR)
     real(rt), intent(inout) :: flux(f_lo(1):f_hi(1),f_lo(2):f_hi(2),f_lo(3):f_hi(3),NVAR)
 
     integer :: i, j, k, n
@@ -188,7 +188,7 @@ contains
 
     real(rt), parameter :: difmag = 0.1d0
 
-    !$acc parallel loop gang vector collapse(4) deviceptr(flux, uin, div) async(acc_stream)
+    !$acc parallel loop gang vector collapse(4) deviceptr(flux, u, div) async(acc_stream)
     do n = 1, NVAR
        do k = lo(3), hi(3)
           do j = lo(2), hi(2)
@@ -201,21 +201,21 @@ contains
                    div1 = FOURTH * (div(i,j,k  ) + div(i,j+1,k) + &
                                     div(i,j,k+1) + div(i,j+1,k))
                    div1 = difmag * min(ZERO, div1)
-                   div1 = div1 * (uin(i,j,k,n) - uin(i-1,j,k,n))
+                   div1 = div1 * (u(i,j,k,n) - u(i-1,j,k,n))
 
                 else if (idir .eq. 2) then
 
                    div1 = FOURTH * (div(i,j,k  ) + div(i+1,j,k) + &
                                     div(i,j,k+1) + div(i+1,j,k))
                    div1 = difmag * min(ZERO, div1)
-                   div1 = div1 * (uin(i,j,k,n) - uin(i,j-1,k,n))
+                   div1 = div1 * (u(i,j,k,n) - u(i,j-1,k,n))
 
                 else
 
                    div1 = FOURTH * (div(i,j  ,k) + div(i+1,j  ,k) + &
                                     div(i,j+1,k) + div(i+1,j+1,k))
                    div1 = difmag * min(ZERO, div1)
-                   div1 = div1 * (uin(i,j,k,n) - uin(i,j,k-1,n))
+                   div1 = div1 * (u(i,j,k,n) - u(i,j,k-1,n))
 
                 end if
 
@@ -317,7 +317,7 @@ contains
   
 
   CASTRO_FORT_DEVICE subroutine fill_hydro_source(lo, hi, &
-                                                  uin, uin_lo, uin_hi, &
+                                                  u, u_lo, u_hi, &
                                                   q, q_lo, q_hi, &
                                                   source, sr_lo, sr_hi, &
                                                   flux1, flux1_lo, flux1_hi, &
@@ -337,7 +337,7 @@ contains
                              GDU, GDV, GDW, GDPRES
 
     integer, intent(in) ::       lo(3),       hi(3)
-    integer, intent(in) ::   uin_lo(3),   uin_hi(3)
+    integer, intent(in) ::     u_lo(3),     u_hi(3)
     integer, intent(in) ::     q_lo(3),     q_hi(3)
     integer, intent(in) ::    sr_lo(3),    sr_hi(3)
     integer, intent(in) :: flux1_lo(3), flux1_hi(3)
@@ -351,7 +351,7 @@ contains
     integer, intent(in) ::    qx_lo(3),    qx_hi(3)
     integer, intent(in) ::   vol_lo(3),   vol_hi(3)
 
-    real(rt), intent(in) :: uin(uin_lo(1):uin_hi(1),uin_lo(2):uin_hi(2),uin_lo(3):uin_hi(3),NVAR)
+    real(rt), intent(in) :: u(u_lo(1):u_hi(1),u_lo(2):u_hi(2),u_lo(3):u_hi(3),NVAR)
     real(rt), intent(in) :: q(q_lo(1):q_hi(1),q_lo(2):q_hi(2),q_lo(3):q_hi(3),QVAR)
     real(rt), intent(inout) :: source(sr_lo(1):sr_hi(1),sr_lo(2):sr_hi(2),sr_lo(3):sr_hi(3),NVAR)
     real(rt), intent(in) :: flux1(flux1_lo(1):flux1_hi(1),flux1_lo(2):flux1_hi(2),flux1_lo(3):flux1_hi(3),NVAR)

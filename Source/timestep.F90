@@ -9,7 +9,7 @@ contains
 
   ! Courant-condition limited timestep
 
-  CASTRO_FORT_DEVICE subroutine estdt(lo,hi,u,u_lo,u_hi,dx,dt) bind(C, name='estdt')
+  CASTRO_FORT_DEVICE subroutine estdt(lo, hi, u, u_lo, u_hi, dx, dt) bind(C, name='estdt')
 
     use network, only: nspec, aion_inv, zion
     use castro_module, only: NVAR, URHO, UMX, UMY, UMZ, UEINT, UTEMP, UFS

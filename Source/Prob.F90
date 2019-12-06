@@ -21,7 +21,7 @@ module initdata_module
 contains
 
   CASTRO_FORT_DEVICE subroutine initdata(lo, hi, &
-                                         state, s_lo, s_hi, &
+                                         u, u_lo, u_hi, &
                                          dx, problo, probhi) &
                                          bind(C, name='initdata')
 
@@ -33,8 +33,8 @@ contains
     implicit none
 
     integer,  intent(in   ) :: lo(3), hi(3)
-    integer,  intent(in   ) :: s_lo(3), s_hi(3)
-    real(rt), intent(inout) :: state(s_lo(1):s_hi(1),s_lo(2):s_hi(2),s_lo(3):s_hi(3),NVAR)
+    integer,  intent(in   ) :: u_lo(3), u_hi(3)
+    real(rt), intent(inout) :: u(u_lo(1):u_hi(1),u_lo(2):u_hi(2),u_lo(3):u_hi(3),NVAR)
     real(rt), intent(in   ) :: dx(3), problo(3), probhi(3)
 
     real(rt) :: xmin, ymin, zmin
@@ -72,7 +72,7 @@ contains
 
     center(:) = (problo(:)+probhi(:)) / 2.e0_rt
 
-    !$acc parallel loop gang vector collapse(3) deviceptr(state) async(acc_stream)
+    !$acc parallel loop gang vector collapse(3) deviceptr(u) async(acc_stream)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
@@ -106,20 +106,20 @@ contains
 
              eint = (npert * e_exp + nambient * e_ambient) / nsub**3
 
-             state(i,j,k,URHO) = dens_ambient
-             state(i,j,k,UMX) = 0.e0_rt
-             state(i,j,k,UMY) = 0.e0_rt
-             state(i,j,k,UMZ) = 0.e0_rt
+             u(i,j,k,URHO) = dens_ambient
+             u(i,j,k,UMX) = 0.e0_rt
+             u(i,j,k,UMY) = 0.e0_rt
+             u(i,j,k,UMZ) = 0.e0_rt
 
-             state(i,j,k,UTEMP) = 1.d9 ! Arbitrary temperature that will be overwritten on a computeTemp call.
+             u(i,j,k,UTEMP) = 1.d9 ! Arbitrary temperature that will be overwritten on a computeTemp call.
 
-             state(i,j,k,UEDEN) = state(i,j,k,URHO) * eint
+             u(i,j,k,UEDEN) = u(i,j,k,URHO) * eint
 
-             state(i,j,k,UEINT) = state(i,j,k,URHO) * eint
+             u(i,j,k,UEINT) = u(i,j,k,URHO) * eint
 
              ! initialize species
-             state(i,j,k,UFS:) = 0.e0_rt
-             state(i,j,k,UFS) = state(i,j,k,URHO)
+             u(i,j,k,UFS:) = 0.e0_rt
+             u(i,j,k,UFS) = u(i,j,k,URHO)
 
           enddo
        enddo
