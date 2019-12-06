@@ -157,7 +157,7 @@ subroutine amrex_probinit (init,name,namlen,problo,probhi) bind(C, name='amrex_p
 
   !$acc update device(p_ambient, dens_ambient, exp_energy, r_init, nsub)
 
-  !$acc target update to(p_ambient, dens_ambient, exp_energy, r_init, nsub)
+  !$omp target update to(p_ambient, dens_ambient, exp_energy, r_init, nsub)
 
 end subroutine amrex_probinit
 
