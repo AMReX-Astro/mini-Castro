@@ -98,6 +98,7 @@ contains
     end if
 
     !$acc parallel loop gang vector collapse(3) deviceptr(ql, qr, flx, qint, qaux, qgdnv) async(acc_stream)
+    !$omp target teams distribute parallel do collapse(3) is_device_ptr(ql, qr, flx, qint, qaux, qgdnv)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)

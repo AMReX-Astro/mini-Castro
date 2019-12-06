@@ -406,6 +406,8 @@ contains
 
     !$acc parallel loop gang vector collapse(3) deviceptr(qm, qp, q, qaux) &
     !$acc private(Ip, Im, Ip_gc, Im_gc, Ip_sp, Im_sp, s) async(acc_stream)
+    !$omp target teams distribute parallel do collapse(3) is_device_ptr(qm, qp, q, qaux) &
+    !$omp private(Ip, Im, Ip_gc, Im_gc, Ip_sp, Im_sp, s)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)

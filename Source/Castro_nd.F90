@@ -87,6 +87,7 @@ contains
     max_dens = ZERO
 
     !$acc parallel loop gang vector collapse(3) deviceptr(u) async(acc_stream)
+    !$omp target teams distribute parallel do collapse(3) is_device_ptr(u)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
@@ -182,6 +183,7 @@ contains
     integer  :: i, j, k
 
     !$acc parallel loop gang vector collapse(3) deviceptr(u) async(acc_stream)
+    !$omp target teams distribute parallel do collapse(3) is_device_ptr(u)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
@@ -221,6 +223,7 @@ contains
     ! Reset internal energy
 
     !$acc parallel loop gang vector collapse(3) deviceptr(u) async(acc_stream)
+    !$omp target teams distribute parallel do collapse(3) is_device_ptr(u)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
@@ -300,6 +303,7 @@ contains
     type (eos_t) :: eos_state
 
     !$acc parallel loop gang vector collapse(3) deviceptr(u) async(acc_stream)
+    !$omp target teams distribute parallel do collapse(3) is_device_ptr(u)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
@@ -348,6 +352,7 @@ contains
     ! Tag on regions of high density gradient
 
     !$acc parallel loop gang vector collapse(3) deviceptr(tag, den) async(acc_stream)
+    !$omp target teams distribute parallel do collapse(3) is_device_ptr(tag, den)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
@@ -399,6 +404,7 @@ contains
     center = (probhi - problo) / TWO
 
     !$acc parallel loop gang vector collapse(3) deviceptr(u) reduction(+:blast_mass, blast_radius) async(acc_stream)
+    !$omp target teams distribute parallel do collapse(3) is_device_ptr(u) reduction(+:blast_mass, blast_radius)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
