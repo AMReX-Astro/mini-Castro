@@ -31,6 +31,8 @@ contains
     ! Knobs for detection of strong shock
     real(rt), parameter :: shktst = 0.33e0_rt, zcut1 = 0.75e0_rt, zcut2 = 0.85e0_rt, dzcut = ONE / (zcut2 - zcut1)
 
+    !$omp declare target
+
     flatn = ONE
 
     do idir = 1, 3
@@ -136,6 +138,8 @@ contains
     ! local
     real(rt) :: dsl, dsr, dsc, dsvl_l, dsvl_r
 
+    !$omp declare target
+
     ! Compute van Leer slopes
 
     dsl = TWO * (s(-1) - s(-2))
@@ -237,6 +241,8 @@ contains
 
     ! local
     real(rt) :: speed, sigma, s6
+
+    !$omp declare target
 
     ! compute x-component of Ip and Im
     s6 = SIX * sc - THREE * (sm + sp)
