@@ -98,8 +98,8 @@ contains
 
     type (eos_t) :: eos_state
 
-    !$acc parallel loop gang vector collapse(3) deviceptr(u, q, qaux) private(vel) async(acc_stream)
-    !$omp target teams distribute parallel do collapse(3) is_device_ptr(u, q, qaux) private(vel)
+    !$acc parallel loop gang vector collapse(3) private(vel, eos_state) deviceptr(u, q, qaux) async(acc_stream)
+    !$omp target teams distribute parallel do collapse(3) private(vel, eos_state) is_device_ptr(u, q, qaux)
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
