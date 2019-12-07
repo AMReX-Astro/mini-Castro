@@ -9,21 +9,8 @@ module eos_module
   public eos_t, eos_init, eos_finalize, eos
 
   integer, parameter :: eos_input_rt = 1  ! rho, T are inputs
-  integer, parameter :: eos_input_rh = 2  ! rho, h are inputs
-  integer, parameter :: eos_input_tp = 3  ! T, p are inputs
-  integer, parameter :: eos_input_rp = 4  ! rho, p are inputs
-  integer, parameter :: eos_input_re = 5  ! rho, e are inputs
-  integer, parameter :: eos_input_ps = 6  ! p, s are inputs
-  integer, parameter :: eos_input_ph = 7  ! p, h are inputs
-  integer, parameter :: eos_input_th = 8  ! T, h are inputs
-
-  ! these are used to allow for a generic interface to the root finding
-  integer, parameter :: itemp = 1
-  integer, parameter :: idens = 2
-  integer, parameter :: iener = 3
-  integer, parameter :: ienth = 4
-  integer, parameter :: ientr = 5
-  integer, parameter :: ipres = 6
+  integer, parameter :: eos_input_re = 2  ! rho, e are inputs
+  integer, parameter :: eos_input_rp = 3  ! rho, p are inputs
 
   ! A generic structure holding thermodynamic quantities and their derivatives,
   ! plus some other quantities of interest.
@@ -84,7 +71,7 @@ module eos_module
   double precision, parameter :: mintemp = 10.0d0**tlo
   double precision, parameter :: mindens = 10.0d0**dlo
 
-  double precision, parameter :: ttol = 1.d-8, dtol = 1.d-8
+  double precision, parameter :: ttol = 1.d-8
 
 #ifdef AMREX_USE_OMP_OFFLOAD
 
@@ -249,12 +236,9 @@ contains
 
     !..declare local variables
 
-    logical :: single_iter, double_iter, converged
-    integer :: var, dvar, var1, var2, iter
-    double precision :: v_want
-    double precision :: v1_want, v2_want
-    double precision :: xnew, xtol, dvdx, smallx, error, v
-    double precision :: v1, v2, dv1dt, dv1dr, dv2dt,dv2dr, delr, error1, error2, told, rold, tnew, rnew, v1i, v2i
+    logical :: converged
+    integer :: iter
+    double precision :: temp_old, v_want, v, dvdx, error
 
     double precision :: x,y,zz,zzi,deni,tempi,xni,dxnidd,dxnida, &
                         dpepdt,dpepdd,deepdt,deepdd,dsepdd,dsepdt, &
@@ -288,65 +272,21 @@ contains
 
     ! Initial setup for iterations
 
-    single_iter = .false.
-    double_iter = .false.
-
     if (input .eq. eos_input_rt) then
 
-      ! Nothing to do here.
+       converged = .true.
 
-    elseif (input .eq. eos_input_rh) then
+    else
 
-      single_iter = .true.
-      v_want = state % h
-      var  = ienth
-      dvar = itemp
+       converged = .false.
 
-    elseif (input .eq. eos_input_tp) then
+    end if
 
-      single_iter = .true.
-      v_want = state % p
-      var  = ipres
-      dvar = idens
-
-    elseif (input .eq. eos_input_rp) then
-
-      single_iter = .true.
-      v_want = state % p
-      var  = ipres
-      dvar = itemp
-
-    elseif (input .eq. eos_input_re) then
-
-      single_iter = .true.
-      v_want = state % e
-      var  = iener
-      dvar = itemp
-
-    elseif (input .eq. eos_input_ps) then
-
-      double_iter = .true.
-      v1_want = state % p
-      v2_want = state % s
-      var1 = ipres
-      var2 = ientr
-
-    elseif (input .eq. eos_input_ph) then
-
-      double_iter = .true.
-      v1_want = state % p
-      v2_want = state % h
-      var1 = ipres
-      var2 = ienth
-
-    elseif (input .eq. eos_input_th) then
-
-      single_iter = .true.
-      v_want = state % h
-      var  = ienth
-      dvar = idens
-
-    endif
+    if (input .eq. eos_input_re) then
+       v_want = state % e
+    else if (input .eq. eos_input_rp) then
+       v_want = state % p
+    end if
 
     ptot_row = 0.0d0
     dpt_row = 0.0d0
@@ -382,10 +322,6 @@ contains
     cp_row = 0.0d0
     cs_row = 0.0d0
     gam1_row = 0.0d0
-
-    converged = .false.
-
-    if (input .eq. eos_input_rt) converged = .true.
 
     do iter = 1, max_newton
 
@@ -542,14 +478,6 @@ contains
        ddsi1mt = -ddpsi1(mxt)*dti(jat)
        ddsi2mt =  ddpsi2(mxt)
 
-       !     ddsi0d =   ddpsi0(xd)*dd2i(iat)
-       !     ddsi1d =   ddpsi1(xd)*ddi(iat)
-       !     ddsi2d =   ddpsi2(xd)
-
-       !     ddsi0md =  ddpsi0(mxd)*dd2i(iat)
-       !     ddsi1md = -ddpsi1(mxd)*ddi(iat)
-       !     ddsi2md =  ddpsi2(mxd)
-
 
        !..the free energy
        free  = h5( fi, &
@@ -565,11 +493,6 @@ contains
        df_t = h5( fi, &
             dsi0t,  dsi1t,  dsi2t,  dsi0mt,  dsi1mt,  dsi2mt, &
             si0d,   si1d,   si2d,   si0md,   si1md,   si2md)
-
-       !..derivative with respect to density**2
-       !     df_dd = h5( &
-       !               si0t,   si1t,   si2t,   si0mt,   si1mt,   si2mt, &
-       !               ddsi0d, ddsi1d, ddsi2d, ddsi0md, ddsi1md, ddsi2md)
 
        !..derivative with respect to temperature**2
        df_tt = h5( fi, &
@@ -711,7 +634,6 @@ contains
        x       = din * din
        pele    = x * df_d
        dpepdt  = x * df_dt
-       !     dpepdd  = ye * (x * df_dd + 2.0d0 * din * df_d)
        s       = dpepdd/ye - 2.0d0 * din * df_d
 
        x       = ye * ye
@@ -799,161 +721,33 @@ contains
 
           exit
 
-       elseif (single_iter) then
+       else
 
-          if (dvar .eq. itemp) then
+          temp_old = temp_row
 
-             x = temp_row
-             smallx = mintemp
-             xtol = ttol
+          if (input .eq. eos_input_re) then
+             v    = etot_row
+             dvdx = det_row
+          else ! input .eq. eos_input_rp
+             v    = ptot_row
+             dvdx = dpt_row
+          end if
 
-             if (var .eq. ipres) then
-                v    = ptot_row
-                dvdx = dpt_row
-             elseif (var .eq. iener) then
-                v    = etot_row
-                dvdx = det_row
-             elseif (var .eq. ientr) then
-                v    = stot_row
-                dvdx = dst_row
-             elseif (var .eq. ienth) then
-                v    = htot_row
-                dvdx = dht_row
-             else
-                exit
-             endif
+          ! Now do the calculation for the next guess for T
+          temp_row = temp_row - (v - v_want) / dvdx
 
-          else ! dvar == density
+          ! Don't let the temperature change by more than a factor of two
+          temp_row = max(0.5 * temp_old, min(temp_row, 2.0 * temp_old))
 
-             x = den_row
-             smallx = mindens
-             xtol = dtol
-
-             if (var .eq. ipres) then
-                v    = ptot_row
-                dvdx = dpd_row
-             elseif (var .eq. iener) then
-                v    = etot_row
-                dvdx = ded_row
-             elseif (var .eq. ientr) then
-                v    = stot_row
-                dvdx = dsd_row
-             elseif (var .eq. ienth) then
-                v    = htot_row
-                dvdx = dhd_row
-             else
-                exit
-             endif
-
-          endif
-
-          ! Now do the calculation for the next guess for T/rho
-
-          xnew = x - (v - v_want) / dvdx
-
-          ! Don't let the temperature/density change by more than a factor of two
-          xnew = max(0.5 * x, min(xnew, 2.0 * x))
-
-          ! Don't let us freeze/evacuate
-          xnew = max(smallx, xnew)
-
-          ! Store the new temperature/density
-
-          if (dvar .eq. itemp) then
-             temp_row = xnew
-          else
-             den_row  = xnew
-          endif
+          ! Don't let us freeze
+          temp_row = max(mintemp, temp_row)
 
           ! Compute the error from the last iteration
+          error = abs((temp_row - temp_old) / temp_old)
 
-          error = abs( (xnew - x) / x )
+          if (error .lt. ttol) converged = .true.
 
-          if (error .lt. xtol) converged = .true.
-
-       elseif (double_iter) then
-
-          ! Figure out which variables we're using
-
-          told = temp_row
-          rold = den_row
-
-          if (var1 .eq. ipres) then
-             v1    = ptot_row
-             dv1dt = dpt_row
-             dv1dr = dpd_row
-          elseif (var1 .eq. iener) then
-             v1    = etot_row
-             dv1dt = det_row
-             dv1dr = ded_row
-          elseif (var1 .eq. ientr) then
-             v1    = stot_row
-             dv1dt = dst_row
-             dv1dr = dsd_row
-          elseif (var1 .eq. ienth) then
-             v1    = htot_row
-             dv1dt = dht_row
-             dv1dr = dhd_row
-          else
-             exit
-          endif
-
-          if (var2 .eq. ipres) then
-             v2    = ptot_row
-             dv2dt = dpt_row
-             dv2dr = dpd_row
-          elseif (var2 .eq. iener) then
-             v2    = etot_row
-             dv2dt = det_row
-             dv2dr = ded_row
-          elseif (var2 .eq. ientr) then
-             v2    = stot_row
-             dv2dt = dst_row
-             dv2dr = dsd_row
-          elseif (var2 .eq. ienth) then
-             v2    = htot_row
-             dv2dt = dht_row
-             dv2dr = dhd_row
-          else
-             exit
-          endif
-
-          ! Two functions, f and g, to iterate over
-          v1i = v1_want - v1
-          v2i = v2_want - v2
-
-          !
-          ! 0 = f + dfdr * delr + dfdt * delt
-          ! 0 = g + dgdr * delr + dgdt * delt
-          !
-
-          ! note that dfi/dT = - df/dT
-          delr = (-v1i*dv2dt + v2i*dv1dt) / (dv2dr*dv1dt - dv2dt*dv1dr)
-
-          rnew = rold + delr
-
-          tnew = told + (v1i - dv1dr*delr) / dv1dt
-
-          ! Don't let the temperature or density change by more
-          ! than a factor of two
-          tnew = max(HALF * told, min(tnew, TWO * told))
-          rnew = max(HALF * rold, min(rnew, TWO * rold))
-
-          ! Don't let us freeze or evacuate
-          tnew = max(mintemp, tnew)
-          rnew = max(mindens, rnew)
-
-          ! Store the new temperature and density
-          den_row  = rnew
-          temp_row = tnew
-
-          ! Compute the errors
-          error1 = abs( (rnew - rold) / rold )
-          error2 = abs( (tnew - told) / told )
-
-          if (error1 .LT. dtol .and. error2 .LT. ttol) converged = .true.
-
-       endif
+       end if
 
     enddo
 
@@ -990,7 +784,6 @@ contains
     state % cv   = cv_row
     state % cp   = cp_row
     state % gam1 = gam1_row
-    ! state % cs   = cs_row
 
     ! Take care of final housekeeping.
 
@@ -1006,35 +799,13 @@ contains
 
     ! Ensure the inputs don't change as a result of the EOS call.
 
-    if (input .eq. eos_input_rh) then
+    if (input .eq. eos_input_re) then
 
-      state % h = v_want
+       state % e = v_want
 
-    elseif (input .eq. eos_input_tp) then
+    else if (input .eq. eos_input_rp) then
 
-      state % p = v_want
-
-    elseif (input .eq. eos_input_rp) then
-
-      state % p = v_want
-
-    elseif (input .eq. eos_input_re) then
-
-      state % e = v_want
-
-    elseif (input .eq. eos_input_ps) then
-
-      state % p = v1_want
-      state % s = v2_want
-
-    elseif (input .eq. eos_input_ph) then
-
-      state % p = v1_want
-      state % h = v2_want
-
-    elseif (input .eq. eos_input_th) then
-
-      state % h = v_want
+       state % p = v_want
 
     endif
 
