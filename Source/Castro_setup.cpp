@@ -37,8 +37,7 @@ Castro::variableSetUp()
     int bndry_func_thread_safe = 1;
     StateDescriptor::setBndryFuncThreadSafety(bndry_func_thread_safe);
 
-    // Initialize the network and EOS
-    network_init();
+    // Initialize the EOS
     eos_init();
 
     Interpolater* interp = &cell_cons_interp;

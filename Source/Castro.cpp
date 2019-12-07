@@ -32,8 +32,6 @@ Castro::variableCleanUp ()
     desc_lst.clear();
 
     eos_finalize();
-
-    network_finalize();
 }
 
 Castro::Castro (Amr&            papa,
