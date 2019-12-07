@@ -179,7 +179,7 @@ contains
     integer :: iter
     real(rt) :: temp_old, v_want, v, dvdx, error
 
-    real(rt) :: temp, den, din, deni, tempi, abar, zbar, ytot1, ye, kt, ktinv
+    real(rt) :: temp, den, din, deni, tempi, abar, zbar, ytot1, ye
     real(rt) :: pres, ener, entr, dpresdd, dpresdt, denerdd, denerdt, dentrdd, dentrdt
     real(rt) :: pele, dpepdt, dpepdd, eele, deepdt, deepdd, sele, dsepdd, dsepdt
     real(rt) :: prad, dpraddd, dpraddt, erad, deraddd, deraddt, srad, dsraddd, dsraddt
@@ -224,8 +224,6 @@ contains
        !..initialize
        deni    = 1.0d0 / den
        tempi   = 1.0d0 / temp
-       kt      = kerg * temp
-       ktinv   = 1.0d0 / kt
 
        !..radiation section:
        prad    = asoli3 * temp * temp * temp * temp
@@ -241,9 +239,9 @@ contains
        dsraddt = (dpraddt * deni + deraddt - srad) * tempi
 
        !..ion section:
-       pion    = avo_eos * ytot1 * den * kt
-       dpiondd = avo_eos * ytot1 * kt
-       dpiondt = avo_eos * ytot1 * den * kerg
+       pion    = kergavo * ytot1 * den * temp
+       dpiondd = kergavo * ytot1 * temp
+       dpiondt = kergavo * ytot1 * den
 
        eion    = 1.5d0 * pion * deni
        deiondd = (1.5d0 * dpiondd - eion) * deni
