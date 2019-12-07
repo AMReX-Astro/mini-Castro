@@ -191,7 +191,7 @@ contains
     real(rt), parameter :: difmag = 0.1d0
 
     !$acc parallel loop gang vector collapse(4) deviceptr(flux, u, div) async(acc_stream)
-    !$omp target teams distribute parallel do collapse(3) is_device_ptr(flux, u, div)
+    !$omp target teams distribute parallel do collapse(4) is_device_ptr(flux, u, div)
     do n = 1, NVAR
        do k = lo(3), hi(3)
           do j = lo(2), hi(2)
@@ -306,7 +306,7 @@ contains
     integer :: i, j, k, n
 
     !$acc parallel loop gang vector collapse(4) deviceptr(flux_out, flux_in, area) async(acc_stream)
-    !$omp target teams distribute parallel do collapse(3) is_device_ptr(flux_out, flux_in, area)
+    !$omp target teams distribute parallel do collapse(4) is_device_ptr(flux_out, flux_in, area)
     do n = 1, NVAR
        do k = lo(3), hi(3)
           do j = lo(2), hi(2)
@@ -380,9 +380,9 @@ contains
     ! essentially the flux divergence.  This can be added with dt to
     ! get the update.
 
-    !$acc parallel loop gang vector collapse(3) deviceptr(source, flux1, flux2, flux3, area1, area2, area3) &
+    !$acc parallel loop gang vector collapse(4) deviceptr(source, flux1, flux2, flux3, area1, area2, area3) &
     !$acc deviceptr(qx, qy, qz, vol) async(acc_stream)
-    !$omp target teams distribute parallel do collapse(3) is_device_ptr(source, flux1, flux2, flux3, area1, area2, area3) &
+    !$omp target teams distribute parallel do collapse(4) is_device_ptr(source, flux1, flux2, flux3, area1, area2, area3) &
     !$omp is_device_ptr(qx, qy, qz, vol)
     do n = 1, NVAR
        do k = lo(3), hi(3)
