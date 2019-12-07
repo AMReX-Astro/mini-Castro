@@ -200,40 +200,6 @@ contains
     integer,      intent(in   ) :: input
     type (eos_t), intent(inout) :: state
 
-    !..rows to store EOS data
-    double precision :: temp_row, &
-                        den_row, &
-                        abar_row, &
-                        zbar_row, &
-                        ye_row, &
-                        etot_row, &
-                        ptot_row, &
-                        cv_row, &
-                        cp_row,  &
-                        xne_row, &
-                        xnp_row, &
-                        etaele_row, &
-                        pele_row, &
-                        ppos_row, &
-                        dpd_row,  &
-                        dpt_row, &
-                        dpa_row, &
-                        dpz_row,  &
-                        ded_row, &
-                        det_row, &
-                        dea_row,  &
-                        dez_row,  &
-                        stot_row, &
-                        dsd_row, &
-                        dst_row, &
-                        htot_row, &
-                        dhd_row, &
-                        dht_row, &
-                        dpe_row, &
-                        dpdr_e_row, &
-                        gam1_row, &
-                        cs_row
-
     !..declare local variables
 
     logical :: converged
@@ -245,10 +211,10 @@ contains
                         dpraddd,dpraddt,deraddd,deraddt,dpiondd,dpiondt, &
                         deiondd,deiondt,dsraddd,dsraddt,dsiondd,dsiondt, &
                         dse,dpe,dsp,kt,ktinv,prad,erad,srad,pion,eion, &
-                        sion,xnem,pele,eele,sele,pres,ener,entr,dpresdd, &
-                        dpresdt,denerdd,denerdt,dentrdd,dentrdt,cv,cp, &
-                        gam1,gam2,gam3,chit,chid,nabad,sound,etaele, &
-                        detadt,detadd,xnefer,dxnedt,dxnedd,s, &
+                        sion,pele,eele,sele,pres,ener,entr,dpresdd, &
+                        dpresdt,denerdd,denerdt,dentrdd,dentrdt, &
+                        gam2,gam3,chit,chid,nabad, &
+                        dxnedt,dxnedd,s, &
                         temp,den,abar,zbar,ytot1,ye
 
     !..for the interpolations
@@ -264,22 +230,12 @@ contains
 
     !$omp declare target
 
-    temp_row = state % T
-    den_row  = state % rho
-    abar_row = state % abar
-    zbar_row = state % zbar
-    ye_row   = state % zbar / state % abar
-
     ! Initial setup for iterations
 
     if (input .eq. eos_input_rt) then
-
        converged = .true.
-
     else
-
        converged = .false.
-
     end if
 
     if (input .eq. eos_input_re) then
@@ -288,50 +244,13 @@ contains
        v_want = state % p
     end if
 
-    ptot_row = 0.0d0
-    dpt_row = 0.0d0
-    dpd_row = 0.0d0
-    dpa_row = 0.0d0
-    dpz_row = 0.0d0
-    dpe_row = 0.0d0
-    dpdr_e_row = 0.0d0
-
-    etot_row = 0.0d0
-    det_row = 0.0d0
-    ded_row = 0.0d0
-    dea_row = 0.0d0
-    dez_row = 0.0d0
-
-    stot_row = 0.0d0
-    dst_row = 0.0d0
-    dsd_row = 0.0d0
-
-    htot_row = 0.0d0
-    dhd_row = 0.0d0
-    dht_row = 0.0d0
-
-    pele_row = 0.0d0
-    ppos_row = 0.0d0
-
-    xne_row = 0.0d0
-    xnp_row = 0.0d0
-
-    etaele_row = 0.0d0
-
-    cv_row = 0.0d0
-    cp_row = 0.0d0
-    cs_row = 0.0d0
-    gam1_row = 0.0d0
-
     do iter = 1, max_newton
 
-       temp  = temp_row
-       den   =  den_row
-       abar  = abar_row
-       zbar  = zbar_row
+       temp  = state % T
+       den   = state % rho
 
-       ytot1 = 1.0d0 / abar
-       ye    = ye_row
+       ytot1 = 1.0d0 / state % abar
+       ye    = state % zbar / state % abar
        din   = ye * den
 
        !..initialize
@@ -366,7 +285,7 @@ contains
        deiondd = (1.5d0 * dpiondd - eion)*deni
        deiondt = 1.5d0 * dpiondt*deni
 
-       x       = abar*abar*sqrt(abar) * deni/avo_eos
+       x       = state % abar * state % abar * sqrt(state % abar) * deni / avo_eos
        s       = sioncon * temp
        z       = x * s * sqrt(s)
        y       = log(z)
@@ -376,14 +295,9 @@ contains
        dsiondt = (dpiondt*deni + deiondt)*tempi -  &
             (pion*deni + eion) * tempi*tempi  &
             + 1.5d0 * kergavo * tempi*ytot1
-       x       = avo_eos*kerg/abar
+       x       = avo_eos*kerg/state % abar
 
        !..electron-positron section:
-       !..assume complete ionization
-       xnem    = xni * zbar
-
-       !..enter the table with ye*den
-       din = ye*den
 
        !..hash locate this temperature and density
        jat = int((log10(temp) - tlo)*tstpi) + 1
@@ -574,21 +488,10 @@ contains
        fi(15) = efdt(iat,jat+1)
        fi(16) = efdt(iat+1,jat+1)
 
-       !..electron chemical potential etaele
-       etaele  = h3( fi, &
-            si0t,   si1t,   si0mt,   si1mt, &
-            si0d,   si1d,   si0md,   si1md)
-
-       !..derivative with respect to density
-       x       = h3( fi, &
-            si0t,   si1t,   si0mt,   si1mt, &
-            dsi0d,  dsi1d,  dsi0md,  dsi1md)
-       detadd  = ye * x
-
-       !..derivative with respect to temperature
-       detadt  = h3( fi, &
-            dsi0t,  dsi1t,  dsi0mt,  dsi1mt, &
-            si0d,   si1d,   si0md,   si1md)
+       !..electron chemical potential eta
+       state % eta = h3(fi, &
+                        si0t, si1t, si0mt, si1mt, &
+                        si0d, si1d, si0md, si1md)
 
        !..look in the number density table only once
        fi(1)  = xf(iat,jat)
@@ -609,21 +512,10 @@ contains
        fi(16) = xfdt(iat+1,jat+1)
 
        !..electron + positron number densities
-       xnefer   = h3( fi, &
-            si0t,   si1t,   si0mt,   si1mt, &
-            si0d,   si1d,   si0md,   si1md)
-
-       !..derivative with respect to density
-       x        = h3( fi, &
-            si0t,   si1t,   si0mt,   si1mt, &
-            dsi0d,  dsi1d,  dsi0md,  dsi1md)
-       x = max(x,0.0d0)
-       dxnedd   = ye * x
-
-       !..derivative with respect to temperature
-       dxnedt   = h3( fi, &
-            dsi0t,  dsi1t,  dsi0mt,  dsi1mt, &
-            si0d,   si1d,   si0md,   si1md)
+       state % xne = h3(fi, &
+                        si0t, si1t, si0mt, si1mt, &
+                        si0d, si1d, si0md, si1md)
+       state % xnp = 0.0d0
 
        !..the desired electron-positron thermodynamic quantities
 
@@ -665,20 +557,18 @@ contains
        !..the first adiabatic exponent (c&g 9.97)
        !..the second adiabatic exponent (c&g 9.105)
        !..the specific heat at constant pressure (c&g 9.98)
-       !..and relativistic formula for the sound speed (c&g 14.29)
        zz    = pres*deni
        zzi   = den/pres
        chit  = temp/pres * dpresdt
        chid  = dpresdd*zzi
-       cv    = denerdt
-       x     = zz * chit/(temp * cv)
+       state % cv = denerdt
+       x     = zz * chit / (temp * state % cv)
        gam3  = x + 1.0d0
-       gam1  = chit*x + chid
-       nabad = x/gam1
+       state % gam1 = chit * x + chid
+       nabad = x / state % gam1
        gam2  = 1.0d0/(1.0d0 - nabad)
-       cp    = cv * gam1/chid
+       state % cp = state % cv * state % gam1 / chid
        z     = 1.0d0 + (ener + light2)*zzi
-       sound = clight * sqrt(gam1/z)
 
        !..maxwell relations; each is zero if the consistency is perfect
        x   = den * den
@@ -686,36 +576,26 @@ contains
        dpe = (denerdd*x + temp*dpresdt)/pres - 1.0d0
        dsp = -dentrdd*x/dpresdt - 1.0d0
 
-       ptot_row = pres
-       dpt_row = dpresdt
-       dpd_row = dpresdd
-       dpe_row = dpresdt / denerdt
-       dpdr_e_row = dpresdd - dpresdt * denerdd / denerdt
+       state % p = pres
+       state % dpdT = dpresdt
+       state % dpdr = dpresdd
+       state % dpde = dpresdt / denerdt
+       state % dpdr_e = dpresdd - dpresdt * denerdd / denerdt
 
-       etot_row = ener
-       det_row = denerdt
-       ded_row = denerdd
+       state % e = ener
+       state % dedT = denerdt
+       state % dedr = denerdd
 
-       stot_row = entr
-       dst_row = dentrdt
-       dsd_row = dentrdd
+       state % s = entr
+       state % dsdT = dentrdt
+       state % dsdr = dentrdd
 
-       htot_row = ener + pres / den
-       dhd_row = denerdd + dpresdd / den - pres / den**2
-       dht_row = denerdt + dpresdt / den
+       state % h = ener + pres / den
+       state % dhdr = denerdd + dpresdd / den - pres / den**2
+       state % dhdT = denerdt + dpresdt / den
 
-       pele_row = pele
-       ppos_row = 0.0d0
-
-       xne_row = xnefer
-       xnp_row = 0.0d0
-
-       etaele_row = etaele
-
-       cv_row = cv
-       cp_row = cp
-       cs_row = sound
-       gam1_row = gam1
+       state % pele = pele
+       state % ppos = 0.0d0
 
        if (converged) then
 
@@ -723,27 +603,29 @@ contains
 
        else
 
-          temp_old = temp_row
+          temp_old = temp
 
           if (input .eq. eos_input_re) then
-             v    = etot_row
-             dvdx = det_row
+             v    = state % e
+             dvdx = state % dedT
           else ! input .eq. eos_input_rp
-             v    = ptot_row
-             dvdx = dpt_row
+             v    = state % p
+             dvdx = state % dpdT
           end if
 
           ! Now do the calculation for the next guess for T
-          temp_row = temp_row - (v - v_want) / dvdx
+          temp = temp - (v - v_want) / dvdx
 
           ! Don't let the temperature change by more than a factor of two
-          temp_row = max(0.5 * temp_old, min(temp_row, 2.0 * temp_old))
+          temp = max(0.5 * temp_old, min(temp, 2.0 * temp_old))
 
           ! Don't let us freeze
-          temp_row = max(mintemp, temp_row)
+          temp = max(mintemp, temp)
+
+          state % T = temp
 
           ! Compute the error from the last iteration
-          error = abs((temp_row - temp_old) / temp_old)
+          error = abs((temp - temp_old) / temp_old)
 
           if (error .lt. ttol) converged = .true.
 
@@ -751,51 +633,13 @@ contains
 
     enddo
 
-    state % T    = temp_row
-    state % rho  = den_row
-
-    state % p    = ptot_row
-    state % dpdT = dpt_row
-    state % dpdr = dpd_row
-
-    state % dpde = dpe_row
-    state % dpdr_e = dpdr_e_row
-
-    state % e    = etot_row
-    state % dedT = det_row
-    state % dedr = ded_row
-
-    state % s    = stot_row
-    state % dsdT = dst_row
-    state % dsdr = dsd_row
-
-    state % h    = htot_row
-    state % dhdR = dhd_row
-    state % dhdT = dht_row
-
-    state % pele = pele_row
-    state % ppos = ppos_row
-
-    state % xne = xne_row
-    state % xnp = xnp_row
-
-    state % eta = etaele_row
-
-    state % cv   = cv_row
-    state % cp   = cp_row
-    state % gam1 = gam1_row
-
-    ! Take care of final housekeeping.
-
-    ! Count the positron contribution in the electron quantities.
-
-    state % xne  = state % xne  + state % xnp
-    state % pele = state % pele + state % ppos
-
-    ! Use the non-relativistic version of the sound speed, cs = sqrt(gam_1 * P / rho).
-    ! This replaces the relativistic version that comes out of helmeos.
-
     state % cs = sqrt(state % gam1 * state % p / state % rho)
+
+    state % dpdA = 0.0d0
+    state % dpdZ = 0.0d0
+
+    state % dedA = 0.0d0
+    state % dedZ = 0.0d0
 
     ! Ensure the inputs don't change as a result of the EOS call.
 
