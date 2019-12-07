@@ -6,17 +6,13 @@ module initdata_module
 
   implicit none
 
-  real(rt), allocatable, public :: p_ambient, dens_ambient, exp_energy
-  real(rt), allocatable, public :: r_init
-  integer,  allocatable, public :: nsub
+  ! Problem setup parameters
 
-#if (defined(AMREX_USE_CUDA) && !(defined(AMREX_USE_ACC) || defined(AMREX_USE_OMP_OFFLOAD)))
-  attributes(managed) :: p_ambient, dens_ambient, exp_energy, r_init, nsub
-#endif
-
-  !$acc declare create(p_ambient, dens_ambient, exp_energy, r_init, nsub)
-
-  !$omp declare target(p_ambient, dens_ambient, exp_energy, r_init, nsub)
+  real(rt), parameter :: p_ambient = 1.e21_rt        ! ambient pressure (in erg/cc)
+  real(rt), parameter :: dens_ambient = 1.e4_rt      ! ambient density (in g/cc)
+  real(rt), parameter :: exp_energy = 1.e52_rt       ! absolute energy of the explosion (in erg)
+  real(rt), parameter :: r_init = 1.25e8_rt          ! initial radius of the explosion (in cm)
+  real(rt), parameter :: nsub = 10                   ! subgrid zones in the initial model
 
 contains
 
@@ -143,36 +139,4 @@ subroutine amrex_probinit (init,name,namlen,problo,probhi) bind(C, name='amrex_p
   integer,  intent(in) :: name(namlen)
   real(rt), intent(in) :: problo(3), probhi(3)
 
-  allocate(p_ambient)
-  allocate(dens_ambient)
-  allocate(exp_energy)
-  allocate(r_init)
-  allocate(nsub)
-
-  ! Set problem parameters
-
-  p_ambient = 1.e21_rt        ! ambient pressure (in erg/cc)
-  dens_ambient = 1.e4_rt      ! ambient density (in g/cc)
-  exp_energy = 1.e52_rt       ! absolute energy of the explosion (in erg)
-  r_init = 1.25e8_rt          ! initial radius of the explosion (in cm)
-  nsub = 10
-
-  !$acc update device(p_ambient, dens_ambient, exp_energy, r_init, nsub)
-
-  !$omp target update to(p_ambient, dens_ambient, exp_energy, r_init, nsub)
-
 end subroutine amrex_probinit
-
-
-
-subroutine probinit_finalize() bind(C, name='probinit_finalize')
-
-  use initdata_module, only: p_ambient, dens_ambient, exp_energy, r_init, nsub
-
-  deallocate(p_ambient)
-  deallocate(dens_ambient)
-  deallocate(exp_energy)
-  deallocate(r_init)
-  deallocate(nsub)
-
-end subroutine probinit_finalize

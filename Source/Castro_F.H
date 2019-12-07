@@ -16,8 +16,6 @@ extern "C"
 
   void eos_finalize();
 
-  void probinit_finalize();
-
   CASTRO_DEVICE
   void ctoprim(const int* lo, const int* hi,
                const amrex::Real* u, const int* u_lo, const int* u_hi,
