@@ -86,6 +86,34 @@ module eos_module
 
   double precision, parameter :: ttol = 1.d-8, dtol = 1.d-8
 
+#ifdef AMREX_USE_OMP_OFFLOAD
+
+  ! IBM's XL implementation seems to not work correctly when using
+  ! allocatable module variables combined with OpenMP declare target.
+  ! As a workaround for this mode, size the EOS data at compile time.
+
+  ! Density and temperature
+  double precision :: d(imax), t(jmax)
+  double precision :: dt(jmax), dt2(jmax), dti(jmax), dt2i(jmax)
+  double precision :: dd(imax), dd2(imax), ddi(imax), dd2i(imax)
+
+  ! Helmholtz free energy and derivatives
+  double precision :: f(imax,jmax)
+  double precision :: fd(imax,jmax), fdd(imax,jmax)
+  double precision :: ft(imax,jmax), ftt(imax,jmax)
+  double precision :: fdt(imax,jmax), fddt(imax,jmax), fdtt(imax,jmax), fddtt(imax,jmax)
+
+  ! Pressure derivatives
+  double precision :: dpdf(imax,jmax), dpdfd(imax,jmax), dpdft(imax,jmax), dpdfdt(imax,jmax)
+
+  ! Chemical potential and derivatives
+  double precision :: ef(imax,jmax), efd(imax,jmax), eft(imax,jmax), efdt(imax,jmax)
+
+  ! Number density and derivatives
+  double precision :: xf(imax,jmax), xfd(imax,jmax), xft(imax,jmax), xfdt(imax,jmax)
+
+#else
+
   ! Density and temperature
   double precision, allocatable :: d(:), t(:)
   double precision, allocatable :: dt(:), dt2(:), dti(:), dt2i(:)
@@ -106,7 +134,7 @@ module eos_module
   ! Number density and derivatives
   double precision, allocatable :: xf(:,:), xfd(:,:), xft(:,:), xfdt(:,:)
 
-#if (defined(AMREX_USE_CUDA) && !(defined(AMREX_USE_ACC) || defined(AMREX_USE_OMP_OFFLOAD)))
+#if (defined(AMREX_USE_CUDA) && !defined(AMREX_USE_ACC))
   attributes(managed) :: d, t
   attributes(managed) :: dt, dt2, dti, dt2i
   attributes(managed) :: dd, dd2, ddi, dd2i
@@ -114,6 +142,8 @@ module eos_module
   attributes(managed) :: dpdf, dpdfd, dpdft, dpdfdt
   attributes(managed) :: ef, efd, eft, efdt
   attributes(managed) :: xf, xfd, xft, xfdt
+#endif
+
 #endif
 
   !$acc declare create(d, t)
@@ -1024,6 +1054,7 @@ contains
 
     ! Allocate managed module variables
 
+#ifndef AMREX_USE_OMP_OFFLOAD
     allocate(d(imax))
     allocate(t(jmax))
     allocate(f(imax,jmax))
@@ -1055,6 +1086,7 @@ contains
     allocate(dd2(imax))
     allocate(ddi(imax))
     allocate(dd2i(imax))
+#endif
 
     ! Read the table
 
@@ -1437,6 +1469,7 @@ contains
 
     ! Deallocate managed module variables
 
+#ifndef AMREX_USE_OMP_OFFLOAD
     deallocate(d)
     deallocate(t)
     deallocate(f)
@@ -1468,6 +1501,7 @@ contains
     deallocate(dd2)
     deallocate(ddi)
     deallocate(dd2i)
+#endif
 
   end subroutine eos_finalize
 
