@@ -158,75 +158,43 @@ module eos_module
   double precision, parameter :: kerg    = 1.380650424d-16
   double precision, parameter :: amu     = 1.66053878283d-24
   double precision, parameter :: asol    = 4.0d0 * 5.67051d-5 / clight
-
-  ! Some useful combinations of the constants
   double precision, parameter :: sioncon = (2.0d0 * M_PI * amu * kerg) / (h * h)
   double precision, parameter :: kergavo = kerg * avo_eos
-  double precision, parameter :: asoli3  = asol/3.0d0
-  double precision, parameter :: light2  = clight * clight
+  double precision, parameter :: asoli3  = asol / 3.0d0
 
 contains
-
-  !  Frank Timmes Helmholtz based Equation of State
-  !  http://cococubed.asu.edu/
-
-  !..given a temperature temp [K], density den [g/cm**3], and a composition
-  !..characterized by abar and zbar, this routine returns most of the other
-  !..thermodynamic quantities. of prime interest is the pressure [erg/cm**3],
-  !..specific thermal energy [erg/gr], the entropy [erg/g/K], along with
-  !..their derivatives with respect to temperature, density, abar, and zbar.
-  !..other quantites such the normalized chemical potential eta (plus its
-  !..derivatives), number density of electrons and positron pair (along
-  !..with their derivatives), adiabatic indices, specific heats, and
-  !..relativistically correct sound speed are also returned.
-  !..
-  !..this routine assumes planckian photons, an ideal gas of ions,
-  !..and an electron-positron gas with an arbitrary degree of relativity
-  !..and degeneracy. interpolation in a table of the helmholtz free energy
-  !..is used to return the electron-positron thermodynamic quantities.
-  !..all other derivatives are analytic.
-  !..
-  !..references: cox & giuli chapter 24 ; timmes & swesty apj 1999
 
   CASTRO_FORT_DEVICE subroutine eos(input, state)
 
     !$acc routine seq
 
     use amrex_constants_module, only: ZERO, HALF, ONE, TWO
-    use network, only: aion, aion_inv, zion
 
     implicit none
 
     integer,      intent(in   ) :: input
     type (eos_t), intent(inout) :: state
 
-    !..declare local variables
-
     logical :: converged
     integer :: iter
     double precision :: temp_old, v_want, v, dvdx, error
 
-    double precision :: x,y,zz,zzi,deni,tempi,xni,dxnidd,dxnida, &
-                        dpepdt,dpepdd,deepdt,deepdd,dsepdd,dsepdt, &
-                        dpraddd,dpraddt,deraddd,deraddt,dpiondd,dpiondt, &
-                        deiondd,deiondt,dsraddd,dsraddt,dsiondd,dsiondt, &
-                        dse,dpe,dsp,kt,ktinv,prad,erad,srad,pion,eion, &
-                        sion,pele,eele,sele,pres,ener,entr,dpresdd, &
-                        dpresdt,denerdd,denerdt,dentrdd,dentrdt, &
-                        gam2,gam3,chit,chid,nabad, &
-                        dxnedt,dxnedd,s, &
-                        temp,den,abar,zbar,ytot1,ye
+    double precision :: temp, den, din, deni, tempi, abar, zbar, ytot1, ye, kt, ktinv
+    double precision :: pres, ener, entr, dpresdd, dpresdt, denerdd, denerdt, dentrdd, dentrdt
+    double precision :: pele, dpepdt, dpepdd, eele, deepdt, deepdd, sele, dsepdd, dsepdt
+    double precision :: prad, dpraddd, dpraddt, erad, deraddd, deraddt, srad, dsraddd, dsraddt
+    double precision :: pion, dpiondd, dpiondt, eion, deiondd, deiondt, sion, dsiondd, dsiondt
+    double precision :: s, x, y, z, zz, zzi, chit, chid
 
-    !..for the interpolations
-    integer          :: iat,jat
-    double precision :: free,df_d,df_t,df_tt,df_dt
-    double precision :: xt,xd,mxt,mxd, &
-                        si0t,si1t,si2t,si0mt,si1mt,si2mt, &
-                        si0d,si1d,si2d,si0md,si1md,si2md, &
-                        dsi0t,dsi1t,dsi2t,dsi0mt,dsi1mt,dsi2mt, &
-                        dsi0d,dsi1d,dsi2d,dsi0md,dsi1md,dsi2md, &
-                        ddsi0t,ddsi1t,ddsi2t,ddsi0mt,ddsi1mt,ddsi2mt, &
-                        z,din,fi(36)
+    integer          :: iat, jat
+    double precision :: free, df_d, df_t, df_tt, df_dt
+    double precision :: xt, xd, mxt, mxd
+    double precision :: fi(36)
+    double precision :: si0t, si1t, si2t, si0mt, si1mt, si2mt
+    double precision :: si0d, si1d, si2d, si0md, si1md, si2md
+    double precision :: dsi0t, dsi1t, dsi2t, dsi0mt, dsi1mt, dsi2mt
+    double precision :: dsi0d, dsi1d, dsi2d, dsi0md, dsi1md, dsi2md
+    double precision :: ddsi0t, ddsi1t, ddsi2t, ddsi0mt, ddsi1mt, ddsi2mt
 
     !$omp declare target
 
@@ -254,48 +222,43 @@ contains
        din   = ye * den
 
        !..initialize
-       deni    = 1.0d0/den
-       tempi   = 1.0d0/temp
+       deni    = 1.0d0 / den
+       tempi   = 1.0d0 / temp
        kt      = kerg * temp
-       ktinv   = 1.0d0/kt
+       ktinv   = 1.0d0 / kt
 
        !..radiation section:
        prad    = asoli3 * temp * temp * temp * temp
        dpraddd = 0.0d0
-       dpraddt = 4.0d0 * prad*tempi
+       dpraddt = 4.0d0 * prad * tempi
 
-       erad    = 3.0d0 * prad*deni
-       deraddd = -erad*deni
-       deraddt = 3.0d0 * dpraddt*deni
+       erad    = 3.0d0 * prad * deni
+       deraddd = -erad * deni
+       deraddt = 3.0d0 * dpraddt * deni
 
-       srad    = (prad*deni + erad)*tempi
-       dsraddd = (dpraddd*deni - prad*deni*deni + deraddd)*tempi
-       dsraddt = (dpraddt*deni + deraddt - srad)*tempi
+       srad    = (prad * deni + erad) * tempi
+       dsraddd = (dpraddd * deni - prad * deni * deni + deraddd) * tempi
+       dsraddt = (dpraddt * deni + deraddt - srad) * tempi
 
        !..ion section:
-       xni     = avo_eos * ytot1 * den
-       dxnidd  = avo_eos * ytot1
-       dxnida  = -xni * ytot1
+       pion    = avo_eos * ytot1 * den * kt
+       dpiondd = avo_eos * ytot1 * kt
+       dpiondt = avo_eos * ytot1 * den * kerg
 
-       pion    = xni * kt
-       dpiondd = dxnidd * kt
-       dpiondt = xni * kerg
-
-       eion    = 1.5d0 * pion*deni
-       deiondd = (1.5d0 * dpiondd - eion)*deni
-       deiondt = 1.5d0 * dpiondt*deni
+       eion    = 1.5d0 * pion * deni
+       deiondd = (1.5d0 * dpiondd - eion) * deni
+       deiondt = 1.5d0 * dpiondt * deni
 
        x       = state % abar * state % abar * sqrt(state % abar) * deni / avo_eos
        s       = sioncon * temp
        z       = x * s * sqrt(s)
        y       = log(z)
-       sion    = (pion*deni + eion)*tempi + kergavo * ytot1 * y
-       dsiondd = (dpiondd*deni - pion*deni*deni + deiondd)*tempi &
-            - kergavo * deni * ytot1
-       dsiondt = (dpiondt*deni + deiondt)*tempi -  &
-            (pion*deni + eion) * tempi*tempi  &
-            + 1.5d0 * kergavo * tempi*ytot1
-       x       = avo_eos*kerg/state % abar
+       sion    = (pion * deni + eion) * tempi + kergavo * ytot1 * y
+       dsiondd = (dpiondd * deni - pion * deni * deni + deiondd) * tempi &
+                 - kergavo * deni * ytot1
+       dsiondt = (dpiondt * deni + deiondt) * tempi - &
+                 (pion*deni + eion) * tempi * tempi &
+                 + 1.5d0 * kergavo * tempi * ytot1
 
        !..electron-positron section:
 
@@ -350,100 +313,99 @@ contains
        mxd = 1.0d0 - xd
 
        !..the six density and six temperature basis functions
-       si0t =   psi0(xt)
-       si1t =   psi1(xt)*dt(jat)
-       si2t =   psi2(xt)*dt2(jat)
+       si0t  =  psi0(xt)
+       si1t  =  psi1(xt)*dt(jat)
+       si2t  =  psi2(xt)*dt2(jat)
 
        si0mt =  psi0(mxt)
        si1mt = -psi1(mxt)*dt(jat)
        si2mt =  psi2(mxt)*dt2(jat)
 
-       si0d =   psi0(xd)
-       si1d =   psi1(xd)*dd(iat)
-       si2d =   psi2(xd)*dd2(iat)
+       si0d  =  psi0(xd)
+       si1d  =  psi1(xd)*dd(iat)
+       si2d  =  psi2(xd)*dd2(iat)
 
        si0md =  psi0(mxd)
        si1md = -psi1(mxd)*dd(iat)
        si2md =  psi2(mxd)*dd2(iat)
 
        !..derivatives of the weight functions
-       dsi0t =   dpsi0(xt)*dti(jat)
-       dsi1t =   dpsi1(xt)
-       dsi2t =   dpsi2(xt)*dt(jat)
+       dsi0t  =  dpsi0(xt)*dti(jat)
+       dsi1t  =  dpsi1(xt)
+       dsi2t  =  dpsi2(xt)*dt(jat)
 
        dsi0mt = -dpsi0(mxt)*dti(jat)
        dsi1mt =  dpsi1(mxt)
        dsi2mt = -dpsi2(mxt)*dt(jat)
 
-       dsi0d =   dpsi0(xd)*ddi(iat)
-       dsi1d =   dpsi1(xd)
-       dsi2d =   dpsi2(xd)*dd(iat)
+       dsi0d  =  dpsi0(xd)*ddi(iat)
+       dsi1d  =  dpsi1(xd)
+       dsi2d  =  dpsi2(xd)*dd(iat)
 
        dsi0md = -dpsi0(mxd)*ddi(iat)
        dsi1md =  dpsi1(mxd)
        dsi2md = -dpsi2(mxd)*dd(iat)
 
        !..second derivatives of the weight functions
-       ddsi0t =   ddpsi0(xt)*dt2i(jat)
-       ddsi1t =   ddpsi1(xt)*dti(jat)
-       ddsi2t =   ddpsi2(xt)
+       ddsi0t  =  ddpsi0(xt)*dt2i(jat)
+       ddsi1t  =  ddpsi1(xt)*dti(jat)
+       ddsi2t  =  ddpsi2(xt)
 
        ddsi0mt =  ddpsi0(mxt)*dt2i(jat)
        ddsi1mt = -ddpsi1(mxt)*dti(jat)
        ddsi2mt =  ddpsi2(mxt)
 
-
        !..the free energy
-       free  = h5( fi, &
-            si0t,   si1t,   si2t,   si0mt,   si1mt,   si2mt, &
-            si0d,   si1d,   si2d,   si0md,   si1md,   si2md)
+       free = h5(fi, &
+                 si0t, si1t, si2t, si0mt, si1mt, si2mt, &
+                 si0d, si1d, si2d, si0md, si1md, si2md)
 
        !..derivative with respect to density
-       df_d  = h5( fi, &
-            si0t,   si1t,   si2t,   si0mt,   si1mt,   si2mt, &
-            dsi0d,  dsi1d,  dsi2d,  dsi0md,  dsi1md,  dsi2md)
+       df_d = h5(fi, &
+                 si0t,  si1t,  si2t,  si0mt,  si1mt,  si2mt, &
+                 dsi0d, dsi1d, dsi2d, dsi0md, dsi1md, dsi2md)
 
        !..derivative with respect to temperature
-       df_t = h5( fi, &
-            dsi0t,  dsi1t,  dsi2t,  dsi0mt,  dsi1mt,  dsi2mt, &
-            si0d,   si1d,   si2d,   si0md,   si1md,   si2md)
+       df_t = h5(fi, &
+                 dsi0t, dsi1t, dsi2t, dsi0mt, dsi1mt, dsi2mt, &
+                 si0d,  si1d,  si2d,  si0md,  si1md,  si2md)
 
        !..derivative with respect to temperature**2
-       df_tt = h5( fi, &
-            ddsi0t, ddsi1t, ddsi2t, ddsi0mt, ddsi1mt, ddsi2mt, &
-            si0d,   si1d,   si2d,   si0md,   si1md,   si2md)
+       df_tt = h5(fi, &
+                  ddsi0t, ddsi1t, ddsi2t, ddsi0mt, ddsi1mt, ddsi2mt, &
+                  si0d,   si1d,   si2d,   si0md,   si1md,   si2md)
 
        !..derivative with respect to temperature and density
-       df_dt = h5( fi, &
-            dsi0t,  dsi1t,  dsi2t,  dsi0mt,  dsi1mt,  dsi2mt, &
-            dsi0d,  dsi1d,  dsi2d,  dsi0md,  dsi1md,  dsi2md)
+       df_dt = h5(fi, &
+                  dsi0t, dsi1t, dsi2t, dsi0mt, dsi1mt, dsi2mt, &
+                  dsi0d, dsi1d, dsi2d, dsi0md, dsi1md, dsi2md)
 
        !..now get the pressure derivative with density, chemical potential, and
        !..electron positron number densities
        !..get the interpolation weight functions
-       si0t   =  xpsi0(xt)
-       si1t   =  xpsi1(xt)*dt(jat)
+       si0t  = xpsi0(xt)
+       si1t  = xpsi1(xt) * dt(jat)
 
-       si0mt  =  xpsi0(mxt)
-       si1mt  =  -xpsi1(mxt)*dt(jat)
+       si0mt = xpsi0(mxt)
+       si1mt = -xpsi1(mxt) * dt(jat)
 
-       si0d   =  xpsi0(xd)
-       si1d   =  xpsi1(xd)*dd(iat)
+       si0d  = xpsi0(xd)
+       si1d  = xpsi1(xd) * dd(iat)
 
-       si0md  =  xpsi0(mxd)
-       si1md  =  -xpsi1(mxd)*dd(iat)
+       si0md = xpsi0(mxd)
+       si1md = -xpsi1(mxd) * dd(iat)
 
        !..derivatives of weight functions
-       dsi0t  = xdpsi0(xt)*dti(jat)
+       dsi0t  = xdpsi0(xt) * dti(jat)
        dsi1t  = xdpsi1(xt)
 
-       dsi0mt = -xdpsi0(mxt)*dti(jat)
+       dsi0mt = -xdpsi0(mxt) * dti(jat)
        dsi1mt = xdpsi1(mxt)
 
-       dsi0d  = xdpsi0(xd)*ddi(iat)
+       dsi0d  = xdpsi0(xd) * ddi(iat)
        dsi1d  = xdpsi1(xd)
 
-       dsi0md = -xdpsi0(mxd)*ddi(iat)
+       dsi0md = -xdpsi0(mxd) * ddi(iat)
        dsi1md = xdpsi1(mxd)
 
        !..look in the pressure derivative only once
@@ -465,10 +427,10 @@ contains
        fi(16) = dpdfdt(iat+1,jat+1)
 
        !..pressure derivative with density
-       dpepdd  = h3(   fi, &
-            si0t,   si1t,   si0mt,   si1mt, &
-            si0d,   si1d,   si0md,   si1md)
-       dpepdd  = max(ye * dpepdd,0.0d0)
+       dpepdd = h3(fi, &
+                   si0t, si1t, si0mt, si1mt, &
+                   si0d, si1d, si0md, si1md)
+       dpepdd  = max(ye * dpepdd, 0.0d0)
 
        !..look in the electron chemical potential table only once
        fi(1)  = ef(iat,jat)
@@ -526,7 +488,6 @@ contains
        x       = din * din
        pele    = x * df_d
        dpepdt  = x * df_dt
-       s       = dpepdd/ye - 2.0d0 * din * df_d
 
        x       = ye * ye
        sele    = -df_t * ye
@@ -551,30 +512,13 @@ contains
        dentrdd = dsraddd + dsiondd + dsepdd
        dentrdt = dsraddt + dsiondt + dsepdt
 
-       !..the temperature and density exponents (c&g 9.81 9.82)
-       !..the specific heat at constant volume (c&g 9.92)
-       !..the third adiabatic exponent (c&g 9.93)
-       !..the first adiabatic exponent (c&g 9.97)
-       !..the second adiabatic exponent (c&g 9.105)
-       !..the specific heat at constant pressure (c&g 9.98)
-       zz    = pres*deni
-       zzi   = den/pres
-       chit  = temp/pres * dpresdt
-       chid  = dpresdd*zzi
+       zz    = pres * deni
+       zzi   = den / pres
+       chit  = temp / pres * dpresdt
+       chid  = dpresdd * zzi
        state % cv = denerdt
-       x     = zz * chit / (temp * state % cv)
-       gam3  = x + 1.0d0
-       state % gam1 = chit * x + chid
-       nabad = x / state % gam1
-       gam2  = 1.0d0/(1.0d0 - nabad)
+       state % gam1 = chit * zz * chit / (temp * state % cv) + chid
        state % cp = state % cv * state % gam1 / chid
-       z     = 1.0d0 + (ener + light2)*zzi
-
-       !..maxwell relations; each is zero if the consistency is perfect
-       x   = den * den
-       dse = temp*dentrdt/denerdt - 1.0d0
-       dpe = (denerdd*x + temp*dpresdt)/pres - 1.0d0
-       dsp = -dentrdd*x/dpresdt - 1.0d0
 
        state % p = pres
        state % dpdT = dpresdt
