@@ -59,19 +59,19 @@ module eos_module
 
   integer, parameter, private :: imax = 541, jmax = 201
 
-  double precision, parameter :: tlo = 3.0d0, thi = 13.0d0
-  double precision, parameter :: dlo = -12.0d0, dhi = 15.0d0
+  real(rt), parameter :: tlo = 3.0d0, thi = 13.0d0
+  real(rt), parameter :: dlo = -12.0d0, dhi = 15.0d0
 
-  double precision, parameter :: tstp = (thi - tlo) / float(jmax-1)
-  double precision, parameter :: tstpi = 1.0d0 / tstp
+  real(rt), parameter :: tstp = (thi - tlo) / float(jmax-1)
+  real(rt), parameter :: tstpi = 1.0d0 / tstp
 
-  double precision, parameter :: dstp = (dhi - dlo) / float(imax-1)
-  double precision, parameter :: dstpi = 1.0d0/dstp
+  real(rt), parameter :: dstp = (dhi - dlo) / float(imax-1)
+  real(rt), parameter :: dstpi = 1.0d0/dstp
 
-  double precision, parameter :: mintemp = 10.0d0**tlo
-  double precision, parameter :: mindens = 10.0d0**dlo
+  real(rt), parameter :: mintemp = 10.0d0**tlo
+  real(rt), parameter :: mindens = 10.0d0**dlo
 
-  double precision, parameter :: ttol = 1.d-8
+  real(rt), parameter :: ttol = 1.d-8
 
 #ifdef AMREX_USE_OMP_OFFLOAD
 
@@ -80,46 +80,46 @@ module eos_module
   ! As a workaround for this mode, size the EOS data at compile time.
 
   ! Density and temperature
-  double precision :: d(imax), t(jmax)
-  double precision :: dt(jmax), dt2(jmax), dti(jmax), dt2i(jmax)
-  double precision :: dd(imax), dd2(imax), ddi(imax), dd2i(imax)
+  real(rt) :: d(imax), t(jmax)
+  real(rt) :: dt(jmax), dt2(jmax), dti(jmax), dt2i(jmax)
+  real(rt) :: dd(imax), dd2(imax), ddi(imax), dd2i(imax)
 
   ! Helmholtz free energy and derivatives
-  double precision :: f(imax,jmax)
-  double precision :: fd(imax,jmax), fdd(imax,jmax)
-  double precision :: ft(imax,jmax), ftt(imax,jmax)
-  double precision :: fdt(imax,jmax), fddt(imax,jmax), fdtt(imax,jmax), fddtt(imax,jmax)
+  real(rt) :: f(imax,jmax)
+  real(rt) :: fd(imax,jmax), fdd(imax,jmax)
+  real(rt) :: ft(imax,jmax), ftt(imax,jmax)
+  real(rt) :: fdt(imax,jmax), fddt(imax,jmax), fdtt(imax,jmax), fddtt(imax,jmax)
 
   ! Pressure derivatives
-  double precision :: dpdf(imax,jmax), dpdfd(imax,jmax), dpdft(imax,jmax), dpdfdt(imax,jmax)
+  real(rt) :: dpdf(imax,jmax), dpdfd(imax,jmax), dpdft(imax,jmax), dpdfdt(imax,jmax)
 
   ! Chemical potential and derivatives
-  double precision :: ef(imax,jmax), efd(imax,jmax), eft(imax,jmax), efdt(imax,jmax)
+  real(rt) :: ef(imax,jmax), efd(imax,jmax), eft(imax,jmax), efdt(imax,jmax)
 
   ! Number density and derivatives
-  double precision :: xf(imax,jmax), xfd(imax,jmax), xft(imax,jmax), xfdt(imax,jmax)
+  real(rt) :: xf(imax,jmax), xfd(imax,jmax), xft(imax,jmax), xfdt(imax,jmax)
 
 #else
 
   ! Density and temperature
-  double precision, allocatable :: d(:), t(:)
-  double precision, allocatable :: dt(:), dt2(:), dti(:), dt2i(:)
-  double precision, allocatable :: dd(:), dd2(:), ddi(:), dd2i(:)
+  real(rt), allocatable :: d(:), t(:)
+  real(rt), allocatable :: dt(:), dt2(:), dti(:), dt2i(:)
+  real(rt), allocatable :: dd(:), dd2(:), ddi(:), dd2i(:)
 
   ! Helmholtz free energy and derivatives
-  double precision, allocatable :: f(:,:)
-  double precision, allocatable :: fd(:,:), fdd(:,:)
-  double precision, allocatable :: ft(:,:), ftt(:,:)
-  double precision, allocatable :: fdt(:,:), fddt(:,:), fdtt(:,:), fddtt(:,:)
+  real(rt), allocatable :: f(:,:)
+  real(rt), allocatable :: fd(:,:), fdd(:,:)
+  real(rt), allocatable :: ft(:,:), ftt(:,:)
+  real(rt), allocatable :: fdt(:,:), fddt(:,:), fdtt(:,:), fddtt(:,:)
 
   ! Pressure derivatives
-  double precision, allocatable :: dpdf(:,:), dpdfd(:,:), dpdft(:,:), dpdfdt(:,:)
+  real(rt), allocatable :: dpdf(:,:), dpdfd(:,:), dpdft(:,:), dpdfdt(:,:)
 
   ! Chemical potential and derivatives
-  double precision, allocatable :: ef(:,:), efd(:,:), eft(:,:), efdt(:,:)
+  real(rt), allocatable :: ef(:,:), efd(:,:), eft(:,:), efdt(:,:)
 
   ! Number density and derivatives
-  double precision, allocatable :: xf(:,:), xfd(:,:), xft(:,:), xfdt(:,:)
+  real(rt), allocatable :: xf(:,:), xfd(:,:), xft(:,:), xfdt(:,:)
 
 #if (defined(AMREX_USE_CUDA) && !defined(AMREX_USE_ACC))
   attributes(managed) :: d, t
@@ -152,15 +152,15 @@ module eos_module
   integer, parameter :: max_newton = 100
 
   ! Physical constants
-  double precision, parameter :: h       = 6.6260689633d-27
-  double precision, parameter :: avo_eos = 6.0221417930d23
-  double precision, parameter :: clight  = 2.99792458d10
-  double precision, parameter :: kerg    = 1.380650424d-16
-  double precision, parameter :: amu     = 1.66053878283d-24
-  double precision, parameter :: asol    = 4.0d0 * 5.67051d-5 / clight
-  double precision, parameter :: sioncon = (2.0d0 * M_PI * amu * kerg) / (h * h)
-  double precision, parameter :: kergavo = kerg * avo_eos
-  double precision, parameter :: asoli3  = asol / 3.0d0
+  real(rt), parameter :: h       = 6.6260689633d-27
+  real(rt), parameter :: avo_eos = 6.0221417930d23
+  real(rt), parameter :: clight  = 2.99792458d10
+  real(rt), parameter :: kerg    = 1.380650424d-16
+  real(rt), parameter :: amu     = 1.66053878283d-24
+  real(rt), parameter :: asol    = 4.0d0 * 5.67051d-5 / clight
+  real(rt), parameter :: sioncon = (2.0d0 * M_PI * amu * kerg) / (h * h)
+  real(rt), parameter :: kergavo = kerg * avo_eos
+  real(rt), parameter :: asoli3  = asol / 3.0d0
 
 contains
 
@@ -177,24 +177,24 @@ contains
 
     logical :: converged
     integer :: iter
-    double precision :: temp_old, v_want, v, dvdx, error
+    real(rt) :: temp_old, v_want, v, dvdx, error
 
-    double precision :: temp, den, din, deni, tempi, abar, zbar, ytot1, ye, kt, ktinv
-    double precision :: pres, ener, entr, dpresdd, dpresdt, denerdd, denerdt, dentrdd, dentrdt
-    double precision :: pele, dpepdt, dpepdd, eele, deepdt, deepdd, sele, dsepdd, dsepdt
-    double precision :: prad, dpraddd, dpraddt, erad, deraddd, deraddt, srad, dsraddd, dsraddt
-    double precision :: pion, dpiondd, dpiondt, eion, deiondd, deiondt, sion, dsiondd, dsiondt
-    double precision :: s, x, y, z, zz, zzi, chit, chid
+    real(rt) :: temp, den, din, deni, tempi, abar, zbar, ytot1, ye, kt, ktinv
+    real(rt) :: pres, ener, entr, dpresdd, dpresdt, denerdd, denerdt, dentrdd, dentrdt
+    real(rt) :: pele, dpepdt, dpepdd, eele, deepdt, deepdd, sele, dsepdd, dsepdt
+    real(rt) :: prad, dpraddd, dpraddt, erad, deraddd, deraddt, srad, dsraddd, dsraddt
+    real(rt) :: pion, dpiondd, dpiondt, eion, deiondd, deiondt, sion, dsiondd, dsiondt
+    real(rt) :: s, x, y, z, zz, zzi, chit, chid
 
-    integer          :: iat, jat
-    double precision :: free, df_d, df_t, df_tt, df_dt
-    double precision :: xt, xd, mxt, mxd
-    double precision :: fi(36)
-    double precision :: si0t, si1t, si2t, si0mt, si1mt, si2mt
-    double precision :: si0d, si1d, si2d, si0md, si1md, si2md
-    double precision :: dsi0t, dsi1t, dsi2t, dsi0mt, dsi1mt, dsi2mt
-    double precision :: dsi0d, dsi1d, dsi2d, dsi0md, dsi1md, dsi2md
-    double precision :: ddsi0t, ddsi1t, ddsi2t, ddsi0mt, ddsi1mt, ddsi2mt
+    integer  :: iat, jat
+    real(rt) :: free, df_d, df_t, df_tt, df_dt
+    real(rt) :: xt, xd, mxt, mxd
+    real(rt) :: fi(36)
+    real(rt) :: si0t, si1t, si2t, si0mt, si1mt, si2mt
+    real(rt) :: si0d, si1d, si2d, si0md, si1md, si2md
+    real(rt) :: dsi0t, dsi1t, dsi2t, dsi0mt, dsi1mt, dsi2mt
+    real(rt) :: dsi0d, dsi1d, dsi2d, dsi0md, dsi1md, dsi2md
+    real(rt) :: ddsi0t, ddsi1t, ddsi2t, ddsi0mt, ddsi1mt, ddsi2mt
 
     !$omp declare target
 
@@ -765,8 +765,8 @@ contains
 
     implicit none
 
-    double precision, intent(in) :: z
-    double precision :: psi0r
+    real(rt), intent(in) :: z
+    real(rt) :: psi0r
 
     !$omp declare target
 
@@ -780,8 +780,8 @@ contains
 
     implicit none
 
-    double precision, intent(in) :: z
-    double precision :: dpsi0r
+    real(rt), intent(in) :: z
+    real(rt) :: dpsi0r
 
     !$omp declare target
 
@@ -795,8 +795,8 @@ contains
 
     implicit none
 
-    double precision, intent(in) :: z
-    double precision :: ddpsi0r
+    real(rt), intent(in) :: z
+    real(rt) :: ddpsi0r
 
     !$omp declare target
 
@@ -811,8 +811,8 @@ contains
 
     implicit none
 
-    double precision, intent(in) :: z
-    double precision :: psi1r
+    real(rt), intent(in) :: z
+    real(rt) :: psi1r
 
     !$omp declare target
 
@@ -826,8 +826,8 @@ contains
 
     implicit none
 
-    double precision, intent(in) :: z
-    double precision :: dpsi1r
+    real(rt), intent(in) :: z
+    real(rt) :: dpsi1r
 
     !$omp declare target
 
@@ -841,8 +841,8 @@ contains
 
     implicit none
 
-    double precision, intent(in) :: z
-    double precision :: ddpsi1r
+    real(rt), intent(in) :: z
+    real(rt) :: ddpsi1r
 
     !$omp declare target
 
@@ -857,8 +857,8 @@ contains
 
     implicit none
 
-    double precision, intent(in) :: z
-    double precision :: psi2r
+    real(rt), intent(in) :: z
+    real(rt) :: psi2r
 
     !$omp declare target
 
@@ -872,8 +872,8 @@ contains
 
     implicit none
 
-    double precision, intent(in) :: z
-    double precision :: dpsi2r
+    real(rt), intent(in) :: z
+    real(rt) :: dpsi2r
 
     !$omp declare target
 
@@ -887,8 +887,8 @@ contains
 
     implicit none
 
-    double precision, intent(in) :: z
-    double precision :: ddpsi2r
+    real(rt), intent(in) :: z
+    real(rt) :: ddpsi2r
 
     !$omp declare target
 
@@ -904,9 +904,9 @@ contains
 
     implicit none
 
-    double precision, intent(in) :: fi(36)
-    double precision, intent(in) :: w0t,w1t,w2t,w0mt,w1mt,w2mt,w0d,w1d,w2d,w0md,w1md,w2md
-    double precision :: h5r
+    real(rt), intent(in) :: fi(36)
+    real(rt), intent(in) :: w0t,w1t,w2t,w0mt,w1mt,w2mt,w0d,w1d,w2d,w0md,w1md,w2md
+    real(rt) :: h5r
 
     !$omp declare target
 
@@ -940,8 +940,8 @@ contains
 
     implicit none
 
-    double precision, intent(in) :: z
-    double precision :: xpsi0r
+    real(rt), intent(in) :: z
+    real(rt) :: xpsi0r
 
     !$omp declare target
 
@@ -955,8 +955,8 @@ contains
 
     implicit none
 
-    double precision, intent(in) :: z
-    double precision :: xdpsi0r
+    real(rt), intent(in) :: z
+    real(rt) :: xdpsi0r
 
     !$omp declare target
 
@@ -972,8 +972,8 @@ contains
 
     implicit none
 
-    double precision, intent(in) :: z
-    double precision :: xpsi1r
+    real(rt), intent(in) :: z
+    real(rt) :: xpsi1r
 
     !$omp declare target
 
@@ -987,8 +987,8 @@ contains
 
     implicit none
 
-    double precision, intent(in) :: z
-    double precision :: xdpsi1r
+    real(rt), intent(in) :: z
+    real(rt) :: xdpsi1r
 
     !$omp declare target
 
@@ -1003,9 +1003,9 @@ contains
 
     implicit none
 
-    double precision, intent(in) :: fi(36)
-    double precision, intent(in) :: w0t,w1t,w0mt,w1mt,w0d,w1d,w0md,w1md
-    double precision :: h3r
+    real(rt), intent(in) :: fi(36)
+    real(rt), intent(in) :: w0t,w1t,w0mt,w1mt,w0d,w1d,w0md,w1md
+    real(rt) :: h3r
 
     !$omp declare target
 
