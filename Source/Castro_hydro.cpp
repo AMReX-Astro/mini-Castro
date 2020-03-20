@@ -129,7 +129,7 @@ Castro::construct_hydro_source(Real dt)
               elix_qm[i][j] = qm_fab[i][j].elixir();
               qm[i][j] = qm_fab[i][j].array();
 
-              qp_fab[i][j].resize(obx, QVAR);
+              qp_fab[i][j].resize(tbx[i][j], QVAR);
               elix_qp[i][j] = qp_fab[i][j].elixir();
               qp[i][j] = qp_fab[i][j].array();
           }
