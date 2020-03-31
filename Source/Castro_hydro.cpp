@@ -62,7 +62,7 @@ Castro::construct_hydro_source(Real dt)
 
       const Box& obx = amrex::grow(bx, 1);
 
-      const Box& qbx = mfi.growntilebox(4);
+      const Box& qbx = amrex::grow(bx, 4);
 
       Array4<Real> const state = Sborder[mfi].array();
       Array4<Real> const source = hydro_source[mfi].array();
