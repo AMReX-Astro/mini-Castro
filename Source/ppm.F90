@@ -18,7 +18,7 @@ contains
 
     implicit none
 
-    integer,  intent(in   ) :: i, j, k
+    integer,  intent(in   ), value :: i, j, k
     integer,  intent(in   ) :: q_lo(3), q_hi(3)
     real(rt), intent(in   ) :: q(q_lo(1):q_hi(1),q_lo(2):q_hi(2),q_lo(3):q_hi(3),QVAR)
     real(rt), intent(inout) :: flatn
