@@ -184,7 +184,7 @@ Castro::estTimeStep (Real dt_old)
     const auto dx = geom.CellSizeArray();
 
 #ifdef _OPENMP
-#pragma omp parallel reduction(min:estdt)
+#pragma omp parallel reduction(min:dt)
 #endif
     for (MFIter mfi(stateMF, tile_size); mfi.isValid(); ++mfi)
     {
