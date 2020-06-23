@@ -78,13 +78,9 @@ contains
     integer,  intent(in   ) :: u_lo(3), u_hi(3)
     real(rt), intent(inout) :: u(u_lo(1):u_hi(1),u_lo(2):u_hi(2),u_lo(3):u_hi(3),NVAR)
 
-    integer      :: i, ii, j, jj, k, kk
-    integer      :: i_set, j_set, k_set
-    real(rt)     :: max_dens
+    integer      :: i, j, k
     integer      :: n, ispec
     type (eos_t) :: eos_state
-
-    max_dens = ZERO
 
     !$acc parallel loop gang vector collapse(3) private(eos_state) deviceptr(u) async(acc_stream)
     !$omp target teams distribute parallel do collapse(3) private(eos_state) is_device_ptr(u)
@@ -94,70 +90,27 @@ contains
 
              if (u(i,j,k,URHO) < small_dens) then
 
-                ! Reset to the characteristics of the adjacent state with the highest density.
-
-                max_dens = u(i,j,k,URHO)
-
-                i_set = i
-                j_set = j
-                k_set = k
-
-                do kk = -1, 1
-                   do jj = -1, 1
-                      do ii = -1, 1
-
-                         if (i+ii >= u_lo(1) .and. j+jj <= u_lo(2) .and. k+kk .ge. lo(3) .and. &
-                             i+ii <= u_hi(1) .and. j+jj <= u_hi(2) .and. k+kk .le. hi(3)) then
-
-                            if (u(i+ii,j+jj,k+kk,URHO) .gt. max_dens) then
-                               i_set = i + ii
-                               j_set = j + jj
-                               k_set = k + kk
-                               max_dens = u(i_set,j_set,k_set,URHO)
-                            end if
-
-                         end if
-
-                      end do
-                   end do
+                do ispec = 1, nspec
+                   n = UFS + ispec - 1
+                   u(i,j,k,n) = u(i,j,k,n) * (small_dens / u(i,j,k,URHO))
                 end do
 
-                if (max_dens < small_dens) then
+                eos_state % rho = small_dens
+                eos_state % T   = small_temp
+                eos_state % abar = ONE / (sum(u(i,j,k,UFS:UFS+nspec-1) * aion_inv(:)) / small_dens)
+                eos_state % zbar = eos_state % abar * (sum(u(i,j,k,UFS:UFS+nspec-1) * zion(:) * aion_inv(:)) / small_dens)
 
-                   ! We could not find any nearby zones with sufficient density.
-                   ! Our only recourse is to set the density equal to small_dens,
-                   ! and the temperature equal to small_temp. We set the velocities
-                   ! to zero, though any choice here would be arbitrary.
+                call eos(eos_input_rt, eos_state)
 
-                   do ispec = 1, nspec
-                      n = UFS + ispec - 1
-                      u(i,j,k,n) = u(i,j,k,n) * (small_dens / u(i,j,k,URHO))
-                   end do
+                u(i,j,k,URHO ) = eos_state % rho
+                u(i,j,k,UTEMP) = eos_state % T
 
-                   eos_state % rho  = small_dens
-                   eos_state % T    = small_temp
-                   eos_state % abar = ONE / (sum(u(i,j,k,UFS:UFS+nspec-1) * aion_inv(:)) / small_dens)
-                   eos_state % zbar = eos_state % abar * (sum(u(i,j,k,UFS:UFS+nspec-1) * zion(:) * aion_inv(:)) / small_dens)
+                u(i,j,k,UMX  ) = ZERO
+                u(i,j,k,UMY  ) = ZERO
+                u(i,j,k,UMZ  ) = ZERO
 
-                   call eos(eos_input_rt, eos_state)
-
-                   u(i,j,k,URHO ) = eos_state % rho
-                   u(i,j,k,UTEMP) = eos_state % T
-
-                   u(i,j,k,UMX  ) = ZERO
-                   u(i,j,k,UMY  ) = ZERO
-                   u(i,j,k,UMZ  ) = ZERO
-
-                   u(i,j,k,UEINT) = eos_state % rho * eos_state % e
-                   u(i,j,k,UEDEN) = u(i,j,k,UEINT)
-
-                else
-
-                   ! Reset to the characteristics of the target zone.
-
-                   u(i,j,k,:) = u(i_set,j_set,k_set,:)
-
-                endif
+                u(i,j,k,UEINT) = eos_state % rho * eos_state % e
+                u(i,j,k,UEDEN) = u(i,j,k,UEINT)
 
              endif
 
