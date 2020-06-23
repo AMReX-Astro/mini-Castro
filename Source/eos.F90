@@ -103,6 +103,7 @@ module eos_module
   attributes(managed) :: xf, xfd, xft, xfdt
 #endif
 
+#ifdef AMREX_USE_ACC
   !$acc declare create(d, t)
   !$acc declare create(dt, dt2, dti, dt2i)
   !$acc declare create(dd, dd2, ddi, dd2i)
@@ -110,7 +111,9 @@ module eos_module
   !$acc declare create(dpdf, dpdfd, dpdft, dpdfdt)
   !$acc declare create(ef, efd, eft, efdt)
   !$acc declare create(xf, xfd, xft, xfdt)
+#endif
 
+#ifdef AMREX_USE_OMP_OFFLOAD
   !$omp declare target(d, t)
   !$omp declare target(dt, dt2, dti, dt2i)
   !$omp declare target(dd, dd2, ddi, dd2i)
@@ -118,6 +121,7 @@ module eos_module
   !$omp declare target(dpdf, dpdfd, dpdft, dpdfdt)
   !$omp declare target(ef, efd, eft, efdt)
   !$omp declare target(xf, xfd, xft, xfdt)
+#endif
 
   integer, parameter :: max_newton = 100
 
@@ -136,7 +140,9 @@ contains
 
   CASTRO_FORT_DEVICE subroutine eos(input, state)
 
+#ifdef AMREX_USE_ACC
     !$acc routine seq
+#endif
 
     use amrex_constants_module, only: ZERO, HALF, ONE, TWO
 
@@ -166,7 +172,9 @@ contains
     real(rt) :: dsi0d, dsi1d, dsi2d, dsi0md, dsi1md, dsi2md
     real(rt) :: ddsi0t, ddsi1t, ddsi2t, ddsi0mt, ddsi1mt, ddsi2mt
 
+#ifdef AMREX_USE_OMP_OFFLOAD
     !$omp declare target
+#endif
 
     ! Initial setup for iterations
 
@@ -703,6 +711,7 @@ contains
        dd2i(i) = 1.0d0 / dd2(i)
     end do
 
+#ifdef AMREX_USE_ACC
     !$acc update device(d, t)
     !$acc update device(dt, dt2, dti, dt2i)
     !$acc update device(dd, dd2, ddi, dd2i)
@@ -710,7 +719,9 @@ contains
     !$acc update device(dpdf, dpdfd, dpdft, dpdfdt)
     !$acc update device(ef, efd, eft, efdt)
     !$acc update device(xf, xfd, xft, xfdt)
+#endif
 
+#ifdef AMREX_USE_OMP_OFFLOAD
     !$omp target update to(d, t)
     !$omp target update to(dt, dt2, dti, dt2i)
     !$omp target update to(dd, dd2, ddi, dd2i)
@@ -718,6 +729,7 @@ contains
     !$omp target update to(dpdf, dpdfd, dpdft, dpdfdt)
     !$omp target update to(ef, efd, eft, efdt)
     !$omp target update to(xf, xfd, xft, xfdt)
+#endif
 
   end subroutine eos_init
 
@@ -727,14 +739,18 @@ contains
   ! psi0 and its derivatives
   CASTRO_FORT_DEVICE pure function psi0(z) result(psi0r)
 
+#ifdef AMREX_USE_ACC
     !$acc routine seq
+#endif
 
     implicit none
 
     real(rt), intent(in) :: z
     real(rt) :: psi0r
 
+#ifdef AMREX_USE_OMP_OFFLOAD
     !$omp declare target
+#endif
 
     psi0r = z**3 * ( z * (-6.0d0*z + 15.0d0) -10.0d0) + 1.0d0
 
@@ -742,14 +758,18 @@ contains
 
   CASTRO_FORT_DEVICE pure function dpsi0(z) result(dpsi0r)
 
+#ifdef AMREX_USE_ACC
     !$acc routine seq
+#endif
 
     implicit none
 
     real(rt), intent(in) :: z
     real(rt) :: dpsi0r
 
+#ifdef AMREX_USE_OMP_OFFLOAD
     !$omp declare target
+#endif
 
     dpsi0r = z**2 * ( z * (-30.0d0*z + 60.0d0) - 30.0d0)
 
@@ -757,14 +777,18 @@ contains
 
   CASTRO_FORT_DEVICE pure function ddpsi0(z) result(ddpsi0r)
 
+#ifdef AMREX_USE_ACC
     !$acc routine seq
+#endif
 
     implicit none
 
     real(rt), intent(in) :: z
     real(rt) :: ddpsi0r
 
+#ifdef AMREX_USE_OMP_OFFLOAD
     !$omp declare target
+#endif
 
     ddpsi0r = z* ( z*( -120.0d0*z + 180.0d0) -60.0d0)
 
@@ -773,14 +797,18 @@ contains
   ! psi1 and its derivatives
   CASTRO_FORT_DEVICE pure function psi1(z) result(psi1r)
 
+#ifdef AMREX_USE_ACC
     !$acc routine seq
+#endif
 
     implicit none
 
     real(rt), intent(in) :: z
     real(rt) :: psi1r
 
+#ifdef AMREX_USE_OMP_OFFLOAD
     !$omp declare target
+#endif
 
     psi1r = z* ( z**2 * ( z * (-3.0d0*z + 8.0d0) - 6.0d0) + 1.0d0)
 
@@ -788,14 +816,18 @@ contains
 
   CASTRO_FORT_DEVICE pure function dpsi1(z) result(dpsi1r)
 
+#ifdef AMREX_USE_ACC
     !$acc routine seq
+#endif
 
     implicit none
 
     real(rt), intent(in) :: z
     real(rt) :: dpsi1r
 
+#ifdef AMREX_USE_OMP_OFFLOAD
     !$omp declare target
+#endif
 
     dpsi1r = z*z * ( z * (-15.0d0*z + 32.0d0) - 18.0d0) +1.0d0
 
@@ -803,14 +835,18 @@ contains
 
   CASTRO_FORT_DEVICE pure function ddpsi1(z) result(ddpsi1r)
 
+#ifdef AMREX_USE_ACC
     !$acc routine seq
+#endif
 
     implicit none
 
     real(rt), intent(in) :: z
     real(rt) :: ddpsi1r
 
+#ifdef AMREX_USE_OMP_OFFLOAD
     !$omp declare target
+#endif
 
     ddpsi1r = z * (z * (-60.0d0*z + 96.0d0) -36.0d0)
 
@@ -819,14 +855,18 @@ contains
   ! psi2  and its derivatives
   CASTRO_FORT_DEVICE pure function psi2(z) result(psi2r)
 
+#ifdef AMREX_USE_ACC
     !$acc routine seq
+#endif
 
     implicit none
 
     real(rt), intent(in) :: z
     real(rt) :: psi2r
 
+#ifdef AMREX_USE_OMP_OFFLOAD
     !$omp declare target
+#endif
 
     psi2r = 0.5d0*z*z*( z* ( z * (-z + 3.0d0) - 3.0d0) + 1.0d0)
 
@@ -834,14 +874,18 @@ contains
 
   CASTRO_FORT_DEVICE pure function dpsi2(z) result(dpsi2r)
 
+#ifdef AMREX_USE_ACC
     !$acc routine seq
+#endif
 
     implicit none
 
     real(rt), intent(in) :: z
     real(rt) :: dpsi2r
 
+#ifdef AMREX_USE_OMP_OFFLOAD
     !$omp declare target
+#endif
 
     dpsi2r = 0.5d0*z*( z*(z*(-5.0d0*z + 12.0d0) - 9.0d0) + 2.0d0)
 
@@ -849,14 +893,18 @@ contains
 
   CASTRO_FORT_DEVICE pure function ddpsi2(z) result(ddpsi2r)
 
+#ifdef AMREX_USE_ACC
     !$acc routine seq
+#endif
 
     implicit none
 
     real(rt), intent(in) :: z
     real(rt) :: ddpsi2r
 
+#ifdef AMREX_USE_OMP_OFFLOAD
     !$omp declare target
+#endif
 
     ddpsi2r = 0.5d0*(z*( z * (-20.0d0*z + 36.0d0) - 18.0d0) + 2.0d0)
 
@@ -866,7 +914,9 @@ contains
   ! biquintic hermite polynomial function
   CASTRO_FORT_DEVICE pure function h5(fi,w0t,w1t,w2t,w0mt,w1mt,w2mt,w0d,w1d,w2d,w0md,w1md,w2md) result(h5r)
 
+#ifdef AMREX_USE_ACC
     !$acc routine seq
+#endif
 
     implicit none
 
@@ -874,7 +924,9 @@ contains
     real(rt), intent(in) :: w0t,w1t,w2t,w0mt,w1mt,w2mt,w0d,w1d,w2d,w0md,w1md,w2md
     real(rt) :: h5r
 
+#ifdef AMREX_USE_OMP_OFFLOAD
     !$omp declare target
+#endif
 
     h5r =  fi(1)  *w0d*w0t   + fi(2)  *w0md*w0t &
          + fi(3)  *w0d*w0mt  + fi(4)  *w0md*w0mt &
@@ -902,14 +954,18 @@ contains
   ! psi0 & derivatives
   CASTRO_FORT_DEVICE pure function xpsi0(z) result(xpsi0r)
 
+#ifdef AMREX_USE_ACC
     !$acc routine seq
+#endif
 
     implicit none
 
     real(rt), intent(in) :: z
     real(rt) :: xpsi0r
 
+#ifdef AMREX_USE_OMP_OFFLOAD
     !$omp declare target
+#endif
 
     xpsi0r = z * z * (2.0d0*z - 3.0d0) + 1.0
 
@@ -917,14 +973,18 @@ contains
 
   CASTRO_FORT_DEVICE pure function xdpsi0(z) result(xdpsi0r)
 
+#ifdef AMREX_USE_ACC
     !$acc routine seq
+#endif
 
     implicit none
 
     real(rt), intent(in) :: z
     real(rt) :: xdpsi0r
 
+#ifdef AMREX_USE_OMP_OFFLOAD
     !$omp declare target
+#endif
 
     xdpsi0r = z * (6.0d0*z - 6.0d0)
 
@@ -934,14 +994,18 @@ contains
   ! psi1 & derivatives
   CASTRO_FORT_DEVICE pure function xpsi1(z) result(xpsi1r)
 
+#ifdef AMREX_USE_ACC
     !$acc routine seq
+#endif
 
     implicit none
 
     real(rt), intent(in) :: z
     real(rt) :: xpsi1r
 
+#ifdef AMREX_USE_OMP_OFFLOAD
     !$omp declare target
+#endif
 
     xpsi1r = z * ( z * (z - 2.0d0) + 1.0d0)
 
@@ -949,14 +1013,18 @@ contains
 
   CASTRO_FORT_DEVICE pure function xdpsi1(z) result(xdpsi1r)
 
+#ifdef AMREX_USE_ACC
     !$acc routine seq
+#endif
 
     implicit none
 
     real(rt), intent(in) :: z
     real(rt) :: xdpsi1r
 
+#ifdef AMREX_USE_OMP_OFFLOAD
     !$omp declare target
+#endif
 
     xdpsi1r = z * (3.0d0*z - 4.0d0) + 1.0d0
 
@@ -965,7 +1033,9 @@ contains
   ! bicubic hermite polynomial function
   CASTRO_FORT_DEVICE pure function h3(fi,w0t,w1t,w0mt,w1mt,w0d,w1d,w0md,w1md) result(h3r)
 
+#ifdef AMREX_USE_ACC
     !$acc routine seq
+#endif
 
     implicit none
 
@@ -973,7 +1043,9 @@ contains
     real(rt), intent(in) :: w0t,w1t,w0mt,w1mt,w0d,w1d,w0md,w1md
     real(rt) :: h3r
 
+#ifdef AMREX_USE_OMP_OFFLOAD
     !$omp declare target
+#endif
 
     h3r =  fi(1)  *w0d*w0t   +  fi(2)  *w0md*w0t &
          + fi(3)  *w0d*w0mt  +  fi(4)  *w0md*w0mt &

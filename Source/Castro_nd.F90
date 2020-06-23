@@ -82,8 +82,12 @@ contains
     integer      :: n, ispec
     type (eos_t) :: eos_state
 
+#ifdef AMREX_USE_ACC
     !$acc parallel loop gang vector collapse(3) private(eos_state) deviceptr(u) async(acc_stream)
+#endif
+#ifdef AMREX_USE_OMP_OFFLOAD
     !$omp target teams distribute parallel do collapse(3) private(eos_state) is_device_ptr(u)
+#endif
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
@@ -135,8 +139,12 @@ contains
 
     integer  :: i, j, k
 
+#ifdef AMREX_USE_ACC
     !$acc parallel loop gang vector collapse(3) deviceptr(u) async(acc_stream)
+#endif
+#ifdef AMREX_USE_OMP_OFFLOAD
     !$omp target teams distribute parallel do collapse(3) is_device_ptr(u)
+#endif
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
@@ -175,8 +183,12 @@ contains
 
     ! Reset internal energy
 
+#ifdef AMREX_USE_ACC
     !$acc parallel loop gang vector collapse(3) private(eos_state) deviceptr(u) async(acc_stream)
+#endif
+#ifdef AMREX_USE_OMP_OFFLOAD
     !$omp target teams distribute parallel do collapse(3) private(eos_state) is_device_ptr(u)
+#endif
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
@@ -255,8 +267,12 @@ contains
 
     type (eos_t) :: eos_state
 
+#ifdef AMREX_USE_ACC
     !$acc parallel loop gang vector collapse(3) private(eos_state) deviceptr(u) async(acc_stream)
+#endif
+#ifdef AMREX_USE_OMP_OFFLOAD
     !$omp target teams distribute parallel do collapse(3) private(eos_state) is_device_ptr(u)
+#endif
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
@@ -304,8 +320,12 @@ contains
 
     ! Tag on regions of high density gradient
 
+#ifdef AMREX_USE_ACC
     !$acc parallel loop gang vector collapse(3) deviceptr(tag, den) async(acc_stream)
+#endif
+#ifdef AMREX_USE_OMP_OFFLOAD
     !$omp target teams distribute parallel do collapse(3) is_device_ptr(tag, den)
+#endif
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
@@ -356,8 +376,12 @@ contains
 
     center = (probhi - problo) / TWO
 
+#ifdef AMREX_USE_ACC
     !$acc parallel loop gang vector collapse(3) deviceptr(u) reduction(+:blast_mass, blast_radius) async(acc_stream)
+#endif
+#ifdef AMREX_USE_OMP_OFFLOAD
     !$omp target teams distribute parallel do collapse(3) is_device_ptr(u) reduction(+:blast_mass, blast_radius)
+#endif
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)

@@ -32,8 +32,12 @@ contains
 
     ! Call EOS for the purpose of computing sound speed
 
+#ifdef AMREX_USE_ACC
     !$acc parallel loop gang vector collapse(3) private(eos_state) deviceptr(u) reduction(min:dt) async(acc_stream)
+#endif
+#ifdef AMREX_USE_OMP_OFFLOAD
     !$omp target teams distribute parallel do collapse(3) private(eos_state) is_device_ptr(u) reduction(min:dt)
+#endif
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)

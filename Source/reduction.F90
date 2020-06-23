@@ -8,7 +8,9 @@ contains
 
   CASTRO_FORT_DEVICE subroutine reduce_add(x, y)
 
+#ifdef AMREX_USE_ACC
     !$acc routine seq
+#endif
 
     implicit none
 
@@ -19,7 +21,9 @@ contains
 
     real(rt) :: t
 
+#ifdef AMREX_USE_OMP_OFFLOAD
     !$omp declare target
+#endif
 
 #if defined(AMREX_USE_CUDA) && !defined(AMREX_USE_ACC) && !defined(AMREX_USE_OMP_OFFLOAD)
     t = atomicAdd(x, y)
@@ -33,7 +37,9 @@ contains
 
   CASTRO_FORT_DEVICE subroutine reduce_min(x, y)
 
+#ifdef AMREX_USE_ACC
     !$acc routine seq
+#endif
 
     implicit none
 
@@ -44,7 +50,9 @@ contains
 
     real(rt) :: t
 
+#ifdef AMREX_USE_OMP_OFFLOAD
     !$omp declare target
+#endif
 
 #if defined(AMREX_USE_CUDA) && !defined(AMREX_USE_ACC) && !defined(AMREX_USE_OMP_OFFLOAD)
     t = atomicMin(x, y)

@@ -9,7 +9,7 @@
 #include <AMReX_TagBox.H>
 #include <AMReX_FillPatchUtil.H>
 
-#ifdef _OPENMP
+#ifdef AMREX_USE_OMP
 #include <omp.h>
 #endif
 
@@ -99,7 +99,7 @@ Castro::initData ()
 	amrex::Abort("We don't support dx != dy != dz");
     }
 
-#ifdef _OPENMP
+#ifdef AMREX_USE_OMP
 #pragma omp parallel
 #endif
     for (MFIter mfi(S_new, tile_size); mfi.isValid(); ++mfi)
@@ -183,7 +183,7 @@ Castro::estTimeStep (Real dt_old)
 
     const auto dx = geom.CellSizeArray();
 
-#ifdef _OPENMP
+#ifdef AMREX_USE_OMP
 #pragma omp parallel reduction(min:dt)
 #endif
     for (MFIter mfi(stateMF, tile_size); mfi.isValid(); ++mfi)
@@ -383,7 +383,7 @@ Castro::post_timestep (int iteration)
         Real blast_radius = 0.0;
         Real blast_mass = 0.0;
 
-#ifdef _OPENMP
+#ifdef AMREX_USE_OMP
 #pragma omp parallel reduction(+:blast_mass,blast_radius)
 #endif
         for (MFIter mfi(S_new, tile_size); mfi.isValid(); ++mfi)
@@ -512,7 +512,7 @@ Castro::errorEst (TagBoxArray& tags,
     const int8_t set   = (int8_t) TagBox::SET;
     const int8_t clear = (int8_t) TagBox::CLEAR;
     
-#ifdef _OPENMP
+#ifdef AMREX_USE_OMP
 #pragma omp parallel
 #endif
     for (MFIter mfi(*mf, tile_size); mfi.isValid(); ++mfi)
@@ -541,7 +541,7 @@ Castro::clean_state(MultiFab& state)
 
     int ng = state.nGrow();
 
-#ifdef _OPENMP
+#ifdef AMREX_USE_OMP
 #pragma omp parallel
 #endif
     for (MFIter mfi(state, tile_size); mfi.isValid(); ++mfi)

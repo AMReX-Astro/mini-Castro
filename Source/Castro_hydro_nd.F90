@@ -32,8 +32,12 @@ contains
     dyinv = ONE / dx(2)
     dzinv = ONE / dx(3)
 
+#ifdef AMREX_USE_ACC
     !$acc parallel loop gang vector collapse(3) deviceptr(div, q) async(acc_stream)
+#endif
+#ifdef AMREX_USE_OMP_OFFLOAD
     !$omp target teams distribute parallel do collapse(3) is_device_ptr(div, q)
+#endif
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
@@ -98,8 +102,12 @@ contains
 
     type (eos_t) :: eos_state
 
+#ifdef AMREX_USE_ACC
     !$acc parallel loop gang vector collapse(3) private(vel, eos_state) deviceptr(u, q, qaux) async(acc_stream)
+#endif
+#ifdef AMREX_USE_OMP_OFFLOAD
     !$omp target teams distribute parallel do collapse(3) private(vel, eos_state) is_device_ptr(u, q, qaux)
+#endif
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
@@ -190,8 +198,12 @@ contains
 
     real(rt), parameter :: difmag = 0.1d0
 
+#ifdef AMREX_USE_ACC
     !$acc parallel loop gang vector collapse(4) deviceptr(flux, u, div) async(acc_stream)
+#endif
+#ifdef AMREX_USE_OMP_OFFLOAD
     !$omp target teams distribute parallel do collapse(4) is_device_ptr(flux, u, div)
+#endif
     do n = 1, NVAR
        do k = lo(3), hi(3)
           do j = lo(2), hi(2)
@@ -252,8 +264,12 @@ contains
     integer  :: i, j, k, n
     real(rt) :: sum, fac
 
+#ifdef AMREX_USE_ACC
     !$acc parallel loop gang vector collapse(3) deviceptr(flux) async(acc_stream)
+#endif
+#ifdef AMREX_USE_OMP_OFFLOAD
     !$omp target teams distribute parallel do collapse(3) is_device_ptr(flux)
+#endif
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
@@ -305,8 +321,12 @@ contains
 
     integer :: i, j, k, n
 
+#ifdef AMREX_USE_ACC
     !$acc parallel loop gang vector collapse(4) deviceptr(flux_out, flux_in, area) async(acc_stream)
+#endif
+#ifdef AMREX_USE_OMP_OFFLOAD
     !$omp target teams distribute parallel do collapse(4) is_device_ptr(flux_out, flux_in, area)
+#endif
     do n = 1, NVAR
        do k = lo(3), hi(3)
           do j = lo(2), hi(2)
@@ -380,10 +400,14 @@ contains
     ! essentially the flux divergence.  This can be added with dt to
     ! get the update.
 
+#ifdef AMREX_USE_ACC
     !$acc parallel loop gang vector collapse(4) deviceptr(source, flux1, flux2, flux3, area1, area2, area3) &
     !$acc deviceptr(qx, qy, qz, vol) async(acc_stream)
+#endif
+#ifdef AMREX_USE_OMP_OFFLOAD
     !$omp target teams distribute parallel do collapse(4) is_device_ptr(source, flux1, flux2, flux3, area1, area2, area3) &
     !$omp is_device_ptr(qx, qy, qz, vol)
+#endif
     do n = 1, NVAR
        do k = lo(3), hi(3)
           do j = lo(2), hi(2)

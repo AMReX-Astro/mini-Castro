@@ -10,7 +10,9 @@ contains
 
   CASTRO_FORT_DEVICE subroutine uflatten(i, j, k, q, q_lo, q_hi, flatn) bind(C, name='uflatten')
 
+#ifdef AMREX_USE_ACC
     !$acc routine seq
+#endif
 
     use amrex_constants_module, only: ZERO, ONE
     use amrex_fort_module, only: rt => amrex_real
@@ -31,7 +33,9 @@ contains
     ! Knobs for detection of strong shock
     real(rt), parameter :: shktst = 0.33e0_rt, zcut1 = 0.75e0_rt, zcut2 = 0.85e0_rt, dzcut = ONE / (zcut2 - zcut1)
 
+#ifdef AMREX_USE_OMP_OFFLOAD
     !$omp declare target
+#endif
 
     flatn = ONE
 
@@ -128,7 +132,9 @@ contains
   CASTRO_FORT_DEVICE subroutine ppm_reconstruct(s, flatn, sm, sp) bind(C, name='ppm_reconstruct')
     ! This routine does the reconstruction of the zone data into a parabola.
 
+#ifdef AMREX_USE_ACC
     !$acc routine seq
+#endif
 
     implicit none
 
@@ -138,7 +144,9 @@ contains
     ! local
     real(rt) :: dsl, dsr, dsc, dsvl_l, dsvl_r
 
+#ifdef AMREX_USE_OMP_OFFLOAD
     !$omp declare target
+#endif
 
     ! Compute van Leer slopes
 
@@ -232,7 +240,9 @@ contains
   CASTRO_FORT_DEVICE subroutine ppm_int_profile(sm, sp, sc, u, c, dtdx, Ip, Im) bind(C, name='ppm_int_profile')
     ! Integrate the parabolic profile to the edge of the cell.
 
+#ifdef AMREX_USE_ACC
     !$acc routine seq
+#endif
 
     implicit none
 
@@ -242,7 +252,9 @@ contains
     ! local
     real(rt) :: speed, sigma, s6
 
+#ifdef AMREX_USE_OMP_OFFLOAD
     !$omp declare target
+#endif
 
     ! compute x-component of Ip and Im
     s6 = SIX * sc - THREE * (sm + sp)
@@ -410,10 +422,14 @@ contains
 
     ! Trace to left and right edges using upwind PPM
 
+#ifdef AMREX_USE_ACC
     !$acc parallel loop gang vector collapse(3) deviceptr(qm, qp, q, qaux) &
     !$acc private(Ip, Im, Ip_gc, Im_gc, Ip_sp, Im_sp, s) async(acc_stream)
+#endif
+#ifdef AMREX_USE_OMP_OFFLOAD
     !$omp target teams distribute parallel do collapse(3) is_device_ptr(qm, qp, q, qaux) &
     !$omp private(Ip, Im, Ip_gc, Im_gc, Ip_sp, Im_sp, s)
+#endif
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)

@@ -25,7 +25,7 @@ Castro::construct_hydro_source(Real dt)
 
   MultiFab& S_new = get_new_data(State_Type);
 
-#ifdef _OPENMP
+#ifdef AMREX_USE_OMP
 #pragma omp parallel
 #endif
   for (MFIter mfi(S_new, tile_size); mfi.isValid(); ++mfi) {
