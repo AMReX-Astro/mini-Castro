@@ -28,34 +28,7 @@ Castro::construct_hydro_source(Real dt)
 #ifdef _OPENMP
 #pragma omp parallel
 #endif
-  {
-
-    // Declare local storage now. This should be done outside the MFIter loop,
-    // and then we will resize the Fabs in each MFIter loop iteration. Then,
-    // we apply an Elixir to ensure that their memory is saved until it is no
-    // longer needed (only relevant for the asynchronous case, usually on GPUs).
-
-    FArrayBox q_fab;
-    FArrayBox qaux_fab;
-
-    // The terms of qm and qp with i == j are the edge states that
-    // come out of the PPM edge state prediction. The terms with
-    // i /= j include transverse corrections.
-
-    FArrayBox qm_fab[3][3], qp_fab[3][3];
-
-    amrex::Array<Box, 3> ebx;
-    amrex::Array<Box, 3> gebx;
-    amrex::Array<amrex::Array<Box, 3>, 3> tbx;
-
-    FArrayBox div_fab;
-    FArrayBox q_int_fab;
-    FArrayBox ftmp1_fab, ftmp2_fab;
-    FArrayBox qgdnvtmp1_fab, qgdnvtmp2_fab;
-    FArrayBox ql_fab, qr_fab;
-    FArrayBox flux_fab[3], qe_fab[3];
-
-    for (MFIter mfi(S_new, tile_size); mfi.isValid(); ++mfi) {
+  for (MFIter mfi(S_new, tile_size); mfi.isValid(); ++mfi) {
 
       // the valid region box
       const Box& bx = mfi.tilebox();
@@ -70,11 +43,19 @@ Castro::construct_hydro_source(Real dt)
       Array4<Real> const fluxes_out[3] = {fluxes[0]->array(mfi), fluxes[1]->array(mfi), fluxes[2]->array(mfi)};
       Array4<Real> const vol = volume[mfi].array();
 
-      q_fab.resize(qbx, QVAR);
+      amrex::Array<Box, 3> ebx;
+      amrex::Array<Box, 3> gebx;
+      amrex::Array<amrex::Array<Box, 3>, 3> tbx;
+
+      // Declare local storage now.
+      // We apply an Elixir to ensure that memory is saved until it is no
+      // longer needed (only relevant for the asynchronous case, usually on GPUs).
+
+      FArrayBox q_fab(qbx, QVAR);
       Elixir elix_q = q_fab.elixir();
       Array4<Real> const q = q_fab.array();
 
-      qaux_fab.resize(qbx, NQAUX);
+      FArrayBox qaux_fab(qbx, NQAUX);
       Elixir elix_qaux = qaux_fab.elixir();
       Array4<Real> const qaux = qaux_fab.array();
 
@@ -87,6 +68,8 @@ Castro::construct_hydro_source(Real dt)
                   AMREX_ARR4_TO_FORTRAN_ANYD(q),
                   AMREX_ARR4_TO_FORTRAN_ANYD(qaux));
       });
+
+      FArrayBox flux_fab[3], qe_fab[3];
 
       Elixir elix_flux[3];
       Elixir elix_qe[3];
@@ -116,6 +99,12 @@ Castro::construct_hydro_source(Real dt)
       tbx[2][0] = amrex::grow(ebx[2], IntVect(0,1,0));
       tbx[2][1] = amrex::grow(ebx[2], IntVect(1,0,0));
       tbx[2][2] = amrex::grow(ebx[2], IntVect(1,1,0));
+      
+      // The terms of qm and qp with i == j are the edge states that
+      // come out of the PPM edge state prediction. The terms with
+      // i /= j include transverse corrections.
+
+      FArrayBox qm_fab[3][3], qp_fab[3][3];
 
       Elixir elix_qm[3][3];
       Elixir elix_qp[3][3];
@@ -139,7 +128,7 @@ Castro::construct_hydro_source(Real dt)
       int idir_t1, idir_t1_f;
       int idir_t2, idir_t2_f;
 
-      div_fab.resize(obx, 1);
+      FArrayBox div_fab(obx, 1);
       Elixir elix_div = div_fab.elixir();
       Array4<Real> const div = div_fab.array();
 
@@ -152,31 +141,31 @@ Castro::construct_hydro_source(Real dt)
                AMREX_ARR4_TO_FORTRAN_ANYD(div));
       });
 
-      q_int_fab.resize(obx, QVAR);
+      FArrayBox q_int_fab(obx, QVAR);
       Elixir elix_q_int = q_int_fab.elixir();
       Array4<Real> const q_int = q_int_fab.array();
 
-      ftmp1_fab.resize(obx, NUM_STATE);
+      FArrayBox ftmp1_fab(obx, NUM_STATE);
       Elixir elix_ftmp1 = ftmp1_fab.elixir();
       Array4<Real> const ftmp1 = ftmp1_fab.array();
 
-      ftmp2_fab.resize(obx, NUM_STATE);
+      FArrayBox ftmp2_fab(obx, NUM_STATE);
       Elixir elix_ftmp2 = ftmp2_fab.elixir();
       Array4<Real> const ftmp2 = ftmp2_fab.array();
 
-      qgdnvtmp1_fab.resize(obx, NGDNV);
+      FArrayBox qgdnvtmp1_fab(obx, NGDNV);
       Elixir elix_qgdnvtmp1 = qgdnvtmp1_fab.elixir();
       Array4<Real> const qgdnvtmp1 = qgdnvtmp1_fab.array();
 
-      qgdnvtmp2_fab.resize(obx, NGDNV);
+      FArrayBox qgdnvtmp2_fab(obx, NGDNV);
       Elixir elix_qgdnvtmp2 = qgdnvtmp2_fab.elixir();
       Array4<Real> const qgdnvtmp2 = qgdnvtmp2_fab.array();
 
-      ql_fab.resize(obx, QVAR);
+      FArrayBox ql_fab(obx, QVAR);
       Elixir elix_ql = ql_fab.elixir();
       Array4<Real> const ql = ql_fab.array();
 
-      qr_fab.resize(obx, QVAR);
+      FArrayBox qr_fab(obx, QVAR);
       Elixir elix_qr = qr_fab.elixir();
       Array4<Real> const qr = qr_fab.array();
 
@@ -405,8 +394,6 @@ Castro::construct_hydro_source(Real dt)
                             AMREX_ZFILL(dx.data()), dt);
       });
 
-    } // MFIter loop
-
-  } // OMP loop
+  } // MFIter loop
 
 }
