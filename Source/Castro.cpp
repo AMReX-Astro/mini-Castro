@@ -104,7 +104,7 @@ Castro::initData ()
 #endif
     for (MFIter mfi(S_new, tile_size); mfi.isValid(); ++mfi)
     {
-        const Box& box = mfi.validbox();
+        const Box& box = mfi.tilebox();
         auto state_arr = S_new[mfi].array();
 
         CASTRO_LAUNCH_LAMBDA(box, lbx,
@@ -188,7 +188,7 @@ Castro::estTimeStep (Real dt_old)
 #endif
     for (MFIter mfi(stateMF, tile_size); mfi.isValid(); ++mfi)
     {
-        const Box& box = mfi.validbox();
+        const Box& box = mfi.tilebox();
 
         auto state_arr = stateMF[mfi].array();
 
@@ -388,7 +388,7 @@ Castro::post_timestep (int iteration)
 #endif
         for (MFIter mfi(S_new, tile_size); mfi.isValid(); ++mfi)
         {
-            const Box& box = mfi.validbox();
+            const Box& box = mfi.tilebox();
 
             auto state_arr = S_new[mfi].array();
 
@@ -517,7 +517,7 @@ Castro::errorEst (TagBoxArray& tags,
 #endif
     for (MFIter mfi(*mf, tile_size); mfi.isValid(); ++mfi)
     {
-        const Box& box = mfi.validbox();
+        const Box& box = mfi.tilebox();
         auto tags_arr = tags[mfi].array();
         auto data_arr = (*mf)[mfi].array();
 
