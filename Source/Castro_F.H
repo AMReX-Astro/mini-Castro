@@ -164,11 +164,10 @@ extern "C"
      const amrex::Real* dx, const amrex::Real* problo, const amrex::Real* probhi);
 
   CASTRO_DEVICE
-  void denerror
+  void calculate_maximum_density
     (const int* lo, const int* hi,
-     int8_t* tag, const int* tag_lo, const int* tag_hi,
-     const amrex::Real* den, const int* den_lo, const int* den_hi,
-     const int8_t tagval, const int8_t clearval);
+     BL_FORT_FAB_ARG_3D(state),
+     amrex::Real* max_density);
 
   CASTRO_DEVICE
   void calculate_blast_radius

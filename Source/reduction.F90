@@ -68,4 +68,36 @@ contains
 
   end subroutine reduce_min
 
+
+
+  CASTRO_FORT_DEVICE subroutine reduce_max(x, y)
+
+#ifdef AMREX_USE_ACC
+    !$acc routine seq
+#endif
+
+    implicit none
+
+    ! Set in x the maximum of x and y atomically on the GPU.
+
+    real(rt), intent(in   ) :: y
+    real(rt), intent(inout) :: x
+
+    real(rt) :: t
+
+#ifdef AMREX_USE_OMP_OFFLOAD
+    !$omp declare target
+#endif
+
+#if defined(AMREX_USE_CUDA) && !defined(AMREX_USE_ACC) && !defined(AMREX_USE_OMP_OFFLOAD)
+    t = atomicMax(x, y)
+#else
+#ifdef AMREX_USE_OMP
+    !$omp atomic
+#endif
+    x = max(x, y)
+#endif
+
+  end subroutine reduce_max
+
 end module reduction_module

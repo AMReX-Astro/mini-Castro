@@ -298,6 +298,44 @@ contains
 
 
 
+  CASTRO_FORT_DEVICE subroutine calculate_maximum_density(lo, hi, &
+                                                          u, u_lo, u_hi, &
+                                                          max_density) &
+                                                          bind(C, name="calculate_maximum_density")
+
+    use reduction_module, only: reduce_max
+
+    implicit none
+
+    integer,  intent(in   ) :: lo(3), hi(3)
+    integer,  intent(in   ) :: u_lo(3), u_hi(3)
+    real(rt), intent(in   ) :: u(u_lo(1):u_hi(1),u_lo(2):u_hi(2),u_lo(3):u_hi(3),NVAR)
+    real(rt), intent(inout) :: max_density
+
+    integer  :: i, j, k
+
+#ifdef AMREX_USE_ACC
+    !$acc parallel loop gang vector collapse(3) deviceptr(u) reduction(max:max_density)
+#endif
+#ifdef AMREX_USE_OMP_OFFLOAD
+    !$omp target teams distribute parallel do collapse(3) is_device_ptr(u) reduction(max:max_density)
+#endif
+    do k = lo(3), hi(3)
+       do j = lo(2), hi(2)
+          do i = lo(1), hi(1)
+
+             if (u(i,j,k,URHO) > max_density) then
+                call reduce_max(max_density, u(i,j,k,URHO))
+             end if
+
+          end do
+       end do
+    end do
+
+  end subroutine calculate_maximum_density
+
+
+
   CASTRO_FORT_DEVICE subroutine calculate_blast_radius(lo, hi, &
                                                        u, u_lo, u_hi, &
                                                        dx, problo, probhi, &

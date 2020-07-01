@@ -314,20 +314,46 @@ Castro::post_timestep (int iteration)
         // location where the density on the domain is maximum. Then we
         // can refine the estimate by doing a weighted sum on the domain.
 
-        // We'll assume that everything we care about is on the finest level.
-        MultiFab& S_new = getLevel(parent->finestLevel()).get_new_data(State_Type);
-        Real max_density = S_new.max(Density);
+        MultiFab& S_new = get_new_data(State_Type);
 
         const auto dx = getLevel(parent->finestLevel()).geom.CellSizeArray();
         const auto problo = geom.ProbLoArray();
         const auto probhi = geom.ProbHiArray();
 
         // Get device pointers to the reduction variables.
+        Real* max_density_loc = static_cast<Real*>(amrex::The_Managed_Arena()->alloc(sizeof(Real)));
         Real* blast_mass_loc = static_cast<Real*>(amrex::The_Managed_Arena()->alloc(sizeof(Real)));
         Real* blast_radius_loc = static_cast<Real*>(amrex::The_Managed_Arena()->alloc(sizeof(Real)));
 
+        *max_density_loc = 0.0;
         *blast_mass_loc = 0.0;
         *blast_radius_loc = 0.0;
+
+        // Copmute the maximum density on the domain.
+
+#ifdef AMREX_USE_OMP
+#pragma omp parallel
+#endif
+        for (MFIter mfi(S_new, tile_size); mfi.isValid(); ++mfi)
+        {
+            const Box& box = mfi.tilebox();
+
+            auto state_arr = S_new[mfi].array();
+
+            CASTRO_LAUNCH_LAMBDA(box, lbx,
+            {
+                calculate_maximum_density(AMREX_ARLIM_ANYD(lbx.loVect()), AMREX_ARLIM_ANYD(lbx.hiVect()),
+                                          AMREX_ARR4_TO_FORTRAN_ANYD(state_arr),
+                                          max_density_loc);
+            });
+        }
+
+        Real max_density = *max_density_loc;
+
+        amrex::The_Managed_Arena()->free(max_density_loc);
+
+        // Reduce over MPI ranks.
+        amrex::ParallelDescriptor::ReduceRealMax(max_density);
 
 #ifdef AMREX_USE_OMP
 #pragma omp parallel
