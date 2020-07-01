@@ -69,7 +69,7 @@ contains
     center(:) = (problo(:)+probhi(:)) / 2.e0_rt
 
 #ifdef AMREX_USE_ACC
-    !$acc parallel loop gang vector collapse(3) deviceptr(u) async(acc_stream)
+    !$acc parallel loop gang vector collapse(3) deviceptr(u)
 #endif
 #ifdef AMREX_USE_OMP_OFFLOAD
     !$omp target teams distribute parallel do collapse(3) is_device_ptr(u)
