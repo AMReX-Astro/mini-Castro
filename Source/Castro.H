@@ -114,12 +114,6 @@ public:
     // Apply a number of corrections to ensure consistency in the state
     void clean_state (amrex::MultiFab& state);
     
-    // Update coarse levels with flux correction from fine levels
-    void reflux (int crse_level, int fine_level);
-
-    // Average down data from fine levels onto underlying coarse levels
-    void avgDown ();
-
     // A record of how many cells we have advanced throughout the simulation.
     // This is saved as a real because we will be storing the number of zones
     // advanced as a ratio with the number of zones on the coarse grid (to
@@ -137,10 +131,6 @@ protected:
 
     // Source term representing hydrodynamics update
     amrex::MultiFab hydro_source;
-
-    // Hydrodynamic fluxes
-    amrex::Vector<std::unique_ptr<amrex::MultiFab> > fluxes;
-    amrex::FluxRegister flux_reg;
 
     // Geometric data
     amrex::MultiFab volume;

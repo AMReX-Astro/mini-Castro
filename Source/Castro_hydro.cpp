@@ -40,7 +40,6 @@ Castro::construct_hydro_source(Real dt)
       Array4<Real> const state = Sborder[mfi].array();
       Array4<Real> const source = hydro_source[mfi].array();
       Array4<Real> const ar[3] = {area[0][mfi].array(), area[1][mfi].array(), area[2][mfi].array()};
-      Array4<Real> const fluxes_out[3] = {fluxes[0]->array(mfi), fluxes[1]->array(mfi), fluxes[2]->array(mfi)};
       Array4<Real> const vol = volume[mfi].array();
 
       amrex::Array<Box, 3> ebx;
@@ -356,19 +355,6 @@ Castro::construct_hydro_source(Real dt)
           {
               normalize_species_fluxes(AMREX_ARLIM_ANYD(lbx.loVect()), AMREX_ARLIM_ANYD(lbx.hiVect()),
                                        AMREX_ARR4_TO_FORTRAN_ANYD(flux[idir]));
-          });
-
-          // Store the fluxes from this advance; we'll use these in
-          // the flux register for doing the coarse-fine level sync.
-          // The flux is scaled by dt * dA.
-
-          CASTRO_LAUNCH_LAMBDA(ebx[idir], lbx,
-          {
-              store_flux(AMREX_ARLIM_ANYD(lbx.loVect()), AMREX_ARLIM_ANYD(lbx.hiVect()),
-                         AMREX_ARR4_TO_FORTRAN_ANYD(fluxes_out[idir]),
-                         AMREX_ARR4_TO_FORTRAN_ANYD(flux[idir]),
-                         AMREX_ARR4_TO_FORTRAN_ANYD(ar[idir]),
-                         dt);
           });
 
       }

@@ -37,11 +37,6 @@ Castro::advance (Real time, Real dt, int  amr_iteration, int  amr_ncycle)
     hydro_source.define(grids,dmap,NUM_STATE,0);
     Sborder.define(grids, dmap, NUM_STATE, 4);
 
-    // Zero out the current fluxes.
-
-    for (int dir = 0; dir < 3; ++dir)
-	fluxes[dir]->setVal(0.0);
-
     MultiFab& S_old = get_old_data(State_Type);
     MultiFab& S_new = get_new_data(State_Type);
 
@@ -76,16 +71,6 @@ Castro::advance (Real time, Real dt, int  amr_iteration, int  amr_ncycle)
     // Make the state thermodynamically consistent.
 
     clean_state(S_new);
-
-    // Update the flux registers.
-
-    if (level < parent->finestLevel())
-        for (int i = 0; i < 3; ++i)
-            getLevel(level+1).flux_reg.CrseInit(*fluxes[i], i, 0, 0, NUM_STATE, -1.0);
-
-    if (level > 0)
-        for (int i = 0; i < 3; ++i)
-            flux_reg.FineAdd(*fluxes[i], i, 0, 0, NUM_STATE, 1.0);
 
     // Clear our temporary MultiFabs.
 
