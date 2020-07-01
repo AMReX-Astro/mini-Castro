@@ -463,4 +463,43 @@ contains
 
   end subroutine copy
 
+
+
+  CASTRO_FORT_DEVICE subroutine axpy(lo, hi, &
+                                     dst, dst_lo, dst_hi, &
+                                     src, src_lo, src_hi, &
+                                     dt) &
+                                     bind(C, name="axpy")
+
+    implicit none
+
+    integer,  intent(in   ) :: lo(3), hi(3)
+    integer,  intent(in   ) :: dst_lo(3), dst_hi(3)
+    integer,  intent(in   ) :: src_lo(3), src_hi(3)
+    real(rt), intent(inout) :: dst(dst_lo(1):dst_hi(1),dst_lo(2):dst_hi(2),dst_lo(3):dst_hi(3),NVAR)
+    real(rt), intent(in   ) :: src(src_lo(1):src_hi(1),src_lo(2):src_hi(2),src_lo(3):src_hi(3),NVAR)
+    real(rt), intent(in   ), value :: dt
+
+    integer :: i, j, k, n
+
+#ifdef AMREX_USE_ACC
+    !$acc parallel loop gang vector collapse(4) deviceptr(dst, src)
+#endif
+#ifdef AMREX_USE_OMP_OFFLOAD
+    !$omp target teams distribute parallel do collapse(4) is_device_ptr(dst, src)
+#endif
+    do n = 1, NVAR
+       do k = lo(3), hi(3)
+          do j = lo(2), hi(2)
+             do i = lo(1), hi(1)
+
+                dst(i,j,k,n) = dst(i,j,k,n) + dt * src(i,j,k,n)
+
+             end do
+          end do
+       end do
+    end do
+
+  end subroutine axpy
+
 end module castro_module

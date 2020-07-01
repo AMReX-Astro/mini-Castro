@@ -58,6 +58,13 @@ extern "C"
      const BL_FORT_FAB_ARG_3D(src));
 
   CASTRO_DEVICE
+  void axpy
+    (const int* lo, const int* hi,
+     BL_FORT_FAB_ARG_3D(dst),
+     const BL_FORT_FAB_ARG_3D(src),
+     amrex::Real dt);
+
+  CASTRO_DEVICE
   void estdt
     (const int* lo, const int* hi,
      const BL_FORT_FAB_ARG_3D(state),

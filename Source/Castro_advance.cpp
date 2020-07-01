@@ -78,7 +78,20 @@ Castro::advance (Real time, Real dt, int  amr_iteration, int  amr_ncycle)
 
     // Add it to the state, scaled by the timestep.
 
-    MultiFab::Saxpy(S_new, dt, hydro_source, 0, 0, NUM_STATE, 0);
+    for (MFIter mfi(S_new, tile_size); mfi.isValid(); ++mfi)
+    {
+        const Box& box = mfi.tilebox();
+        auto S_new_arr = S_new[mfi].array();
+        auto hydro_arr = hydro_source[mfi].array();
+
+        CASTRO_LAUNCH_LAMBDA(box, lbx,
+        {
+            axpy(AMREX_INT_ANYD(lbx.loVect()), AMREX_INT_ANYD(lbx.hiVect()),
+                 AMREX_ARR4_TO_FORTRAN_ANYD(S_new_arr),
+                 AMREX_ARR4_TO_FORTRAN_ANYD(hydro_arr),
+                 dt);
+        });
+    }
 
     // Make the state thermodynamically consistent.
 
