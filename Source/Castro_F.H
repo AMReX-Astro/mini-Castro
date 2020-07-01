@@ -52,6 +52,12 @@ extern "C"
      int idir);
 
   CASTRO_DEVICE
+  void copy
+    (const int* lo, const int* hi,
+     BL_FORT_FAB_ARG_3D(dst),
+     const BL_FORT_FAB_ARG_3D(src));
+
+  CASTRO_DEVICE
   void estdt
     (const int* lo, const int* hi,
      const BL_FORT_FAB_ARG_3D(state),

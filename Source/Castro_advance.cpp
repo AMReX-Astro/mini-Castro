@@ -47,7 +47,19 @@ Castro::advance (Real time, Real dt, int  amr_iteration, int  amr_ncycle)
 
     // Initialize the new-time data from the old time data.
 
-    MultiFab::Copy(S_new, S_old, 0, 0, NUM_STATE, S_new.nGrow());
+    for (MFIter mfi(S_old, tile_size); mfi.isValid(); ++mfi)
+    {
+        const Box& box = mfi.tilebox();
+        auto S_old_arr = S_old[mfi].array();
+        auto S_new_arr = S_new[mfi].array();
+
+        CASTRO_LAUNCH_LAMBDA(box, lbx,
+        {
+            copy(AMREX_ARLIM_ANYD(lbx.loVect()), AMREX_ARLIM_ANYD(lbx.hiVect()),
+                 AMREX_ARR4_TO_FORTRAN_ANYD(S_new_arr),
+                 AMREX_ARR4_TO_FORTRAN_ANYD(S_old_arr));
+        });
+    }
 
     // For the hydrodynamics update we need to have NUM_GROW ghost
     // zones available, but the state data does not carry ghost

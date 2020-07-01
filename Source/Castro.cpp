@@ -59,7 +59,7 @@ Castro::Castro (Amr&            papa,
 #ifdef AMREX_USE_OMP
 #pragma omp parallel
 #endif
-    for (MFIter mfi(volume, TilingIfNotGPU()); mfi.isValid(); ++mfi)
+    for (MFIter mfi(volume, tile_size); mfi.isValid(); ++mfi)
     {
         const Box& box = mfi.tilebox();
         auto vol = volume[mfi].array();
@@ -81,7 +81,7 @@ Castro::Castro (Amr&            papa,
 #ifdef AMREX_USE_OMP
 #pragma omp parallel
 #endif
-        for (MFIter mfi(area[dir], TilingIfNotGPU()); mfi.isValid(); ++mfi)
+        for (MFIter mfi(area[dir], tile_size); mfi.isValid(); ++mfi)
         {
             const Box& box = mfi.tilebox();
             auto ar = area[dir][mfi].array();
