@@ -28,6 +28,9 @@ contains
 #if defined(AMREX_USE_CUDA) && !defined(AMREX_USE_ACC) && !defined(AMREX_USE_OMP_OFFLOAD)
     t = atomicAdd(x, y)
 #else
+#ifdef AMREX_USE_OMP
+    !$omp atomic
+#endif
     x = x + y
 #endif
 
@@ -57,6 +60,9 @@ contains
 #if defined(AMREX_USE_CUDA) && !defined(AMREX_USE_ACC) && !defined(AMREX_USE_OMP_OFFLOAD)
     t = atomicMin(x, y)
 #else
+#ifdef AMREX_USE_OMP
+    !$omp atomic
+#endif
     x = min(x, y)
 #endif
 

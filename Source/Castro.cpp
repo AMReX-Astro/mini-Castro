@@ -179,21 +179,20 @@ Castro::estTimeStep (Real dt_old)
 
     const MultiFab& stateMF = get_new_data(State_Type);
 
-    amrex::Real dt = std::numeric_limits<amrex::Real>::max();
-
     const auto dx = geom.CellSizeArray();
 
+    Real* dt_loc = static_cast<Real*>(amrex::The_Managed_Arena()->alloc(sizeof(Real)));
+
+    *dt_loc = std::numeric_limits<amrex::Real>::max();
+
 #ifdef AMREX_USE_OMP
-#pragma omp parallel reduction(min:dt)
+#pragma omp parallel
 #endif
     for (MFIter mfi(stateMF, tile_size); mfi.isValid(); ++mfi)
     {
         const Box& box = mfi.tilebox();
 
         auto state_arr = stateMF[mfi].array();
-
-        // Get a device pointer for estdt.
-        Real* dt_loc = CASTRO_MFITER_REDUCE_MIN(&dt);
 
         CASTRO_LAUNCH_LAMBDA(box, lbx,
         {
@@ -202,6 +201,10 @@ Castro::estTimeStep (Real dt_old)
                   AMREX_ZFILL(dx.data()), dt_loc);
         });
     }
+
+    Real dt = *dt_loc;
+
+    amrex::The_Managed_Arena()->free(dt_loc);
 
     // Reduce over all MPI ranks.
     ParallelDescriptor::ReduceRealMin(dt);
@@ -380,21 +383,21 @@ Castro::post_timestep (int iteration)
         const auto problo = geom.ProbLoArray();
         const auto probhi = geom.ProbHiArray();
 
-        Real blast_radius = 0.0;
-        Real blast_mass = 0.0;
+        // Get device pointers to the reduction variables.
+        Real* blast_mass_loc = static_cast<Real*>(amrex::The_Managed_Arena()->alloc(sizeof(Real)));
+        Real* blast_radius_loc = static_cast<Real*>(amrex::The_Managed_Arena()->alloc(sizeof(Real)));
+
+        *blast_mass_loc = 0.0;
+        *blast_radius_loc = 0.0;
 
 #ifdef AMREX_USE_OMP
-#pragma omp parallel reduction(+:blast_mass,blast_radius)
+#pragma omp parallel
 #endif
         for (MFIter mfi(S_new, tile_size); mfi.isValid(); ++mfi)
         {
             const Box& box = mfi.tilebox();
 
             auto state_arr = S_new[mfi].array();
-
-            // Get device pointers to the reduction variables.
-            Real* blast_mass_loc = CASTRO_MFITER_REDUCE_SUM(&blast_mass);
-            Real* blast_radius_loc = CASTRO_MFITER_REDUCE_SUM(&blast_radius);
 
             CASTRO_LAUNCH_LAMBDA(box, lbx,
             {
@@ -405,6 +408,12 @@ Castro::post_timestep (int iteration)
             });
 
         }
+
+        Real blast_mass = *blast_mass_loc;
+        Real blast_radius = *blast_radius_loc;
+
+        amrex::The_Managed_Arena()->free(blast_mass_loc);
+        amrex::The_Managed_Arena()->free(blast_radius_loc);
 
         // Reduce over MPI ranks.
         amrex::ParallelDescriptor::ReduceRealSum(blast_mass);
