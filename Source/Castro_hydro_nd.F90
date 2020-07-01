@@ -33,7 +33,7 @@ contains
     dzinv = ONE / dx(3)
 
 #ifdef AMREX_USE_ACC
-    !$acc parallel loop gang vector collapse(3) deviceptr(div, q) async(acc_stream)
+    !$acc parallel loop gang vector collapse(3) deviceptr(div, q)
 #endif
 #ifdef AMREX_USE_OMP_OFFLOAD
     !$omp target teams distribute parallel do collapse(3) is_device_ptr(div, q)
@@ -103,7 +103,7 @@ contains
     type (eos_t) :: eos_state
 
 #ifdef AMREX_USE_ACC
-    !$acc parallel loop gang vector collapse(3) private(vel, eos_state) deviceptr(u, q, qaux) async(acc_stream)
+    !$acc parallel loop gang vector collapse(3) private(vel, eos_state) deviceptr(u, q, qaux)
 #endif
 #ifdef AMREX_USE_OMP_OFFLOAD
     !$omp target teams distribute parallel do collapse(3) private(vel, eos_state) is_device_ptr(u, q, qaux)
@@ -199,7 +199,7 @@ contains
     real(rt), parameter :: difmag = 0.1d0
 
 #ifdef AMREX_USE_ACC
-    !$acc parallel loop gang vector collapse(4) deviceptr(flux, u, div) async(acc_stream)
+    !$acc parallel loop gang vector collapse(4) deviceptr(flux, u, div)
 #endif
 #ifdef AMREX_USE_OMP_OFFLOAD
     !$omp target teams distribute parallel do collapse(4) is_device_ptr(flux, u, div)
@@ -265,7 +265,7 @@ contains
     real(rt) :: sum, fac
 
 #ifdef AMREX_USE_ACC
-    !$acc parallel loop gang vector collapse(3) deviceptr(flux) async(acc_stream)
+    !$acc parallel loop gang vector collapse(3) deviceptr(flux)
 #endif
 #ifdef AMREX_USE_OMP_OFFLOAD
     !$omp target teams distribute parallel do collapse(3) is_device_ptr(flux)
@@ -359,7 +359,7 @@ contains
 
 #ifdef AMREX_USE_ACC
     !$acc parallel loop gang vector collapse(4) deviceptr(source, flux1, flux2, flux3, area1, area2, area3) &
-    !$acc deviceptr(qx, qy, qz, vol) async(acc_stream)
+    !$acc deviceptr(qx, qy, qz, vol)
 #endif
 #ifdef AMREX_USE_OMP_OFFLOAD
     !$omp target teams distribute parallel do collapse(4) is_device_ptr(source, flux1, flux2, flux3, area1, area2, area3) &

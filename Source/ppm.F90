@@ -424,7 +424,7 @@ contains
 
 #ifdef AMREX_USE_ACC
     !$acc parallel loop gang vector collapse(3) deviceptr(qm, qp, q, qaux) &
-    !$acc private(Ip, Im, Ip_gc, Im_gc, Ip_sp, Im_sp, s) async(acc_stream)
+    !$acc private(Ip, Im, Ip_gc, Im_gc, Ip_sp, Im_sp, s)
 #endif
 #ifdef AMREX_USE_OMP_OFFLOAD
     !$omp target teams distribute parallel do collapse(3) is_device_ptr(qm, qp, q, qaux) &

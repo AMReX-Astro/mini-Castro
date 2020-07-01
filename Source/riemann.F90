@@ -98,7 +98,7 @@ contains
     end if
 
 #ifdef AMREX_USE_ACC
-    !$acc parallel loop gang vector collapse(3) deviceptr(ql, qr, flx, qint, qaux, qgdnv) async(acc_stream)
+    !$acc parallel loop gang vector collapse(3) deviceptr(ql, qr, flx, qint, qaux, qgdnv)
 #endif
 #ifdef AMREX_USE_OMP_OFFLOAD
     !$omp target teams distribute parallel do collapse(3) is_device_ptr(ql, qr, flx, qint, qaux, qgdnv)

@@ -79,7 +79,7 @@ contains
     logical :: reset_state
 
 #ifdef AMREX_USE_ACC
-    !$acc parallel loop gang vector collapse(3) deviceptr(q2m, q2p, q2mo, q2po, qaux, f1, q1) private(lq2, lq2o) async(acc_stream)
+    !$acc parallel loop gang vector collapse(3) deviceptr(q2m, q2p, q2mo, q2po, qaux, f1, q1) private(lq2, lq2o)
 #endif
 #ifdef AMREX_USE_OMP_OFFLOAD
     !$omp target teams distribute parallel do collapse(3) is_device_ptr(q2m, q2p, q2mo, q2po, qaux, f1, q1) private(lq2, lq2o)
@@ -318,7 +318,7 @@ contains
     !-------------------------------------------------------------------
 
 #ifdef AMREX_USE_ACC
-    !$acc parallel loop gang vector collapse(3) deviceptr(qm1, qp1, qm1o, qp1o, qaux, f2, f3, q2, q3) private(lqo, lq) async(acc_stream)
+    !$acc parallel loop gang vector collapse(3) deviceptr(qm1, qp1, qm1o, qp1o, qaux, f2, f3, q2, q3) private(lqo, lq)
 #endif
 #ifdef AMREX_USE_OMP_OFFLOAD
     !$omp target teams distribute parallel do collapse(3) is_device_ptr(qm1, qp1, qm1o, qp1o, qaux, f2, f3, q2, q3) private(lqo, lq)
