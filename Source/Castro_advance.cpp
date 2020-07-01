@@ -63,13 +63,24 @@ Castro::advance (Real time, Real dt, int  amr_iteration, int  amr_ncycle)
 
     // For the hydrodynamics update we need to have NUM_GROW ghost
     // zones available, but the state data does not carry ghost
-    // zones. So we do a parallel copy (which involves MPI
-    // communication) to give us Sborder, which does have ghost
-    // zones. This is both a halo exchange operation (sending/receiving
-    // remote data) and a local operation (copying the data in the
-    // locally owned zones).
+    // zones. So we first do a local copy to an array Sborder,
+    // then we do a halo exchange to fill its ghost zones.
 
-    Sborder.ParallelCopy(S_old, 0, 0, NUM_STATE, 0, 4, geom.periodicity());
+    for (MFIter mfi(S_old, tile_size); mfi.isValid(); ++mfi)
+    {
+        const Box& box = mfi.tilebox();
+        auto S_old_arr = S_old[mfi].array();
+        auto Sbord_arr = Sborder[mfi].array();
+
+        CASTRO_LAUNCH_LAMBDA(box, lbx,
+        {
+            copy(AMREX_ARLIM_ANYD(lbx.loVect()), AMREX_ARLIM_ANYD(lbx.hiVect()),
+                 AMREX_ARR4_TO_FORTRAN_ANYD(Sbord_arr),
+                 AMREX_ARR4_TO_FORTRAN_ANYD(S_old_arr));
+        });
+    }
+
+    Sborder.FillBoundary(geom.periodicity());
 
     // Make the temporarily expanded state thermodynamically consistent after the fill.
 
