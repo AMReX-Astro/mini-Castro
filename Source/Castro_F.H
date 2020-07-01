@@ -39,18 +39,23 @@ extern "C"
     (const int* lo, const int* hi, BL_FORT_FAB_ARG_3D(state));
 
   CASTRO_DEVICE
+  void set_volume
+    (const int* lo, const int* hi,
+     BL_FORT_FAB_ARG_3D(vol),
+     const amrex::Real* dx);
+
+  CASTRO_DEVICE
+  void set_area
+    (const int* lo, const int* hi,
+     BL_FORT_FAB_ARG_3D(area),
+     const amrex::Real* dx,
+     int idir);
+
+  CASTRO_DEVICE
   void estdt
     (const int* lo, const int* hi,
      const BL_FORT_FAB_ARG_3D(state),
      const amrex::Real* dx, amrex::Real* dt);
-
-  CASTRO_DEVICE
-  void store_flux
-    (const int* lo, const int* hi,
-     BL_FORT_FAB_ARG_3D(flux_out),
-     BL_FORT_FAB_ARG_3D(flux_in),
-     BL_FORT_FAB_ARG_3D(area),
-     const amrex::Real dt);
 
   CASTRO_DEVICE
   void fill_hydro_source

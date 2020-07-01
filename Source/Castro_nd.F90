@@ -350,5 +350,80 @@ contains
     end do
 
   end subroutine calculate_blast_radius
-  
+
+
+
+  CASTRO_FORT_DEVICE subroutine set_volume(lo, hi, &
+                                           vol, vol_lo, vol_hi, &
+                                           dx) &
+                                           bind(C, name="set_volume")
+
+    implicit none
+
+    integer,  intent(in   ) :: lo(3), hi(3)
+    integer,  intent(in   ) :: vol_lo(3), vol_hi(3)
+    real(rt), intent(inout) :: vol(vol_lo(1):vol_hi(1),vol_lo(2):vol_hi(2),vol_lo(3):vol_hi(3))
+    real(rt), intent(in   ) :: dx(3)
+
+    integer :: i, j, k
+
+#ifdef AMREX_USE_ACC
+    !$acc parallel loop gang vector collapse(3) deviceptr(vol)
+#endif
+#ifdef AMREX_USE_OMP_OFFLOAD
+    !$omp target teams distribute parallel do collapse(3) is_device_ptr(vol)
+#endif
+    do k = lo(3), hi(3)
+       do j = lo(2), hi(2)
+          do i = lo(1), hi(1)
+
+             vol(i,j,k) = dx(1) * dx(2) * dx(3)
+
+          end do
+       end do
+    end do
+
+  end subroutine set_volume
+
+
+
+  CASTRO_FORT_DEVICE subroutine set_area(lo, hi, &
+                                         area, area_lo, area_hi, &
+                                         dx, idir) &
+                                         bind(C, name="set_area")
+
+    implicit none
+
+    integer,  intent(in   ) :: lo(3), hi(3)
+    integer,  intent(in   ) :: area_lo(3), area_hi(3)
+    real(rt), intent(inout) :: area(area_lo(1):area_hi(1),area_lo(2):area_hi(2),area_lo(3):area_hi(3))
+    real(rt), intent(in   ) :: dx(3)
+    integer,  intent(in   ), value :: idir
+
+    integer :: i, j, k
+
+#ifdef AMREX_USE_ACC
+    !$acc parallel loop gang vector collapse(3) deviceptr(area)
+#endif
+#ifdef AMREX_USE_OMP_OFFLOAD
+    !$omp target teams distribute parallel do collapse(3) is_device_ptr(area)
+#endif
+    do k = lo(3), hi(3)
+       do j = lo(2), hi(2)
+          do i = lo(1), hi(1)
+
+             if (idir == 1) then
+                area(i,j,k) = dx(2) * dx(3)
+             else if (idir == 2) then
+                area(i,j,k) = dx(1) * dx(3)
+             else
+                area(i,j,k) = dx(1) * dx(2)
+             end if
+
+          end do
+       end do
+    end do
+
+  end subroutine set_area
+
 end module castro_module

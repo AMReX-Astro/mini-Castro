@@ -53,13 +53,47 @@ Castro::Castro (Amr&            papa,
 
     volume.clear();
     volume.define(grids, dmap, 1, 4);
-    geom.GetVolume(volume);
+
+    auto dx = geom.CellSizeArray();
+
+#ifdef AMREX_USE_OMP
+#pragma omp parallel
+#endif
+    for (MFIter mfi(volume, TilingIfNotGPU()); mfi.isValid(); ++mfi)
+    {
+        const Box& box = mfi.tilebox();
+        auto vol = volume[mfi].array();
+
+        CASTRO_LAUNCH_LAMBDA(box, lbx,
+        {
+            set_volume(AMREX_ARLIM_ANYD(lbx.loVect()), AMREX_ARLIM_ANYD(lbx.hiVect()),
+                       AMREX_ARR4_TO_FORTRAN_ANYD(vol),
+                       AMREX_ZFILL(dx.data()));
+        });
+
+    }
 
     for (int dir = 0; dir < BL_SPACEDIM; dir++)
     {
         area[dir].clear();
 	area[dir].define(getEdgeBoxArray(dir), dmap, 1, 4);
-        geom.GetFaceArea(area[dir],dir);
+
+#ifdef AMREX_USE_OMP
+#pragma omp parallel
+#endif
+        for (MFIter mfi(area[dir], TilingIfNotGPU()); mfi.isValid(); ++mfi)
+        {
+            const Box& box = mfi.tilebox();
+            auto ar = area[dir][mfi].array();
+
+            CASTRO_LAUNCH_LAMBDA(box, lbx,
+            {
+                set_area(AMREX_ARLIM_ANYD(lbx.loVect()), AMREX_ARLIM_ANYD(lbx.hiVect()),
+                         AMREX_ARR4_TO_FORTRAN_ANYD(ar),
+                         AMREX_ZFILL(dx.data()),
+                         dir + 1);
+            });
+        }
     }
 }
 
