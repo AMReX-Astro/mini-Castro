@@ -63,10 +63,13 @@ Castro::advance (Real time, Real dt, int  amr_iteration, int  amr_ncycle)
 
     // For the hydrodynamics update we need to have NUM_GROW ghost
     // zones available, but the state data does not carry ghost
-    // zones. So we use a FillPatch using the state data to give us
-    // Sborder, which does have ghost zones.
+    // zones. So we do a parallel copy (which involves MPI
+    // communication) to give us Sborder, which does have ghost
+    // zones. This is both a halo exchange operation (sending/receiving
+    // remote data) and a local operation (copying the data in the
+    // locally owned zones).
 
-    AmrLevel::FillPatch(*this, Sborder, 4, time, State_Type, 0, NUM_STATE);
+    Sborder.ParallelCopy(S_old, 0, 0, NUM_STATE, 0, 4, geom.periodicity());
 
     // Make the temporarily expanded state thermodynamically consistent after the fill.
 
