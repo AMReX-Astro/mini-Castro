@@ -114,8 +114,6 @@ Castro::initData ()
     MultiFab& S_new = get_new_data(State_Type);
     Real cur_time   = state[State_Type].curTime();
 
-    S_new.setVal(0.);
-
     // make sure dx = dy = dz -- that's all we guarantee to support
     const Real SMALL = 1.e-13;
     if ( (fabs(dx[0] - dx[1]) > SMALL*dx[0]) || (fabs(dx[0] - dx[2]) > SMALL*dx[0]) )

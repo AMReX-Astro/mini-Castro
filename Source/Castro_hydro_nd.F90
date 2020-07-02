@@ -372,7 +372,7 @@ contains
 
                 volinv = ONE / vol(i,j,k)
 
-                source(i,j,k,n) = source(i,j,k,n) + &
+                source(i,j,k,n) = &
                      ( flux1(i,j,k,n) * area1(i,j,k) - flux1(i+1,j,k,n) * area1(i+1,j,k) &
                      + flux2(i,j,k,n) * area2(i,j,k) - flux2(i,j+1,k,n) * area2(i,j+1,k) &
                      + flux3(i,j,k,n) * area3(i,j,k) - flux3(i,j,k+1,n) * area3(i,j,k+1) &

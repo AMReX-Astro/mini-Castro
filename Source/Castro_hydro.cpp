@@ -14,8 +14,6 @@ Castro::construct_hydro_source(Real dt)
   // this constructs the hydrodynamic source (essentially the flux
   // divergence) using the CTU framework for unsplit hydrodynamics
 
-  hydro_source.setVal(0.0);
-
   int finest_level = parent->finestLevel();
 
   auto dx = geom.CellSizeArray();
