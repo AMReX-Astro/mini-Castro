@@ -12,7 +12,7 @@ module initdata_module
   real(rt), parameter :: dens_ambient = 1.e4_rt      ! ambient density (in g/cc)
   real(rt), parameter :: exp_energy = 1.e52_rt       ! absolute energy of the explosion (in erg)
   real(rt), parameter :: r_init = 1.25e8_rt          ! initial radius of the explosion (in cm)
-  real(rt), parameter :: nsub = 10                   ! subgrid zones in the initial model
+  integer, parameter  :: nsub = 10                   ! subgrid zones in the initial model
 
 contains
 
