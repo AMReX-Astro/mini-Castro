@@ -405,8 +405,8 @@ contains
     !$acc deviceptr(qx, qy, qz, vol)
 #endif
 #ifdef AMREX_USE_OMP_OFFLOAD
-    !$omp target teams distribute parallel do collapse(4) is_device_ptr(source, flux1, flux2, flux3, area1, area2, area3) &
-    !$omp is_device_ptr(qx, qy, qz, vol)
+    !$omp target teams distribute parallel do collapse(4) &
+    !$omp is_device_ptr(source, flux1, flux2, flux3, area1, area2, area3, qx, qy, qz, vol)
 #endif
     do n = 1, NVAR
        do k = lo(3), hi(3)
