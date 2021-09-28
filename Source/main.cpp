@@ -37,7 +37,7 @@ main (int argc, char* argv[])
         amrex::Print() << "max_step (10000000): The maximum number of timesteps to take." << std::endl;
         amrex::Print() << std::endl;
         amrex::Print() << "Example program invocation:" << std::endl;
-        amrex::Print() << "./mini-Castro3d.pgi.MPI.CUDA.ex n_cell = 128 max_box_size = 128 min_box_size = 32 max_level = 0" << std::endl;
+        amrex::Print() << "./mini-Castro3d.pgi.MPI.CUDA.ex n_cell=128 max_box_size=128 min_box_size=32 max_level=0" << std::endl;
         amrex::Print() << std::endl;
         amrex::Print() << "n_cell should be used to control the total amount of work to do. There are n_cell^3" << std::endl <<
                           "zones in the simulation, subdivided into boxes of various sizes. The minimum size" << std::endl <<
