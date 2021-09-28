@@ -2,6 +2,8 @@
 #include <iostream>
 #include <Castro.H>
 
+amrex::LevelBld* getLevelBld ();
+
 int
 main (int argc, char* argv[])
 {
@@ -118,7 +120,7 @@ main (int argc, char* argv[])
         amrex::Print() << "stop_time = " << stop_time << std::endl;
         amrex::Print() << std::endl;
 
-        amrex::Amr* amrptr = new amrex::Amr;
+        amrex::Amr* amrptr = new amrex::Amr(getLevelBld());
 
         amrex::Print() << "Running simulation and calculating diagnostics every " << Castro::diagnostic_interval << " timesteps..." << std::endl << std::endl;
 
